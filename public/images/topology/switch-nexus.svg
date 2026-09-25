@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 76" width="260" height="76">
+  <defs>
+    <linearGradient id="nexusBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="40%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="rackEar" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="50%" stop-color="#cbd5e1"/>
+      <stop offset="100%" stop-color="#64748b"/>
+    </linearGradient>
+    <linearGradient id="slotBezel" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="50%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    <linearGradient id="supCard" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <filter id="chassisShadow" x="-5%" y="-10%" width="110%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#chassisShadow)">
+    <!-- Left Heavy Rack Ear -->
+    <path d="M 4 6 L 16 6 L 16 68 L 4 68 Z" fill="url(#rackEar)" stroke="#475569" stroke-width="0.8"/>
+    <circle cx="10" cy="14" r="2.5" fill="#1e293b" stroke="#334155" stroke-width="0.6"/>
+    <circle cx="10" cy="37" r="2.5" fill="#1e293b" stroke="#334155" stroke-width="0.6"/>
+    <circle cx="10" cy="60" r="2.5" fill="#1e293b" stroke="#334155" stroke-width="0.6"/>
+
+    <!-- Right Heavy Rack Ear -->
+    <path d="M 244 6 L 256 6 L 256 68 L 244 68 Z" fill="url(#rackEar)" stroke="#475569" stroke-width="0.8"/>
+    <circle cx="250" cy="14" r="2.5" fill="#1e293b" stroke="#334155" stroke-width="0.6"/>
+    <circle cx="250" cy="37" r="2.5" fill="#1e293b" stroke="#334155" stroke-width="0.6"/>
+    <circle cx="250" cy="60" r="2.5" fill="#1e293b" stroke="#334155" stroke-width="0.6"/>
+
+    <!-- Modular Nexus Chassis Enclosure -->
+    <rect x="16" y="6" width="228" height="62" rx="2" fill="url(#nexusBody)" stroke="#475569" stroke-width="1.2"/>
+    <line x1="16" y1="8" x2="244" y2="8" stroke="#64748b" stroke-width="1"/>
+
+    <!-- Fan Tray Grill (Top ventilation bar) -->
+    <g transform="translate(20, 10)" fill="#090d16" stroke="#1e293b" stroke-width="0.6">
+      <rect x="0" y="0" width="220" height="7" rx="1"/>
+      <!-- Honeycomb vents -->
+      <line x1="10" y1="2" x2="10" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="20" y1="2" x2="20" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="30" y1="2" x2="30" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="40" y1="2" x2="40" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="50" y1="2" x2="50" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="60" y1="2" x2="60" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="70" y1="2" x2="70" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="80" y1="2" x2="80" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="90" y1="2" x2="90" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="100" y1="2" x2="100" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="110" y1="2" x2="110" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="120" y1="2" x2="120" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="130" y1="2" x2="130" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="140" y1="2" x2="140" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="150" y1="2" x2="150" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="160" y1="2" x2="160" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="170" y1="2" x2="170" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="180" y1="2" x2="180" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="190" y1="2" x2="190" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="200" y1="2" x2="200" y2="5" stroke="#334155" stroke-linecap="round"/>
+      <line x1="210" y1="2" x2="210" y2="5" stroke="#334155" stroke-linecap="round"/>
+    </g>
+
+    <!-- Supervisor Module 1 (Left Blade) -->
+    <g transform="translate(20, 21)">
+      <rect x="0" y="0" width="48" height="42" rx="1.5" fill="url(#slotBezel)" stroke="#0f172a" stroke-width="0.8"/>
+      <!-- Cisco Nexus Brand Label -->
+      <rect x="3" y="3" width="7" height="5" rx="0.8" fill="#0284c7"/>
+      <text x="12" y="7" font-family="ui-monospace, monospace" font-size="4" font-weight="900" fill="#f8fafc" letter-spacing="0.5">CISCO</text>
+      <text x="3" y="14" font-family="ui-monospace, monospace" font-size="3.5" font-weight="800" fill="#38bdf8">NEXUS 7000</text>
+      <text x="3" y="19" font-family="ui-monospace, monospace" font-size="2.6" fill="#94a3b8">SUP-2E / ACTIVE</text>
+      
+      <!-- Management and Console Ports -->
+      <rect x="3" y="24" width="7" height="6" rx="0.5" fill="#020617" stroke="#475569" stroke-width="0.5"/>
+      <rect x="13" y="24" width="7" height="6" rx="0.5" fill="#020617" stroke="#475569" stroke-width="0.5"/>
+      <rect x="23" y="24" width="7" height="6" rx="0.5" fill="#020617" stroke="#0284c7" stroke-width="0.5"/>
+      <text x="3.5" y="35" font-family="ui-monospace, monospace" font-size="2.5" fill="#64748b">CON MGMT CMP</text>
+      
+      <!-- Supervisor Status LEDs -->
+      <circle cx="36" cy="25" r="1" fill="#10b981"/>
+      <circle cx="41" cy="25" r="1" fill="#10b981"/>
+      <circle cx="36" cy="30" r="1" fill="#38bdf8"/>
+      <circle cx="41" cy="30" r="1" fill="#10b981"/>
+    </g>
+
+    <!-- High-Density 10G/40G Line Card Slot 2 -->
+    <g transform="translate(72, 21)">
+      <rect x="0" y="0" width="80" height="42" rx="1.5" fill="url(#slotBezel)" stroke="#0f172a" stroke-width="0.8"/>
+      <text x="4" y="8" font-family="ui-monospace, monospace" font-size="3.2" font-weight="700" fill="#cbd5e1">F3-SERIES 48P 10GE</text>
+      
+      <!-- SFP+ Port Cages Array (2 rows of 8 dual cages) -->
+      <g transform="translate(4, 12)">
+        <!-- Row 1 -->
+        <rect x="0" y="0" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+        <rect x="9" y="0" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+        <rect x="18" y="0" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+        <rect x="27" y="0" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+        <rect x="36" y="0" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+        <rect x="45" y="0" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+        <rect x="54" y="0" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+        <rect x="63" y="0" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+
+        <!-- Row 2 -->
+        <rect x="0" y="13" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+        <rect x="9" y="13" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+        <rect x="18" y="13" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+        <rect x="27" y="13" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+        <rect x="36" y="13" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+        <rect x="45" y="13" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+        <rect x="54" y="13" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+        <rect x="63" y="13" width="8" height="10" rx="0.5" fill="#020617" stroke="#64748b" stroke-width="0.6"/>
+
+        <!-- Micro Activity LEDs -->
+        <circle cx="4" cy="-1.5" r="0.8" fill="#10b981"/>
+        <circle cx="13" cy="-1.5" r="0.8" fill="#10b981"/>
+        <circle cx="22" cy="-1.5" r="0.8" fill="#10b981"/>
+        <circle cx="31" cy="-1.5" r="0.8" fill="#10b981"/>
+        <circle cx="40" cy="-1.5" r="0.8" fill="#10b981"/>
+        <circle cx="49" cy="-1.5" r="0.8" fill="#10b981"/>
+        <circle cx="58" cy="-1.5" r="0.8" fill="#10b981"/>
+        <circle cx="67" cy="-1.5" r="0.8" fill="#10b981"/>
+      </g>
+    </g>
+
+    <!-- Line Card Slot 3 (40G/100G Fabric M2) -->
+    <g transform="translate(156, 21)">
+      <rect x="0" y="0" width="84" height="42" rx="1.5" fill="url(#slotBezel)" stroke="#0f172a" stroke-width="0.8"/>
+      <text x="4" y="8" font-family="ui-monospace, monospace" font-size="3.2" font-weight="700" fill="#cbd5e1">M2-SERIES 24P 10/40G QSFP</text>
+      
+      <!-- QSFP Large Cages -->
+      <g transform="translate(4, 13)">
+        <rect x="0" y="0" width="11" height="9" rx="0.8" fill="#020617" stroke="#38bdf8" stroke-width="0.7"/>
+        <rect x="13" y="0" width="11" height="9" rx="0.8" fill="#020617" stroke="#38bdf8" stroke-width="0.7"/>
+        <rect x="26" y="0" width="11" height="9" rx="0.8" fill="#020617" stroke="#38bdf8" stroke-width="0.7"/>
+        <rect x="39" y="0" width="11" height="9" rx="0.8" fill="#020617" stroke="#38bdf8" stroke-width="0.7"/>
+        <rect x="52" y="0" width="11" height="9" rx="0.8" fill="#020617" stroke="#38bdf8" stroke-width="0.7"/>
+        <rect x="65" y="0" width="11" height="9" rx="0.8" fill="#020617" stroke="#38bdf8" stroke-width="0.7"/>
+
+        <rect x="0" y="12" width="11" height="9" rx="0.8" fill="#020617" stroke="#38bdf8" stroke-width="0.7"/>
+        <rect x="13" y="12" width="11" height="9" rx="0.8" fill="#020617" stroke="#38bdf8" stroke-width="0.7"/>
+        <rect x="26" y="12" width="11" height="9" rx="0.8" fill="#020617" stroke="#38bdf8" stroke-width="0.7"/>
+        <rect x="39" y="12" width="11" height="9" rx="0.8" fill="#020617" stroke="#38bdf8" stroke-width="0.7"/>
+        <rect x="52" y="12" width="11" height="9" rx="0.8" fill="#020617" stroke="#38bdf8" stroke-width="0.7"/>
+        <rect x="65" y="12" width="11" height="9" rx="0.8" fill="#020617" stroke="#38bdf8" stroke-width="0.7"/>
+
+        <!-- LEDs -->
+        <circle cx="5.5" cy="-1.5" r="0.9" fill="#10b981"/>
+        <circle cx="18.5" cy="-1.5" r="0.9" fill="#10b981"/>
+        <circle cx="31.5" cy="-1.5" r="0.9" fill="#10b981"/>
+        <circle cx="44.5" cy="-1.5" r="0.9" fill="#10b981"/>
+        <circle cx="57.5" cy="-1.5" r="0.9" fill="#10b981"/>
+        <circle cx="70.5" cy="-1.5" r="0.9" fill="#10b981"/>
+      </g>
+    </g>
+  </g>
+</svg>

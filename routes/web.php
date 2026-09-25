@@ -1,0 +1,57 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ConsolaSeguraController;
+use App\Http\Controllers\VlanController;
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/', [DashboardController::class, 'index']);
+    
+    Route::get('/setup-2fa', function () {
+        return view('auth.setup-2fa');
+    })->name('setup-2fa');
+
+    Route::middleware(['password.confirm:password.confirm,900', 'check.admin'])->group(function () {
+        // ==========================================
+        // RUTAS CRÍTICAS (Requieren Password Confirm & Admin)
+        // ==========================================
+        Route::get('/consola', [ConsolaSeguraController::class, 'index'])->name('consola.index');
+        Route::post('/consola/ejecutar', [ConsolaSeguraController::class, 'ejecutar'])->name('consola.ejecutar');
+
+        Route::get('/vlans', [VlanController::class, 'index'])->name('vlans.index');
+        Route::post('/vlans/provision', [VlanController::class, 'provisionVlan'])->name('vlans.provision');
+        Route::post('/vlans/assign-port', [VlanController::class, 'assignPort'])->name('vlans.assign_port');
+        
+        Route::get('/configuraciones', [App\Http\Controllers\ConfiguracionDispositivoController::class, 'index'])->name('configuraciones.index');
+        Route::post('/configuraciones/respaldar', [App\Http\Controllers\ConfiguracionDispositivoController::class, 'respaldar'])->name('configuraciones.respaldar');
+        Route::get('/configuraciones/{id}/descargar', [App\Http\Controllers\ConfiguracionDispositivoController::class, 'descargar'])->name('configuraciones.descargar');
+        Route::get('/configuraciones/{id}/pdf', [App\Http\Controllers\ConfiguracionDispositivoController::class, 'descargarPdf'])->name('configuraciones.pdf');
+        
+        Route::get('/settings', [App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
+        Route::post('/settings', [App\Http\Controllers\SettingController::class, 'update'])->name('settings.update');
+        Route::post('/settings/role/{user}', [App\Http\Controllers\SettingController::class, 'updateRole'])->name('settings.update_role');
+        Route::post('/settings/register', [App\Http\Controllers\SettingController::class, 'register'])->name('settings.register');
+        Route::put('/settings/user/{user}', [App\Http\Controllers\SettingController::class, 'updateUser'])->name('settings.update_user');
+        Route::delete('/settings/user/{user}', [App\Http\Controllers\SettingController::class, 'deleteUser'])->name('settings.delete_user');
+    });
+
+    // ==========================================
+    // RUTAS ESTÁNDAR (Solo requieren Auth normal)
+    // ==========================================
+    Route::get('/dispositivos/create', [App\Http\Controllers\DispositivoController::class, 'create'])->name('dispositivos.create');
+    Route::post('/dispositivos', [App\Http\Controllers\DispositivoController::class, 'store'])->name('dispositivos.store');
+    Route::get('/dispositivos/{id}', [App\Http\Controllers\DispositivoShowController::class, 'show'])->name('dispositivos.show');
+    Route::get('/dispositivos/{id}/pdf', [App\Http\Controllers\DispositivoShowController::class, 'descargarPdf'])->name('dispositivos.pdf');
+    
+    Route::get('/topologia', [App\Http\Controllers\TopologiaController::class, 'index'])->name('topologia.index');
+    Route::get('/api/topologia/nodos-enlaces', [App\Http\Controllers\TopologiaController::class, 'datosGrafos'])->name('topologia.datos');
+    Route::post('/topologia/descubrir', [App\Http\Controllers\DiscoveryController::class, 'run'])->name('topologia.descubrir');
+    Route::post('/topologia/escanear-local', [App\Http\Controllers\DiscoveryController::class, 'scanLocalInterface'])->name('topologia.escanear_local');
+    
+    Route::get('/reportes/inventario-pdf', [App\Http\Controllers\DashboardController::class, 'descargarInventarioPdf'])->name('reportes.inventario_pdf');
+    Route::get('/api/snmp/live-traffic', [App\Http\Controllers\DashboardController::class, 'snmpLiveTraffic'])->name('snmp.live_traffic');
+    Route::get('/api/cdp/live', [App\Http\Controllers\DashboardController::class, 'cdpLive'])->name('cdp.live');
+    Route::get('/api/kpi/live', [App\Http\Controllers\DashboardController::class, 'kpiLive'])->name('kpi.live');
+});

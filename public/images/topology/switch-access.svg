@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 48" width="260" height="48">
+  <defs>
+    <linearGradient id="c2960Body" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="30%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="rackEar" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="50%" stop-color="#cbd5e1"/>
+      <stop offset="100%" stop-color="#64748b"/>
+    </linearGradient>
+    <linearGradient id="sfpCage" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e1"/>
+      <stop offset="60%" stop-color="#64748b"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    <filter id="chassisShadow" x="-5%" y="-10%" width="110%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#chassisShadow)">
+    <!-- Left Rack Ear -->
+    <path d="M 4 6 L 16 6 L 16 42 L 4 42 Z" fill="url(#rackEar)" stroke="#475569" stroke-width="0.75"/>
+    <circle cx="10" cy="12" r="2.3" fill="#334155" stroke="#1e293b" stroke-width="0.5"/>
+    <circle cx="10" cy="36" r="2.3" fill="#334155" stroke="#1e293b" stroke-width="0.5"/>
+
+    <!-- Right Rack Ear -->
+    <path d="M 244 6 L 256 6 L 256 42 L 244 42 Z" fill="url(#rackEar)" stroke="#475569" stroke-width="0.75"/>
+    <circle cx="250" cy="12" r="2.3" fill="#334155" stroke="#1e293b" stroke-width="0.5"/>
+    <circle cx="250" cy="36" r="2.3" fill="#334155" stroke="#1e293b" stroke-width="0.5"/>
+
+    <!-- 1U Switch Chassis -->
+    <rect x="16" y="6" width="228" height="36" rx="2" fill="url(#c2960Body)" stroke="#475569" stroke-width="1"/>
+    <line x1="16" y1="7" x2="244" y2="7" stroke="#64748b" stroke-width="1"/>
+
+    <!-- Left Brand & Mode Button -->
+    <rect x="22" y="11" width="8" height="6" rx="1" fill="#0284c7" opacity="0.85"/>
+    <text x="33" y="15" font-family="ui-monospace, monospace" font-size="5" font-weight="900" fill="#cbd5e1" letter-spacing="0.5">CISCO</text>
+    <text x="33" y="21" font-family="ui-monospace, monospace" font-size="4" font-weight="700" fill="#94a3b8">CATALYST 2960-X</text>
+
+    <!-- Mode Button & LEDs (SYST, STAT, SPEED, DPLX) -->
+    <circle cx="24" cy="27" r="2.2" fill="#475569" stroke="#94a3b8" stroke-width="0.5"/>
+    <circle cx="31" cy="26" r="1" fill="#10b981"/>
+    <circle cx="35" cy="26" r="1" fill="#10b981"/>
+    <circle cx="39" cy="26" r="1" fill="#10b981"/>
+    <circle cx="31" cy="31" r="1" fill="#10b981"/>
+    <circle cx="35" cy="31" r="1" fill="#64748b"/>
+    <circle cx="39" cy="31" r="1" fill="#10b981"/>
+
+    <!-- 24-Port 10/100/1000 Bank (Ports 1-12 and 13-24) -->
+    <g transform="translate(56, 12)">
+      <rect x="0" y="0" width="144" height="24" rx="1.5" fill="#0f172a" stroke="#334155" stroke-width="0.8"/>
+      
+      <!-- 12 dual RJ45 stacks -->
+      <!-- Stack 1 -->
+      <rect x="4" y="2" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <rect x="4" y="14" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <circle cx="8" cy="1" r="0.8" fill="#10b981"/>
+      <circle cx="8" cy="23" r="0.8" fill="#10b981"/>
+
+      <!-- Stack 2 -->
+      <rect x="15" y="2" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <rect x="15" y="14" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <circle cx="19" cy="1" r="0.8" fill="#10b981"/>
+      <circle cx="19" cy="23" r="0.8" fill="#10b981"/>
+
+      <!-- Stack 3 -->
+      <rect x="26" y="2" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <rect x="26" y="14" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <circle cx="30" cy="1" r="0.8" fill="#10b981"/>
+      <circle cx="30" cy="23" r="0.8" fill="#64748b"/>
+
+      <!-- Stack 4 -->
+      <rect x="37" y="2" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <rect x="37" y="14" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <circle cx="41" cy="1" r="0.8" fill="#10b981"/>
+      <circle cx="41" cy="23" r="0.8" fill="#10b981"/>
+
+      <!-- Stack 5 -->
+      <rect x="50" y="2" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <rect x="50" y="14" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <circle cx="54" cy="1" r="0.8" fill="#10b981"/>
+      <circle cx="54" cy="23" r="0.8" fill="#10b981"/>
+
+      <!-- Stack 6 -->
+      <rect x="61" y="2" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <rect x="61" y="14" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <circle cx="65" cy="1" r="0.8" fill="#10b981"/>
+      <circle cx="65" cy="23" r="0.8" fill="#10b981"/>
+
+      <!-- Stack 7 -->
+      <rect x="72" y="2" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <rect x="72" y="14" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <circle cx="76" cy="1" r="0.8" fill="#10b981"/>
+      <circle cx="76" cy="23" r="0.8" fill="#64748b"/>
+
+      <!-- Stack 8 -->
+      <rect x="83" y="2" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <rect x="83" y="14" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <circle cx="87" cy="1" r="0.8" fill="#10b981"/>
+      <circle cx="87" cy="23" r="0.8" fill="#10b981"/>
+
+      <!-- Stack 9 -->
+      <rect x="96" y="2" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <rect x="96" y="14" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <circle cx="100" cy="1" r="0.8" fill="#10b981"/>
+      <circle cx="100" cy="23" r="0.8" fill="#10b981"/>
+
+      <!-- Stack 10 -->
+      <rect x="107" y="2" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <rect x="107" y="14" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <circle cx="111" cy="1" r="0.8" fill="#10b981"/>
+      <circle cx="111" cy="23" r="0.8" fill="#10b981"/>
+
+      <!-- Stack 11 -->
+      <rect x="118" y="2" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <rect x="118" y="14" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <circle cx="122" cy="1" r="0.8" fill="#10b981"/>
+      <circle cx="122" cy="23" r="0.8" fill="#64748b"/>
+
+      <!-- Stack 12 -->
+      <rect x="129" y="2" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <rect x="129" y="14" width="8" height="8" rx="0.5" fill="#1e293b" stroke="#475569" stroke-width="0.5"/>
+      <circle cx="133" cy="1" r="0.8" fill="#10b981"/>
+      <circle cx="133" cy="23" r="0.8" fill="#10b981"/>
+    </g>
+
+    <!-- Dual SFP Uplinks (Right) -->
+    <g transform="translate(208, 12)">
+      <rect x="0" y="0" width="28" height="24" rx="1.5" fill="#0f172a" stroke="#475569" stroke-width="0.8"/>
+      <rect x="3" y="3" width="10" height="18" rx="1" fill="url(#sfpCage)" stroke="#cbd5e1" stroke-width="0.5"/>
+      <rect x="15" y="3" width="10" height="18" rx="1" fill="url(#sfpCage)" stroke="#cbd5e1" stroke-width="0.5"/>
+      <circle cx="8" cy="1" r="0.9" fill="#10b981"/>
+      <circle cx="20" cy="1" r="0.9" fill="#10b981"/>
+    </g>
+  </g>
+</svg>
