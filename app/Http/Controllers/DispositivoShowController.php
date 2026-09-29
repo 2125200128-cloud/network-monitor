@@ -15,9 +15,7 @@ class DispositivoShowController extends Controller
         $dispositivo = Dispositivo::findOrFail($id);
         
         $interfaces = InterfazRed::where('dispositivo_id', $id)
-            ->with(['telemetria' => function($query) {
-                $query->latest()->limit(1);
-            }])
+            ->with('ultimaTelemetria')
             ->orderBy('if_index')
             ->get();
             
@@ -44,7 +42,7 @@ class DispositivoShowController extends Controller
         $portIndex = 1;
 
         foreach ($interfaces as $iface) {
-            $t = $iface->telemetria->first();
+            $t = $iface->ultimaTelemetria;
             $isErr = $t ? (bool)$t->is_errdisabled : false;
             $oper = $isErr ? 'err-disabled' : ($t ? $t->oper_status : ($iface->oper_status ?? 'down'));
 

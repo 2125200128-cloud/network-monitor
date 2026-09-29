@@ -108,14 +108,16 @@ class DiscoveryController extends Controller
     private function getPythonBinary(): string
     {
         $specificPaths = [
+            env('PYTHON_PATH'),
+            'C:\\Users\\ssocial_redes1\\AppData\\Local\\Programs\\Python\\Python312\\python.exe',
             'C:\\Users\\Adahir_Mendez\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe',
         ];
         foreach ($specificPaths as $path) {
-            if (file_exists($path)) {
+            if ($path && file_exists($path)) {
                 return $path;
             }
         }
-        return 'py';
+        return 'python';
     }
 
     /**

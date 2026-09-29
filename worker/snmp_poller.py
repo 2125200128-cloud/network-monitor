@@ -3,6 +3,8 @@ import time
 import subprocess
 import mysql.connector
 import asyncio
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 from pysnmp.hlapi.v3arch.asyncio import *
 
 sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
@@ -10,7 +12,7 @@ sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
 DB_CONFIG = {
     'host': '127.0.0.1',
     'user': 'root',
-    'password': '',
+    'password': 'root',
     'database': 'network_monitor'
 }
 

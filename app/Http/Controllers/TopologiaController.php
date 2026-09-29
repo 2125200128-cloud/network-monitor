@@ -404,7 +404,7 @@ class TopologiaController extends Controller
             }
 
             return [
-                'image' => 'img/pc.png',
+                'image' => 'images/topology/switch-access.svg',
                 'rol' => 'ENDPOINT',
                 'tipo_equipo' => 'Dispositivo Final (PC/Servidor/Impresora)',
                 'factor_forma' => 'Endpoint',

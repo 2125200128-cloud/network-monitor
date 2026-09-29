@@ -62,11 +62,11 @@ class DispositivoController extends Controller
             'dispositivo_id' => $dispositivo->id,
             'cpu_usage' => rand(5, 12),
             'memory_usage' => rand(18, 30),
-            'temperatura' => 34,
+            'temperatura_celsius' => 34,
             'ping_ms' => 1.2,
-            'paquetes_perdidos' => 0,
-            'ancho_banda_utilizado' => 15.4,
-            'estado_dispositivo' => $dispositivo->estado,
+            'packet_loss' => 0,
+            'bytes_in' => 15400,
+            'bytes_out' => 12000,
             'fecha_registro' => now()
         ]);
 

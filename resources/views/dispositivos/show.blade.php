@@ -894,10 +894,10 @@
                 <div class="telemetry-card">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">CPU Global</span>
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-[#3b5998]">{{ $ultimaMetrica->cpu_usage ?? 0 }}%</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-[#3b5998]">{{ $ultimaMetrica->cpu_utilization ?? 0 }}%</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3 overflow-hidden">
-                        <div class="bg-[#3b5998] h-2.5 rounded-full" style="width: {{ $ultimaMetrica->cpu_usage ?? 0 }}%"></div>
+                        <div class="bg-[#3b5998] h-2.5 rounded-full" style="width: {{ $ultimaMetrica->cpu_utilization ?? 0 }}%"></div>
                     </div>
                     <div class="grid grid-cols-2 gap-2 text-[11px] text-gray-600 border-t border-gray-200 pt-2 font-mono">
                         @foreach($chasis->cpu_cores ?? [['core'=>'Core 0','usage'=>32],['core'=>'Core 1','usage'=>24],['core'=>'Core 2','usage'=>29],['core'=>'Core 3','usage'=>27]] as $core)
@@ -910,10 +910,10 @@
                 <div class="telemetry-card">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">Memoria RAM</span>
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">{{ $ultimaMetrica->memory_usage ?? 0 }}%</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">{{ $ultimaMetrica->memory_utilization ?? 0 }}%</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3 overflow-hidden">
-                        <div class="bg-emerald-600 h-2.5 rounded-full" style="width: {{ $ultimaMetrica->memory_usage ?? 0 }}%"></div>
+                        <div class="bg-emerald-600 h-2.5 rounded-full" style="width: {{ $ultimaMetrica->memory_utilization ?? 0 }}%"></div>
                     </div>
                     <div class="space-y-1 text-xs text-gray-600 border-t border-gray-200 pt-2">
                         <div class="flex justify-between"><span>Total:</span> <span class="font-bold font-mono">{{ $chasis->ram_total_mb ?? 8192 }} MB</span></div>

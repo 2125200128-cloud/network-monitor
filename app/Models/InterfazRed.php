@@ -34,4 +34,9 @@ class InterfazRed extends Model
     {
         return $this->hasMany(TelemetriaInterfaz::class, 'interfaz_id');
     }
+
+    public function ultimaTelemetria()
+    {
+        return $this->hasOne(TelemetriaInterfaz::class, 'interfaz_id')->latestOfMany();
+    }
 }

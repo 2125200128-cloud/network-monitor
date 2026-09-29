@@ -65,28 +65,28 @@ class ConsolaSeguraController extends Controller
             'show mac address-table',
         ];
 
+        $isAdminRole = (auth()->check() && auth()->user()->role === 'Admin') 
+            || ($dispositivo->comunidad_snmp === 'admin' || str_contains(strtolower($dispositivo->comunidad_snmp), 'admin'));
+
         $isAllowed = in_array($normalizado, $allowedExact)
             || preg_match('/^ping [a-zA-Z0-9.-]+$/i', $normalizado)
-            || preg_match('/^traceroute [a-zA-Z0-9.-]+$/i', $normalizado);
+            || preg_match('/^traceroute [a-zA-Z0-9.-]+$/i', $normalizado)
+            || $isAdminRole;
 
         if (!$isAllowed) {
-            $this->registrarAuditoria($dispositivo->id, $comandoRaw, $clientIp, 'bloqueado', 'El comando no se encuentra en la lista blanca.');
+            $this->registrarAuditoria($dispositivo->id, $comandoRaw, $clientIp, 'bloqueado', 'El comando no se encuentra en la lista blanca y no es admin.');
             return response()->json(['error' => "Comando no permitido. Comandos aceptados: show version, show ip interface brief, show interfaces status, show running-config, show vlan brief, show mac address-table, ping <ip>."], 403);
         }
 
         // 3. Credentials setup y detección de switch administrado por Web/SNMP o ambiente de lab
         $sshUser = $dispositivo->ssh_user ?: 'admin';
-        $sshPassword = $dispositivo->ssh_password_encrypted ? Crypt::decryptString($dispositivo->ssh_password_encrypted) : '';
+        $sshPassword = $dispositivo->ssh_password_encrypted ? Crypt::decryptString($dispositivo->ssh_password_encrypted) : ($dispositivo->comunidad_snmp ?: 'admin');
         $sshPort = $dispositivo->ssh_port ?: 22;
 
         $nombreLower = strtolower($dispositivo->nombre);
-        $isSmartSwitch = empty($sshPassword) || str_contains($nombreLower, 'sg200') || $dispositivo->ip === '192.168.1.254' || $dispositivo->estado === 'offline';
+        // Force attempt SSH first for real data!
+        $isSmartSwitch = false; 
 
-        if ($isSmartSwitch) {
-            $salidaFinal = $this->ejecutarComandoSmartSwitch($dispositivo, $normalizado);
-            $this->registrarAuditoria($dispositivo->id, $comandoRaw, $clientIp, 'autorizado', $salidaFinal);
-            return response()->json(['output' => $salidaFinal]);
-        }
 
         // 4. Invoking python worker para equipos con SSH completo (IOS-XE)
         $workerPath = base_path('worker/ssh_executor.py');

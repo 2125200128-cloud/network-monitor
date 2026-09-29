@@ -9,6 +9,8 @@ from mysql.connector import Error
 from ping3 import ping
 from pysnmp.hlapi.v3arch.asyncio import *
 import asyncio
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

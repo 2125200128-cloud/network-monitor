@@ -44,7 +44,12 @@ class ConfiguracionDispositivoController extends Controller
         $tipo = $request->tipo ?? 'running';
         $comandoSsh = ($tipo === 'startup') ? 'show startup-config' : 'show running-config';
         
-        $password = Crypt::decryptString($dispositivo->ssh_password_encrypted);
+        $password = '';
+        if ($dispositivo->ssh_password_encrypted) {
+            $password = Crypt::decryptString($dispositivo->ssh_password_encrypted);
+        } else {
+            $password = $dispositivo->comunidad_snmp ?: 'admin';
+        }
 
         $process = new Process([
             'py', 

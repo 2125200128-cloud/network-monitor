@@ -23,12 +23,6 @@ return new class extends Migration
             
             $table->index(['dispositivo_id', 'fecha_ejecucion']);
         });
-
-        Schema::table('dispositivos', function (Blueprint $table) {
-            $table->string('ssh_user')->default('admin')->nullable();
-            $table->text('ssh_password_encrypted')->nullable();
-            $table->unsignedSmallInteger('ssh_port')->default(22);
-        });
     }
 
     /**
@@ -36,9 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('dispositivos', function (Blueprint $table) {
-            $table->dropColumn(['ssh_user', 'ssh_password_encrypted', 'ssh_port']);
-        });
         Schema::dropIfExists('auditoria_comandos');
     }
 };

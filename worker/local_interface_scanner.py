@@ -16,6 +16,8 @@ import time
 import json
 import socket
 import asyncio
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 import argparse
 import ipaddress
 import subprocess
@@ -32,7 +34,7 @@ if hasattr(sys.stderr, 'reconfigure'):
 DB_CONFIG = {
     'host': '127.0.0.1',
     'user': 'root',
-    'password': '',
+    'password': 'root',
     'database': 'network_monitor'
 }
 

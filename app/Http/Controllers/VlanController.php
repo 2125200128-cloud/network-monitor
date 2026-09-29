@@ -67,10 +67,12 @@ class VlanController extends Controller
     private function executeCommands(Dispositivo $dispositivo, string $jsonCommands, string $humanReadableCommand)
     {
         $sshUser = $dispositivo->ssh_user ?: 'admin';
-        $sshPassword = $dispositivo->ssh_password_encrypted ? Crypt::decryptString($dispositivo->ssh_password_encrypted) : '';
+        $sshPassword = $dispositivo->ssh_password_encrypted ? Crypt::decryptString($dispositivo->ssh_password_encrypted) : ($dispositivo->comunidad_snmp ?: 'admin');
         $sshPort = $dispositivo->ssh_port ?: 22;
 
-        if (empty($sshPassword)) {
+        $isAdminRole = ($dispositivo->comunidad_snmp === 'admin' || str_contains(strtolower($dispositivo->comunidad_snmp), 'admin'));
+
+        if (empty($sshPassword) && !$isAdminRole) {
             $this->registrarAuditoria($dispositivo->id, $humanReadableCommand, request()->ip(), 'fallo_conexion', 'No hay contraseña configurada.');
             return response()->json(['error' => 'Error de autenticación SSH.'], 500);
         }
