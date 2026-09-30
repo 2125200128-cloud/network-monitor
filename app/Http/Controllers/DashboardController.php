@@ -263,7 +263,10 @@ class DashboardController extends Controller
                 'latest', fn($j) => $j->on('m.dispositivo_id', '=', 'latest.dispositivo_id')
                                        ->on('m.fecha_registro', '=', 'latest.last_ts')
             )
-            ->select(DB::raw('AVG(m.cpu_usage) as cpu, AVG(m.memory_usage) as ram, AVG(m.ping_ms) as ping, MIN(m.uptime) as uptime'))
+            ->select(
+                DB::raw('AVG(m.cpu_usage) as cpu, AVG(m.memory_usage) as ram, AVG(m.ping_ms) as ping, MIN(m.uptime) as uptime'),
+                DB::raw('SUM(CASE WHEN (m.cpu_usage > 0 OR m.memory_usage > 0) AND m.fecha_registro >= NOW() - INTERVAL 5 MINUTE THEN 1 ELSE 0 END) as snmp_online_count')
+            )
             ->first();
 
         return response()->json([
@@ -278,6 +281,7 @@ class DashboardController extends Controller
                                         : round($perDevice->ram ?? 0, 1),
             'port_saturation_pct'=> $g ? round($g->port_saturation_pct, 1) : 0,
             'active_nodes'       => $g ? $g->active_nodes : $online,
+            'snmp_online'        => (int) ($perDevice->snmp_online_count ?? 0),
             'dispositivos'       => compact('online', 'offline', 'warning', 'total'),
             'uptime_min'         => $perDevice->uptime ?? 0,
             'recorded_at'        => $g ? $g->recorded_at : now()->toIso8601String(),

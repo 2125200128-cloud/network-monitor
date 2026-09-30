@@ -932,6 +932,9 @@
             if (!container) return;
 
 
+            const savedPositions = JSON.parse(localStorage.getItem('vis_positions_v1')) || {};
+            const hasSavedPositions = Object.keys(savedPositions).length > 0;
+
             // Enriquecer nodos con render frontal según el modelo real
             const mappedNodes = (initialGrafoData.nodes || []).map(node => {
                 const cData = node.customData || {};
@@ -962,7 +965,9 @@
                         rol: esInfra ? (cData.rol || imgInfo.rol) : 'ENDPOINT',
                         tipo_equipo: esInfra ? (cData.tipo_equipo || imgInfo.tipo_equipo) : 'Dispositivo Final'
                     },
-                    title: undefined // Disable native tooltip
+                    title: undefined,
+                    x: savedPositions[node.id] ? savedPositions[node.id].x : undefined,
+                    y: savedPositions[node.id] ? savedPositions[node.id].y : undefined
                 };
             });
 
@@ -1004,7 +1009,14 @@
 
             const options = {
                 layout: {
-                    improvedLayout: true
+                    improvedLayout: true,
+                    hierarchical: hasSavedPositions ? false : {
+                        enabled: true,
+                        direction: 'UD',
+                        sortMethod: 'directed',
+                        nodeSpacing: 250,
+                        levelSeparation: 300
+                    }
                 },
                 nodes: {
                     borderWidth: 0,
@@ -1038,7 +1050,7 @@
                     width: 1.5
                 },
                 physics: {
-                    enabled: true,
+                    enabled: !hasSavedPositions,
                     solver: 'barnesHut',
                     barnesHut: {
                         gravitationalConstant: -30000,
@@ -1066,16 +1078,18 @@
 
             // Encuadre automático con amplio padding (80px) y CONGELACIÓN de física al estabilizar
             network.once('stabilizationIterationsDone', function() {
-                // 1. Congelar física por completo para inmovilidad absoluta de la topología
-                network.setOptions({ physics: { enabled: false } });
+                network.storePositions();
+                network.setOptions({ physics: { enabled: false }, layout: { hierarchical: false } });
                 physicsEnabled = false;
+                
+                const currentPositions = network.getPositions();
+                localStorage.setItem('vis_positions_v1', JSON.stringify(currentPositions));
 
                 const btnPhys = document.getElementById('btnTogglePhysics');
                 const labelPhys = document.getElementById('physicsStatusLabel');
                 if (btnPhys) btnPhys.classList.remove('active');
                 if (labelPhys) labelPhys.textContent = 'Física Pausada';
 
-                // 2. Encuadrar con amplio margen (80px)
                 network.fit({
                     animation: {
                         duration: 800,
@@ -1086,6 +1100,17 @@
             });
 
             // ==================== TOOLTIP OLED INTELIGENTE ====================
+            
+            // Guardar posiciones al terminar de arrastrar nodos
+            network.on('dragEnd', function (params) {
+                if (params.nodes && params.nodes.length > 0) {
+                    const currentPositions = network.getPositions();
+                    const saved = JSON.parse(localStorage.getItem('vis_positions_v1')) || {};
+                    Object.assign(saved, currentPositions);
+                    localStorage.setItem('vis_positions_v1', JSON.stringify(saved));
+                }
+            });
+
             network.on('hoverNode', function(params) {
                 const nodeId = params.node;
                 const node = nodesDataSet.get(nodeId);
@@ -1442,6 +1467,7 @@
 
         function setLayout(type) {
             if (!network) return;
+            localStorage.removeItem('vis_positions_v1');
 
             const btnTree = document.getElementById('btnLayoutTree');
             const btnFree = document.getElementById('btnLayoutFree');
@@ -1456,17 +1482,26 @@
                             enabled: true,
                             direction: 'UD',
                             sortMethod: 'directed',
-                            nodeSpacing: 150,
-                            levelSeparation: 200
+                            nodeSpacing: 250,
+                            levelSeparation: 300
                         }
                     },
                     physics: { enabled: false }
                 });
+                
+                // Synchronous processing
+                network.storePositions();
+                network.setOptions({ layout: { hierarchical: false } });
+                
+                const currentPositions = network.getPositions();
+                localStorage.setItem('vis_positions_v1', JSON.stringify(currentPositions));
+
                 physicsEnabled = false;
                 const btnPhys = document.getElementById('btnTogglePhysics');
                 const labelPhys = document.getElementById('physicsStatusLabel');
                 if (btnPhys) btnPhys.classList.remove('active');
                 if (labelPhys) labelPhys.textContent = 'Física Inactiva';
+
                 setTimeout(() => network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' }, padding: 80 }), 250);
             } else {
                 if (btnFree) btnFree.classList.add('active');
@@ -1490,8 +1525,8 @@
                         }
                     }
                 });
-
-                // Al volver a Libre, estabilizamos orgánicamente y luego congelamos para firmeza total
+                physicsEnabled = true;
+                
                 network.once('stabilizationIterationsDone', function() {
                     network.setOptions({ physics: { enabled: false } });
                     physicsEnabled = false;
@@ -1499,10 +1534,23 @@
                     const labelPhys = document.getElementById('physicsStatusLabel');
                     if (btnPhys) btnPhys.classList.remove('active');
                     if (labelPhys) labelPhys.textContent = 'Física Pausada';
+                    
+                    const currentPositions = network.getPositions();
+                    localStorage.setItem('vis_positions_v1', JSON.stringify(currentPositions));
+                    
                     network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' }, padding: 80 });
                 });
+                
+                const btnPhys = document.getElementById('btnTogglePhysics');
+                const labelPhys = document.getElementById('physicsStatusLabel');
+                if (btnPhys) btnPhys.classList.add('active');
+                if (labelPhys) labelPhys.textContent = 'Física Activa';
             }
         }
+
+
+
+
 
         function filterEdges(filter, btn) {
             currentFilter = filter;
@@ -2003,22 +2051,32 @@
         async function checkSNMPHealth() {
             if (!navigator.onLine) return; // Si no hay red local, no checamos
             try {
-                // Hacemos ping rápido para ver si hay nodos activos reportados por SNMP
-                const res = await fetch("{{ route('topologia.datos') }}", { 
+                // Hacemos ping rápido para ver si hay nodos activos
+                const res = await fetch("{{ route('kpi.live') }}", { 
                     cache: "no-store",
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
                 });
+                
                 if (res.ok) {
-                    const data = await res.json();
-                    // Si responde pero no hay nodos, consideramos falla de SNMP
-                    snmpIsWorking = (data.nodes && data.nodes.length > 0);
-                } else {
-                    snmpIsWorking = false;
+                    const text = await res.text();
+                    try {
+                        const data = JSON.parse(text);
+                        // Evaluamos SNMP basándonos en dispositivos que SÍ devolvieron métricas de CPU/RAM reales
+                        if (data.snmp_online !== undefined) {
+                            snmpIsWorking = (data.snmp_online > 0);
+                        } else if (data.dispositivos && typeof data.dispositivos.online !== 'undefined') {
+                            snmpIsWorking = (data.dispositivos.online > 0);
+                        } else if (data.total !== undefined) {
+                            snmpIsWorking = (data.total > 0);
+                        }
+                    } catch (parseErr) {
+                        // Si recibimos HTML (ej. redirección al login), ignoramos el chequeo
+                        console.warn("Monitor SNMP: Respuesta no JSON (posible timeout de sesión)");
+                    }
                 }
             } catch (e) {
-                snmpIsWorking = false;
+                // Si la red falla intermitentemente, no ponemos el icono rojo de inmediato
+                console.warn("Monitor SNMP: Fallo de red temporal", e);
             }
             updateLiveBadgeStatus();
         }

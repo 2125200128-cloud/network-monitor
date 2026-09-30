@@ -170,6 +170,7 @@ async def poll_device(dev, snmpEngine):
             
     except Exception as e:
         # Si SNMP tiene timeout o no está habilitado, el equipo sigue ONLINE vía ICMP
+        print(f"[{ip}] ⚠️ FALLO SNMP ({name}): {e}", flush=True)
         pass
 
     up_ports_count = len([p for p, s in oper_statuses.items() if s == 'up'])
