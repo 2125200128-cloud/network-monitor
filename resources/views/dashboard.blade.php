@@ -398,13 +398,42 @@
                         <!-- Temp -->
                         <div>
                             <div class="flex justify-between text-sm mb-2">
-                                <span class="font-medium text-gray-600 dark:text-slate-400">Temperatura Promedio</span>
+                                <span class="font-medium text-gray-600 dark:text-slate-400">Temperatura Promedio Global</span>
                                 <span class="font-bold text-gray-800 dark:text-slate-200">{{ round($avgTemp) }} °C</span>
                             </div>
-                            <div class="w-full bg-gray-100 dark:bg-slate-800/80 rounded-full h-2">
-                                @php $tempPercent = min(100, max(0, ($avgTemp / 80) * 100)); @endphp
-                                <div class="bg-[#8b5cf6] h-2 rounded-full" style="width: {{ $tempPercent }}%"></div>
+                            
+                            <!-- Speedometer animado para Dashboard -->
+                            @php
+                                $dasharray = 125.6;
+                                $percentage = min(100, max(0, ($avgTemp / 80) * 100)); // Escala hasta 80°C
+                                $dashoffset = 125.6 - (125.6 * $percentage / 100);
+                                $color = $avgTemp >= 60 ? '#ef4444' : ($avgTemp >= 45 ? '#f59e0b' : '#10b981');
+                            @endphp
+                            <div class="relative w-full h-20 overflow-hidden flex justify-center mt-3">
+                                <svg viewBox="0 0 100 50" class="w-40 h-20 drop-shadow-md">
+                                    <!-- Background arc -->
+                                    <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#e2e8f0" class="dark:stroke-slate-700" stroke-width="10" stroke-linecap="round"/>
+                                    <!-- Animated fill arc -->
+                                    <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="{{ $color }}" stroke-width="10" stroke-linecap="round" 
+                                          stroke-dasharray="125.6" stroke-dashoffset="125.6" 
+                                          class="dash-gauge-fill drop-shadow-sm"
+                                          style="--dash-target-offset: {{ $dashoffset }};"/>
+                                </svg>
+                                <div class="absolute bottom-0 left-0 w-full text-center flex flex-col items-center">
+                                    <span class="text-2xl font-extrabold text-gray-800 dark:text-white font-mono leading-none">{{ round($avgTemp) }}<span class="text-sm text-gray-400">°C</span></span>
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">{{ $avgTemp < 45 ? 'ÓPTIMO' : 'ALERTA' }}</span>
+                                </div>
                             </div>
+                            
+                            <style>
+                                @keyframes dashFillGauge {
+                                    from { stroke-dashoffset: 125.6; }
+                                    to { stroke-dashoffset: var(--dash-target-offset); }
+                                }
+                                .dash-gauge-fill {
+                                    animation: dashFillGauge 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+                                }
+                            </style>
                         </div>
 
                         <!-- Conexiones -->

@@ -891,16 +891,21 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {{-- CPU Global & Cores --}}
+                @php
+                    $cpuVal = $chasis->cpu_utilization ?? $ultimaMetrica->cpu_usage ?? 0;
+                    $ramVal = $chasis->ram_utilization ?? $ultimaMetrica->memory_usage ?? 0;
+                    $tempVal = $chasis->temperatura_c ?? $ultimaMetrica->temperatura_celsius ?? 34;
+                @endphp
                 <div class="telemetry-card">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">CPU Global</span>
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-[#3b5998]">{{ $ultimaMetrica->cpu_utilization ?? 0 }}%</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-[#3b5998]">{{ round($cpuVal, 1) }}%</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3 overflow-hidden">
-                        <div class="bg-[#3b5998] h-2.5 rounded-full" style="width: {{ $ultimaMetrica->cpu_utilization ?? 0 }}%"></div>
+                        <div class="bg-[#3b5998] h-2.5 rounded-full" style="width: {{ min(100, max(2, $cpuVal)) }}%"></div>
                     </div>
                     <div class="grid grid-cols-2 gap-2 text-[11px] text-gray-600 border-t border-gray-200 pt-2 font-mono">
-                        @foreach($chasis->cpu_cores ?? [['core'=>'Core 0','usage'=>32],['core'=>'Core 1','usage'=>24],['core'=>'Core 2','usage'=>29],['core'=>'Core 3','usage'=>27]] as $core)
+                        @foreach($chasis->cpu_cores ?? [['core'=>'Core 0','usage'=>round($cpuVal)],['core'=>'Core 1','usage'=>round(max(0, $cpuVal - 2))],['core'=>'Core 2','usage'=>round(max(0, $cpuVal + 1))],['core'=>'Core 3','usage'=>round($cpuVal)]] as $core)
                             <div>{{ $core['core'] }}: <span class="font-bold text-gray-800">{{ $core['usage'] }}%</span></div>
                         @endforeach
                     </div>
@@ -910,14 +915,14 @@
                 <div class="telemetry-card">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">Memoria RAM</span>
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">{{ $ultimaMetrica->memory_utilization ?? 0 }}%</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">{{ round($ramVal, 1) }}%</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3 overflow-hidden">
-                        <div class="bg-emerald-600 h-2.5 rounded-full" style="width: {{ $ultimaMetrica->memory_utilization ?? 0 }}%"></div>
+                        <div class="bg-emerald-600 h-2.5 rounded-full" style="width: {{ min(100, max(2, $ramVal)) }}%"></div>
                     </div>
                     <div class="space-y-1 text-xs text-gray-600 border-t border-gray-200 pt-2">
                         <div class="flex justify-between"><span>Total:</span> <span class="font-bold font-mono">{{ $chasis->ram_total_mb ?? 8192 }} MB</span></div>
-                        <div class="flex justify-between"><span>Usada:</span> <span class="font-bold font-mono">{{ $chasis->ram_used_mb ?? 3440 }} MB</span></div>
+                        <div class="flex justify-between"><span>Usada:</span> <span class="font-bold font-mono">{{ $chasis->ram_used_mb ?? round(($ramVal/100) * ($chasis->ram_total_mb ?? 8192)) }} MB</span></div>
                     </div>
                 </div>
 
@@ -947,22 +952,22 @@
                     <div>
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">Salud y Fuentes (PSU)</span>
-                            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Normal</span>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-full {{ $tempVal < 55 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">{{ $tempVal < 55 ? 'Normal' : 'Alerta Térmica' }}</span>
                         </div>
                         <div class="space-y-1 text-xs text-gray-600 mt-2">
                             <div class="flex justify-between">
                                 <span>Temp. Térmica:</span> 
-                                <span class="font-bold font-mono text-emerald-600">32.5 °C (Óptima)</span>
+                                <span class="font-bold font-mono {{ $tempVal < 55 ? 'text-emerald-600' : 'text-amber-600' }}">{{ round($tempVal, 1) }} °C ({{ $tempVal < 55 ? 'Óptima' : 'Elevada' }})</span>
                             </div>
                             <div class="flex justify-between">
                                 <span>Ventilación / Fans:</span> 
-                                <span class="font-bold text-gray-700">Fan Tray 1: OK</span>
+                                <span class="font-bold text-gray-700">{{ $chasis->estado_ventiladores[0]['fan'] ?? 'Fan Tray 1' }}: {{ $chasis->estado_ventiladores[0]['status'] ?? 'OK' }}</span>
                             </div>
                         </div>
                     </div>
                     <div class="border-t border-gray-200 pt-2 mt-2 flex items-center justify-between text-xs font-mono">
                         <span class="text-gray-500">Fuente Principal:</span>
-                        <span class="font-bold text-emerald-600">PSU-1 Activa</span>
+                        <span class="font-bold text-emerald-600">{{ $chasis->estado_fuentes[0]['psu'] ?? 'PSU-1' }} Activa</span>
                     </div>
                 </div>
             </div>
@@ -1025,17 +1030,51 @@
                         <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         Sensores Térmicos
                     </h3>
-                    <div class="space-y-2">
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         @foreach($chasis->sensores_temperatura ?? [] as $sensor)
-                        <div class="bg-white p-2.5 rounded-lg border border-gray-200 flex items-center justify-between text-xs">
-                            <span class="font-medium text-gray-700">{{ $sensor['sensor'] }}</span>
-                            <div class="flex items-center gap-2">
-                                <span class="font-mono font-bold text-gray-900 text-sm">{{ $sensor['temp_c'] }}°C</span>
-                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">{{ $sensor['status'] }}</span>
+                        @php
+                            $tempC = $sensor['temp_c'] ?? 0;
+                            $percentage = min(100, max(0, ($tempC / 80) * 100)); // Asumiendo 80°C como máximo esperado para la escala
+                            $dasharray = 125.6;
+                            $dashoffset = 125.6 - (125.6 * $percentage / 100);
+                            $color = $tempC >= 60 ? '#ef4444' : ($tempC >= 45 ? '#f59e0b' : '#10b981');
+                        @endphp
+                        <div class="bg-slate-900 p-4 rounded-xl shadow-lg border border-slate-800 flex flex-col items-center justify-center group hover:scale-105 transition-transform duration-300">
+                            <span class="text-xs font-bold text-slate-300 mb-2 truncate w-full text-center">{{ $sensor['sensor'] }}</span>
+                            
+                            <!-- Speedometer Gauge -->
+                            <div class="relative w-24 h-14 overflow-hidden mt-1">
+                                <svg viewBox="0 0 100 50" class="w-full h-full drop-shadow-md">
+                                    <!-- Background arc -->
+                                    <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#334155" stroke-width="12" stroke-linecap="round"/>
+                                    <!-- Animated fill arc -->
+                                    <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="{{ $color }}" stroke-width="12" stroke-linecap="round" 
+                                          stroke-dasharray="125.6" stroke-dashoffset="125.6" 
+                                          class="gauge-fill-animation drop-shadow-lg"
+                                          style="--target-offset: {{ $dashoffset }};"/>
+                                </svg>
+                                <div class="absolute bottom-0 left-0 w-full text-center flex flex-col items-center">
+                                    <span class="text-lg font-extrabold text-white font-mono leading-none">{{ $tempC }}<span class="text-xs text-slate-400">°C</span></span>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3 flex items-center justify-center">
+                                <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider {{ $sensor['status'] == 'OK' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30' }}">{{ $sensor['status'] }}</span>
                             </div>
                         </div>
                         @endforeach
                     </div>
+
+                    <!-- CSS para la animación dinámica de cada termómetro -->
+                    <style>
+                        @keyframes fillGauge {
+                            from { stroke-dashoffset: 125.6; }
+                            to { stroke-dashoffset: var(--target-offset); }
+                        }
+                        .gauge-fill-animation {
+                            animation: fillGauge 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+                        }
+                    </style>
                 </div>
             </div>
         </div>

@@ -199,7 +199,8 @@ def collect_global_metrics(devices, active_nodes):
             
             # GET TRAFFIC VIA TEST_SNMP.PY (Robusto y Probado)
             try:
-                out = subprocess.run([sys.executable, 'test_snmp.py'], capture_output=True, text=True, timeout=10)
+                root_test_snmp = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'test_snmp.py')
+                out = subprocess.run([sys.executable, root_test_snmp], capture_output=True, text=True, timeout=10)
                 if out.returncode == 0:
                     for line in out.stdout.splitlines():
                         if line.startswith('{'):

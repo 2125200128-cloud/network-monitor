@@ -214,7 +214,8 @@ class TopologiaController extends Controller
                     'sysDescr' => $osVersion,
                     'url' => route('dispositivos.show', $disp->id),
                     'image' => $imageUrl,
-                    'conexiones' => $conexionesPorDispositivo[$disp->id] ?? []
+                    'conexiones' => $conexionesPorDispositivo[$disp->id] ?? [],
+                    'sensores_temperatura' => $disp->telemetriaChasis->sensores_temperatura ?? []
                 ]
             ];
         }
