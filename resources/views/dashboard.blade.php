@@ -1292,6 +1292,35 @@
                     setVal('kpiMemValue', data.ram_avg_pct + '%');
                     setVal('kpiNodesValue', `${data.dispositivos.online} / ${data.dispositivos.total}`);
 
+                    // Actualizar Alertas y Notificaciones en Vivo
+                    if (data.unread_notif_count !== undefined) {
+                        const countBadge = document.getElementById('notifCountBadge');
+                        const badgeText  = document.getElementById('notifBadgeText');
+                        const bellBtn    = document.getElementById('notifBellBtn');
+
+                        if (data.unread_notif_count > 0) {
+                            if (countBadge) {
+                                countBadge.textContent = data.unread_notif_count;
+                            } else if (bellBtn) {
+                                const newBadge = document.createElement('span');
+                                newBadge.id = 'notifCountBadge';
+                                newBadge.className = 'absolute -top-1 -right-1 min-w-[19px] h-[19px] px-1 bg-[#f26419] text-white text-[10px] font-black rounded-full flex items-center justify-center ring-2 ring-white shadow';
+                                newBadge.textContent = data.unread_notif_count;
+                                bellBtn.appendChild(newBadge);
+                            }
+                            if (badgeText) {
+                                badgeText.textContent = `${data.unread_notif_count} no leídas`;
+                                badgeText.className = 'px-2 py-0.5 rounded-full text-[10px] font-black bg-[#3b5998]/10 text-[#3b5998]';
+                            }
+                        } else {
+                            if (countBadge) countBadge.remove();
+                            if (badgeText) {
+                                badgeText.textContent = '0 no leídas';
+                                badgeText.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500';
+                            }
+                        }
+                    }
+
                 } catch (err) {
                     console.error('Error fetching live KPIs:', err);
                 }

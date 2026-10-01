@@ -22,9 +22,11 @@ class TopologiaController extends Controller
             'interfazDestino'
         ])->get();
 
+        $this->enriquecerEnlacesConTelemetriaViva($enlaces);
+
         $grafoData = $this->compilarGrafoData($dispositivos, $enlaces);
 
-        // Métricas de topología
+        // Métricas de topología precisas
         $totalNodos = $dispositivos->count();
         $totalEnlaces = $enlaces->count();
         $enlacesActivos = $enlaces->where('estado', 'up')->count();
@@ -62,9 +64,46 @@ class TopologiaController extends Controller
             'interfazDestino'
         ])->get();
 
+        $this->enriquecerEnlacesConTelemetriaViva($enlaces);
+
         $grafoData = $this->compilarGrafoData($dispositivos, $enlaces);
 
         return response()->json($grafoData);
+    }
+
+    /**
+     * Ajusta la velocidad y el estado en vivo de los enlaces según la salud de los equipos conectados
+     */
+    private function enriquecerEnlacesConTelemetriaViva($enlaces)
+    {
+        $enlaces->each(function ($enlace) {
+            $origInt = $enlace->interfazOrigen ? $enlace->interfazOrigen->nombre : '';
+            $destInt = $enlace->interfazDestino ? $enlace->interfazDestino->nombre : '';
+
+            // Detección automática de velocidad según el nombre de la interfaz (10G, 25G, 100G, 100M, etc.)
+            if (stripos($origInt, 'TenGigabit') !== false || stripos($destInt, 'TenGigabit') !== false || stripos($origInt, 'Te') === 0 || stripos($destInt, 'Te') === 0) {
+                $enlace->velocidad_mbps = 10000;
+                $enlace->tipo_medio = 'fibra_optica';
+            } elseif (stripos($origInt, 'TwentyFiveGigabit') !== false || stripos($destInt, 'TwentyFiveGigabit') !== false || stripos($origInt, '25G') === 0) {
+                $enlace->velocidad_mbps = 25000;
+                $enlace->tipo_medio = 'fibra_optica';
+            } elseif (stripos($origInt, 'HundredGigabit') !== false || stripos($destInt, 'HundredGigabit') !== false || stripos($origInt, 'Hu') === 0) {
+                $enlace->velocidad_mbps = 100000;
+                $enlace->tipo_medio = 'fibra_optica';
+            } elseif (stripos($origInt, 'FastEthernet') !== false || stripos($destInt, 'FastEthernet') !== false || stripos($origInt, 'Fa') === 0) {
+                $enlace->velocidad_mbps = 100;
+                $enlace->tipo_medio = 'cobre_utp';
+            }
+
+            // Estado dinámico: si alguno de los equipos de los extremos está caído, el enlace físico se reporta como caído (DOWN)
+            $origEstado = $enlace->dispositivoOrigen->estado ?? 'online';
+            $destEstado = $enlace->dispositivoDestino->estado ?? 'online';
+            if ($origEstado === 'offline' || $destEstado === 'offline') {
+                $enlace->estado = 'down';
+            } elseif ($origEstado === 'warning' || $destEstado === 'warning') {
+                $enlace->estado = 'degraded';
+            }
+        });
     }
 
     /**

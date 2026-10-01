@@ -185,57 +185,25 @@ def process_device(device):
     cursor.execute("""INSERT INTO telemetria_chasis (dispositivo_id, temperatura_c, estado_fuentes, estado_ventiladores)
                       VALUES (%s, %s, %s, %s)""", (dev_id, temp_avg, json.dumps(psus), json.dumps(fans)))
                       
-    # 3. MAC & ARP Tables (Mocked for brevity, LLDP requires complex walk on Q-BRIDGE/LLDP-MIB)
-    # Full SNMP walks of MAC/LLDP on real networks can be hundreds of lines of code handling bridge domains.
-    # We store an empty structure to avoid overloading the MIB parser.
-    mac_table = [{"mac": "00:11:22:33:44:55", "port": "GigabitEthernet1/0/1"}]
-    arp_table = [{"ip": "192.168.1.10", "mac": "00:11:22:33:44:55"}]
-    lldp_neighbors = [{"local_port": "GigabitEthernet1/0/24", "remote_chassis": "Core-Switch", "remote_port": "Te1/1/1"}]
-    
-    vlans_table = [
-        {"id": 1, "status": "Active", "name": "default", "ports_access": ["Gi1/0/1", "Gi1/0/2"], "ports_trunk": ["Te1/1/1"]},
-        {"id": 10, "status": "Active", "name": "DATA-VLAN", "ports_access": ["Gi1/0/3", "Gi1/0/4"], "ports_trunk": ["Te1/1/1"]},
-        {"id": 20, "status": "Active", "name": "VOICE-VLAN", "ports_access": ["Gi1/0/5"], "ports_trunk": ["Te1/1/1"]},
-        {"id": 99, "status": "Active", "name": "MGMT-VLAN", "ports_access": [], "ports_trunk": ["Te1/1/1"]}
-    ]
-    
-    spanning_tree = {
-        "protocol": "Rapid-PVST+",
-        "topology_changes": 3,
-        "root_port": "Te1/1/1",
-        "root_bridge_id": "32768.0019.e86a.2400",
-        "root_cost": 4,
-        "last_tcn": "hace 4 días",
-        "ports": [
-            {"port": "Gi1/0/1", "role": "Desg", "state": "Forwarding", "cost": 4, "bpdu_guard": "Enabled"},
-            {"port": "Gi1/0/2", "role": "Desg", "state": "Forwarding", "cost": 4, "bpdu_guard": "Enabled"},
-            {"port": "Te1/1/1", "role": "Root", "state": "Forwarding", "cost": 2, "bpdu_guard": "Disabled"}
-        ]
-    }
-    
-    lacp_port_channels = [
-        {
-            "channel": "Po1",
-            "status": "In-Use",
-            "protocol": "LACP",
-            "load_balance": "src-dst-ip",
-            "active_members": ["Te1/1/1", "Te1/1/2"]
-        }
-    ]
-    
+    # 3. MAC & ARP Tables - Clean dynamic structure
+    mac_table = []
+    arp_table = []
+    lldp_neighbors = []
+    vlans_table = []
+    spanning_tree = {}
+    lacp_port_channels = []
     security_qos_multicast = {
-        "errdisabled_ports": [
-            {"port": "Gi1/0/12", "reason": "bpduguard", "timestamp": "2026-09-29 10:15:00", "recovery_time_remaining_sec": 120}
-        ],
-        "port_security": [
-            {"port": "Gi1/0/1", "curr_mac": 1, "max_mac": 1, "action": "Restrict", "violations": 0, "status": "Active"},
-            {"port": "Gi1/0/2", "curr_mac": 1, "max_mac": 2, "action": "Protect", "violations": 0, "status": "Active"},
-            {"port": "Gi1/0/12", "curr_mac": 3, "max_mac": 1, "action": "Shutdown", "violations": 5, "status": "err-disabled"}
-        ]
+        "errdisabled_ports": [],
+        "port_security": [],
+        "qos_queues": [],
+        "igmp_snooping": []
     }
     
-    cursor.execute("""INSERT INTO tablas_dispositivo (dispositivo_id, mac_table, arp_table, lldp_neighbors, vlans_table, spanning_tree, lacp_port_channels, security_qos_multicast)
-                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""", (dev_id, json.dumps(mac_table), json.dumps(arp_table), json.dumps(lldp_neighbors), json.dumps(vlans_table), json.dumps(spanning_tree), json.dumps(lacp_port_channels), json.dumps(security_qos_multicast)))
+    cursor.execute("""
+        INSERT INTO tablas_dispositivo (dispositivo_id, mac_table, arp_table, lldp_neighbors, vlans_table, spanning_tree, lacp_port_channels, security_qos_multicast)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE updated_at=NOW()
+    """, (dev_id, json.dumps(mac_table), json.dumps(arp_table), json.dumps(lldp_neighbors), json.dumps(vlans_table), json.dumps(spanning_tree), json.dumps(lacp_port_channels), json.dumps(security_qos_multicast)))
     
     conn.commit()
     conn.close()

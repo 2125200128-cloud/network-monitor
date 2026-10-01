@@ -191,13 +191,17 @@ async def poll_device(dev, snmpEngine, sem):
                 if cpu_cand is not None:
                     cpu_usage = cpu_cand
 
-                # RAM
+                # RAM Total & Used
+                ram_total_mb = None
+                ram_used_mb = None
                 # Intentar primero Catalyst (bytes)
                 try:
                     m_used = int(varBinds[4][1])
                     m_free = int(varBinds[5][1])
                     if m_used + m_free > 0:
                         mem_usage = round((m_used / (m_used + m_free)) * 100, 1)
+                        ram_used_mb = round(m_used / (1024 * 1024))
+                        ram_total_mb = round((m_used + m_free) / (1024 * 1024))
                 except Exception:
                     pass
                 # Si no, intentar Nexus NX-OS (KB)
@@ -207,6 +211,8 @@ async def poll_device(dev, snmpEngine, sem):
                         nx_free = int(varBinds[7][1])
                         if nx_used + nx_free > 0:
                             mem_usage = round((nx_used / (nx_used + nx_free)) * 100, 1)
+                            ram_used_mb = round(nx_used / 1024)
+                            ram_total_mb = round((nx_used + nx_free) / 1024)
                     except Exception:
                         pass
 
@@ -327,12 +333,21 @@ async def poll_device(dev, snmpEngine, sem):
 
         sensores_json = json.dumps(sensores_temp) if sensores_temp else None
         if sys_descr:
-            cursor.execute("""
-                UPDATE telemetria_chasis 
-                SET uptime_str=%s, model_name=%s, cpu_utilization=%s, ram_utilization=%s,
-                    temperatura_c=%s, sensores_temperatura=%s, updated_at=NOW()
-                WHERE dispositivo_id=%s
-            """, (uptime_str, sys_descr, cpu_usage, mem_usage, temp_celsius, sensores_json, dev_id))
+            if ram_total_mb is not None:
+                cursor.execute("""
+                    UPDATE telemetria_chasis 
+                    SET uptime_str=%s, model_name=%s, cpu_utilization=%s, ram_utilization=%s,
+                        ram_total_mb=%s, ram_used_mb=%s,
+                        temperatura_c=%s, sensores_temperatura=%s, updated_at=NOW()
+                    WHERE dispositivo_id=%s
+                """, (uptime_str, sys_descr, cpu_usage, mem_usage, ram_total_mb, ram_used_mb, temp_celsius, sensores_json, dev_id))
+            else:
+                cursor.execute("""
+                    UPDATE telemetria_chasis 
+                    SET uptime_str=%s, model_name=%s, cpu_utilization=%s, ram_utilization=%s,
+                        temperatura_c=%s, sensores_temperatura=%s, updated_at=NOW()
+                    WHERE dispositivo_id=%s
+                """, (uptime_str, sys_descr, cpu_usage, mem_usage, temp_celsius, sensores_json, dev_id))
         else:
             cursor.execute("""
                 UPDATE telemetria_chasis 

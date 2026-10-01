@@ -65,9 +65,34 @@ class SyncL2DataCommand extends Command
             $tabla->arp_table = $data['arp_table'] ?? [];
             $tabla->mac_table = $data['mac_table'] ?? [];
             $tabla->vlans_table = $data['vlans_table'] ?? [];
+            $tabla->spanning_tree = $data['spanning_tree'] ?? [];
+            $tabla->lacp_port_channels = $data['lacp_port_channels'] ?? [];
+            $tabla->security_qos_multicast = $data['security_qos_multicast'] ?? [
+                'errdisabled_ports' => [],
+                'port_security' => [],
+                'qos_queues' => [],
+                'igmp_snooping' => []
+            ];
             $tabla->save();
 
-            $this->info("✓ Tablas L2 actualizadas para {$dispositivo->nombre} (ARP: " . count($tabla->arp_table) . ", MAC: " . count($tabla->mac_table) . ")");
+            // Actualizar telemetría de chasis si hay datos adicionales de hardware
+            $chasis = \App\Models\TelemetriaChasis::firstOrNew(['dispositivo_id' => $dispositivo->id]);
+            if (!empty($data['serial_number'])) {
+                $chasis->serial_number = $data['serial_number'];
+            }
+            if (!empty($data['os_version'])) {
+                $chasis->os_version = $data['os_version'];
+            }
+            if (!empty($data['ram_total_mb'])) {
+                $chasis->ram_total_mb = $data['ram_total_mb'];
+                $chasis->ram_used_mb = $data['ram_used_mb'];
+                if ($data['ram_total_mb'] > 0) {
+                    $chasis->ram_utilization = round(($data['ram_used_mb'] / $data['ram_total_mb']) * 100, 1);
+                }
+            }
+            $chasis->save();
+
+            $this->info("✓ Tablas L2 y Chasis actualizadas para {$dispositivo->nombre} (ARP: " . count($tabla->arp_table) . ", MAC: " . count($tabla->mac_table) . ", VLANs: " . count($tabla->vlans_table) . ")");
         }
         
         $this->info('Sincronización L2 finalizada.');

@@ -122,6 +122,42 @@ class DashboardController extends Controller
         }
 
         // Compilar notificaciones inteligentes de red
+        $notificaciones = $this->compilarNotificaciones($dispositivos);
+        $unreadNotificaciones = count(array_filter($notificaciones, fn($n) => !$n['leida']));
+
+        return view('dashboard', compact(
+            'dispositivos', 
+            'totalDispositivos', 
+            'dispositivosOnline', 
+            'dispositivosOffline', 
+            'dispositivosWarning', 
+            'avgPing',
+            'avgPacketLoss',
+            'avgCpu',
+            'avgMem',
+            'avgTemp',
+            'avgConexiones',
+            'avgErrores',
+            'avgPortSat',
+            'formattedUptime',
+            'labels',
+            'pingData',
+            'trafficIn',
+            'trafficOut',
+            'notificaciones',
+            'unreadNotificaciones'
+        ));
+    }
+
+    /**
+     * Compila todas las alertas en tiempo real (interfaces err-disabled, offline, warning, térmicas, cpu y backups).
+     */
+    public function compilarNotificaciones($dispositivos = null): array
+    {
+        if (!$dispositivos) {
+            $dispositivos = Dispositivo::with('telemetriaChasis')->get();
+        }
+
         $notificaciones = [];
 
         // 1. Interfaces en Err-Disabled (Crítica)
@@ -143,7 +179,7 @@ class DashboardController extends Controller
                 'categoria' => 'interfaz',
                 'titulo' => "Puerto {$intfNombre} en Err-Disabled",
                 'mensaje' => "El puerto {$intfNombre} en {$dispNombre} fue suspendido por protección {$motivo}.",
-                'tiempo' => 'Hace 15 min',
+                'tiempo' => 'En tiempo real',
                 'dispositivo' => $dispNombre,
                 'leida' => false,
                 'link' => route('dispositivos.show', $dispId),
@@ -159,7 +195,7 @@ class DashboardController extends Controller
                 'categoria' => 'dispositivo',
                 'titulo' => "Equipo Inaccesible ({$devOff->nombre})",
                 'mensaje' => "Sin respuesta a sondeos ICMP/SNMP en {$devOff->ip} ({$devOff->ubicacion}).",
-                'tiempo' => 'Hace 28 min',
+                'tiempo' => 'Inaccesible',
                 'dispositivo' => $devOff->nombre,
                 'leida' => false,
                 'link' => route('dispositivos.show', $devOff->id),
@@ -176,7 +212,7 @@ class DashboardController extends Controller
                 'categoria' => 'dispositivo',
                 'titulo' => "Degradación de Enlace ({$devWarn->nombre})",
                 'mensaje' => "Latencia elevada y pérdida de paquetes detectada ({$loss}%) en {$devWarn->ip}.",
-                'tiempo' => 'Hace 45 min',
+                'tiempo' => 'En monitoreo',
                 'dispositivo' => $devWarn->nombre,
                 'leida' => false,
                 'link' => route('dispositivos.show', $devWarn->id),
@@ -184,7 +220,26 @@ class DashboardController extends Controller
             ];
         }
 
-        // 4. Último respaldo de configuración NCM (Sistema)
+        // 4. Alertas Térmicas Críticas (Temperatura >= 55°C)
+        foreach ($dispositivos as $disp) {
+            $temp = (float)($disp->telemetriaChasis->temperatura_c ?? 0);
+            if ($temp >= 55.0) {
+                $notificaciones[] = [
+                    'id' => 'temp-' . $disp->id,
+                    'tipo' => 'advertencia',
+                    'categoria' => 'hardware',
+                    'titulo' => "Alerta Térmica ({$disp->nombre})",
+                    'mensaje' => "Chasis o núcleos operando a {$temp}°C (Umbral térmico elevado).",
+                    'tiempo' => 'Térmico',
+                    'dispositivo' => $disp->nombre,
+                    'leida' => false,
+                    'link' => route('dispositivos.show', $disp->id),
+                    'accion' => 'Ver Sensores'
+                ];
+            }
+        }
+
+        // 5. Último respaldo de configuración NCM (Sistema)
         $ultimoBackup = ConfiguracionDispositivo::with('dispositivo')->latest()->first();
         if ($ultimoBackup && $ultimoBackup->dispositivo) {
             $notificaciones[] = [
@@ -192,7 +247,7 @@ class DashboardController extends Controller
                 'tipo' => 'sistema',
                 'categoria' => 'ncm',
                 'titulo' => "Instantánea NCM Generada",
-                'mensaje' => "Respaldo {$ultimoBackup->tipo}-config verificado (SHA256: " . substr($ultimoBackup->checksum_sha256, 0, 8) . "...) para {$ultimoBackup->dispositivo->nombre}.",
+                'mensaje' => "Respaldo {$ultimoBackup->tipo}-config verificado para {$ultimoBackup->dispositivo->nombre}.",
                 'tiempo' => $ultimoBackup->created_at->diffForHumans(),
                 'dispositivo' => $ultimoBackup->dispositivo->nombre,
                 'leida' => true,
@@ -201,49 +256,26 @@ class DashboardController extends Controller
             ];
         }
 
-        // 5. Estado del Motor SNMP (Sistema)
+        // 6. Estado del Motor SNMP (Sistema)
         $notificaciones[] = [
             'id' => 'snmp-poller',
             'tipo' => 'sistema',
             'categoria' => 'poller',
             'titulo' => "Sincronización SNMP Exitosa",
-            'mensaje' => "Ciclo de sondeo MIB-II completado para {$totalDispositivos} equipos de red.",
-            'tiempo' => 'Hace 3 min',
+            'mensaje' => "Ciclo de sondeo MIB-II completado para " . $dispositivos->count() . " equipos de red.",
+            'tiempo' => 'Activo',
             'dispositivo' => 'Core Poller',
             'leida' => true,
             'link' => route('settings.index', ['section' => 'general']),
             'accion' => 'Ajustes SNMP'
         ];
 
-        $unreadNotificaciones = count(array_filter($notificaciones, fn($n) => !$n['leida']));
-
-        return view('dashboard', compact(
-            'dispositivos', 
-            'totalDispositivos', 
-            'dispositivosOnline', 
-            'dispositivosOffline',
-            'dispositivosWarning',
-            'avgPing',
-            'avgPacketLoss',
-            'avgCpu',
-            'avgMem',
-            'avgTemp',
-            'avgConexiones',
-            'avgErrores',
-            'avgPortSat',
-            'formattedUptime',
-            'labels',
-            'pingData',
-            'trafficIn',
-            'trafficOut',
-            'notificaciones',
-            'unreadNotificaciones'
-        ));
+        return $notificaciones;
     }
 
     /**
      * Endpoint JSON para refrescar KPIs del dashboard en tiempo real (fetch cada 30s).
-     * Retorna los últimos valores de global_metrics + contadores de dispositivos.
+     * Retorna los últimos valores de global_metrics + contadores de dispositivos + alertas en vivo.
      */
     public function kpiLive(): JsonResponse
     {
@@ -269,6 +301,9 @@ class DashboardController extends Controller
             )
             ->first();
 
+        $notificaciones = $this->compilarNotificaciones();
+        $unreadCount = count(array_filter($notificaciones, fn($n) => !$n['leida']));
+
         return response()->json([
             'traffic_mbps'       => $g ? round($g->traffic_mbps, 2)       : 0,
             'latency_ms'         => $g ? round($g->latency_ms, 1)          : round($perDevice->ping ?? 0, 1),
@@ -285,6 +320,8 @@ class DashboardController extends Controller
             'dispositivos'       => compact('online', 'offline', 'warning', 'total'),
             'uptime_min'         => $perDevice->uptime ?? 0,
             'recorded_at'        => $g ? $g->recorded_at : now()->toIso8601String(),
+            'notificaciones'     => $notificaciones,
+            'unread_notif_count' => $unreadCount,
         ]);
     }
 

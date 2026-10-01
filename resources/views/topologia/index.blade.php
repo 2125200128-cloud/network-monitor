@@ -12,36 +12,42 @@
             background-size: 28px 28px;
         }
 
-        .control-pill-btn {
+        .ease-custom {
+            transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .uiverse-btn {
+            position: relative;
             display: inline-flex;
             align-items: center;
-            gap: 0.4rem;
-            padding: 0.45rem 0.85rem;
-            border-radius: 9999px;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.45rem 1.4rem;
+            border: 2px solid #0f172a;
+            border-radius: 0.75rem;
             font-size: 0.75rem;
             font-weight: 700;
-            background: rgba(255, 255, 255, 0.95);
-            color: #334155;
-            border: 1px solid #e2e8f0;
-            backdrop-filter: blur(8px);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #1e293b;
+            color: #ffffff;
             cursor: pointer;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
             user-select: none;
-            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
             pointer-events: auto !important;
         }
-        .control-pill-btn:hover {
-            background: #ffffff;
-            border-color: #cbd5e1;
-            color: #0f172a;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
-        }
-        .control-pill-btn.active {
-            background: #1e293b;
+
+        .uiverse-btn:hover {
+            color: #0f172a !important;
+            border-radius: 1.25rem;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.2);
             border-color: #0f172a;
-            color: #ffffff;
-            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+        }
+
+        .uiverse-btn.active {
+            border-color: #3b82f6 !important;
+            background: #0f172a !important;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.4) !important;
         }
 
         .dark .blueprint-canvas {
@@ -50,21 +56,22 @@
                 linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
         }
-        .dark .control-pill-btn {
-            background: rgba(18, 22, 31, 0.92);
-            color: #cbd5e1;
-            border-color: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+
+        .dark .uiverse-btn {
+            background: #0f131c;
+            border-color: #334155;
+            color: #f1f5f9;
         }
-        .dark .control-pill-btn:hover {
-            background: #1e2638;
-            border-color: rgba(255, 255, 255, 0.2);
-            color: #ffffff;
+
+        .dark .uiverse-btn:hover {
+            color: #090d16 !important;
+            border-color: #f8fafc;
         }
-        .dark .control-pill-btn.active {
-            background: #3b5998;
-            border-color: #60a5fa;
-            color: #ffffff;
+
+        .dark .uiverse-btn.active {
+            border-color: #60a5fa !important;
+            background: #1e2638 !important;
+            box-shadow: 0 0 12px rgba(96, 165, 250, 0.4) !important;
         }
 
         .interactive-bar-island {
@@ -138,9 +145,18 @@
                 <span id="badgeEnlacesUp" class="text-xs font-black text-emerald-800 dark:text-emerald-300 font-mono">{{ $enlacesActivos }}</span>
             </div>
 
-            <div id="badgeAlertaContainer" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200/80 dark:border-red-800/40 shadow-xs {{ $enlacesAlerta > 0 ? '' : 'hidden' }}">
-                <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                <span class="text-xs text-red-700 dark:text-red-400 font-semibold">Alerta / Down:</span>
+            <div id="badgeAlertaContainer" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200/80 dark:border-red-800/40 shadow-xs {{ $enlacesAlerta > 0 ? '' : 'hidden' }}">
+                <div class="w-6 h-6 flex items-center justify-center shrink-0">
+                    <dotlottie-player 
+                        src="{{ asset('animations/alert-down.lottie') }}?v={{ filemtime(public_path('animations/alert-down.lottie')) }}" 
+                        background="transparent" 
+                        speed="1" 
+                        style="width: 24px; height: 24px;" 
+                        loop 
+                        autoplay>
+                    </dotlottie-player>
+                </div>
+                <span class="text-xs text-red-700 dark:text-red-400 font-bold tracking-tight">Alerta / Down:</span>
                 <span id="badgeEnlacesDown" class="text-xs font-black text-red-800 dark:text-red-300 font-mono">{{ $enlacesAlerta }}</span>
             </div>
 
@@ -157,39 +173,73 @@
         {{-- Unified Floating Top Bar (Organizada en dos grupos lógicos con separadores) --}}
         <div class="absolute z-10 flex flex-wrap items-center justify-between gap-3 pointer-events-none" style="top: 1rem; left: 1rem; right: 1rem;">
             
-            {{-- Left Bar: Toolbar Groups --}}
-            <div class="flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl bg-white/95 dark:bg-[#0d1017]/95 backdrop-blur-md border border-slate-200/90 dark:border-slate-800/70 shadow-lg dark:shadow-none interactive-bar-island" style="pointer-events: auto;">
+            {{-- Left Bar: Toolbar Groups (Uiverse Buttons) --}}
+            <div class="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white/95 dark:bg-[#0d1017]/95 backdrop-blur-md border border-slate-200/90 dark:border-slate-800/70 shadow-lg dark:shadow-none interactive-bar-island" style="pointer-events: auto;">
                 
                 {{-- Grupo 1: Vista / Física --}}
                 <div class="flex items-center gap-1.5">
-                    <button type="button" onclick="resetZoom()" class="control-pill-btn" title="Centrar y encuadrar vista completa con margen amplio">
-                        <svg class="w-4 h-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"></path>
+                    {{-- 1. Centrar --}}
+                    <button type="button" onclick="resetZoom()" class="uiverse-btn group" title="Centrar y encuadrar vista completa con margen amplio">
+                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
                         </svg>
-                        <span>Centrar</span>
+                        <span class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Centrar</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[220px] group-hover:h-[220px] group-hover:opacity-100 pointer-events-none"></span>
+                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
+                        </svg>
                     </button>
 
                     <div class="h-4 w-px bg-slate-200 dark:bg-slate-700/60 mx-0.5"></div>
 
-                    <button type="button" id="btnTogglePhysics" onclick="togglePhysics()" class="control-pill-btn" title="Alternar simulación de física y fuerzas gravitatorias en tiempo real">
-                        <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"></path>
+                    {{-- 2. Física Pausada / Activa --}}
+                    <button type="button" id="btnTogglePhysics" onclick="togglePhysics()" class="uiverse-btn group" title="Alternar simulación de física y fuerzas gravitatorias">
+                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-amber-400 z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-amber-600" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" fill="currentColor"></path>
                         </svg>
-                        <span id="physicsStatusLabel">Física Pausada</span>
+                        <span id="physicsStatusLabel" class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Física Pausada</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[220px] group-hover:h-[220px] group-hover:opacity-100 pointer-events-none"></span>
+                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-amber-400 z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-amber-600" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" fill="currentColor"></path>
+                        </svg>
                     </button>
 
-                    <button type="button" id="btnLayoutTree" onclick="setLayout('tree')" class="control-pill-btn" title="Organizar en niveles jerárquicos (Core ➔ Acceso)">
-                        <svg class="w-4 h-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"></path>
+                    {{-- 3. Jerárquico --}}
+                    <button type="button" id="btnLayoutTree" onclick="setLayout('tree')" class="uiverse-btn group" title="Organizar en niveles jerárquicos (Core ➔ Acceso)">
+                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
                         </svg>
-                        <span>Jerárquico</span>
+                        <span class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Jerárquico</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[220px] group-hover:h-[220px] group-hover:opacity-100 pointer-events-none"></span>
+                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
+                        </svg>
                     </button>
 
-                    <button type="button" id="btnLayoutFree" onclick="setLayout('free')" class="control-pill-btn active" title="Disposición orgánica con equilibrio de repulsión libre (Barnes-Hut)">
-                        <svg class="w-4 h-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418"></path>
+                    {{-- 4. Libre --}}
+                    <button type="button" id="btnLayoutFree" onclick="setLayout('free')" class="uiverse-btn group active" title="Disposición orgánica libre">
+                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
                         </svg>
-                        <span>Libre</span>
+                        <span class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Libre</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[220px] group-hover:h-[220px] group-hover:opacity-100 pointer-events-none"></span>
+                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
+                        </svg>
+                    </button>
+
+                    <div class="h-4 w-px bg-slate-200 dark:bg-slate-700/60 mx-0.5"></div>
+
+                    {{-- 5. Haces de Tráfico Animados (MagicUI Animated Beams) --}}
+                    <button type="button" id="btnToggleBeams" onclick="toggleTrafficBeams()" class="uiverse-btn group active" title="Alternar simulación de tráfico de red en vivo (MagicUI Animated Beams)">
+                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-cyan-400 z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-cyan-600" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M13 10V3L4 14h7v7l9-11h-7z" fill="currentColor"></path>
+                        </svg>
+                        <span id="beamsStatusLabel" class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Haces Activos (Beams)</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[240px] group-hover:h-[240px] group-hover:opacity-100 pointer-events-none"></span>
+                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-cyan-400 z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-cyan-600" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M13 10V3L4 14h7v7l9-11h-7z" fill="currentColor"></path>
+                        </svg>
                     </button>
                 </div>
 
@@ -198,18 +248,28 @@
 
                 {{-- Grupo 2: Acciones --}}
                 <div class="flex items-center gap-1.5" x-data>
-                    <button type="button" onclick="openDiscoveryModal()" class="control-pill-btn bg-[#12161f] text-cyan-400 border-[#1e293b] hover:bg-[#1e293b] shadow-cyan-900/20" title="Auto-Descubrimiento SNMP (CDP/LLDP)">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+                    {{-- 5. Auto-Descubrimiento SNMP --}}
+                    <button type="button" onclick="openDiscoveryModal()" class="uiverse-btn group" title="Auto-Descubrimiento SNMP (CDP/LLDP)">
+                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-cyan-400 z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-cyan-600" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
                         </svg>
-                        <span>Auto-Descubrimiento SNMP</span>
+                        <span class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Auto-Descubrimiento SNMP</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[260px] group-hover:h-[260px] group-hover:opacity-100 pointer-events-none"></span>
+                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-cyan-400 z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-cyan-600" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
+                        </svg>
                     </button>
 
-                    <button type="button" onclick="exportTopologyImage()" class="control-pill-btn" title="Exportar topología de red como imagen PNG en alta definición">
-                        <svg class="w-4 h-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
+                    {{-- 6. Exportar PNG --}}
+                    <button type="button" onclick="exportTopologyImage()" class="uiverse-btn group" title="Exportar topología de red como imagen PNG en alta definición">
+                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
                         </svg>
-                        <span>Exportar PNG</span>
+                        <span class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Exportar PNG</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[220px] group-hover:h-[220px] group-hover:opacity-100 pointer-events-none"></span>
+                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
+                        </svg>
                     </button>
                 </div>
 
@@ -839,6 +899,12 @@
         let physicsEnabled = true;
         let currentFilter = 'all';
 
+        // MagicUI Animated Beams & Live Simulation State
+        let trafficSimulationEnabled = true;
+        let trafficAnimTime = 0;
+        let trafficSpeedMultiplier = 1.0;
+        let animLoopRunning = false;
+
         document.addEventListener('DOMContentLoaded', function() {
             fetchTopologyData();
         });
@@ -1076,6 +1142,9 @@
 
             network = new vis.Network(container, data, options);
 
+            // Iniciar ciclo de animación a 60 FPS para Haces de Red (MagicUI Animated Beams)
+            startTrafficAnimationLoop();
+
             // Encuadre automático con amplio padding (80px) y CONGELACIÓN de física al estabilizar
             network.once('stabilizationIterationsDone', function() {
                 network.storePositions();
@@ -1144,12 +1213,137 @@
                 tt.classList.add('opacity-0');
             });
 
-            // ==================== INDICADOR DE ESTADO MODERNO (MICRO-LED 8px) ====================
+            // ==================== AFTERDRAWING: HACES DE RED CURVADOS (MAGICUI BEAMS) ====================
             network.on('afterDrawing', function(ctx) {
                 if (!nodesDataSet) return;
                 const nodeIds = nodesDataSet.getIds();
                 const nodePositions = network.getPositions(nodeIds);
 
+                // ----------------------------------------------------
+                // CAPA 1: HACES DE LUZ ANIMADOS PEGADOS AL CABLE
+                // ----------------------------------------------------
+                if (edgesDataSet) {
+                    const edges = edgesDataSet.get();
+
+                    edges.forEach(edge => {
+                        const fromPos = nodePositions[edge.from];
+                        const toPos = nodePositions[edge.to];
+                        if (!fromPos || !toPos) return;
+
+                        // Obtener el objeto interno de Vis.js para calcular la curva exacta del cable
+                        const visEdge = network.body && network.body.edges ? network.body.edges[edge.id] : null;
+
+                        const isDown = edge.customData?.estado === 'DOWN';
+                        const isSaturated = (parseFloat(edge.customData?.saturacion_pct) || 0) > 75;
+
+                        // Si la simulación está activa y el enlace está UP, renderizar los pulsos que siguen la curva
+                        if (trafficSimulationEnabled && !isDown) {
+                            const seed = ((edge.from * 23 + edge.to * 47) % 100) / 100;
+                            const speed = 0.35;
+                            const beamSpan = 0.14; // Porcentaje del cable ocupado por la estela del haz
+
+                            // 1. Haz Principal (Forward: Origen ➔ Destino)
+                            for (let k = 0; k < 2; k++) {
+                                const rawPhase = (trafficAnimTime * speed + seed + (k * 0.5)) % 1;
+                                // Rango activo entre 0.08 y 0.92 para no tapar los chasis
+                                const tHead = 0.08 + rawPhase * 0.84;
+                                const tTail = Math.max(0.04, tHead - beamSpan);
+
+                                const headPt = getPointOnVisEdge(visEdge, fromPos, toPos, tHead);
+                                const tailPt = getPointOnVisEdge(visEdge, fromPos, toPos, tTail);
+
+                                ctx.save();
+                                const grad = ctx.createLinearGradient(tailPt.x, tailPt.y, headPt.x, headPt.y);
+                                if (isSaturated) {
+                                    grad.addColorStop(0, 'rgba(239, 68, 68, 0)');
+                                    grad.addColorStop(0.4, 'rgba(245, 158, 11, 0.7)');
+                                    grad.addColorStop(0.9, 'rgba(251, 191, 36, 1)');
+                                    grad.addColorStop(1, '#ffffff');
+                                    ctx.shadowColor = '#f59e0b';
+                                } else {
+                                    // Cyber Neon: Cyan -> Esmeralda -> Núcleo Blanco
+                                    grad.addColorStop(0, 'rgba(6, 182, 212, 0)');
+                                    grad.addColorStop(0.35, 'rgba(16, 185, 129, 0.75)');
+                                    grad.addColorStop(0.85, 'rgba(52, 211, 153, 1)');
+                                    grad.addColorStop(1, '#ffffff');
+                                    ctx.shadowColor = '#10b981';
+                                }
+                                ctx.strokeStyle = grad;
+                                ctx.lineWidth = 3.5;
+                                ctx.lineCap = 'round';
+                                ctx.shadowBlur = 8;
+
+                                // Dibujar el segmento curvo muestreando puntos exactos sobre la spline del cable
+                                ctx.beginPath();
+                                const samples = 8;
+                                for (let s = 0; s <= samples; s++) {
+                                    const st = tTail + (tHead - tTail) * (s / samples);
+                                    const pt = getPointOnVisEdge(visEdge, fromPos, toPos, st);
+                                    if (s === 0) ctx.moveTo(pt.x, pt.y);
+                                    else ctx.lineTo(pt.x, pt.y);
+                                }
+                                ctx.stroke();
+
+                                // Fotón/Paquete Líder brillante que viaja sobre el cable
+                                ctx.beginPath();
+                                ctx.arc(headPt.x, headPt.y, 3.2, 0, Math.PI * 2);
+                                ctx.fillStyle = '#ffffff';
+                                ctx.shadowBlur = 10;
+                                ctx.fill();
+                                ctx.restore();
+                            }
+
+                            // 2. Haz Secundario / ACK (Retorno Full-Duplex: Destino ➔ Origen)
+                            const revRawPhase = (trafficAnimTime * (speed * 1.15) + seed * 1.7) % 1;
+                            const tRevHead = 0.92 - revRawPhase * 0.84;
+                            const tRevTail = Math.min(0.96, tRevHead + (beamSpan * 0.75));
+
+                            const revHeadPt = getPointOnVisEdge(visEdge, fromPos, toPos, tRevHead);
+                            const revTailPt = getPointOnVisEdge(visEdge, fromPos, toPos, tRevTail);
+
+                            ctx.save();
+                            const revGrad = ctx.createLinearGradient(revTailPt.x, revTailPt.y, revHeadPt.x, revHeadPt.y);
+                            revGrad.addColorStop(0, 'rgba(56, 189, 248, 0)');
+                            revGrad.addColorStop(0.6, 'rgba(99, 102, 241, 0.8)');
+                            revGrad.addColorStop(1, '#ffffff');
+                            ctx.strokeStyle = revGrad;
+                            ctx.lineWidth = 2.4;
+                            ctx.lineCap = 'round';
+                            ctx.shadowColor = '#6366f1';
+                            ctx.shadowBlur = 6;
+
+                            ctx.beginPath();
+                            const revSamples = 6;
+                            for (let s = 0; s <= revSamples; s++) {
+                                const st = tRevTail + (tRevHead - tRevTail) * (s / revSamples);
+                                const pt = getPointOnVisEdge(visEdge, fromPos, toPos, st);
+                                if (s === 0) ctx.moveTo(pt.x, pt.y);
+                                else ctx.lineTo(pt.x, pt.y);
+                            }
+                            ctx.stroke();
+
+                            ctx.beginPath();
+                            ctx.arc(revHeadPt.x, revHeadPt.y, 2.4, 0, Math.PI * 2);
+                            ctx.fillStyle = '#ffffff';
+                            ctx.shadowBlur = 8;
+                            ctx.fill();
+                            ctx.restore();
+                        }
+
+                        // Badges de puertos colocados exactamente en los extremos de la curva del cable
+                        const p1Text = edge.customData?.origen_puerto_abrev || 'P1';
+                        const p2Text = edge.customData?.destino_puerto_abrev || 'P2';
+                        const badgePos1 = getPointOnVisEdge(visEdge, fromPos, toPos, 0.12);
+                        const badgePos2 = getPointOnVisEdge(visEdge, fromPos, toPos, 0.88);
+
+                        drawPortBadge(ctx, badgePos1.x, badgePos1.y, p1Text, isDown);
+                        drawPortBadge(ctx, badgePos2.x, badgePos2.y, p2Text, isDown);
+                    });
+                }
+
+                // ----------------------------------------------------
+                // CAPA 2: MICRO-LEDS DE ESTADO EN HARDWARE (8px)
+                // ----------------------------------------------------
                 nodeIds.forEach(id => {
                     const pos = nodePositions[id];
                     if (!pos) return;
@@ -1160,30 +1354,27 @@
                     const estado = node.customData.estado || 'online';
                     const nodeSize = node.size || 26;
 
-                    // Ubicación del micro-LED en la esquina superior derecha del chasis de rack (proporcional al tamaño)
                     const ledX = pos.x + (nodeSize * 2.5) - 3;
                     const ledY = pos.y - (nodeSize * 0.5) + 3;
-                    const ledRadius = 4; // Diámetro de 8px
+                    const ledRadius = 4;
 
                     ctx.save();
                     ctx.beginPath();
                     ctx.arc(ledX, ledY, ledRadius, 0, 2 * Math.PI, false);
 
                     if (estado === 'online') {
-                        // Verde sólido (#10b981)
                         ctx.fillStyle = '#10b981';
-                        ctx.shadowColor = 'rgba(16, 185, 129, 0.5)';
-                        ctx.shadowBlur = 4;
+                        ctx.shadowColor = 'rgba(16, 185, 129, 0.6)';
+                        ctx.shadowBlur = 5;
                         ctx.fill();
 
                         ctx.strokeStyle = '#ffffff';
                         ctx.lineWidth = 1.2;
                         ctx.stroke();
                     } else {
-                        // Rojo sólido (#ef4444) para Alerta/Offline
                         ctx.fillStyle = '#ef4444';
-                        ctx.shadowColor = 'rgba(239, 68, 68, 0.6)';
-                        ctx.shadowBlur = 4;
+                        ctx.shadowColor = 'rgba(239, 68, 68, 0.7)';
+                        ctx.shadowBlur = 5;
                         ctx.fill();
 
                         ctx.strokeStyle = '#ffffff';
@@ -1192,52 +1383,40 @@
                     }
                     ctx.restore();
                 });
-
-                // ==================== BADGES DE PUERTOS EN EXTREMOS DE CABLES ====================
-                if (edgesDataSet) {
-                    const parTracker = {};
-                    const edges = edgesDataSet.get();
-
-                    edges.forEach(edge => {
-                        const fromPos = nodePositions[edge.from];
-                        const toPos = nodePositions[edge.to];
-                        if (!fromPos || !toPos) return;
-
-                        const dx = toPos.x - fromPos.x;
-                        const dy = toPos.y - fromPos.y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < 40) return;
-
-                        const ux = dx / dist;
-                        const uy = dy / dist;
-
-                        // Desplazamiento lateral para separar badges en cables paralelos entre el mismo par
-                        const parKey = Math.min(edge.from, edge.to) + '_' + Math.max(edge.from, edge.to);
-                        parTracker[parKey] = (parTracker[parKey] || 0) + 1;
-                        const shiftIndex = parTracker[parKey];
-                        const lateralOffset = (shiftIndex === 1) ? -14 : (shiftIndex === 2 ? 14 : 0);
-                        const nx = -uy * lateralOffset;
-                        const ny = ux * lateralOffset;
-
-                        // Distancia desde el centro del equipo hacia el inicio visible del cable
-                        const offsetFrom = 38;
-                        const offsetTo = 38;
-
-                        const p1x = fromPos.x + (ux * offsetFrom) + nx;
-                        const p1y = fromPos.y + (uy * offsetFrom) + ny;
-
-                        const p2x = toPos.x - (ux * offsetTo) + nx;
-                        const p2y = toPos.y - (uy * offsetTo) + ny;
-
-                        const p1Text = edge.customData?.origen_puerto_abrev || 'P1';
-                        const p2Text = edge.customData?.destino_puerto_abrev || 'P2';
-                        const isDown = edge.customData?.estado === 'DOWN';
-
-                        drawPortBadge(ctx, p1x, p1y, p1Text, isDown);
-                        drawPortBadge(ctx, p2x, p2y, p2Text, isDown);
-                    });
-                }
             });
+
+            /**
+             * Función de alta precisión para interpolar coordenadas a lo largo de la curva exacta de un enlace de Vis.js.
+             */
+            function getPointOnVisEdge(visEdge, fromPos, toPos, t) {
+                // 1. Intentar obtener el punto directamente desde el motor de cálculo spline de Vis.js
+                if (visEdge && visEdge.edgeType && typeof visEdge.edgeType.getPoint === 'function') {
+                    try {
+                        const p = visEdge.edgeType.getPoint(t);
+                        if (p && typeof p.x === 'number' && typeof p.y === 'number' && !isNaN(p.x) && !isNaN(p.y)) {
+                            return p;
+                        }
+                    } catch (e) {
+                        // Fallback a curva cuadrática
+                    }
+                }
+
+                // 2. Si Vis.js calculó un punto de control Bezier (via), interpolar la curva cuadrática
+                const via = visEdge?.edgeType?.via || visEdge?.via;
+                if (via && typeof via.x === 'number' && typeof via.y === 'number') {
+                    const inv = 1 - t;
+                    return {
+                        x: inv * inv * fromPos.x + 2 * inv * t * via.x + t * t * toPos.x,
+                        y: inv * inv * fromPos.y + 2 * inv * t * via.y + t * t * toPos.y
+                    };
+                }
+
+                // 3. Fallback a interpolación lineal si el cable es recto
+                return {
+                    x: fromPos.x + t * (toPos.x - fromPos.x),
+                    y: fromPos.y + t * (toPos.y - fromPos.y)
+                };
+            }
 
             // Función auxiliar para dibujar pastillas de puertos en los extremos de los cables
             function drawPortBadge(ctx, x, y, text, isAlert = false) {
@@ -1437,6 +1616,38 @@
         }
 
         // ==================== CONTROLES DE LIENZO ====================
+        function toggleTrafficBeams() {
+            trafficSimulationEnabled = !trafficSimulationEnabled;
+            const btn = document.getElementById('btnToggleBeams');
+            const label = document.getElementById('beamsStatusLabel');
+            if (trafficSimulationEnabled) {
+                if (btn) btn.classList.add('active');
+                if (label) label.textContent = 'Haces Activos (Beams)';
+            } else {
+                if (btn) btn.classList.remove('active');
+                if (label) label.textContent = 'Haces Pausados';
+                if (network) network.redraw();
+            }
+        }
+
+        function startTrafficAnimationLoop() {
+            if (animLoopRunning) return;
+            animLoopRunning = true;
+            let lastTimestamp = performance.now();
+
+            function frame(now) {
+                const delta = (now - lastTimestamp) / 1000;
+                lastTimestamp = now;
+
+                if (trafficSimulationEnabled && network) {
+                    trafficAnimTime += delta * trafficSpeedMultiplier;
+                    network.redraw();
+                }
+                requestAnimationFrame(frame);
+            }
+            requestAnimationFrame(frame);
+        }
+
         function resetZoom() {
             if (network) {
                 network.fit({

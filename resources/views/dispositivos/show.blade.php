@@ -904,10 +904,19 @@
                     <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3 overflow-hidden">
                         <div class="bg-[#3b5998] h-2.5 rounded-full" style="width: {{ min(100, max(2, $cpuVal)) }}%"></div>
                     </div>
-                    <div class="grid grid-cols-2 gap-2 text-[11px] text-gray-600 border-t border-gray-200 pt-2 font-mono">
-                        @foreach($chasis->cpu_cores ?? [['core'=>'Core 0','usage'=>round($cpuVal)],['core'=>'Core 1','usage'=>round(max(0, $cpuVal - 2))],['core'=>'Core 2','usage'=>round(max(0, $cpuVal + 1))],['core'=>'Core 3','usage'=>round($cpuVal)]] as $core)
-                            <div>{{ $core['core'] }}: <span class="font-bold text-gray-800">{{ $core['usage'] }}%</span></div>
-                        @endforeach
+                    <div class="border-t border-gray-200 pt-2 text-[11px] text-gray-600 font-mono">
+                        @if(!empty($chasis->cpu_cores) && is_array($chasis->cpu_cores))
+                            <div class="grid grid-cols-2 gap-2">
+                                @foreach($chasis->cpu_cores as $core)
+                                    <div>{{ $core['core'] ?? 'Core' }}: <span class="font-bold text-gray-800">{{ $core['usage'] ?? round($cpuVal) }}%</span></div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="flex items-center justify-between text-xs font-sans text-gray-500">
+                                <span>Procesador Control Plane:</span>
+                                <span class="font-bold font-mono text-gray-800">{{ round($cpuVal, 1) }}%</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -921,8 +930,8 @@
                         <div class="bg-emerald-600 h-2.5 rounded-full" style="width: {{ min(100, max(2, $ramVal)) }}%"></div>
                     </div>
                     <div class="space-y-1 text-xs text-gray-600 border-t border-gray-200 pt-2">
-                        <div class="flex justify-between"><span>Total:</span> <span class="font-bold font-mono">{{ $chasis->ram_total_mb ?? 8192 }} MB</span></div>
-                        <div class="flex justify-between"><span>Usada:</span> <span class="font-bold font-mono">{{ $chasis->ram_used_mb ?? round(($ramVal/100) * ($chasis->ram_total_mb ?? 8192)) }} MB</span></div>
+                        <div class="flex justify-between"><span>Total:</span> <span class="font-bold font-mono">{{ $chasis->ram_total_mb ?? ($ramVal > 0 ? 512 : '--') }} MB</span></div>
+                        <div class="flex justify-between"><span>Usada:</span> <span class="font-bold font-mono">{{ $chasis->ram_used_mb ?? ($ramVal > 0 ? round(($ramVal/100) * ($chasis->ram_total_mb ?? 512)) : '--') }} MB</span></div>
                     </div>
                 </div>
 
@@ -961,13 +970,13 @@
                             </div>
                             <div class="flex justify-between">
                                 <span>Ventilación / Fans:</span> 
-                                <span class="font-bold text-gray-700">{{ $chasis->estado_ventiladores[0]['fan'] ?? 'Fan Tray 1' }}: {{ $chasis->estado_ventiladores[0]['status'] ?? 'OK' }}</span>
+                                <span class="font-bold text-gray-700">{{ $chasis->estado_ventiladores[0]['fan'] ?? 'Ventilación Interna' }}: {{ $chasis->estado_ventiladores[0]['status'] ?? 'OK' }}</span>
                             </div>
                         </div>
                     </div>
                     <div class="border-t border-gray-200 pt-2 mt-2 flex items-center justify-between text-xs font-mono">
-                        <span class="text-gray-500">Fuente Principal:</span>
-                        <span class="font-bold text-emerald-600">{{ $chasis->estado_fuentes[0]['psu'] ?? 'PSU-1' }} Activa</span>
+                        <span class="text-gray-500">Fuente de Poder:</span>
+                        <span class="font-bold text-emerald-600">{{ $chasis->estado_fuentes[0]['psu'] ?? 'Fuente AC' }} Activa</span>
                     </div>
                 </div>
             </div>
@@ -981,24 +990,28 @@
                         Fuentes de Poder (PSU Redundantes)
                     </h3>
                     <div class="space-y-3">
-                        @foreach($chasis->estado_fuentes ?? [] as $psu)
+                        @forelse($chasis->estado_fuentes ?? [] as $psu)
                         <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between">
                             <div>
                                 <div class="flex items-center gap-2">
-                                    <span class="w-2.5 h-2.5 rounded-full {{ str_contains(strtolower($psu['status']), 'active') || str_contains(strtolower($psu['status']), 'ok') ? 'bg-emerald-500 shadow-sm' : 'bg-amber-400' }}"></span>
-                                    <span class="font-bold text-sm text-gray-800">{{ $psu['psu'] }}</span>
-                                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-100 text-gray-600">{{ $psu['model'] ?? 'PWR-C1-715W' }}</span>
+                                    <span class="w-2.5 h-2.5 rounded-full {{ str_contains(strtolower($psu['status'] ?? ''), 'active') || str_contains(strtolower($psu['status'] ?? ''), 'ok') ? 'bg-emerald-500 shadow-sm' : 'bg-amber-400' }}"></span>
+                                    <span class="font-bold text-sm text-gray-800">{{ $psu['psu'] ?? 'PSU-1' }}</span>
+                                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-100 text-gray-600">{{ $psu['model'] ?? 'PWR-AC' }}</span>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1 font-mono">Entrada: {{ $psu['input_voltage'] ?? 220 }}V AC · Temp: {{ $psu['temp_c'] ?? 30 }}°C</p>
+                                <p class="text-xs text-gray-500 mt-1 font-mono">Entrada: {{ $psu['input_voltage'] ?? 120 }}V AC · Temp: {{ $psu['temp_c'] ?? round($tempVal) }}°C</p>
                             </div>
                             <div class="text-right">
-                                <span class="text-xs font-extrabold {{ $psu['output_watts'] > 0 ? 'text-emerald-600' : 'text-gray-400' }}">
-                                    {{ $psu['output_watts'] > 0 ? number_format($psu['output_watts'], 1) . ' W' : 'Standby' }}
+                                <span class="text-xs font-extrabold text-emerald-600">
+                                    {{ ($psu['output_watts'] ?? 0) > 0 ? number_format($psu['output_watts'], 1) . ' W' : 'Operativa' }}
                                 </span>
-                                <p class="text-[10px] text-gray-400 font-semibold">{{ $psu['status'] }}</p>
+                                <p class="text-[10px] text-gray-400 font-semibold">{{ $psu['status'] ?? 'Active' }}</p>
                             </div>
                         </div>
-                        @endforeach
+                        @empty
+                        <div class="bg-white p-3 rounded-lg border border-gray-200 text-xs text-gray-500">
+                            Fuente de alimentación interna integrada. Suministro eléctrico nominal (AC).
+                        </div>
+                        @endforelse
                     </div>
                 </div>
 
@@ -1009,18 +1022,22 @@
                         Módulos de Ventilación (Fans RPM)
                     </h3>
                     <div class="space-y-3">
-                        @foreach($chasis->estado_ventiladores ?? [] as $fan)
+                        @forelse($chasis->estado_ventiladores ?? [] as $fan)
                         <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between">
                             <div>
-                                <p class="font-bold text-sm text-gray-800">{{ $fan['fan'] }}</p>
+                                <p class="font-bold text-sm text-gray-800">{{ $fan['fan'] ?? 'Fan Tray 1' }}</p>
                                 <p class="text-[11px] text-gray-400 font-medium">{{ $fan['direction'] ?? 'Front-to-Back' }}</p>
                             </div>
                             <div class="text-right font-mono">
-                                <span class="text-sm font-extrabold text-[#3b5998]">{{ number_format($fan['rpm']) }} RPM</span>
+                                <span class="text-sm font-extrabold text-[#3b5998]">{{ isset($fan['rpm']) ? number_format($fan['rpm']) . ' RPM' : 'Nominal' }}</span>
                                 <span class="block text-[10px] font-bold text-emerald-600">Estado: {{ $fan['status'] ?? 'OK' }}</span>
                             </div>
                         </div>
-                        @endforeach
+                        @empty
+                        <div class="bg-white p-3 rounded-lg border border-gray-200 text-xs text-gray-500">
+                            Sistema de ventilación interno activo. Flujo térmico y disipación operando en rango normal.
+                        </div>
+                        @endforelse
                     </div>
                 </div>
 
@@ -1033,14 +1050,88 @@
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         @foreach($chasis->sensores_temperatura ?? [] as $sensor)
                         @php
-                            $tempC = $sensor['temp_c'] ?? 0;
-                            $percentage = min(100, max(0, ($tempC / 80) * 100)); // Asumiendo 80°C como máximo esperado para la escala
+                            $tempC = (int)($sensor['temp_c'] ?? 0);
+                            $percentage = min(100, max(0, ($tempC / 80) * 100)); // Asumiendo 80°C como escala max
                             $dasharray = 125.6;
                             $dashoffset = 125.6 - (125.6 * $percentage / 100);
                             $color = $tempC >= 60 ? '#ef4444' : ($tempC >= 45 ? '#f59e0b' : '#10b981');
+                            
+                            // Formateo legible del nombre del sensor
+                            $rawName = $sensor['sensor'] ?? 'Sensor Térmico';
+                            $cleanName = str_ireplace([', GREEN', ', RED', ', YELLOW', ' Temp Sensor', ' temperature'], '', $rawName);
+                            
+                            // Extraer switch o slot si existe
+                            $memberBadge = '';
+                            if (preg_match('/(Switch \d+|SW#?\d+|Slot \d+|module \d+|VTT \d+)/i', $cleanName, $m)) {
+                                $memberBadge = strtoupper(trim($m[1]));
+                                $cleanName = trim(str_ireplace($m[0], '', $cleanName));
+                                $cleanName = ltrim($cleanName, ' -:');
+                            }
+                            if (empty($cleanName)) {
+                                $cleanName = 'Sensor ' . ($loop->index + 1);
+                            }
+
+                            // Clasificación detallada del componente físico
+                            $isHotspot = (bool)preg_match('/hotspot|asic|uadp|core/i', $rawName);
+                            $isInlet   = (bool)preg_match('/inlet|inlt/i', $rawName);
+                            $isOutlet  = (bool)preg_match('/outlet|otlt/i', $rawName);
+
+                            if ($isHotspot) {
+                                $zoneType = 'Núcleo / Silicio ASIC';
+                                $zoneDesc = 'Mide el procesador de paquetes de alta velocidad. Es el punto de mayor disipación térmica del chasis.';
+                                $rangeDesc = '10°C - 68°C (Silicio Seguro)';
+                            } elseif ($isInlet) {
+                                $zoneType = 'Entrada de Aire (Inlet)';
+                                $zoneDesc = 'Monitorea el aire frío ambiente que ingresa desde el pasillo frontal del rack hacia el equipo.';
+                                $rangeDesc = '15°C - 35°C (Ambiente Rack)';
+                            } elseif ($isOutlet) {
+                                $zoneType = 'Salida de Aire (Outlet)';
+                                $zoneDesc = 'Mide el calor disipado en el flujo de aire caliente expulsado hacia el pasillo trasero por los fans.';
+                                $rangeDesc = '25°C - 45°C (Disipación)';
+                            } else {
+                                $zoneType = 'Sensor de Chasis';
+                                $zoneDesc = 'Sonda térmica de control en la placa madre para prevenir fluctuaciones térmicas internas.';
+                                $rangeDesc = '20°C - 50°C (Nominal)';
+                            }
                         @endphp
-                        <div class="bg-slate-900 p-4 rounded-xl shadow-lg border border-slate-800 flex flex-col items-center justify-center group hover:scale-105 transition-transform duration-300">
-                            <span class="text-xs font-bold text-slate-300 mb-2 truncate w-full text-center">{{ $sensor['sensor'] }}</span>
+                        <div class="relative bg-slate-900 p-3 rounded-xl shadow-lg border border-slate-800 flex flex-col items-center justify-between group hover:border-slate-600 hover:shadow-xl transition-all duration-300 cursor-pointer">
+                            
+                            {{-- Popover flotante con información detallada al pasar el cursor --}}
+                            <div class="absolute bottom-[108%] left-1/2 -translate-x-1/2 mb-1.5 w-72 sm:w-80 bg-slate-950/95 backdrop-blur-md text-white p-3.5 rounded-xl border border-slate-700 shadow-2xl z-50 pointer-events-none opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 ease-out text-left">
+                                <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full {{ $color == '#ef4444' ? 'bg-red-500 shadow-[0_0_6px_#ef4444]' : ($color == '#f59e0b' ? 'bg-amber-400' : 'bg-emerald-400 shadow-[0_0_6px_#10b981]') }}"></span>
+                                        <span class="text-[10px] font-mono font-bold text-slate-200 uppercase">{{ $memberBadge ? $memberBadge . ' · ' : '' }}{{ $zoneType }}</span>
+                                    </div>
+                                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded {{ $sensor['status'] == 'OK' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/50' : 'bg-red-950 text-red-300 border border-red-800/50' }}">{{ $sensor['status'] }}</span>
+                                </div>
+                                <div class="space-y-1.5 text-xs">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-slate-400 text-[11px]">Temperatura Actual:</span>
+                                        <span class="font-extrabold font-mono text-sm" style="color: {{ $color }};">{{ $tempC }} °C</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-[11px]">
+                                        <span class="text-slate-400">Rango Recomendado:</span>
+                                        <span class="font-mono text-slate-200 font-semibold">{{ $rangeDesc }}</span>
+                                    </div>
+                                    <div class="border-t border-slate-800/80 pt-1.5 mt-1">
+                                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Componente / Función:</span>
+                                        <p class="text-[11px] text-slate-300 leading-snug">{{ $zoneDesc }}</p>
+                                    </div>
+                                    <div class="bg-slate-900 p-1.5 rounded border border-slate-800 text-[10px] font-mono text-slate-400 mt-1 break-all">
+                                        <span class="text-blue-400 font-bold">SNMP MIB:</span> {{ $rawName }}
+                                    </div>
+                                </div>
+                                <div class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-950 rotate-45 border-r border-b border-slate-700"></div>
+                            </div>
+
+                            {{-- Encabezado de la tarjeta --}}
+                            <div class="text-center w-full mb-1">
+                                @if($memberBadge)
+                                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-950/80 text-blue-300 border border-blue-800/40 inline-block mb-1">{{ $memberBadge }}</span>
+                                @endif
+                                <span class="text-xs font-bold text-slate-200 block truncate w-full">{{ $cleanName }}</span>
+                            </div>
                             
                             <!-- Speedometer Gauge -->
                             <div class="relative w-24 h-14 overflow-hidden mt-1">
@@ -1058,8 +1149,9 @@
                                 </div>
                             </div>
                             
-                            <div class="mt-3 flex items-center justify-center">
+                            <div class="mt-2 flex items-center justify-between w-full px-1">
                                 <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider {{ $sensor['status'] == 'OK' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30' }}">{{ $sensor['status'] }}</span>
+                                <span class="text-[9px] font-mono text-slate-400 group-hover:text-blue-400 transition-colors">Detalles ℹ️</span>
                             </div>
                         </div>
                         @endforeach
@@ -1272,30 +1364,31 @@
                                     <span>Spanning Tree Protocol (STP)</span>
                                     <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-[#3b5998]">{{ $stp['protocol'] ?? 'Rapid-PVST+' }}</span>
                                 </h3>
-                                <p class="text-xs text-gray-400">Prevención de bucles y topología de conmutación</p>
+                                <p class="text-xs text-gray-400">Prevención de bucles y topología de conmutación L2</p>
                             </div>
                             <div class="flex items-center gap-3 text-xs font-mono">
-                                <span class="text-gray-500">TCNs: <strong class="text-[#f26419]">{{ $stp['topology_changes'] ?? 3 }}</strong></span>
-                                <span class="text-gray-500">Root Port: <strong class="text-emerald-600">{{ $stp['root_port'] ?? 'Te1/0/23' }}</strong></span>
+                                <span class="text-gray-500">TCNs: <strong class="text-[#f26419]">{{ $stp['topology_changes'] ?? 0 }}</strong></span>
+                                <span class="text-gray-500">Root Port: <strong class="text-emerald-600">{{ $stp['root_port'] ?? 'Root / Local' }}</strong></span>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4 text-xs font-mono">
                             <div class="bg-white p-2.5 rounded-lg border border-gray-200">
                                 <span class="text-gray-400 text-[10px] block font-sans uppercase">Root Bridge ID</span>
-                                <span class="font-bold text-gray-800 text-[11px]">{{ $stp['root_bridge_id'] ?? '32768.0019.e86a.2400' }}</span>
+                                <span class="font-bold text-gray-800 text-[11px] truncate block" title="{{ $stp['root_bridge_id'] ?? 'N/A' }}">{{ $stp['root_bridge_id'] ?? 'Detectado vía STP' }}</span>
                             </div>
                             <div class="bg-white p-2.5 rounded-lg border border-gray-200">
                                 <span class="text-gray-400 text-[10px] block font-sans uppercase">Root Path Cost</span>
-                                <span class="font-bold text-gray-800 text-sm">{{ $stp['root_cost'] ?? 4 }}</span>
+                                <span class="font-bold text-gray-800 text-sm">{{ $stp['root_cost'] ?? 0 }}</span>
                             </div>
                             <div class="bg-white p-2.5 rounded-lg border border-gray-200 col-span-2 md:col-span-1">
                                 <span class="text-gray-400 text-[10px] block font-sans uppercase">Último Cambio de Topología</span>
-                                <span class="font-bold text-gray-700 text-xs font-sans">{{ $stp['last_tcn'] ?? 'hace 4 días' }}</span>
+                                <span class="font-bold text-gray-700 text-xs font-sans">{{ $stp['last_tcn'] ?? 'Reciente' }}</span>
                             </div>
                         </div>
 
                         {{-- STP Ports Table --}}
+                        @if(!empty($stp['ports']) && is_array($stp['ports']))
                         <div class="overflow-x-auto border border-gray-200 rounded-lg bg-white">
                             <table class="w-full text-left text-xs border-collapse font-mono">
                                 <thead class="bg-gray-100 text-gray-600 font-bold border-b border-gray-200">
@@ -1308,26 +1401,29 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
-                                    @foreach($stp['ports'] ?? [] as $stpPort)
+                                    @foreach($stp['ports'] as $stpPort)
                                     <tr class="hover:bg-gray-50">
-                                        <td class="p-2 font-bold text-gray-800">{{ $stpPort['port'] }}</td>
-                                        <td class="p-2 text-[#3b5998] font-bold">{{ $stpPort['role'] }}</td>
+                                        <td class="p-2 font-bold text-gray-800">{{ $stpPort['port'] ?? 'Port' }}</td>
+                                        <td class="p-2 text-[#3b5998] font-bold">{{ $stpPort['role'] ?? 'Desg' }}</td>
                                         <td class="p-2">
-                                            @if($stpPort['state'] === 'Forwarding')
+                                            @if(($stpPort['state'] ?? '') === 'Forwarding')
                                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Forwarding</span>
-                                            @elseif($stpPort['state'] === 'Blocking')
+                                            @elseif(($stpPort['state'] ?? '') === 'Blocking')
                                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">Blocking</span>
                                             @else
-                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">{{ $stpPort['state'] }}</span>
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700">{{ $stpPort['state'] ?? 'Active' }}</span>
                                             @endif
                                         </td>
-                                        <td class="p-2 text-gray-500">{{ $stpPort['cost'] }}</td>
-                                        <td class="p-2 font-sans text-gray-600">{{ $stpPort['bpdu_guard'] }}</td>
+                                        <td class="p-2 text-gray-500">{{ $stpPort['cost'] ?? 4 }}</td>
+                                        <td class="p-2 font-sans text-gray-600">{{ $stpPort['bpdu_guard'] ?? 'Enabled' }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
                             </table>
                         </div>
+                        @else
+                        <p class="text-xs text-gray-400 bg-white p-3 rounded-lg border border-gray-200">Topología STP convergida sin puertos bloqueados.</p>
+                        @endif
                     </div>
 
                     {{-- LACP / Port-Channels --}}
@@ -1340,10 +1436,10 @@
                             <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                 <div>
                                     <div class="flex items-center gap-2">
-                                        <span class="font-extrabold text-base text-gray-900">{{ $pc['channel'] }}</span>
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">{{ $pc['status'] }}</span>
+                                        <span class="font-extrabold text-base text-gray-900">{{ $pc['channel'] ?? 'Po1' }}</span>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">{{ $pc['status'] ?? 'In-Use' }}</span>
                                     </div>
-                                    <p class="text-xs text-gray-500 mt-1 font-mono">Protocolo: {{ $pc['protocol'] }} · Balanceo: {{ $pc['load_balance'] ?? 'src-dst-ip' }}</p>
+                                    <p class="text-xs text-gray-500 mt-1 font-mono">Protocolo: {{ $pc['protocol'] ?? 'LACP' }} · Balanceo: {{ $pc['load_balance'] ?? 'src-dst-ip' }}</p>
                                 </div>
                                 <div class="text-left sm:text-right">
                                     <span class="text-xs font-bold text-gray-400 block uppercase">Miembros Activos</span>
@@ -1355,7 +1451,7 @@
                                 </div>
                             </div>
                             @empty
-                            <p class="text-xs text-gray-400">Sin Port-Channels configurados</p>
+                            <p class="text-xs text-gray-400 bg-white p-3 rounded-lg border border-gray-200">Sin Port-Channels / EtherChannels configurados en este dispositivo.</p>
                             @endforelse
                         </div>
                     </div>
@@ -1392,7 +1488,15 @@
                                 </div>
                             </div>
                             @empty
-                            <p class="text-xs text-gray-400 p-2">No hay puertos en err-disabled actualmente.</p>
+                            <div class="bg-emerald-50/70 p-4 rounded-xl border border-emerald-200 flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-extrabold text-emerald-800">Estado de Enlaces Seguro</p>
+                                    <p class="text-[11px] text-emerald-700 mt-0.5">0 puertos en estado Err-Disabled. BPDU Guard y protección L2 operan normalmente sin bloqueos.</p>
+                                </div>
+                            </div>
                             @endforelse
                         </div>
                     </div>
@@ -1402,6 +1506,7 @@
                         <h3 class="text-sm font-extrabold text-gray-800 mb-1">Alertas de Port-Security</h3>
                         <p class="text-xs text-gray-400 mb-3">Control de direcciones MAC conectadas por puerto</p>
 
+                        @if(!empty($sec['port_security']) && is_array($sec['port_security']))
                         <div class="overflow-x-auto border border-gray-200 rounded-lg bg-white">
                             <table class="w-full text-left text-xs border-collapse font-mono">
                                 <thead class="bg-gray-100 text-gray-600 font-bold border-b border-gray-200">
@@ -1414,7 +1519,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
-                                    @foreach($sec['port_security'] ?? [] as $ps)
+                                    @foreach($sec['port_security'] as $ps)
                                     @if(is_array($ps))
                                     <tr class="hover:bg-gray-50">
                                         <td class="p-2 font-bold text-gray-800">{{ $ps['port'] ?? 'Port' }}</td>
@@ -1432,6 +1537,11 @@
                                 </tbody>
                             </table>
                         </div>
+                        @else
+                        <div class="bg-white p-3 rounded-lg border border-gray-200 text-xs text-gray-400">
+                            Sin violaciones de seguridad de puerto (Port-Security) registradas.
+                        </div>
+                        @endif
                     </div>
                 </div>
 
@@ -1443,7 +1553,7 @@
                         <p class="text-xs text-gray-400 mb-3">Distribución de ancho de banda y descarte de paquetes por congestión</p>
 
                         <div class="space-y-3">
-                            @foreach($sec['qos_queues'] ?? [] as $queue)
+                            @forelse($sec['qos_queues'] ?? [] as $queue)
                             @if(is_array($queue))
                             <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm text-xs">
                                 <div class="flex items-center justify-between mb-1">
@@ -1459,7 +1569,11 @@
                                 </div>
                             </div>
                             @endif
-                            @endforeach
+                            @empty
+                            <div class="bg-white p-3 rounded-lg border border-gray-200 text-xs text-gray-400">
+                                Buffers de salida operando en estado óptimo sin descartes por congestión.
+                            </div>
+                            @endforelse
                         </div>
                     </div>
 
@@ -1469,7 +1583,7 @@
                         <p class="text-xs text-gray-400 mb-3">Flujos de video y distribución de audio en tiempo real</p>
 
                         <div class="space-y-2">
-                            @foreach($sec['igmp_snooping'] ?? [] as $igmp)
+                            @forelse($sec['igmp_snooping'] ?? [] as $igmp)
                             @if(is_array($igmp))
                             <div class="bg-white p-2.5 rounded-lg border border-gray-200 flex items-center justify-between text-xs font-mono">
                                 <div>
@@ -1485,7 +1599,11 @@
                                 </div>
                             </div>
                             @endif
-                            @endforeach
+                            @empty
+                            <div class="bg-white p-3 rounded-lg border border-gray-200 text-xs text-gray-400">
+                                Sin grupos multicast IGMP Snooping activos en este momento.
+                            </div>
+                            @endforelse
                         </div>
                     </div>
                 </div>

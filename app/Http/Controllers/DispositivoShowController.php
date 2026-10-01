@@ -41,6 +41,25 @@ class DispositivoShowController extends Controller
         $interfacesData = [];
         $portIndex = 1;
 
+        // Función inteligente de extracción de número físico de puerto
+        $extractPortNumber = function(string $name, int $fallbackIndex): int {
+            $name = trim($name);
+            // 1. Matches slot/subslot/port: Gi1/0/24 -> 24, Fa0/12 -> 12, Te1/1/1 -> 1, Gi0/21 -> 21
+            if (preg_match('/\/(\d+)$/', $name, $m)) {
+                return (int)$m[1];
+            }
+            // 2. Matches Cisco MIB 5-digit format: GigabitEthernet10124 -> 24, GigabitEthernet10101 -> 1
+            if (preg_match('/(\d{5})$/', $name, $m)) {
+                return ((int)$m[1]) % 100;
+            }
+            // 3. Matches trailing numbers: Gi24 -> 24, Port12 -> 12
+            if (preg_match('/(\d+)$/', $name, $m)) {
+                $num = (int)$m[1];
+                return ($num > 1000) ? ($num % 100) : $num;
+            }
+            return $fallbackIndex;
+        };
+
         foreach ($interfaces as $iface) {
             $t = $iface->ultimaTelemetria;
             $isErr = $t ? (bool)$t->is_errdisabled : false;
@@ -63,11 +82,7 @@ class DispositivoShowController extends Controller
                 $totalOutBytes += (int)($t->out_octets ?? 0);
             }
 
-            // Extraer el índice numérico del puerto (ej. GigabitEthernet1 -> 1, Gi1 -> 1)
-            $portNum = $portIndex;
-            if (preg_match('/(\d+)$/', $iface->nombre, $matches)) {
-                $portNum = (int)$matches[1];
-            }
+            $portNum = $extractPortNumber($iface->nombre, $portIndex);
 
             // Client data map for instant drawer rendering
             $data = [
@@ -75,7 +90,7 @@ class DispositivoShowController extends Controller
                 'port_num' => $portNum,
                 'if_index' => $iface->if_index,
                 'name' => $iface->nombre,
-                'short_name' => str_replace(['GigabitEthernet', 'TenGigabitEthernet', 'gigabitethernet'], ['Gi', 'Te', 'Gi'], $iface->nombre),
+                'short_name' => str_replace(['GigabitEthernet', 'TenGigabitEthernet', 'gigabitethernet', 'FastEthernet', 'fastethernet'], ['Gi', 'Te', 'Gi', 'Fa', 'Fa'], $iface->nombre),
                 'mac' => $iface->mac_address,
                 'speed' => $iface->velocidad_mbps,
                 'duplex' => $iface->duplex ?? 'Full',
@@ -124,34 +139,47 @@ class DispositivoShowController extends Controller
                 'poe_max' => (float)($t?->poe_max_watts ?? 30.0),
             ];
 
-            // Indexar tanto por ID de base de datos como por número físico de puerto
             $interfacesData[$iface->id] = $data;
             $interfacesData[$portNum] = $data;
             $portIndex++;
         }
 
-        $totalPorts = $interfaces->count();
+        // Filtrar interfaces físicas reales (excluir VLANs virtuales y Null)
+        $physicalInterfaces = $interfaces->filter(function($iface) {
+            $n = strtolower($iface->nombre);
+            return !str_starts_with($n, 'vlan') && 
+                   !str_starts_with($n, 'vl') && 
+                   !str_starts_with($n, 'null') && 
+                   !str_starts_with($n, 'loopback') && 
+                   !str_starts_with($n, 'lo') && 
+                   !str_starts_with($n, 'stackport');
+        });
+
+        $totalPorts = $physicalInterfaces->count() > 0 ? $physicalInterfaces->count() : $interfaces->count();
 
         // Clasificación de interfaces físicas según medio de transmisión (Cobre RJ-45 vs Fibra Óptica SFP)
         $copperPorts = collect();
         $sfpPorts = collect();
 
-        foreach ($interfaces as $iface) {
+        foreach ($physicalInterfaces as $iface) {
             $nameLower = strtolower($iface->nombre);
             $typeLower = strtolower($iface->port_type ?? '');
+            $portNum = $extractPortNumber($iface->nombre, 1);
 
             // FastEthernet / Fa / 100BaseTX es SIEMPRE cobre RJ-45
-            $isFastEth = str_contains($nameLower, 'fastethernet') || preg_match('/^fa\d+/i', $nameLower) || preg_match('/^fe\d+/i', $nameLower);
-
-            if ($isFastEth) {
+            if (str_contains($nameLower, 'fastethernet') || preg_match('/^fa/i', $nameLower)) {
                 $isSfp = false;
+            } elseif (
+                str_contains($nameLower, 'tengigabit') || 
+                str_contains($nameLower, 'twentyfive') || 
+                str_contains($nameLower, 'sfp') || 
+                str_contains($nameLower, 'twe') || 
+                preg_match('/^te\d+/i', $nameLower) ||
+                ($typeLower === 'sfp_fiber' && ($portNum > 24 || ($iface->velocidad_mbps ?? 1000) >= 10000))
+            ) {
+                $isSfp = true;
             } else {
-                $isSfp = ($typeLower === 'sfp_fiber' || $typeLower === 'sfp' || $typeLower === 'fiber') || 
-                         str_contains($nameLower, 'tengigabit') || 
-                         str_contains($nameLower, 'twentyfive') || 
-                         str_contains($nameLower, 'sfp') || 
-                         str_contains($nameLower, 'twe') ||
-                         preg_match('/^te\d+/i', $nameLower);
+                $isSfp = false;
             }
 
             if ($isSfp) {
@@ -165,7 +193,7 @@ class DispositivoShowController extends Controller
         $copperPortsList = [];
         $sfpPortsList = [];
 
-        foreach ($interfaces as $iface) {
+        foreach ($physicalInterfaces as $iface) {
             $dMap = $interfacesData[$iface->id];
             $isSfp = $sfpPorts->contains('id', $iface->id);
             $dMap['is_sfp'] = $isSfp;
@@ -176,6 +204,10 @@ class DispositivoShowController extends Controller
                 $copperPortsList[] = $dMap;
             }
         }
+
+        // Ordenamiento natural por número físico de puerto
+        usort($copperPortsList, fn($a, $b) => $a['port_num'] <=> $b['port_num']);
+        usort($sfpPortsList, fn($a, $b) => $a['port_num'] <=> $b['port_num']);
 
         // Mapeo dinámico de hardware fotorrealista para la Ficha Técnica según el modelo real
         $modeloExacto = $chasis->model_name ?? '';
