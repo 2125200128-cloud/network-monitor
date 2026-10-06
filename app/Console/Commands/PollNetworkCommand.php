@@ -32,7 +32,7 @@ class PollNetworkCommand extends Command
         if (!file_exists($pythonBin)) $pythonBin = 'python';
 
         $process = new Process([$pythonBin, '-c', 'import asyncio; from worker.snmp_poller import run_poll_cycle; asyncio.run(run_poll_cycle())'], base_path());
-        $process->setTimeout(30);
+        $process->setTimeout(180);
         $process->run();
 
         if ($process->isSuccessful()) {

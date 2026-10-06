@@ -530,11 +530,7 @@
                 {{-- Current User Session & Logout Card --}}
                 <div class="bg-gradient-to-r from-blue-50/70 to-indigo-50/30 dark:from-[#090b10] dark:to-[#0d1017] rounded-2xl p-4 mb-6 border border-blue-100 dark:border-slate-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm dark:shadow-none">
                     <div class="flex items-center gap-3.5">
-                        @if(auth()->user()->avatar)
-                            <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}" class="w-12 h-12 rounded-full object-cover border-2 border-[#3b5998]/30 shadow-sm flex-shrink-0">
-                        @else
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name ?? 'Admin') }}&background=3b5998&color=fff&size=80" alt="{{ auth()->user()->name }}" class="w-12 h-12 rounded-full border-2 border-[#3b5998]/30 shadow-sm flex-shrink-0">
-                        @endif
+                        <img src="{{ auth()->user()->avatar_url }}" alt="{{ auth()->user()->name }}" class="w-12 h-12 rounded-full object-cover border-2 border-[#3b5998]/30 shadow-sm flex-shrink-0" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name ?? 'Admin') }}&background=3b5998&color=fff&size=80';">
                         <div>
                             <div class="flex items-center gap-2">
                                 <h3 class="text-sm font-extrabold text-gray-900 dark:text-white">
@@ -659,11 +655,7 @@
                             <tr>
                                 <td>
                                     <div class="flex items-center gap-3">
-                                        @if($user->avatar)
-                                            <img src="{{ asset('storage/' . $user->avatar) }}" alt="{{ $user->name }}" class="w-8 h-8 rounded-full flex-shrink-0 object-cover border border-gray-200 dark:border-slate-700">
-                                        @else
-                                            <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background={{ strtolower($user->role) === 'admin' ? '3b5998' : (strtolower($user->role) === 'operador' ? '16a34a' : 'f26419') }}&color=fff&size=64" alt="{{ $user->name }}" class="w-8 h-8 rounded-full flex-shrink-0">
-                                        @endif
+                                        <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-8 h-8 rounded-full flex-shrink-0 object-cover border border-gray-200 dark:border-slate-700" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background={{ strtolower($user->role) === 'admin' ? '3b5998' : (strtolower($user->role) === 'operador' ? '16a34a' : 'f26419') }}&color=fff&size=64';">
                                         <div>
                                             <p class="font-bold text-gray-800 dark:text-white text-sm">
                                                 @if($user->prefijo)<span class="text-[#3b5998] dark:text-blue-400">{{ $user->prefijo }}</span> @endif{{ $user->name }}
@@ -718,7 +710,7 @@
                                     prefijo: @json($user->prefijo ?? ''),
                                     email: @json($user->email),
                                     role: @json($user->role),
-                                    avatar: @json($user->avatar ? asset('storage/' . $user->avatar) : ''),
+                                    avatar: @json($user->avatar_url),
                                     avatarRaw: @json($user->avatar ?? ''),
                                     isSelf: {{ $user->id === auth()->id() ? 'true' : 'false' }},
                                     created: @json($user->created_at ? $user->created_at->format('d/m/Y H:i') : 'N/A'),

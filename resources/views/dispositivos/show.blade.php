@@ -56,9 +56,80 @@
             border-color: #3b4754 !important;
             box-shadow: inset 0 1px 2px rgba(242, 100, 25, 0.2), inset 0 -2px 6px rgba(0, 0, 0, 0.9), 0 12px 30px rgba(0, 0, 0, 0.35) !important;
         }
+        .chassis-phone {
+            background: linear-gradient(180deg, #181d27 0%, #12151e 50%, #0a0d14 100%) !important;
+            border-color: #2563eb !important;
+            box-shadow: inset 0 1px 2px rgba(37, 99, 235, 0.25), inset 0 -2px 6px rgba(0, 0, 0, 0.9), 0 12px 30px rgba(0, 0, 0, 0.35) !important;
+        }
+        .chassis-ap {
+            background: linear-gradient(180deg, #13221b 0%, #0c1813 50%, #060e0a 100%) !important;
+            border-color: #059669 !important;
+            box-shadow: inset 0 1px 2px rgba(16, 185, 129, 0.25), inset 0 -2px 6px rgba(0, 0, 0, 0.9), 0 12px 30px rgba(0, 0, 0, 0.35) !important;
+        }
+        .chassis-server {
+            background: linear-gradient(180deg, #1c1829 0%, #13101e 50%, #0b0813 100%) !important;
+            border-color: #7c3aed !important;
+            box-shadow: inset 0 1px 2px rgba(124, 58, 237, 0.25), inset 0 -2px 6px rgba(0, 0, 0, 0.9), 0 12px 30px rgba(0, 0, 0, 0.35) !important;
+        }
+        .chassis-pc {
+            background: linear-gradient(180deg, #1a202c 0%, #12161f 50%, #0a0d13 100%) !important;
+            border-color: #0891b2 !important;
+            box-shadow: inset 0 1px 2px rgba(6, 182, 212, 0.25), inset 0 -2px 6px rgba(0, 0, 0, 0.9), 0 12px 30px rgba(0, 0, 0, 0.35) !important;
+        }
         .chassis-access {
             background: linear-gradient(180deg, #1e2229 0%, #16191e 50%, #0d1013 100%) !important;
             border-color: #2d333b !important;
+        }
+
+        /* RJ9 Socket for Audio Handset / Headset */
+        .rj9-socket {
+            width: 32px;
+            height: 32px;
+            background: #090b0e;
+            border: 1.5px solid #2d3748;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .rj9-notch {
+            width: 12px;
+            height: 4px;
+            background: #171d26;
+            border: 1px solid #283241;
+            border-radius: 1px;
+            margin-bottom: 2px;
+        }
+        .rj9-pins {
+            display: flex;
+            gap: 1.5px;
+        }
+        .rj9-pin {
+            width: 1.2px;
+            height: 4px;
+            background: #d4af37;
+            border-radius: 0.5px;
+        }
+
+        /* DC Jack Barrel */
+        .dc-jack {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #090b0e;
+            border: 2px solid #374151;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .dc-jack-pin {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #9ca3af;
+            border: 1px solid #4b5563;
         }
 
         /* RJ45 Port Matrix - Pairs in Columns (Odd Top, Even Bottom) */
@@ -315,14 +386,14 @@
     <div class="bg-white dark:bg-[#12161f] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             {{-- Render Oficial de Hardware según el Modelo Real --}}
-            <div class="w-36 sm:w-44 h-24 sm:h-28 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-2 border border-slate-700/60 shadow-lg flex-shrink-0 flex flex-col items-center justify-between relative overflow-hidden group">
+            <div class="w-44 sm:w-52 h-32 sm:h-36 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-2.5 border border-slate-700/60 shadow-lg flex-shrink-0 flex flex-col items-center justify-between relative overflow-hidden group">
                 <div class="absolute inset-0 bg-radial from-blue-500/10 to-transparent pointer-events-none"></div>
                 <div class="w-full flex items-center justify-between px-1.5 pt-0.5">
                     <span class="text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">{{ $deviceHardware['rol'] }}</span>
                     <span class="text-[8px] font-mono font-bold text-emerald-400 uppercase">ONLINE</span>
                 </div>
                 <div class="w-full flex-1 flex items-center justify-center px-1">
-                    <img src="{{ asset($deviceHardware['image']) }}" alt="{{ $chasis->model_name ?? $dispositivo->nombre }}" class="max-h-16 w-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300">
+                    <img src="{{ asset($deviceHardware['image']) }}" alt="{{ $chasis->model_name ?? $dispositivo->nombre }}" class="max-h-22 w-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300">
                 </div>
                 <div class="w-full text-center pb-0.5">
                     <span class="text-[8px] font-mono text-slate-400 truncate block px-1">{{ $deviceHardware['factor_forma'] }}</span>
@@ -394,21 +465,34 @@
         </div>
     </div>
 
-    {{-- ==================== 2. PHYSICAL FACEPLATE (19" RACKMOUNT) ==================== --}}
+    {{-- ==================== 2. PHYSICAL FACEPLATE & HARDWARE MORPHOLOGY ==================== --}}
     @php
-        $rol = $deviceHardware['rol'];
+        $rol = $deviceHardware['rol'] ?? '';
+        $tipo = $deviceHardware['tipo'] ?? 'switch';
         $haystack = strtolower($dispositivo->nombre . ' ' . ($chasis->model_name ?? '') . ' ' . ($dispositivo->modelo ?? ''));
-        $isRouter = ($rol === 'ROUTER / EDGE') || str_contains($haystack, '1841') || str_contains($haystack, 'router') || str_contains($haystack, 'isr');
-        $isNexus = ($rol === 'CORE / MODULAR') && !$isRouter;
-        $isCatalyst = ($rol === 'DISTRIBUTION / CORE') && !$isRouter;
+        $isRouter = ($tipo === 'router') || ($rol === 'ROUTER / EDGE') || str_contains($haystack, '1841') || str_contains($haystack, 'router') || str_contains($haystack, 'isr');
+        $isPhone = ($tipo === 'telefono');
+        $isAP = ($tipo === 'access_point');
+        $isServer = ($tipo === 'servidor');
+        $isPC = ($tipo === 'pc');
+        $isNexus = ($rol === 'CORE / MODULAR') && !$isRouter && !$isPhone && !$isAP && !$isServer && !$isPC;
+        $isCatalyst = ($rol === 'DISTRIBUTION / CORE') && !$isRouter && !$isPhone && !$isAP && !$isServer && !$isPC;
 
         $chassisClass = match(true) {
+            $isPhone => 'chassis-phone',
+            $isAP => 'chassis-ap',
+            $isServer => 'chassis-server',
+            $isPC => 'chassis-pc',
             $isRouter => 'chassis-router',
             $isNexus => 'chassis-nexus',
             $isCatalyst => 'chassis-catalyst',
             default => 'chassis-access'
         };
         $badgeBg = match(true) {
+            $isPhone => 'bg-blue-600',
+            $isAP => 'bg-emerald-600',
+            $isServer => 'bg-purple-600',
+            $isPC => 'bg-cyan-600',
             $isRouter => 'bg-[#f26419]',
             $isNexus => 'bg-indigo-600',
             $isCatalyst => 'bg-[#3b5998]',
@@ -416,22 +500,48 @@
         };
     @endphp
 
-    <div x-data="faceplateComponent()" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+    <div x-data="faceplateComponent()" class="bg-white dark:bg-[#12161f] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800">
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2.5">
                 <div class="px-3 py-1.5 rounded-lg {{ $badgeBg }} flex items-center justify-center text-white font-black text-xs shadow-sm font-mono tracking-wider">
-                    {{ $isRouter ? 'ROUTER 1U' : $deviceHardware['factor_forma'] }}
+                    @if($isPhone)
+                        TELÉFONO VOIP
+                    @elseif($isAP)
+                        ACCESS POINT WI-FI 6
+                    @elseif($isServer)
+                        SERVIDOR DEDICADO
+                    @elseif($isPC)
+                        PC CLIENT
+                    @elseif($isRouter)
+                        ROUTER 1U
+                    @else
+                        {{ $deviceHardware['factor_forma'] }}
+                    @endif
                 </div>
                 <div>
-                    <h2 class="text-base font-extrabold text-gray-900 leading-tight">Panel Frontal Físico (Carrier-Grade Faceplate)</h2>
-                    <p class="text-xs text-gray-500 font-medium">
-                        {{ $chasis->model_name ?? $dispositivo->nombre }} · <span x-text="copperPorts.length"></span> Puertos de Cobre RJ45 / <span x-text="sfpPorts.length"></span> Puertos SFP Ópticos (<span x-text="interfaces.length"></span> Interfaces Totales Gestionadas) · Haz clic en cualquier puerto para abrir la telemetría.
+                    <h2 class="text-base font-extrabold text-gray-900 dark:text-white leading-tight">
+                        @if($isPhone)
+                            Panel Trasero de Conectividad & Puertos (VoIP Faceplate)
+                        @elseif($isAP)
+                            Panel de Enlace de Red & Radios RF (Wi-Fi 6 Faceplate)
+                        @elseif($isServer)
+                            Panel Posterior de Interfaces & Gestión (Server Faceplate)
+                        @elseif($isPC)
+                            Panel Posterior de E/S & Red (Workstation Faceplate)
+                        @elseif($isRouter)
+                            Panel Frontal Físico (Carrier-Grade Router Faceplate)
+                        @else
+                            Panel Frontal Físico (Carrier-Grade Switch Faceplate)
+                        @endif
+                    </h2>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 font-medium">
+                        {{ $chasis->model_name ?? $dispositivo->nombre }} · <span x-text="copperPorts.length"></span> Puertos de Red / <span x-text="sfpPorts.length"></span> Puertos SFP (<span x-text="interfaces.length"></span> Interfaces Totales) · Haz clic en cualquier puerto para abrir la telemetría y diagnósticos.
                     </p>
                 </div>
             </div>
 
             {{-- Faceplate Legend --}}
-            <div class="hidden md:flex items-center gap-4 text-xs font-semibold text-gray-500 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200">
+            <div class="hidden md:flex items-center gap-4 text-xs font-semibold text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-slate-900/60 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-800">
                 <div class="flex items-center gap-1.5">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-sm"></span>
                     <span>Link Up</span>
@@ -452,15 +562,81 @@
         </div>
 
         {{-- Physical Faceplate Chassis Container --}}
-        <div class="faceplate-chassis {{ $chassisClass }} flex items-center justify-between gap-2 overflow-x-auto custom-scrollbar">
-            {{-- Left Rack Ear --}}
+        <div class="faceplate-chassis {{ $chassisClass }} flex items-center justify-between gap-3 overflow-x-auto custom-scrollbar">
+            {{-- Left Rack Ear / Bezel Ear --}}
             <div class="rack-ear">
                 <div class="rack-screw"></div>
                 <div class="rack-screw"></div>
             </div>
 
             {{-- Brand Logo & Status Panel Customized to Device --}}
-            @if($isNexus)
+            @if($isPhone)
+                <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-blue-900/40 pr-4 flex-shrink-0">
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-sm bg-blue-400 shadow-[0_0_8px_#3b82f6]"></span>
+                            <span class="text-xs font-black text-blue-200 tracking-wider">CISCO VOIP</span>
+                        </div>
+                        <p class="text-[9px] font-mono text-blue-300 uppercase tracking-tight mt-0.5 truncate max-w-[125px]">{{ $deviceHardware['clean_model'] ?? 'IP PHONE' }}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-x-2 gap-y-1">
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full {{ $dispositivo->estado === 'online' ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500' }} shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">SIP</span></div>
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full {{ $dispositivo->estado === 'online' ? 'bg-amber-400' : 'bg-gray-500' }} shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">PoE</span></div>
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">DSP</span></div>
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">QoS</span></div>
+                    </div>
+                    <div class="text-[8px] text-blue-400 font-mono">VLAN 100 • 802.3af</div>
+                </div>
+            @elseif($isAP)
+                <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-emerald-900/40 pr-4 flex-shrink-0">
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-sm bg-emerald-400 shadow-[0_0_8px_#10b981]"></span>
+                            <span class="text-xs font-black text-emerald-200 tracking-wider">CISCO WI-FI 6</span>
+                        </div>
+                        <p class="text-[9px] font-mono text-emerald-300 uppercase tracking-tight mt-0.5 truncate max-w-[125px]">{{ $deviceHardware['clean_model'] ?? 'CATALYST AP' }}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-x-2 gap-y-1">
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm animate-pulse"></span><span class="text-[8px] font-mono text-slate-400">2.4G</span></div>
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm animate-pulse"></span><span class="text-[8px] font-mono text-slate-400">5.0G</span></div>
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">PoE+</span></div>
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">WLC</span></div>
+                    </div>
+                    <div class="text-[8px] text-emerald-400 font-mono">mGig 2.5G • 802.11ax</div>
+                </div>
+            @elseif($isServer)
+                <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-purple-900/40 pr-4 flex-shrink-0">
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-sm bg-purple-400 shadow-[0_0_8px_#8b5cf6]"></span>
+                            <span class="text-xs font-black text-purple-200 tracking-wider">SERVER RACK</span>
+                        </div>
+                        <p class="text-[9px] font-mono text-purple-300 uppercase tracking-tight mt-0.5 truncate max-w-[125px]">{{ $chasis->model_name ?? 'ENTERPRISE 2U' }}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-x-2 gap-y-1">
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm animate-pulse"></span><span class="text-[8px] font-mono text-slate-400">PWR</span></div>
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm animate-pulse"></span><span class="text-[8px] font-mono text-slate-400">DISK</span></div>
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">UID</span></div>
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">BMC</span></div>
+                    </div>
+                    <div class="text-[8px] text-purple-400 font-mono">iDRAC/iLO • 2U RACK</div>
+                </div>
+            @elseif($isPC)
+                <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-cyan-900/40 pr-4 flex-shrink-0">
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-sm bg-cyan-400 shadow-[0_0_8px_#06b6d4]"></span>
+                            <span class="text-xs font-black text-cyan-200 tracking-wider">WORKSTATION</span>
+                        </div>
+                        <p class="text-[9px] font-mono text-cyan-300 uppercase tracking-tight mt-0.5 truncate max-w-[125px]">{{ $dispositivo->nombre }}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-x-2 gap-y-1">
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm animate-pulse"></span><span class="text-[8px] font-mono text-slate-400">PWR</span></div>
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">NIC</span></div>
+                    </div>
+                    <div class="text-[8px] text-cyan-400 font-mono">1000Base-T • PC I/O</div>
+                </div>
+            @elseif($isNexus)
                 <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-cyan-900/40 pr-4 flex-shrink-0">
                     <div>
                         <div class="flex items-center gap-1.5">
@@ -530,16 +706,248 @@
                 </div>
             @endif
 
-            {{-- CENTER: DYNAMIC HARDWARE LAYOUT --}}
+            {{-- ==================== CENTER: DYNAMIC HARDWARE LAYOUT ==================== --}}
+
+            {{-- 1. MORFOLOGÍA TELÉFONO IP (CISCO UNIFIED VOIP) --}}
+            <template x-if="isPhone">
+                <div class="flex-1 flex items-center justify-around px-4 gap-4">
+                    {{-- Puertos Ethernet del Teléfono (Switch Interno de 2 Puertos) --}}
+                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-blue-900/40 shadow-inner flex flex-col items-center">
+                        <span class="text-[8px] font-mono font-bold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                            SWITCH ETHERNET INTEGRADO (VOIP & DATA)
+                        </span>
+                        <div class="flex items-center gap-6">
+                            <template x-for="(interfaz, index) in interfaces" :key="index">
+                                <div class="port-pair-column">
+                                    <span class="port-num-label text-blue-300" x-text="interfaz.short_name"></span>
+                                    <div class="rj45-socket port-element" 
+                                         :id="'port-btn-' + interfaz.id"
+                                         :class="{ 'active-selected': selectedPortId === interfaz.id }"
+                                         @click="select(interfaz.id)" 
+                                         :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'down').toUpperCase()">
+                                        <div class="led-indicator led-top-left" :class="{
+                                            'led-link-err': interfaz.is_errdisabled,
+                                            'led-link-up': !interfaz.is_errdisabled && interfaz.oper_status === 'up',
+                                            'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status !== 'up'
+                                        }"></div>
+                                        <template x-if="interfaz.is_poe">
+                                            <div class="led-indicator led-top-right led-poe-active"></div>
+                                        </template>
+                                        <div class="rj45-clip-notch"></div>
+                                        <div class="rj45-pins">
+                                            <div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div>
+                                            <div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[8px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status === 'up' ? (interfaz.is_poe ? 'PoE In' : 'PC Link') : 'Down'"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- Conectores de Audio RJ-9 (Handset & Headset) --}}
+                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-slate-800 shadow-inner hidden sm:flex flex-col items-center">
+                        <span class="text-[8px] font-mono font-bold text-slate-400 uppercase tracking-wider mb-2">PUERTOS DE AUDIO (RJ-9)</span>
+                        <div class="flex items-center gap-4">
+                            <div class="port-pair-column" title="Conector RJ-9 para Auricular Telefónico (Handset)">
+                                <span class="port-num-label text-slate-400">AURICULAR</span>
+                                <div class="rj9-socket">
+                                    <div class="rj9-notch"></div>
+                                    <div class="rj9-pins">
+                                        <div class="rj9-pin"></div><div class="rj9-pin"></div><div class="rj9-pin"></div><div class="rj9-pin"></div>
+                                    </div>
+                                </div>
+                                <span class="text-[7px] font-mono text-slate-500 mt-1 uppercase">HANDSET</span>
+                            </div>
+
+                            <div class="port-pair-column" title="Conector RJ-9 para Diadema / Casco Telefónico (Headset)">
+                                <span class="port-num-label text-slate-400">DIADEMA</span>
+                                <div class="rj9-socket">
+                                    <div class="rj9-notch"></div>
+                                    <div class="rj9-pins">
+                                        <div class="rj9-pin"></div><div class="rj9-pin"></div><div class="rj9-pin"></div><div class="rj9-pin"></div>
+                                    </div>
+                                </div>
+                                <span class="text-[7px] font-mono text-slate-500 mt-1 uppercase">HEADSET</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Entrada de Alimentación DC Auxiliar --}}
+                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-slate-800 shadow-inner hidden md:flex flex-col items-center">
+                        <span class="text-[8px] font-mono font-bold text-amber-400/90 uppercase tracking-wider mb-2">ALIMENTACIÓN DC</span>
+                        <div class="port-pair-column" title="Jack de Entrada de Energía Auxiliar 48V DC">
+                            <span class="port-num-label text-amber-300">AUX PWR</span>
+                            <div class="dc-jack">
+                                <div class="dc-jack-pin"></div>
+                            </div>
+                            <span class="text-[7px] font-mono text-amber-400/80 mt-1 uppercase">48V DC</span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            {{-- 2. MORFOLOGÍA ACCESS POINT WI-FI 6 --}}
+            <template x-if="isAP">
+                <div class="flex-1 flex items-center justify-around px-4 gap-4">
+                    {{-- Puertos Físicos: mGig 2.5G PoE+ Uplink & Consola --}}
+                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-emerald-900/40 shadow-inner flex flex-col items-center">
+                        <span class="text-[8px] font-mono font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            UPLINK MULTIGIGABIT & GESTIÓN
+                        </span>
+                        <div class="flex items-center gap-5">
+                            <template x-for="(interfaz, index) in interfaces" :key="index">
+                                <div class="port-pair-column">
+                                    <span class="port-num-label" :class="interfaz.is_poe ? 'text-emerald-300' : 'text-sky-300'" x-text="interfaz.short_name"></span>
+                                    <div class="rj45-socket port-element" 
+                                         :id="'port-btn-' + interfaz.id"
+                                         :class="{ 'active-selected': selectedPortId === interfaz.id }"
+                                         @click="select(interfaz.id)" 
+                                         :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'down').toUpperCase()">
+                                        <div class="led-indicator led-top-left" :class="{
+                                            'led-link-err': interfaz.is_errdisabled,
+                                            'led-link-up': !interfaz.is_errdisabled && interfaz.oper_status === 'up',
+                                            'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status !== 'up'
+                                        }"></div>
+                                        <template x-if="interfaz.is_poe">
+                                            <div class="led-indicator led-top-right led-poe-active"></div>
+                                        </template>
+                                        <div class="rj45-clip-notch"></div>
+                                        <div class="rj45-pins">
+                                            <div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div>
+                                            <div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[8px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.is_poe ? 'PoE+ 30W' : 'CLI 9600'"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- Radios Wi-Fi 6 (2.4 GHz & 5.0 GHz MU-MIMO) --}}
+                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-slate-800 shadow-inner flex items-center gap-3">
+                        <div class="flex flex-col items-center bg-slate-900/80 px-3 py-2 rounded-lg border border-slate-700/50">
+                            <span class="text-[8px] font-mono font-bold text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                RADIO 0 (2.4 GHz)
+                            </span>
+                            <span class="text-[11px] font-mono font-black text-white">802.11ax 4x4</span>
+                            <span class="text-[8px] font-mono text-slate-400 mt-0.5">CH 6 (20 MHz) · 18 dBm</span>
+                        </div>
+
+                        <div class="flex flex-col items-center bg-slate-900/80 px-3 py-2 rounded-lg border border-slate-700/50">
+                            <span class="text-[8px] font-mono font-bold text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                RADIO 1 (5.0 GHz)
+                            </span>
+                            <span class="text-[11px] font-mono font-black text-white">802.11ax 4x4</span>
+                            <span class="text-[8px] font-mono text-slate-400 mt-0.5">CH 36 (80 MHz) · 21 dBm</span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            {{-- 3. MORFOLOGÍA SERVIDOR DEDICADO --}}
+            <template x-if="isServer">
+                <div class="flex-1 flex items-center justify-around px-4 gap-4">
+                    {{-- Tarjetas de Red (NICs Gigabit) --}}
+                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-purple-900/40 shadow-inner flex flex-col items-center">
+                        <span class="text-[8px] font-mono font-bold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
+                            INTERFACES DE RED (NIC PRODUCTION & OOB MGMT)
+                        </span>
+                        <div class="flex items-center gap-4">
+                            <template x-for="(interfaz, index) in interfaces" :key="index">
+                                <div class="port-pair-column">
+                                    <span class="port-num-label" :class="interfaz.short_name.includes('MGMT') ? 'text-amber-300' : 'text-purple-300'" x-text="interfaz.short_name"></span>
+                                    <div class="rj45-socket port-element" 
+                                         :id="'port-btn-' + interfaz.id"
+                                         :class="{ 'active-selected': selectedPortId === interfaz.id }"
+                                         @click="select(interfaz.id)" 
+                                         :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'down').toUpperCase()">
+                                        <div class="led-indicator led-top-left" :class="{
+                                            'led-link-err': interfaz.is_errdisabled,
+                                            'led-link-up': !interfaz.is_errdisabled && interfaz.oper_status === 'up',
+                                            'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status !== 'up'
+                                        }"></div>
+                                        <div class="rj45-clip-notch"></div>
+                                        <div class="rj45-pins">
+                                            <div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div>
+                                            <div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[8px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- Bahías de Almacenamiento SAS/NVMe Hot-Plug --}}
+                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-slate-800 shadow-inner hidden md:flex items-center gap-2">
+                        <div class="w-16 h-16 bg-gradient-to-b from-slate-800 to-slate-900 rounded border border-slate-700 flex flex-col justify-between p-1">
+                            <div class="flex items-center justify-between">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                <span class="text-[7px] font-mono text-slate-400">BAY 0</span>
+                            </div>
+                            <span class="text-[7px] font-mono text-slate-300 text-center font-bold">SAS 1.9TB</span>
+                            <div class="w-full h-1 bg-slate-700 rounded-xs"></div>
+                        </div>
+
+                        <div class="w-16 h-16 bg-gradient-to-b from-slate-800 to-slate-900 rounded border border-slate-700 flex flex-col justify-between p-1">
+                            <div class="flex items-center justify-between">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                <span class="text-[7px] font-mono text-slate-400">BAY 1</span>
+                            </div>
+                            <span class="text-[7px] font-mono text-slate-300 text-center font-bold">SAS 1.9TB</span>
+                            <div class="w-full h-1 bg-slate-700 rounded-xs"></div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            {{-- 4. MORFOLOGÍA PC CLIENT --}}
+            <template x-if="isPC">
+                <div class="flex-1 flex items-center justify-around px-4 gap-4">
+                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-cyan-900/40 shadow-inner flex flex-col items-center">
+                        <span class="text-[8px] font-mono font-bold text-cyan-400 uppercase tracking-wider mb-2">PLACA BASE I/O · PUERTO GIGABIT ETHERNET</span>
+                        <div class="flex items-center gap-4">
+                            <template x-for="(interfaz, index) in interfaces" :key="index">
+                                <div class="port-pair-column">
+                                    <span class="port-num-label text-cyan-300" x-text="interfaz.short_name"></span>
+                                    <div class="rj45-socket port-element" 
+                                         :id="'port-btn-' + interfaz.id"
+                                         :class="{ 'active-selected': selectedPortId === interfaz.id }"
+                                         @click="select(interfaz.id)" 
+                                         :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'down').toUpperCase()">
+                                        <div class="led-indicator led-top-left" :class="{
+                                            'led-link-err': interfaz.is_errdisabled,
+                                            'led-link-up': !interfaz.is_errdisabled && interfaz.oper_status === 'up',
+                                            'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status !== 'up'
+                                        }"></div>
+                                        <div class="rj45-clip-notch"></div>
+                                        <div class="rj45-pins">
+                                            <div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div>
+                                            <div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[8px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            {{-- 5. MORFOLOGÍA ROUTER WAN/LAN (CISCO 1841 / ISR 4400) --}}
             <template x-if="isRouter">
-                {{-- ==================== MORFOLOGÍA FÍSICA ROUTER (CISCO 1841 / ISR 4400) ==================== --}}
                 <div class="flex-1 flex items-center justify-around px-4 gap-4">
                     {{-- Puertos Físicos Dinámicos desde la Base de Datos --}}
                     <div class="bg-[#0a0d13] p-3 rounded-xl border border-slate-700/60 shadow-inner flex flex-col items-center">
                         <span class="text-[8px] font-mono font-bold text-orange-400 uppercase tracking-wider mb-2">PUERTOS DE RED (ROUTER WAN/LAN)</span>
                         <div class="flex items-center gap-3">
                             <template x-for="(interfaz, index) in interfaces" :key="index">
-                                <!-- Dibuja el puerto dinámicamente según sea tipo cobre (RJ45) o SFP -->
                                 <div class="port-pair-column">
                                     <span class="port-num-label" :class="interfaz.is_sfp ? 'text-blue-300' : 'text-orange-300'" x-text="interfaz.short_name"></span>
 
@@ -660,8 +1068,8 @@
                 </div>
             </template>
 
-            <template x-if="!isRouter">
-                {{-- ==================== MORFOLOGÍA SWITCH RACK (CATALYST / SG200 / NEXUS) ==================== --}}
+            {{-- 6. MORFOLOGÍA SWITCH RACK (CATALYST / SG200 / NEXUS) --}}
+            <template x-if="!isRouter && !isPhone && !isAP && !isServer && !isPC">
                 <div class="flex-1 flex items-center justify-center px-2">
                     <template x-if="copperPorts.length > 0">
                         <div class="port-matrix">
@@ -736,7 +1144,7 @@
             </template>
 
             {{-- SFP Uplinks for Switch --}}
-            <template x-if="!isRouter && sfpPorts.length > 0">
+            <template x-if="!isRouter && !isPhone && !isAP && !isServer && !isPC && sfpPorts.length > 0">
                 <div class="flex items-center">
                     {{-- Metallic Bezel Divider --}}
                     <div class="w-[2px] bg-gradient-to-b from-transparent via-gray-600 to-transparent my-1"></div>
@@ -800,13 +1208,84 @@
         </div>
     </div>
 
+    {{-- ==================== 2.1 PC CONECTADA AL PUERTO PC (PASS-THROUGH) ==================== --}}
+    @if($isPhone && !empty($attachedPc))
+    <div class="bg-gradient-to-br from-indigo-50/70 via-white to-blue-50/50 dark:from-slate-900/90 dark:via-[#12161f] dark:to-indigo-950/30 rounded-2xl p-6 shadow-sm border border-indigo-100 dark:border-indigo-900/50">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-indigo-100/80 dark:border-slate-800">
+            <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-700 text-white flex items-center justify-center shadow-md shadow-indigo-600/20 flex-shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-lg font-black text-gray-900 dark:text-white">Dispositivo Conectado al Puerto PC (Pass-Through)</h3>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider {{ ($attachedPc['has_attached_pc'] ?? false) ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300' }}">
+                            {{ ($attachedPc['has_attached_pc'] ?? false) ? 'ENLACE ACTIVO (PC CONECTADA)' : 'PUERTO EN STANDBY' }}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 font-medium mt-0.5">Identificación de host en puerto de datos secundario vía Tabla CAM del Switch & Detección ARP</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 text-xs font-mono">
+                <span class="text-gray-400">Switch Uplink:</span>
+                <span class="font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 px-2 py-1 rounded border border-gray-200 dark:border-slate-700">{{ $attachedPc['switch_name'] ?? 'Switch Acceso' }} ({{ $attachedPc['switch_port'] ?? 'P1' }})</span>
+            </div>
+        </div>
+
+        @if($attachedPc['has_attached_pc'] ?? false)
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
+            <div class="bg-white dark:bg-slate-900/80 p-4 rounded-xl border border-indigo-50 dark:border-slate-800 shadow-xs">
+                <span class="text-[10px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider block">Nombre de Equipo (Host)</span>
+                <div class="flex items-center gap-1.5 mt-1">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-sm font-black text-slate-800 dark:text-white">{{ $attachedPc['hostname'] ?? 'PC-HOST' }}</span>
+                </div>
+                <span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold block mt-0.5">{{ $attachedPc['vendor'] ?? 'Fabricante PC' }}</span>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900/80 p-4 rounded-xl border border-indigo-50 dark:border-slate-800 shadow-xs">
+                <span class="text-[10px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider block">Dirección IP de Datos</span>
+                <div class="flex items-center gap-1.5 mt-1">
+                    <span class="text-sm font-mono font-black text-blue-600 dark:text-blue-400">{{ $attachedPc['ip'] ?? '10.204.x.x' }}</span>
+                </div>
+                <span class="text-[10px] text-gray-400 block mt-0.5">{{ $attachedPc['vlan'] ?? 'VLAN Datos (Untagged)' }}</span>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900/80 p-4 rounded-xl border border-indigo-50 dark:border-slate-800 shadow-xs">
+                <span class="text-[10px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider block">Dirección MAC (CAM Table)</span>
+                <div class="flex items-center gap-1.5 mt-1">
+                    <span class="text-sm font-mono font-black text-slate-800 dark:text-slate-200">{{ $attachedPc['mac'] ?? 'XX:XX:XX:XX:XX:XX' }}</span>
+                </div>
+                <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block mt-0.5">Identificada en Switch CAM</span>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900/80 p-4 rounded-xl border border-indigo-50 dark:border-slate-800 shadow-xs">
+                <span class="text-[10px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider block">Velocidad / Negociación</span>
+                <div class="flex items-center gap-1.5 mt-1">
+                    <span class="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">{{ $attachedPc['speed'] ?? '1.0 Gbps (Full)' }}</span>
+                </div>
+                <span class="text-[10px] text-gray-400 block mt-0.5">Puerto PC 10/100/1000BASE-T</span>
+            </div>
+        </div>
+        @else
+        <div class="flex items-center gap-3 p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40 text-xs text-amber-800 dark:text-amber-300 mt-4 font-medium">
+            <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>{{ $attachedPc['message'] ?? 'Puerto PC disponible (Sin computadora transmitiendo tráfico actualmente en el puerto secundario).' }}</span>
+        </div>
+        @endif
+    </div>
+    @endif
+
     {{-- ==================== 3. LOWER TAB SYSTEM ==================== --}}
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="bg-white dark:bg-[#12161f] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
         {{-- Tabs Navigation Bar --}}
-        <div class="flex items-center border-b border-gray-200 px-4 bg-gray-50/70 overflow-x-auto">
+        <div class="flex items-center border-b border-gray-200 dark:border-slate-800 px-4 bg-gray-50/70 dark:bg-slate-900/60 overflow-x-auto">
             <button class="nav-tab-btn active" data-tab="tab-hardware">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
-                Tab 1: Chasis y Hardware
+                Tab 1: Ficha Técnica & Hardware
             </button>
             <button class="nav-tab-btn" data-tab="tab-addressing">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -822,67 +1301,77 @@
             </button>
         </div>
 
-        {{-- ==================== TAB 1: Chasis y Hardware ==================== --}}
+        {{-- ==================== TAB 1: Ficha Técnica & Hardware ==================== --}}
         <div class="tab-pane active p-6" id="tab-hardware">
 
-            {{-- Ficha Técnica Oficial del Dispositivo / Hardware Architecture Banner --}}
-            <div class="bg-gradient-to-r from-slate-900 via-[#0e131d] to-slate-900 border border-slate-800 rounded-2xl p-5 mb-5 shadow-md relative overflow-hidden">
+            {{-- Ficha Técnica Oficial del Dispositivo / Official Datasheet & Architectural Specs --}}
+            <div class="bg-gradient-to-r from-slate-900 via-[#0e131d] to-slate-900 border border-slate-800 rounded-2xl p-6 mb-6 shadow-md relative overflow-hidden">
                 <div class="absolute -right-16 -top-16 w-56 h-56 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
-                <div class="flex flex-col gap-4">
-                    {{-- Header Row: Model & Architectural Badges --}}
-                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                <div class="flex flex-col gap-5">
+                    {{-- Header Row: Manufacturer, Model & Architecture Badges --}}
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-2.5 h-2.5 rounded-full bg-[#f26419] shadow-[0_0_8px_#f26419]"></div>
+                            <div class="w-3 h-3 rounded-full bg-[#f26419] shadow-[0_0_10px_#f26419]"></div>
                             <div>
-                                <span class="text-[9px] font-mono font-black text-blue-400 uppercase tracking-widest block">ARQUITECTURA DE CHASSIS & CONTROL</span>
-                                <h3 class="text-lg font-black text-white leading-tight mt-0.5">{{ $chasis->model_name ?? $dispositivo->nombre }}</h3>
+                                <span class="text-[9px] font-mono font-black text-blue-400 uppercase tracking-widest block">FICHA TÉCNICA OFICIAL DEL FABRICANTE</span>
+                                <h3 class="text-xl font-black text-white leading-tight mt-0.5">{{ $chasis->model_name ?? $dispositivo->nombre }}</h3>
                             </div>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
-                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-blue-950/80 text-blue-300 border border-blue-800/50 uppercase font-mono">
+                            <span class="px-3 py-1 rounded-lg text-xs font-bold bg-blue-950/80 text-blue-300 border border-blue-800/50 uppercase font-mono">
                                 {{ $deviceHardware['tipo_equipo'] }}
                             </span>
-                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700/60 uppercase font-mono">
+                            <span class="px-3 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700/60 uppercase font-mono">
                                 {{ $deviceHardware['factor_forma'] }}
                             </span>
-                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800/50 uppercase font-mono flex items-center gap-1.5">
+                            <span class="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800/50 uppercase font-mono flex items-center gap-1.5">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                                 {{ $deviceHardware['rol'] }}
                             </span>
                         </div>
                     </div>
 
-                    {{-- Complementary Control & Operational Specifications --}}
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                        <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/40 flex flex-col justify-between">
-                            <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Matriz de Conectividad</span>
-                            <div class="mt-1">
-                                <span class="font-extrabold text-slate-100 text-sm font-mono block">{{ $copperPorts->count() }} RJ45 / {{ $sfpPorts->count() }} SFP</span>
-                                <span class="text-[10px] text-blue-400 font-mono mt-0.5 block">{{ $totalPorts }} Interfaces Totales</span>
+                    {{-- Main Specs Grid & Device Render Asset --}}
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+                        {{-- Left Column: High-Res Render Asset & Quick Facts --}}
+                        <div class="lg:col-span-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex flex-col items-center justify-center text-center">
+                            <div class="w-full h-48 flex items-center justify-center p-2 mb-3 relative group">
+                                <div class="absolute inset-0 bg-radial from-blue-500/10 to-transparent pointer-events-none"></div>
+                                <img src="{{ asset($deviceHardware['image']) }}" alt="{{ $dispositivo->nombre }}" class="max-h-40 max-w-full object-contain drop-shadow-xl group-hover:scale-105 transition-transform duration-300">
+                            </div>
+                            <h4 class="text-sm font-extrabold text-white">{{ $deviceHardware['clean_model'] ?? $dispositivo->nombre }}</h4>
+                            <p class="text-xs text-slate-400 mt-0.5">{{ $deviceHardware['tipo_equipo'] }}</p>
+                            <div class="flex items-center gap-2 mt-3 pt-3 border-t border-slate-800/80 w-full justify-center text-[10px] font-mono text-slate-400">
+                                <span>IP: <strong class="text-slate-200">{{ $dispositivo->ip }}</strong></span>
+                                <span>•</span>
+                                <span>MAC: <strong class="text-slate-200">{{ $dispositivo->mac_address ?: 'N/A' }}</strong></span>
                             </div>
                         </div>
 
-                        <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/40 flex flex-col justify-between">
-                            <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Modularidad & Bahías</span>
-                            <div class="mt-1">
-                                <span class="font-extrabold text-slate-100 text-xs mt-0.5 block">{{ $isRouter ? '2x Ranuras WIC/HWIC' : 'Stacking / Uplink Modular' }}</span>
-                                <span class="text-[10px] text-orange-400 font-mono mt-0.5 block">{{ $isRouter ? 'Slot 0 (WAN) · Slot 1 (Opt)' : 'SFP Uplinks Flexibles' }}</span>
+                        {{-- Right Column: Full Specifications Matrix --}}
+                        <div class="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            @foreach($deviceHardware['specs'] as $specKey => $specVal)
+                            <div class="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/40 flex flex-col justify-between hover:border-slate-600 transition-colors">
+                                <span class="text-[10px] text-blue-400 uppercase font-bold tracking-wider block font-mono">{{ $specKey }}</span>
+                                <span class="font-bold text-slate-100 text-xs mt-1 block leading-snug">{{ $specVal }}</span>
                             </div>
-                        </div>
-
-                        <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/40 flex flex-col justify-between">
-                            <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Comunidad SNMP (Sondeo)</span>
-                            <div class="mt-1">
-                                <code class="font-mono font-bold text-amber-300 text-xs block truncate bg-slate-900/60 px-2 py-0.5 rounded border border-amber-500/20 w-fit">{{ $dispositivo->comunidad_snmp ?? 'public' }} (v2c)</code>
-                                <span class="text-[10px] text-emerald-400 font-mono mt-0.5 block">Poller & Telemetría OK</span>
+                            @endforeach
+                            
+                            {{-- Complementary Operational Specs --}}
+                            <div class="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/40 flex flex-col justify-between hover:border-slate-600 transition-colors">
+                                <span class="text-[10px] text-amber-400 uppercase font-bold tracking-wider block font-mono">Comunidad SNMP (Sondeo)</span>
+                                <div class="flex items-center justify-between mt-1">
+                                    <code class="font-mono font-bold text-amber-300 text-xs bg-slate-900/80 px-2 py-0.5 rounded border border-amber-500/20">{{ $dispositivo->comunidad_snmp ?? 'public' }} (v2c)</code>
+                                    <span class="text-[10px] text-emerald-400 font-mono">Poller Activo</span>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/40 flex flex-col justify-between">
-                            <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Gestión Local & SSH</span>
-                            <div class="mt-1">
-                                <span class="font-mono font-bold text-sky-300 text-xs block">Puerto SSH: {{ $dispositivo->ssh_port ?? 22 }}</span>
-                                <span class="text-[10px] text-slate-400 font-mono mt-0.5 block">Consola RJ-45 (9600-8N1)</span>
+                            <div class="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/40 flex flex-col justify-between hover:border-slate-600 transition-colors">
+                                <span class="text-[10px] text-sky-400 uppercase font-bold tracking-wider block font-mono">Gestión Local & Acceso Seguro</span>
+                                <div class="flex items-center justify-between mt-1">
+                                    <span class="font-mono font-bold text-sky-200 text-xs">SSH: Puerto {{ $dispositivo->ssh_port ?? 22 }}</span>
+                                    <span class="text-[10px] text-slate-400 font-mono">Consola Local</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1770,6 +2259,10 @@
             copperPorts: @json($copperPortsList),
             sfpPorts: @json($sfpPortsList),
             isRouter: {{ $isRouter ? 'true' : 'false' }},
+            isPhone: {{ $isPhone ? 'true' : 'false' }},
+            isAP: {{ $isAP ? 'true' : 'false' }},
+            isServer: {{ $isServer ? 'true' : 'false' }},
+            isPC: {{ $isPC ? 'true' : 'false' }},
             selectedPortId: null,
             select(id) {
                 this.selectedPortId = id;

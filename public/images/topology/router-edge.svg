@@ -1,103 +1,51 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 52" width="260" height="52">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
   <defs>
-    <linearGradient id="isrBody" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#475569"/>
-      <stop offset="25%" stop-color="#334155"/>
-      <stop offset="100%" stop-color="#1e293b"/>
+    <!-- Vibrant Cisco Yellow/Gold Radial Gradient -->
+    <radialGradient id="ciscoYellowGrad" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="25%" stop-color="#fde047"/>
+      <stop offset="55%" stop-color="#eab308"/>
+      <stop offset="85%" stop-color="#ca8a04"/>
+      <stop offset="100%" stop-color="#a16207"/>
+    </radialGradient>
+    
+    <!-- Outer Golden Rim Gradient -->
+    <linearGradient id="goldRimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef9c3" stop-opacity="0.95"/>
+      <stop offset="50%" stop-color="#facc15" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#854d0e" stop-opacity="0.95"/>
     </linearGradient>
-    <linearGradient id="nimSlot" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#1e293b"/>
-      <stop offset="100%" stop-color="#0f172a"/>
-    </linearGradient>
-    <linearGradient id="rackEar" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#94a3b8"/>
-      <stop offset="50%" stop-color="#cbd5e1"/>
-      <stop offset="100%" stop-color="#64748b"/>
-    </linearGradient>
-    <filter id="chassisShadow" x="-5%" y="-10%" width="110%" height="130%">
-      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.35"/>
+
+    <!-- Deep Drop Shadow & Ambient Glow -->
+    <filter id="yellowRouterShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.4"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#ca8a04" flood-opacity="0.3"/>
     </filter>
   </defs>
 
-  <g filter="url(#chassisShadow)">
-    <!-- Left Rack Ear -->
-    <path d="M 4 8 L 16 8 L 16 44 L 4 44 Z" fill="url(#rackEar)" stroke="#475569" stroke-width="0.75"/>
-    <circle cx="10" cy="14" r="2.5" fill="#334155" stroke="#1e293b" stroke-width="0.5"/>
-    <circle cx="10" cy="38" r="2.5" fill="#334155" stroke="#1e293b" stroke-width="0.5"/>
+  <g filter="url(#yellowRouterShadow)">
+    <!-- Base Outer Circle (Cisco Disc Chassis) -->
+    <circle cx="60" cy="60" r="52" fill="url(#ciscoYellowGrad)" stroke="url(#goldRimGrad)" stroke-width="3.5"/>
+    
+    <!-- Inner Accent Ring -->
+    <circle cx="60" cy="60" r="44" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.4"/>
 
-    <!-- Right Rack Ear -->
-    <path d="M 244 8 L 256 8 L 256 44 L 244 44 Z" fill="url(#rackEar)" stroke="#475569" stroke-width="0.75"/>
-    <circle cx="250" cy="14" r="2.5" fill="#334155" stroke="#1e293b" stroke-width="0.5"/>
-    <circle cx="250" cy="38" r="2.5" fill="#334155" stroke="#1e293b" stroke-width="0.5"/>
-
-    <!-- 1U/2U Router Chassis -->
-    <rect x="16" y="8" width="228" height="36" rx="2" fill="url(#isrBody)" stroke="#475569" stroke-width="1"/>
-    <line x1="16" y1="9" x2="244" y2="9" stroke="#94a3b8" stroke-width="1"/>
-
-    <!-- Brand / Model Silk -->
-    <rect x="22" y="13" width="9" height="6" rx="1" fill="#0284c7" opacity="0.9"/>
-    <text x="34" y="18" font-family="ui-monospace, monospace" font-size="5" font-weight="900" fill="#f8fafc" letter-spacing="0.5">CISCO</text>
-    <text x="34" y="24" font-family="ui-monospace, monospace" font-size="4" font-weight="700" fill="#94a3b8">ISR 4400 SERIES</text>
-
-    <!-- Router System LEDs (PWR, STAT, ACT, FAN) -->
-    <g transform="translate(22, 28)">
-      <circle cx="2" cy="4" r="1.3" fill="#10b981"/>
-      <circle cx="7" cy="4" r="1.3" fill="#10b981"/>
-      <circle cx="12" cy="4" r="1.3" fill="#38bdf8"/>
-      <circle cx="17" cy="4" r="1.3" fill="#10b981"/>
-      <text x="0" y="11" font-family="ui-monospace, monospace" font-size="3" fill="#64748b">PWR STAT ACT</text>
-    </g>
-
-    <!-- Vent Grille Array (Center-Left) -->
-    <g transform="translate(70, 14)" stroke="#1e293b" stroke-width="1" stroke-linecap="round">
-      <line x1="0" y1="2" x2="0" y2="22"/>
-      <line x1="3" y1="2" x2="3" y2="22"/>
-      <line x1="6" y1="2" x2="6" y2="22"/>
-      <line x1="9" y1="2" x2="9" y2="22"/>
-      <line x1="12" y1="2" x2="12" y2="22"/>
-      <line x1="15" y1="2" x2="15" y2="22"/>
-      <line x1="18" y1="2" x2="18" y2="22"/>
-      <line x1="21" y1="2" x2="21" y2="22"/>
-      <line x1="24" y1="2" x2="24" y2="22"/>
-      <line x1="27" y1="2" x2="27" y2="22"/>
-    </g>
-
-    <!-- Modular NIM Bay 1 (NIM-ES2-4 / WAN) -->
-    <g transform="translate(108, 13)">
-      <rect x="0" y="0" width="62" height="26" rx="1.5" fill="url(#nimSlot)" stroke="#475569" stroke-width="0.8"/>
-      <!-- Slot thumbscrews -->
-      <circle cx="4" cy="4" r="1.5" fill="#64748b" stroke="#334155" stroke-width="0.4"/>
-      <circle cx="58" cy="4" r="1.5" fill="#64748b" stroke="#334155" stroke-width="0.4"/>
-      <circle cx="4" cy="22" r="1.5" fill="#64748b" stroke="#334155" stroke-width="0.4"/>
-      <circle cx="58" cy="22" r="1.5" fill="#64748b" stroke="#334155" stroke-width="0.4"/>
-
-      <!-- NIM-ES2 GE WAN Ports -->
-      <rect x="12" y="7" width="8" height="12" rx="1" fill="#1e293b" stroke="#64748b" stroke-width="0.5"/>
-      <circle cx="16" cy="4" r="1" fill="#10b981"/>
-      <rect x="23" y="7" width="8" height="12" rx="1" fill="#1e293b" stroke="#64748b" stroke-width="0.5"/>
-      <circle cx="27" cy="4" r="1" fill="#10b981"/>
+    <!-- Cisco 4-Arrow Dynamic Cross Matrix (White with subtle shadow) -->
+    <g fill="#ffffff" filter="drop-shadow(0px 1px 2px rgba(0,0,0,0.35))">
+      <!-- 1. Left Arrow (Pointing In to Center) -->
+      <path d="M 24 56 L 44 56 L 44 50 L 53 60 L 44 70 L 44 64 L 24 64 Z"/>
       
-      <!-- SFP WAN Port -->
-      <rect x="36" y="8" width="16" height="10" rx="1" fill="#64748b" stroke="#cbd5e1" stroke-width="0.6"/>
-      <circle cx="44" cy="4" r="1" fill="#10b981"/>
-      <text x="12" y="24" font-family="ui-monospace, monospace" font-size="3" fill="#94a3b8">GE0/0/0 - GE0/0/1 SFP</text>
-    </g>
-
-    <!-- Modular NIM Bay 2 (Right WAN/Expansion) -->
-    <g transform="translate(176, 13)">
-      <rect x="0" y="0" width="62" height="26" rx="1.5" fill="url(#nimSlot)" stroke="#475569" stroke-width="0.8"/>
-      <circle cx="4" cy="4" r="1.5" fill="#64748b"/>
-      <circle cx="58" cy="4" r="1.5" fill="#64748b"/>
-      <circle cx="4" cy="22" r="1.5" fill="#64748b"/>
-      <circle cx="58" cy="22" r="1.5" fill="#64748b"/>
-
-      <!-- Console / Aux / USB -->
-      <rect x="12" y="8" width="8" height="10" rx="1" fill="#0284c7" opacity="0.6"/>
-      <rect x="23" y="8" width="8" height="10" rx="1" fill="#334155" stroke="#64748b" stroke-width="0.5"/>
-      <rect x="36" y="9" width="10" height="8" rx="1" fill="#e2e8f0" stroke="#475569" stroke-width="0.5"/>
-      <circle cx="16" cy="5" r="0.9" fill="#38bdf8"/>
-      <circle cx="27" cy="5" r="0.9" fill="#10b981"/>
-      <text x="12" y="23" font-family="ui-monospace, monospace" font-size="3" fill="#94a3b8">CONSOLE  AUX  USB</text>
+      <!-- 2. Right Arrow (Pointing Out to Right) -->
+      <path d="M 67 60 L 76 50 L 76 56 L 96 56 L 96 64 L 76 64 L 76 70 Z"/>
+      
+      <!-- 3. Top Arrow (Pointing In to Center) -->
+      <path d="M 56 24 L 56 44 L 50 44 L 60 53 L 70 44 L 64 44 L 64 24 Z"/>
+      
+      <!-- 4. Bottom Arrow (Pointing Out to Bottom) -->
+      <path d="M 60 67 L 50 76 L 56 76 L 56 96 L 64 96 L 64 76 L 70 76 Z"/>
+      
+      <!-- Center Routing Core Dot -->
+      <circle cx="60" cy="60" r="4.5" fill="#ffffff"/>
     </g>
   </g>
 </svg>

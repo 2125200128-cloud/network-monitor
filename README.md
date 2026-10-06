@@ -57,3 +57,14 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Estructura del proyecto
+
+| Carpeta | Contenido |
+|---|---|
+| `app/` , `routes/` , `resources/` , `database/` | Aplicación Laravel (controladores, vistas, migraciones) |
+| `worker/` | Servicios Python: sondeo SNMP, descubrimiento, ejecución SSH, recolección de tráfico (`snmp_traffic.py`) |
+| `tools/maintenance/` | Utilidades de mantenimiento manual (depuración de dispositivos/interfaces, diagnóstico de equipos offline) |
+| `tests/` | Pruebas automatizadas (PHPUnit) |
+| `public/images/topology/` | Iconos de la topología |
+

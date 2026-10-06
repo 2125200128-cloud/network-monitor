@@ -1,16 +1,33 @@
 @extends('layouts.app')
 
+@section('styles')
+<style>
+    @keyframes nocMarquee {
+        0% { transform: translateX(0%); }
+        100% { transform: translateX(-50%); }
+    }
+    .animate-noc-marquee {
+        display: flex;
+        width: max-content;
+        animation: nocMarquee 35s linear infinite;
+    }
+    .animate-noc-marquee:hover {
+        animation-play-state: paused;
+    }
+</style>
+@endsection
+
 @section('content')
             <!-- Top Bar -->
-            <div class="flex justify-between items-center mb-6">
-                <div class="relative w-96">
+            <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mb-4 sm:mb-6">
+                <div class="relative w-full sm:w-80 md:w-96">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </span>
-                    <input type="text" class="w-full bg-white dark:bg-[#0d1017] border border-gray-100 dark:border-slate-800/60 rounded-full py-3 pl-12 pr-4 shadow-sm dark:shadow-none focus:ring-2 focus:ring-hacienda-blue dark:focus:ring-blue-500 text-sm text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500" placeholder="Buscar IPs, alertas, switches...">
+                    <input type="text" class="w-full bg-white dark:bg-[#0d1017] border border-gray-100 dark:border-slate-800/60 rounded-full py-2.5 sm:py-3 pl-12 pr-4 shadow-sm dark:shadow-none focus:ring-2 focus:ring-hacienda-blue dark:focus:ring-blue-500 text-sm text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500" placeholder="Buscar IPs, alertas, switches...">
                 </div>
                 
-                <div class="flex items-center gap-3">
+                <div class="flex items-center justify-end gap-2.5">
                     <a href="{{ route('reportes.inventario_pdf') }}" target="_blank" class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-[#0d1017] hover:bg-gray-50 dark:hover:bg-slate-800/60 text-gray-700 dark:text-slate-300 text-xs font-bold rounded-full shadow-sm dark:shadow-none transition border border-gray-100 dark:border-slate-800/60 hover:border-gray-200 dark:hover:border-slate-700" title="Descargar Reporte Ejecutivo de Inventario en PDF">
                         <svg class="w-4 h-4 text-[#3b5998]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         <span>Reporte PDF</span>
@@ -44,15 +61,16 @@
                                         <p class="text-[11px] text-gray-500">Alertas NOC en tiempo real</p>
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-1.5">
                                     <span id="notifBadgeText" class="px-2 py-0.5 rounded-full text-[10px] font-black {{ $unreadNotificaciones > 0 ? 'bg-[#3b5998]/10 text-[#3b5998]' : 'bg-gray-100 text-gray-500' }}">
                                         {{ $unreadNotificaciones }} no leídas
                                     </span>
-                                    @if($unreadNotificaciones > 0)
-                                        <button type="button" onclick="markAllNotificationsAsRead()" class="text-[11px] text-gray-500 hover:text-[#3b5998] font-bold transition px-2 py-1 rounded-lg hover:bg-white" title="Marcar todas como leídas">
-                                            Leídas
-                                        </button>
-                                    @endif
+                                    <button type="button" onclick="markAllNotificationsAsRead()" class="text-[11px] text-gray-500 hover:text-[#3b5998] dark:hover:text-blue-400 font-bold transition px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" title="Marcar todas como leídas">
+                                        Marcar Leídas
+                                    </button>
+                                    <button type="button" onclick="clearAllNotifications()" class="text-[11px] text-gray-500 hover:text-red-600 dark:hover:text-red-400 font-bold transition px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40" title="Descartar y limpiar todas las alertas">
+                                        Limpiar Todas
+                                    </button>
                                 </div>
                             </div>
 
@@ -100,21 +118,62 @@
 
                                         {{-- Body --}}
                                         <div class="flex-1 min-w-0 pr-2">
-                                            <div class="flex items-center justify-between gap-2 mb-0.5">
-                                                <h4 class="text-xs font-bold text-gray-900 dark:text-slate-100 truncate leading-tight">{{ $n['titulo'] }}</h4>
-                                                <span class="text-[10px] text-gray-400 dark:text-slate-500 font-mono whitespace-nowrap">{{ $n['tiempo'] }}</span>
-                                            </div>
-                                            <p class="text-xs text-gray-600 dark:text-slate-300 leading-snug mb-2">{{ $n['mensaje'] }}</p>
-                                            
-                                            <div class="flex items-center justify-between">
-                                                <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-transparent dark:border-slate-700">
-                                                    <span class="w-1.5 h-1.5 rounded-full {{ $n['tipo'] === 'critica' ? 'bg-red-500' : ($n['tipo'] === 'advertencia' ? 'bg-[#f26419]' : 'bg-blue-500') }}"></span>
-                                                    {{ $n['dispositivo'] }}
+                                            <div class="flex items-center justify-between gap-2 mb-1">
+                                                <h4 class="text-xs font-extrabold text-gray-900 dark:text-slate-100 leading-tight">{{ $n['titulo'] }}</h4>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold font-mono bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 shrink-0" title="Hora de falla: {{ $n['fecha_falla'] ?? $n['tiempo'] }}">
+                                                    <svg class="w-3 h-3 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                    <span>{{ $n['hora_falla'] ?? $n['tiempo'] }}</span>
                                                 </span>
+                                            </div>
+                                            
+                                            <p class="text-xs text-gray-600 dark:text-slate-300 leading-snug mb-1 font-medium">{{ $n['mensaje'] }}</p>
+
+                                            @if(!empty($n['fecha_falla']))
+                                                <div class="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-mono mb-2">
+                                                    <span class="font-bold text-slate-600 dark:text-slate-300">🕒 Ocurrencia:</span>
+                                                    <span class="font-extrabold text-slate-900 dark:text-slate-100">{{ $n['fecha_falla'] }}</span>
+                                                    @if(!empty($n['hace_cuanto']))
+                                                        <span class="text-slate-400">({{ $n['hace_cuanto'] }})</span>
+                                                    @endif
+                                                </div>
+                                            @endif
+
+                                            {{-- Bloque de Causa Raíz Inteligente --}}
+                                            @if(!empty($n['causa_raiz']))
+                                                <div class="mb-2 p-2 rounded-xl bg-slate-50 dark:bg-[#07090e] border border-slate-200/80 dark:border-slate-800/80 text-[11px] leading-relaxed">
+                                                    <div class="flex items-start gap-1.5 text-slate-700 dark:text-slate-300 mb-1">
+                                                        <svg class="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                        <div>
+                                                            <strong class="font-bold text-slate-900 dark:text-white">¿Por qué falló?</strong>
+                                                            <span class="text-slate-600 dark:text-slate-400">{{ $n['causa_raiz'] }}</span>
+                                                        </div>
+                                                    </div>
+                                                    @if(!empty($n['accion_sugerida']))
+                                                        <div class="flex items-start gap-1.5 text-emerald-700 dark:text-emerald-400 pt-1 border-t border-slate-200/50 dark:border-slate-800/50">
+                                                            <svg class="w-3.5 h-3.5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                            <span><strong class="font-bold">Acción:</strong> {{ $n['accion_sugerida'] }}</span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            @endif
+                                            
+                                            <div class="flex items-center justify-between pt-1">
+                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                    <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-transparent dark:border-slate-700">
+                                                        <span class="w-1.5 h-1.5 rounded-full {{ $n['tipo'] === 'critica' ? 'bg-red-500' : ($n['tipo'] === 'advertencia' ? 'bg-[#f26419]' : 'bg-blue-500') }}"></span>
+                                                        {{ $n['dispositivo'] }}
+                                                    </span>
+                                                    @if(!empty($n['ubicacion']) && $n['ubicacion'] !== 'No especificada')
+                                                        <span class="text-[9px] text-gray-400 dark:text-slate-500 truncate max-w-[120px]" title="{{ $n['ubicacion'] }}">
+                                                            📍 {{ $n['ubicacion'] }}
+                                                        </span>
+                                                    @endif
+                                                </div>
+
                                                 @if(isset($n['link']))
-                                                    <a href="{{ $n['link'] }}" class="text-[11px] font-bold text-[#3b5998] dark:text-blue-400 hover:text-[#f26419] transition flex items-center gap-0.5">
+                                                    <a href="{{ $n['link'] }}" class="text-[11px] font-bold text-[#3b5998] dark:text-blue-400 hover:text-[#f26419] dark:hover:text-cyan-400 transition flex items-center gap-0.5 group">
                                                         <span>{{ $n['accion'] }}</span>
-                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                                        <svg class="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                                                     </a>
                                                 @endif
                                             </div>
@@ -165,29 +224,69 @@
                 </div>
             </div>
 
-            {{-- Alerta Superior NOC (Banner) --}}
+            {{-- Alerta Superior NOC estilo Monitor de Noticias Ticker --}}
             @if($unreadNotificaciones > 0)
-                <div id="dashboardAlertBanner" class="mb-6 rounded-2xl bg-gradient-to-r from-red-500/10 via-amber-500/10 to-blue-500/10 border border-red-200/60 dark:border-red-900/40 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs dark:shadow-none backdrop-blur-sm">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-red-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm animate-pulse">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                        </div>
-                        <div>
-                            <p class="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <span>Incidencias Activas en la Red</span>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-400 uppercase tracking-wider border border-transparent dark:border-red-800/40">{{ $unreadNotificaciones }} Alertas</span>
-                            </p>
-                            <p class="text-xs text-gray-600 dark:text-slate-300 mt-0.5">
-                                Se han detectado eventos críticos en la infraestructura (puertos en Err-Disabled y equipos con degradación o fuera de línea).
-                            </p>
+                <div id="dashboardAlertBanner" class="mb-6 rounded-2xl bg-gradient-to-r from-red-950 via-slate-900 to-slate-950 border border-red-500/40 p-2.5 sm:p-3 flex items-center justify-between gap-3 shadow-xl overflow-hidden relative backdrop-blur-md">
+                    {{-- Badge Fijo Izquierdo --}}
+                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-600/90 text-white font-black text-[11px] uppercase tracking-wider shrink-0 shadow-md animate-pulse z-10">
+                        <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                        <span class="hidden sm:inline">NOC NEWS LIVE</span>
+                        <span class="sm:hidden">INCIDENCIAS</span>
+                        <span class="bg-black/40 px-1.5 py-0.5 rounded-md text-[10px] font-mono">{{ $unreadNotificaciones }}</span>
+                    </div>
+
+                    {{-- Contenedor del Marquee / Cinta de Noticias --}}
+                    <div class="flex-1 overflow-hidden relative mx-2 flex items-center">
+                        <div class="animate-noc-marquee flex items-center gap-8 text-xs font-semibold text-slate-200 whitespace-nowrap">
+                            {{-- Pista 1 --}}
+                            <div class="flex items-center gap-8">
+                                @foreach($notificaciones as $n)
+                                    @if(!$n['leida'])
+                                        <div class="inline-flex items-center gap-2 cursor-pointer hover:text-amber-300 transition" onclick="toggleNotifDropdown(event)">
+                                            @if($n['tipo'] === 'critica')
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-black bg-red-500/30 text-red-300 border border-red-500/40">🔴 CRÍTICA</span>
+                                            @elseif($n['tipo'] === 'advertencia')
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/40">🟡 ADVERTENCIA</span>
+                                            @else
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/40">⚡ SISTEMA</span>
+                                            @endif
+                                            <span class="font-extrabold text-white">{{ $n['titulo'] }}</span>
+                                            <span class="text-slate-300 font-mono text-[11px]">({{ $n['dispositivo'] }} · {{ $n['hora_falla'] ?? $n['tiempo'] }})</span>
+                                            <span class="text-red-500 font-extrabold mx-2">///</span>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+
+                            {{-- Pista 2 Duplicada para Loop Infinito Continuo --}}
+                            <div class="flex items-center gap-8">
+                                @foreach($notificaciones as $n)
+                                    @if(!$n['leida'])
+                                        <div class="inline-flex items-center gap-2 cursor-pointer hover:text-amber-300 transition" onclick="toggleNotifDropdown(event)">
+                                            @if($n['tipo'] === 'critica')
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-black bg-red-500/30 text-red-300 border border-red-500/40">🔴 CRÍTICA</span>
+                                            @elseif($n['tipo'] === 'advertencia')
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/40">🟡 ADVERTENCIA</span>
+                                            @else
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/40">⚡ SISTEMA</span>
+                                            @endif
+                                            <span class="font-extrabold text-white">{{ $n['titulo'] }}</span>
+                                            <span class="text-slate-300 font-mono text-[11px]">({{ $n['dispositivo'] }} · {{ $n['hora_falla'] ?? $n['tiempo'] }})</span>
+                                            <span class="text-red-500 font-extrabold mx-2">///</span>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-                        <button type="button" onclick="toggleNotifDropdown(event)" class="px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200 text-xs font-bold shadow-sm dark:shadow-none border border-gray-200 dark:border-slate-700 transition flex items-center gap-1.5">
+
+                    {{-- Botones de Acción Derechos --}}
+                    <div class="flex items-center gap-2 shrink-0 z-10">
+                        <button type="button" onclick="toggleNotifDropdown(event)" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/10 transition flex items-center gap-1.5" title="Ver detalle de todas las alertas">
                             <span>Ver Alertas</span>
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
-                        <button type="button" onclick="document.getElementById('dashboardAlertBanner').remove()" class="p-1.5 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 rounded-lg transition" title="Descartar aviso">
+                        <button type="button" onclick="document.getElementById('dashboardAlertBanner').remove()" class="p-1.5 text-slate-400 hover:text-white rounded-lg transition" title="Ocultar cinta de noticias">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
@@ -469,53 +568,120 @@
 
             </div>
 
-            <!-- ==================== TOPOLOGY MAP ==================== -->
-            <div class="floating-card p-6 mb-6">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4 pb-4 border-b border-gray-100 dark:border-slate-800/40">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-hacienda-blue shadow-sm"></span>
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white tracking-tight">Mapa de Topología Visual</h3>
-                        </div>
-                        <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Topología de red autodescubierta vía L2/ARP</p>
-                    </div>
-                    <div>
-                        <button onclick="if(window.networkMap) window.networkMap.fit();" class="px-3 py-1.5 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 text-xs font-bold rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition">Centrar Mapa</button>
-                    </div>
-                </div>
-                <div id="topologyMap" style="height: 500px; width: 100%; border-radius: 0.75rem; background-color: #f8fafc;" class="border border-gray-200 dark:border-slate-800 dark:bg-[#090b10]"></div>
-            </div>
-
             <!-- ==================== TABLA DE INVENTARIO DE DISPOSITIVOS (NOC) ==================== -->
             <div class="floating-card p-6 mb-6" x-data="{
                 filtroBusqueda: '',
                 filtroEstado: 'todos',
-                matches(nombre, ip, estado) {
+                filtroTipo: 'todos',
+                matches(nombre, ip, estado, tipo) {
                     const q = this.filtroBusqueda.toLowerCase().trim();
                     const matchText = !q || nombre.toLowerCase().includes(q) || ip.toLowerCase().includes(q);
-                    const matchStatus = this.filtroEstado === 'todos' || estado === this.filtroEstado;
-                    return matchText && matchStatus;
+                    const matchStatus = this.filtroEstado === 'todos' || estado.toLowerCase() === this.filtroEstado;
+                    const matchTipo = this.filtroTipo === 'todos' || tipo === this.filtroTipo;
+                    return matchText && matchStatus && matchTipo;
                 }
             }">
-                <!-- Encabezado con Título, Filtros de Estado y Buscador -->
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5 pb-4 border-b border-gray-100 dark:border-slate-800/40">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-hacienda-orange shadow-sm"></span>
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white tracking-tight">Inventario de Infraestructura y Switches</h3>
+                <!-- Encabezado con Título, Filtros de Categoría, Estado y Buscador -->
+                <div class="flex flex-col gap-4 mb-5 pb-4 border-b border-gray-100 dark:border-slate-800/40">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-hacienda-orange shadow-sm"></span>
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white tracking-tight">Inventario de Dispositivos e Infraestructura</h3>
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Supervisión en tiempo real de switches, teléfonos VoIP, servidores, PCs, routers y APs</p>
                         </div>
-                        <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Supervisión en tiempo real de nodos de red y switches L2/L3</p>
+
+                        <!-- Buscador en tiempo real -->
+                        <div class="relative w-full sm:w-72">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </div>
+                            <input 
+                                type="text" 
+                                x-model="filtroBusqueda"
+                                placeholder="Buscar por nombre, IP, tipo..." 
+                                class="w-full pl-9 pr-8 py-2 bg-gray-50 dark:bg-[#090b10] border border-gray-200 dark:border-slate-800/60 rounded-xl text-xs focus:ring-2 focus:ring-hacienda-blue dark:focus:ring-blue-500 focus:border-transparent outline-none transition placeholder-gray-400 dark:placeholder-slate-500 text-gray-800 dark:text-slate-200"
+                            >
+                            <button 
+                                x-show="filtroBusqueda.length > 0" 
+                                @click="filtroBusqueda = ''"
+                                type="button" 
+                                class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
+                                style="display: none;">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-3">
+                    <!-- Barra de Filtros Dual: Categorías de Hardware + Estado Online/Offline -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                        <!-- Filtros por Tipo de Dispositivo -->
+                        <div class="flex flex-wrap items-center gap-1.5 bg-gray-100/80 dark:bg-[#090b10] border border-transparent dark:border-slate-800/40 p-1 rounded-xl text-xs font-semibold">
+                            <button 
+                                @click="filtroTipo = 'todos'"
+                                :class="filtroTipo === 'todos' ? 'bg-white dark:bg-slate-800 text-hacienda-blue dark:text-blue-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
+                                class="px-2.5 py-1.5 rounded-lg transition"
+                                type="button">
+                                Todos ({{ $totalDispositivos }})
+                            </button>
+                            <button 
+                                @click="filtroTipo = 'switch'"
+                                :class="filtroTipo === 'switch' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
+                                class="px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                                Switches ({{ $totalSwitches }})
+                            </button>
+                            <button 
+                                @click="filtroTipo = 'telefono'"
+                                :class="filtroTipo === 'telefono' ? 'bg-white dark:bg-slate-800 text-pink-600 dark:text-pink-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
+                                class="px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                                type="button">
+                                <img src="{{ asset('images/topology/ip-phone.png') }}" class="w-4 h-4 object-contain" alt="Teléfonos">
+                                Teléfonos IP ({{ $totalTelefonos }})
+                            </button>
+                            <button 
+                                @click="filtroTipo = 'router'"
+                                :class="filtroTipo === 'router' ? 'bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
+                                class="px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                                type="button">
+                                <img src="{{ asset('images/topology/router.png') }}" class="w-4 h-4 object-contain" alt="Routers">
+                                Routers ({{ $totalRouters }})
+                            </button>
+                            <button 
+                                @click="filtroTipo = 'access_point'"
+                                :class="filtroTipo === 'access_point' ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
+                                class="px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                                type="button">
+                                <img src="{{ asset('images/topology/access-point.png') }}" class="w-4 h-4 object-contain" alt="APs">
+                                APs Wi-Fi ({{ $totalAPs }})
+                            </button>
+                            <button 
+                                @click="filtroTipo = 'servidor'"
+                                :class="filtroTipo === 'servidor' ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
+                                class="px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                                type="button">
+                                <img src="{{ asset('images/topology/server.png') }}" class="w-4 h-4 object-contain" alt="Servidores">
+                                Servidores ({{ $totalServidores }})
+                            </button>
+                            <button 
+                                @click="filtroTipo = 'pc'"
+                                :class="filtroTipo === 'pc' ? 'bg-white dark:bg-slate-800 text-cyan-600 dark:text-cyan-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
+                                class="px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                                type="button">
+                                <img src="{{ asset('images/topology/pc.png') }}" class="w-4 h-4 object-contain" alt="PCs">
+                                PCs ({{ $totalPCs }})
+                            </button>
+                        </div>
+
                         <!-- Filtros por Estado -->
-                        <div class="flex bg-gray-100/80 dark:bg-[#090b10] border border-transparent dark:border-slate-800/40 p-1 rounded-xl text-xs font-semibold">
+                        <div class="flex items-center bg-gray-100/80 dark:bg-[#090b10] border border-transparent dark:border-slate-800/40 p-1 rounded-xl text-xs font-semibold">
                             <button 
                                 @click="filtroEstado = 'todos'"
                                 :class="filtroEstado === 'todos' ? 'bg-white dark:bg-slate-800 text-hacienda-blue dark:text-blue-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
                                 class="px-3 py-1.5 rounded-lg transition"
                                 type="button">
-                                Todos ({{ $totalDispositivos }})
+                                Todos
                             </button>
                             <button 
                                 @click="filtroEstado = 'online'"
@@ -534,40 +700,19 @@
                                 Offline ({{ $dispositivosOffline }})
                             </button>
                         </div>
-
-                        <!-- Buscador en tiempo real -->
-                        <div class="relative w-full sm:w-64">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                            </div>
-                            <input 
-                                type="text" 
-                                x-model="filtroBusqueda"
-                                placeholder="Filtrar por nombre o IP..." 
-                                class="w-full pl-9 pr-8 py-2 bg-gray-50 dark:bg-[#090b10] border border-gray-200 dark:border-slate-800/60 rounded-xl text-xs focus:ring-2 focus:ring-hacienda-blue dark:focus:ring-blue-500 focus:border-transparent outline-none transition placeholder-gray-400 dark:placeholder-slate-500 text-gray-800 dark:text-slate-200"
-                            >
-                            <button 
-                                x-show="filtroBusqueda.length > 0" 
-                                @click="filtroBusqueda = ''"
-                                type="button" 
-                                class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
-                                style="display: none;">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
-                        </div>
                     </div>
                 </div>
 
                 <!-- Contenedor con Scroll Interno Controlado (Evita scroll infinito de la página) -->
                 <div class="rounded-xl border border-gray-200/80 dark:border-slate-800/40 overflow-hidden shadow-xs dark:shadow-none bg-white dark:bg-[#0d1017]">
-                    <div x-ref="tableContainer" class="max-h-[380px] overflow-y-auto overflow-x-auto custom-scrollbar relative" style="scrollbar-gutter: stable;">
+                    <div x-ref="tableContainer" class="max-h-[420px] overflow-y-auto overflow-x-auto custom-scrollbar relative" style="scrollbar-gutter: stable;">
                         <table class="w-full text-left border-separate border-spacing-0 text-xs">
                             <thead class="sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.04)] dark:shadow-none">
                                 <tr class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                                     <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-28">Estado</th>
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 min-w-[190px]">Switch / Router</th>
+                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 min-w-[210px]">Dispositivo / Hostname</th>
                                     <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-32">Dirección IP</th>
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 min-w-[150px]">Modelo / Plataforma</th>
+                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 min-w-[160px]">Tipo / Modelo</th>
                                     <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-32">CPU / RAM (%)</th>
                                     <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-28">Uptime</th>
                                     <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-36 text-right">Acciones</th>
@@ -576,13 +721,13 @@
                             <tbody class="divide-y divide-gray-100 dark:divide-slate-800/30 bg-white dark:bg-[#0d1017]">
                                 @forelse($dispositivos as $disp)
                                 <tr 
-                                    x-show="matches('{{ addslashes($disp->nombre) }}', '{{ $disp->ip }}', '{{ $disp->estado }}')"
+                                    x-show="matches('{{ addslashes($disp->nombre) }}', '{{ $disp->ip }}', '{{ $disp->estado }}', '{{ $disp->tipo_dispositivo }}')"
                                     class="hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition duration-150 group">
                                     
                                     <!-- Estado LED / Badge -->
                                     <td class="py-2.5 px-3.5 whitespace-nowrap border-b border-gray-100 dark:border-slate-800/30">
                                         @if(strtolower($disp->estado) === 'online' || strtolower($disp->estado) === 'up')
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40">
+                                             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                                 Online
                                             </span>
@@ -599,11 +744,30 @@
                                         @endif
                                     </td>
 
-                                    <!-- Nombre del Switch / Router -->
+                                    <!-- Nombre del Dispositivo con Icono Específico Más Grande -->
                                     <td class="py-2.5 px-3.5 border-b border-gray-100 dark:border-slate-800/30">
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-7 h-7 rounded-lg {{ $disp->estado === 'online' ? 'bg-blue-50 dark:bg-blue-950/60 text-hacienda-blue dark:text-blue-400' : 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-500' }} flex items-center justify-center flex-shrink-0 font-bold">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg>
+                                        <div class="flex items-center gap-2.5">
+                                            <!-- Icono según el tipo real -->
+                                            <div class="w-9 h-9 rounded-xl {{ $disp->tipo_icon_container_classes }} flex items-center justify-center flex-shrink-0 font-bold shadow-xs border border-transparent dark:border-white/5" title="{{ $disp->tipo_label }}">
+                                                @if($disp->tipo_dispositivo === 'telefono')
+                                                    <!-- Teléfono IP (VoIP) -->
+                                                    <img src="{{ asset('images/topology/ip-phone.png') }}" class="w-6 h-6 object-contain" alt="Teléfono">
+                                                @elseif($disp->tipo_dispositivo === 'servidor')
+                                                    <!-- Servidor Dedicado (Icono Isométrico) -->
+                                                    <img src="{{ asset('images/topology/server.png') }}" class="w-6 h-6 object-contain" alt="Servidor">
+                                                @elseif($disp->tipo_dispositivo === 'pc')
+                                                    <!-- PC / Workstation -->
+                                                    <img src="{{ asset('images/topology/pc.png') }}" class="w-6 h-6 object-contain" alt="PC">
+                                                @elseif($disp->tipo_dispositivo === 'access_point')
+                                                    <!-- Access Point Wi-Fi -->
+                                                    <img src="{{ asset('images/topology/access-point.png') }}" class="w-6 h-6 object-contain" alt="Access Point">
+                                                @elseif($disp->tipo_dispositivo === 'router')
+                                                    <!-- Router WAN / ISR -->
+                                                    <img src="{{ asset('images/topology/router.png') }}" class="w-6 h-6 object-contain" alt="Router">
+                                                @else
+                                                    <!-- Switch L2/L3 -->
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                                                @endif
                                             </div>
                                             <div class="min-w-0 max-w-[200px] sm:max-w-[240px]">
                                                 <a href="{{ route('dispositivos.show', $disp->id) }}" class="font-bold text-gray-900 dark:text-slate-100 group-hover:text-hacienda-blue dark:group-hover:text-blue-400 hover:underline transition truncate block" title="{{ $disp->nombre }}">
@@ -621,9 +785,9 @@
                                         </span>
                                     </td>
 
-                                    <!-- Modelo / Plataforma -->
+                                    <!-- Modelo / Plataforma y Badge de Tipo -->
                                     <td class="py-2.5 px-3.5 whitespace-nowrap border-b border-gray-100 dark:border-slate-800/30">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-900/80 text-[#5c8096] dark:text-slate-300 border border-slate-200 dark:border-slate-800/60">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border {{ $disp->tipo_badge_classes }}">
                                             {{ $disp->clean_model }}
                                         </span>
                                     </td>
@@ -663,7 +827,7 @@
                                             <!-- Ver Detalle -->
                                             <a href="{{ route('dispositivos.show', $disp->id) }}" 
                                                class="px-2.5 py-1 rounded-lg text-xs font-semibold text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-hacienda-blue dark:hover:bg-blue-600 hover:text-white dark:hover:text-white transition flex items-center gap-1 shadow-xs border border-transparent dark:border-blue-900/40"
-                                               title="Ver detalles e interfaces del switch">
+                                               title="Ver detalles e interfaces del dispositivo">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                                 <span>Detalles</span>
                                             </a>
@@ -1097,6 +1261,28 @@
             }
         }
 
+        function markSingleNotificationAsRead(id) {
+            const item = document.querySelector(`.notif-item[data-id="${id}"]`);
+            if (!item || item.dataset.leida === '1') return;
+
+            item.dataset.leida = '1';
+            item.classList.remove('bg-blue-50/20', 'dark:bg-blue-950/20');
+            const dot = item.querySelector('.notif-unread-dot');
+            if (dot) dot.remove();
+
+            decrementUnreadBadge();
+
+            fetch('{{ route("notificaciones.marcar_leida") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ id: id })
+            }).catch(err => console.error('Error al marcar notificación como leída:', err));
+        }
+
         function dismissNotification(id, event) {
             if (event) event.stopPropagation();
             const item = document.querySelector(`.notif-item[data-id="${id}"]`);
@@ -1119,16 +1305,27 @@
                     if (list) {
                         list.innerHTML = `
                             <div class="p-8 text-center">
-                                <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-2">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <div class="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2 border border-transparent dark:border-emerald-800/40">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
                                 </div>
-                                <p class="text-sm font-bold text-gray-800">Todo en orden</p>
-                                <p class="text-xs text-gray-400 mt-1">Has atendido todas las alertas del sistema.</p>
+                                <p class="text-sm font-bold text-gray-800 dark:text-slate-100">Todo en orden</p>
+                                <p class="text-xs text-gray-400 dark:text-slate-400 mt-1">Has atendido todas las alertas del sistema.</p>
                             </div>
                         `;
                     }
                 }
             }, 200);
+
+            // Persistir descarte en BD
+            fetch('{{ route("notificaciones.descartar") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ id: id })
+            }).catch(err => console.error('Error al descartar notificación:', err));
         }
 
         function markAllNotificationsAsRead() {
@@ -1137,7 +1334,7 @@
             // Remove unread dots and highlights
             document.querySelectorAll('.notif-item').forEach(item => {
                 item.dataset.leida = '1';
-                item.classList.remove('bg-blue-50/20');
+                item.classList.remove('bg-blue-50/20', 'dark:bg-blue-950/20');
                 const dot = item.querySelector('.notif-unread-dot');
                 if (dot) dot.remove();
             });
@@ -1164,6 +1361,78 @@
                 banner.style.opacity = '0';
                 setTimeout(() => banner.remove(), 300);
             }
+
+            // Persistir en BD que todas fueron leídas
+            fetch('{{ route("notificaciones.marcar_leida") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ all: true })
+            }).catch(err => console.error('Error al marcar notificaciones leídas:', err));
+        }
+
+        function clearAllNotifications() {
+            unreadNotifCount = 0;
+
+            const items = document.querySelectorAll('.notif-item');
+            items.forEach(item => {
+                item.style.transition = 'all 0.2s ease';
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(15px)';
+            });
+
+            setTimeout(() => {
+                items.forEach(item => item.remove());
+                const list = document.getElementById('notifListContainer');
+                if (list) {
+                    list.innerHTML = `
+                        <div class="p-8 text-center">
+                            <div class="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2 border border-transparent dark:border-emerald-800/40">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                            </div>
+                            <p class="text-sm font-bold text-gray-800 dark:text-slate-100">Todo en orden</p>
+                            <p class="text-xs text-gray-400 dark:text-slate-400 mt-1">Has atendido y limpiado todas las alertas del sistema.</p>
+                        </div>
+                    `;
+                }
+            }, 200);
+
+            // Update badge text
+            const badgeText = document.getElementById('notifBadgeText');
+            if (badgeText) {
+                badgeText.textContent = '0 no leídas';
+                badgeText.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500';
+            }
+
+            // Remove badge and pulse from bell button
+            const badge = document.getElementById('notifCountBadge');
+            if (badge) badge.remove();
+            const ring = document.getElementById('notifPulseRing');
+            if (ring) ring.remove();
+            const dot = document.getElementById('notifPulseDot');
+            if (dot) dot.remove();
+
+            // Hide top banner
+            const banner = document.getElementById('dashboardAlertBanner');
+            if (banner) {
+                banner.style.transition = 'all 0.3s ease';
+                banner.style.opacity = '0';
+                setTimeout(() => banner.remove(), 300);
+            }
+
+            // Persistir descarte de todas en BD
+            fetch('{{ route("notificaciones.descartar") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ all: true })
+            }).catch(err => console.error('Error al descartar todas las notificaciones:', err));
         }
 
         function decrementUnreadBadge() {
@@ -1328,89 +1597,5 @@
 
             setInterval(fetchKPIs, KPI_INTERVAL);
         })();
-    </script>
-    {{-- ============================================================== --}}
-    {{-- TOPOLOGY MAP (vis-network)                                      --}}
-    {{-- ============================================================== --}}
-    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const container = document.getElementById('topologyMap');
-            if (!container) return;
-            
-            fetch('/api/topologia/nodos-enlaces', {
-                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(res => res.json())
-            .then(data => {
-                const options = {
-                    nodes: {
-                        shape: 'image',
-                        size: 30,
-                        font: {
-                            color: document.documentElement.classList.contains('dark') ? '#e2e8f0' : '#1e293b',
-                            size: 11,
-                            face: 'Inter, system-ui, sans-serif',
-                            vadjust: 12
-                        },
-                        shadow: {
-                            enabled: true,
-                            color: 'rgba(0,0,0,0.1)',
-                            size: 5
-                        }
-                    },
-                    edges: {
-                        smooth: {
-                            type: 'continuous'
-                        },
-                        color: {
-                            color: '#10b981', // green for healthy links
-                            highlight: '#3b5998',
-                            hover: '#f26419'
-                        },
-                        width: 2
-                    },
-                    physics: {
-                        solver: 'barnesHut',
-                        barnesHut: {
-                            gravitationalConstant: -10000,
-                            centralGravity: 0.05,
-                            springLength: 300,
-                            springConstant: 0.05,
-                            damping: 0.09,
-                            avoidOverlap: 1
-                        },
-                        stabilization: {
-                            enabled: true,
-                            iterations: 150,
-                            updateInterval: 50
-                        }
-                    },
-                    interaction: {
-                        hover: true,
-                        tooltipDelay: 200,
-                        hideEdgesOnDrag: true,
-                        hideEdgesOnPan: true
-                    }
-                };
-                
-                // Keep reference globally so 'Centrar Mapa' button works
-                window.networkMap = new vis.Network(container, data, options);
-
-                // Disable physics after initial layout to improve performance
-                window.networkMap.once("stabilizationIterationsDone", function() {
-                    window.networkMap.setOptions({ physics: false });
-                });
-                
-                // Listen to theme changes
-                window.addEventListener('theme-changed', (e) => {
-                    const textColor = e.detail.isDark ? '#e2e8f0' : '#1e293b';
-                    window.networkMap.setOptions({
-                        nodes: { font: { color: textColor } }
-                    });
-                });
-            })
-            .catch(err => console.error('Error fetching topology:', err));
-        });
     </script>
 @endsection

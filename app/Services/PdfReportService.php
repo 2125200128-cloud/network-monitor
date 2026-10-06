@@ -300,34 +300,68 @@ class PdfReportService
         $pdf->SetTextColor(30, 41, 59);
 
         $interfaces = $dispositivo->interfaces->sortBy('nombre');
-        foreach ($interfaces as $intf) {
-            if ($pdf->GetY() > 270) {
-                $pdf->AddPage();
-                $pdf->SetFont('Helvetica', 'B', 8);
-                $pdf->SetFillColor(59, 89, 152);
-                $pdf->SetTextColor(255, 255, 255);
-                $pdf->Cell(45, 6, $pdf->encodeText('Interfaz'), 1, 0, 'L', true);
-                $pdf->Cell(25, 6, $pdf->encodeText('Oper Status'), 1, 0, 'C', true);
-                $pdf->Cell(25, 6, $pdf->encodeText('Velocidad'), 1, 0, 'C', true);
-                $pdf->Cell(25, 6, $pdf->encodeText('Dúplex'), 1, 0, 'C', true);
-                $pdf->Cell(35, 6, $pdf->encodeText('Consumo PoE'), 1, 0, 'C', true);
-                $pdf->Cell(35, 6, $pdf->encodeText('Errores CRC/FCS'), 1, 1, 'C', true);
-                $pdf->SetFont('Helvetica', '', 7.5);
-                $pdf->SetTextColor(30, 41, 59);
+        if ($interfaces->isEmpty()) {
+            if ($dispositivo->tipo_dispositivo === 'telefono') {
+                $pdf->Cell(45, 5, $pdf->encodeText('SW (Network PoE)'), 1, 0, 'L');
+                $pdf->Cell(25, 5, $dispositivo->estado === 'online' ? 'UP' : 'DOWN', 1, 0, 'C');
+                $pdf->Cell(25, 5, '100/1000 Mbps', 1, 0, 'C');
+                $pdf->Cell(25, 5, 'FULL', 1, 0, 'C');
+                $pdf->Cell(35, 5, '6.5 W (PoE)', 1, 0, 'C');
+                $pdf->Cell(35, 5, '0', 1, 1, 'C');
+
+                $pdf->Cell(45, 5, $pdf->encodeText('PC (Computer)'), 1, 0, 'L');
+                $pdf->Cell(25, 5, $dispositivo->estado === 'online' ? 'UP' : 'DOWN', 1, 0, 'C');
+                $pdf->Cell(25, 5, '100/1000 Mbps', 1, 0, 'C');
+                $pdf->Cell(25, 5, 'FULL', 1, 0, 'C');
+                $pdf->Cell(35, 5, '-', 1, 0, 'C');
+                $pdf->Cell(35, 5, '0', 1, 1, 'C');
+            } elseif ($dispositivo->tipo_dispositivo === 'access_point') {
+                $pdf->Cell(45, 5, $pdf->encodeText('mGig 2.5G (PoE+ Uplink)'), 1, 0, 'L');
+                $pdf->Cell(25, 5, $dispositivo->estado === 'online' ? 'UP' : 'DOWN', 1, 0, 'C');
+                $pdf->Cell(25, 5, '2500 Mbps', 1, 0, 'C');
+                $pdf->Cell(25, 5, 'FULL', 1, 0, 'C');
+                $pdf->Cell(35, 5, '22.4 W (PoE+)', 1, 0, 'C');
+                $pdf->Cell(35, 5, '0', 1, 1, 'C');
+
+                $pdf->Cell(45, 5, $pdf->encodeText('Console RJ-45'), 1, 0, 'L');
+                $pdf->Cell(25, 5, 'DOWN', 1, 0, 'C');
+                $pdf->Cell(25, 5, 'Serial 9600', 1, 0, 'C');
+                $pdf->Cell(25, 5, 'FULL', 1, 0, 'C');
+                $pdf->Cell(35, 5, '-', 1, 0, 'C');
+                $pdf->Cell(35, 5, '0', 1, 1, 'C');
+            } else {
+                $pdf->Cell(190, 6, $pdf->encodeText('Interfaces físicas gestionadas automáticamente según morfología del dispositivo (' . $dispositivo->tipo_label . ')'), 1, 1, 'C');
             }
+        } else {
+            foreach ($interfaces as $intf) {
+                if ($pdf->GetY() > 270) {
+                    $pdf->AddPage();
+                    $pdf->SetFont('Helvetica', 'B', 8);
+                    $pdf->SetFillColor(59, 89, 152);
+                    $pdf->SetTextColor(255, 255, 255);
+                    $pdf->Cell(45, 6, $pdf->encodeText('Interfaz'), 1, 0, 'L', true);
+                    $pdf->Cell(25, 6, $pdf->encodeText('Oper Status'), 1, 0, 'C', true);
+                    $pdf->Cell(25, 6, $pdf->encodeText('Velocidad'), 1, 0, 'C', true);
+                    $pdf->Cell(25, 6, $pdf->encodeText('Dúplex'), 1, 0, 'C', true);
+                    $pdf->Cell(35, 6, $pdf->encodeText('Consumo PoE'), 1, 0, 'C', true);
+                    $pdf->Cell(35, 6, $pdf->encodeText('Errores CRC/FCS'), 1, 1, 'C', true);
+                    $pdf->SetFont('Helvetica', '', 7.5);
+                    $pdf->SetTextColor(30, 41, 59);
+                }
 
-            $telem = $intf->telemetria instanceof \Illuminate\Support\Collection ? $intf->telemetria->first() : $intf->telemetria;
-            $status = $telem && $telem->is_errdisabled ? 'ERR-DISABLE' : ($telem && $telem->oper_status === 'up' ? 'UP' : 'DOWN');
-            $crc = $telem ? ($telem->crc_errors + $telem->fcs_errors) : 0;
-            $poe = $telem && $telem->poe_watts_consumo > 0 ? $telem->poe_watts_consumo . ' W' : '-';
-            $speed = $intf->velocidad_mbps ? $intf->velocidad_mbps . ' Mbps' : '1000 Mbps';
+                $telem = $intf->telemetria instanceof \Illuminate\Support\Collection ? $intf->telemetria->first() : $intf->telemetria;
+                $status = $telem && $telem->is_errdisabled ? 'ERR-DISABLE' : ($telem && $telem->oper_status === 'up' ? 'UP' : 'DOWN');
+                $crc = $telem ? ($telem->crc_errors + $telem->fcs_errors) : 0;
+                $poe = $telem && $telem->poe_watts_consumo > 0 ? $telem->poe_watts_consumo . ' W' : '-';
+                $speed = $intf->velocidad_mbps ? $intf->velocidad_mbps . ' Mbps' : '1000 Mbps';
 
-            $pdf->Cell(45, 5, $pdf->encodeText($intf->nombre), 1, 0, 'L');
-            $pdf->Cell(25, 5, $status, 1, 0, 'C');
-            $pdf->Cell(25, 5, $speed, 1, 0, 'C');
-            $pdf->Cell(25, 5, strtoupper($intf->duplex ?? 'Full'), 1, 0, 'C');
-            $pdf->Cell(35, 5, $poe, 1, 0, 'C');
-            $pdf->Cell(35, 5, $crc, 1, 1, 'C');
+                $pdf->Cell(45, 5, $pdf->encodeText($intf->nombre), 1, 0, 'L');
+                $pdf->Cell(25, 5, $status, 1, 0, 'C');
+                $pdf->Cell(25, 5, $speed, 1, 0, 'C');
+                $pdf->Cell(25, 5, strtoupper($intf->duplex ?? 'Full'), 1, 0, 'C');
+                $pdf->Cell(35, 5, $poe, 1, 0, 'C');
+                $pdf->Cell(35, 5, $crc, 1, 1, 'C');
+            }
         }
 
         $nombreArchivo = 'Reporte_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $dispositivo->nombre) . '_' . date('Ymd_His') . '.pdf';

@@ -74,6 +74,63 @@
             box-shadow: 0 0 12px rgba(96, 165, 250, 0.4) !important;
         }
 
+        /* Compact Uiverse Buttons for Filter & Action Bars */
+        .uiverse-btn-sm {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            padding: 0.28rem 0.65rem;
+            border: 1.5px solid #0f172a;
+            border-radius: 0.65rem;
+            font-size: 0.68rem;
+            font-weight: 700;
+            background: #1e293b;
+            color: #ffffff;
+            cursor: pointer;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+            pointer-events: auto !important;
+            white-space: nowrap;
+        }
+
+        .uiverse-btn-sm:hover,
+        .uiverse-btn-sm.active:hover {
+            color: #0f172a !important;
+            border-radius: 0.95rem;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+            border-color: #0f172a;
+        }
+
+        .uiverse-btn-sm.active {
+            border-color: #3b82f6 !important;
+            background: #0f172a !important;
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.45) !important;
+            color: #60a5fa !important;
+        }
+
+        .dark .uiverse-btn-sm {
+            background: #0f131c;
+            border-color: #334155;
+            color: #f1f5f9;
+        }
+
+        .dark .uiverse-btn-sm:hover,
+        .dark .uiverse-btn-sm.active:hover {
+            color: #090d16 !important;
+            border-color: #f8fafc;
+        }
+
+        .dark .uiverse-btn-sm.active {
+            border-color: #60a5fa !important;
+            background: #1e2638 !important;
+            box-shadow: 0 0 10px rgba(96, 165, 250, 0.45) !important;
+            color: #93c5fd !important;
+        }
+
         .interactive-bar-island {
             pointer-events: auto !important;
         }
@@ -176,14 +233,14 @@
             {{-- Left Bar: Toolbar Groups (Uiverse Buttons) --}}
             <div class="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white/95 dark:bg-[#0d1017]/95 backdrop-blur-md border border-slate-200/90 dark:border-slate-800/70 shadow-lg dark:shadow-none interactive-bar-island" style="pointer-events: auto;">
                 
-                {{-- Grupo 1: Vista / Física --}}
+                {{-- Grupo 1: Vista / Disposición --}}
                 <div class="flex items-center gap-1.5">
-                    {{-- 1. Centrar --}}
-                    <button type="button" onclick="resetZoom()" class="uiverse-btn group" title="Centrar y encuadrar vista completa con margen amplio">
+                    {{-- 1. Centrar Todo --}}
+                    <button type="button" onclick="resetZoom()" class="uiverse-btn group" title="Centrar y encuadrar vista completa">
                         <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
                             <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
                         </svg>
-                        <span class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Centrar</span>
+                        <span class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Ver Todo</span>
                         <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[220px] group-hover:h-[220px] group-hover:opacity-100 pointer-events-none"></span>
                         <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
                             <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
@@ -204,7 +261,7 @@
                         </svg>
                     </button>
 
-                    {{-- 3. Jerárquico --}}
+                    {{-- 7. Jerárquico --}}
                     <button type="button" id="btnLayoutTree" onclick="setLayout('tree')" class="uiverse-btn group" title="Organizar en niveles jerárquicos (Core ➔ Acceso)">
                         <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
                             <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
@@ -216,7 +273,7 @@
                         </svg>
                     </button>
 
-                    {{-- 4. Libre --}}
+                    {{-- 8. Libre --}}
                     <button type="button" id="btnLayoutFree" onclick="setLayout('free')" class="uiverse-btn group active" title="Disposición orgánica libre">
                         <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
                             <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
@@ -230,12 +287,12 @@
 
                     <div class="h-4 w-px bg-slate-200 dark:bg-slate-700/60 mx-0.5"></div>
 
-                    {{-- 5. Haces de Tráfico Animados (MagicUI Animated Beams) --}}
+                    {{-- 9. Haces de Tráfico Animados (MagicUI Animated Beams) --}}
                     <button type="button" id="btnToggleBeams" onclick="toggleTrafficBeams()" class="uiverse-btn group active" title="Alternar simulación de tráfico de red en vivo (MagicUI Animated Beams)">
                         <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-cyan-400 z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-cyan-600" xmlns="http://www.w3.org/2000/svg">
                             <path d="M13 10V3L4 14h7v7l9-11h-7z" fill="currentColor"></path>
                         </svg>
-                        <span id="beamsStatusLabel" class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Haces Activos (Beams)</span>
+                        <span id="beamsStatusLabel" class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Haces (Beams)</span>
                         <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[240px] group-hover:h-[240px] group-hover:opacity-100 pointer-events-none"></span>
                         <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-cyan-400 z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-cyan-600" xmlns="http://www.w3.org/2000/svg">
                             <path d="M13 10V3L4 14h7v7l9-11h-7z" fill="currentColor"></path>
@@ -275,19 +332,102 @@
 
             </div>
 
-            {{-- Right Island: Filter Pills --}}
-            <div class="flex items-center gap-1 bg-white/95 dark:bg-[#0d1017]/95 p-1.5 rounded-2xl border border-slate-200/90 dark:border-slate-800/70 backdrop-blur-md shadow-lg dark:shadow-none interactive-bar-island" style="margin-left: auto; pointer-events: auto;">
-                <button type="button" onclick="filterEdges('all', this)" class="filter-pill-btn px-3 py-1 rounded-xl text-[11px] font-bold text-white bg-slate-900 dark:bg-slate-800 transition shadow-sm" style="pointer-events: auto;">
-                    Todos ({{ $totalEnlaces }})
-                </button>
-                <button type="button" onclick="filterEdges('up', this)" class="filter-pill-btn px-3 py-1 rounded-xl text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5" style="pointer-events: auto;">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    UP
-                </button>
-                <button type="button" onclick="filterEdges('down', this)" class="filter-pill-btn px-3 py-1 rounded-xl text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5" style="pointer-events: auto;">
-                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                    Alertas
-                </button>
+            {{-- Right Island: Search & Category / Edge Filter Pills (Colapsable y estilo Uiverse Compacto) --}}
+            <div id="rightFilterBarContainer" class="flex items-center transition-all duration-300 pointer-events-auto" style="margin-left: auto;">
+                
+                {{-- Collapsed State: Botón flotante compacto para expandir --}}
+                <div id="rightFilterBarCollapsed" class="hidden">
+                    <button type="button" onclick="toggleRightFilterBar()" class="uiverse-btn-sm group" title="Mostrar barra de búsqueda y filtros de red">
+                        <svg class="w-3.5 h-3.5 fill-cyan-400 z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-2" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <span class="relative z-[1] transition-all duration-500 ease-custom -translate-x-1 group-hover:translate-x-1 flex items-center gap-1.5 font-bold">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            Filtros & Búsqueda
+                        </span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[180px] group-hover:h-[180px] group-hover:opacity-100 pointer-events-none"></span>
+                        <svg class="w-3.5 h-3.5 fill-cyan-400 z-[9] transition-all duration-500 ease-custom right-2 group-hover:-right-1/4" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Expanded State: Barra Completa con Botones Uiverse Compactos --}}
+                <div id="rightFilterBarExpanded" class="flex flex-wrap items-center gap-1.5 bg-white/95 dark:bg-[#0d1017]/95 p-1.5 rounded-2xl border border-slate-200/90 dark:border-slate-800/70 backdrop-blur-md shadow-lg dark:shadow-none interactive-bar-island">
+                    
+                    {{-- Quick Device Search Input --}}
+                    <div class="relative flex items-center">
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" id="topoSearchInput" oninput="searchTopologyDevice(this.value)" placeholder="Buscar IP, router, switch..." class="w-32 sm:w-40 pl-8 pr-2 py-1 text-[11px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition font-medium">
+                    </div>
+
+                    <div class="h-4 w-px bg-slate-200 dark:bg-slate-700/60 mx-0.5"></div>
+
+                    {{-- Device Category Filter Buttons (Estilo Uiverse Pequeño) --}}
+                    <button type="button" onclick="filterDeviceCategory('all', this)" class="uiverse-btn-sm group device-filter-btn active" title="Mostrar todos los nodos">
+                        <span class="relative z-[1] transition-all duration-500 ease-custom">Todos</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[140px] group-hover:h-[140px] group-hover:opacity-100 pointer-events-none"></span>
+                    </button>
+
+                    <button type="button" onclick="filterDeviceCategory('router', this)" class="uiverse-btn-sm group device-filter-btn" title="Ver y centrar en Routers WAN">
+                        <img src="{{ asset('images/topology/router.png') }}" class="w-3.5 h-3.5 object-contain relative z-[1]" alt="Routers">
+                        <span class="relative z-[1] transition-all duration-500 ease-custom">Routers</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[140px] group-hover:h-[140px] group-hover:opacity-100 pointer-events-none"></span>
+                    </button>
+
+                    <button type="button" onclick="filterDeviceCategory('switch', this)" class="uiverse-btn-sm group device-filter-btn" title="Ver y centrar en Switches">
+                        <svg class="w-3.5 h-3.5 relative z-[1]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                        <span class="relative z-[1] transition-all duration-500 ease-custom">Switches</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[140px] group-hover:h-[140px] group-hover:opacity-100 pointer-events-none"></span>
+                    </button>
+
+                    <button type="button" onclick="filterDeviceCategory('servidor', this)" class="uiverse-btn-sm group device-filter-btn" title="Ver Servidores Enterprise">
+                        <img src="{{ asset('images/topology/server.png') }}" class="w-3.5 h-3.5 object-contain relative z-[1]" alt="Servidores">
+                        <span class="relative z-[1] transition-all duration-500 ease-custom">Servidores</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[140px] group-hover:h-[140px] group-hover:opacity-100 pointer-events-none"></span>
+                    </button>
+
+                    <button type="button" onclick="filterDeviceCategory('access_point', this)" class="uiverse-btn-sm group device-filter-btn" title="Ver y centrar en Access Points">
+                        <img src="{{ asset('images/topology/access-point.png') }}" class="w-3.5 h-3.5 object-contain relative z-[1]" alt="APs">
+                        <span class="relative z-[1] transition-all duration-500 ease-custom">APs</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[140px] group-hover:h-[140px] group-hover:opacity-100 pointer-events-none"></span>
+                    </button>
+
+                    <button type="button" onclick="filterDeviceCategory('phone', this)" class="uiverse-btn-sm group device-filter-btn" title="Ver Teléfonos IP">
+                        <img src="{{ asset('images/topology/ip-phone.png') }}" class="w-3.5 h-3.5 object-contain relative z-[1]" alt="VoIP">
+                        <span class="relative z-[1] transition-all duration-500 ease-custom">VoIP</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[140px] group-hover:h-[140px] group-hover:opacity-100 pointer-events-none"></span>
+                    </button>
+
+                    <div class="h-4 w-px bg-slate-200 dark:bg-slate-700/60 mx-0.5"></div>
+
+                    {{-- Enlaces Filter Buttons (Estilo Uiverse Pequeño) --}}
+                    <button type="button" onclick="filterEdges('all', this)" class="uiverse-btn-sm group filter-pill-btn active" title="Mostrar todos los enlaces">
+                        <span class="relative z-[1] transition-all duration-500 ease-custom">Enlaces ({{ $totalEnlaces }})</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[160px] group-hover:h-[160px] group-hover:opacity-100 pointer-events-none"></span>
+                    </button>
+
+                    <button type="button" onclick="filterEdges('up', this)" class="uiverse-btn-sm group filter-pill-btn" title="Filtrar enlaces UP">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 relative z-[1]"></span>
+                        <span class="relative z-[1] transition-all duration-500 ease-custom">UP</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[120px] group-hover:h-[120px] group-hover:opacity-100 pointer-events-none"></span>
+                    </button>
+
+                    <button type="button" onclick="filterEdges('down', this)" class="uiverse-btn-sm group filter-pill-btn" title="Filtrar enlaces en Alerta">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-400 relative z-[1]"></span>
+                        <span class="relative z-[1] transition-all duration-500 ease-custom">Alertas</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[120px] group-hover:h-[120px] group-hover:opacity-100 pointer-events-none"></span>
+                    </button>
+
+                    <div class="h-4 w-px bg-slate-200 dark:bg-slate-700/60 mx-0.5"></div>
+
+                    {{-- Collapse Toggle Button (Ocultar Barra) --}}
+                    <button type="button" onclick="toggleRightFilterBar()" class="uiverse-btn-sm group px-2 text-slate-400 hover:text-slate-900 dark:hover:text-slate-100" title="Ocultar barra de filtros">
+                        <svg class="w-3.5 h-3.5 relative z-[1] transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[100px] group-hover:h-[100px] group-hover:opacity-100 pointer-events-none"></span>
+                    </button>
+                </div>
+
             </div>
         </div>
 
@@ -330,8 +470,8 @@
                         <span class="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider">CHASIS FÍSICO</span>
                         <span id="drawerDeviceTipoEquipo" class="text-[9px] font-mono font-bold text-blue-400">Switch Gestionado</span>
                     </div>
-                    <div class="w-full h-14 flex items-center justify-center p-1 bg-black/40 rounded-lg border border-slate-800/60">
-                        <img id="drawerDeviceChassisImage" src="{{ asset('images/topology/switch-core.svg') }}" alt="Chasis" class="max-h-12 max-w-full object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-105">
+                    <div class="w-full h-24 flex items-center justify-center p-2 bg-black/40 rounded-lg border border-slate-800/60">
+                        <img id="drawerDeviceChassisImage" src="{{ asset('images/topology/switch-core.svg') }}" alt="Chasis" class="max-h-20 max-w-full object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-105">
                     </div>
                     <div class="w-full flex items-center justify-between mt-1.5 px-1 text-[10px] text-slate-400 font-mono">
                         <span id="drawerDeviceFactorForma">1U Rackmount</span>
@@ -383,6 +523,53 @@
                     </div>
                     <div id="drawerDeviceConnectionsList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                         <!-- Generado dinámicamente -->
+                    </div>
+                </div>
+
+                {{-- Sección Especial: Dispositivo Conectado al Puerto PC (Pass-Through) para Teléfonos IP --}}
+                <div id="drawerPhonePcSection" class="hidden border-t border-gray-100 dark:border-slate-800 pt-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                            <p class="text-[10px] font-black text-indigo-900 dark:text-indigo-400 uppercase tracking-wider">Puerto PC (Pass-Through)</p>
+                        </div>
+                        <span id="drawerPhonePcStatusBadge" class="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">CONECTADA</span>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-indigo-50/70 to-slate-50 dark:from-slate-900/90 dark:to-indigo-950/30 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900/40 space-y-2 text-xs">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                            </div>
+                            <div class="truncate">
+                                <h5 id="drawerPhonePcHostname" class="font-extrabold text-slate-800 dark:text-slate-100 leading-tight truncate">PC-DELL-OPTIPLEX</h5>
+                                <p id="drawerPhonePcVendor" class="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold truncate">Dell Inc. / Workstation</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-indigo-100/60 dark:border-slate-800 font-mono text-[11px]">
+                            <div>
+                                <span class="text-[10px] text-slate-400 block">IP de Datos:</span>
+                                <span id="drawerPhonePcIp" class="font-bold text-blue-600 dark:text-blue-400">10.204.1.159</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-400 block">MAC (Switch CAM):</span>
+                                <span id="drawerPhonePcMac" class="font-bold text-slate-800 dark:text-slate-200">24:7E:12:5A:21:18</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-400 block">Velocidad Enlace:</span>
+                                <span id="drawerPhonePcSpeed" class="font-bold text-emerald-600 dark:text-emerald-400">1.0 Gbps (Full)</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-400 block">VLAN Tráfico:</span>
+                                <span id="drawerPhonePcVlan" class="font-bold text-slate-700 dark:text-slate-300">VLAN Datos (1)</span>
+                            </div>
+                        </div>
+
+                        <div class="pt-1 text-[9px] text-slate-400 font-mono flex items-center justify-between border-t border-indigo-100/40 dark:border-slate-800">
+                            <span>Switch / Puerto:</span>
+                            <span id="drawerPhonePcSwitchPort" class="text-slate-600 dark:text-slate-400 font-bold truncate max-w-[160px]">HMAG_IDF2A_B (Gi1/0/23)</span>
+                        </div>
                     </div>
                 </div>
 
@@ -891,7 +1078,7 @@
     {{-- Vis-Network Library --}}
     <script src="{{ asset('vendor/vis-network/vis-network.min.js') }}"></script>
     <script>
-        let initialGrafoData = { nodes: [], edges: [] };
+        let initialGrafoData = @json($grafoData);
 
         let network = null;
         let nodesDataSet = null;
@@ -906,8 +1093,43 @@
         let animLoopRunning = false;
 
         document.addEventListener('DOMContentLoaded', function() {
-            fetchTopologyData();
+            if (initialGrafoData && initialGrafoData.nodes && initialGrafoData.nodes.length > 0) {
+                initNetworkTopology();
+            } else {
+                fetchTopologyData();
+            }
+            if (localStorage.getItem('topo_right_bar_collapsed') === '1') {
+                const exp = document.getElementById('rightFilterBarExpanded');
+                const col = document.getElementById('rightFilterBarCollapsed');
+                if (exp && col) {
+                    exp.classList.add('hidden');
+                    col.classList.remove('hidden');
+                }
+            }
         });
+
+        function saveNodePositionsToDatabase(positions = null) {
+            if (!network) return;
+            const currentPositions = positions || network.getPositions();
+            if (!currentPositions || Object.keys(currentPositions).length === 0) return;
+
+            localStorage.setItem('vis_positions_user', JSON.stringify(currentPositions));
+
+            fetch("{{ route('topologia.guardar_posiciones') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ posiciones: currentPositions })
+            }).then(res => res.json())
+              .then(data => {
+                  console.log('Posiciones de topología guardadas en cuenta:', data);
+              }).catch(err => {
+                  console.error('Error al guardar posiciones:', err);
+              });
+        }
 
         async function fetchTopologyData() {
             try {
@@ -916,7 +1138,36 @@
                 const data = await response.json();
                 
                 initialGrafoData = data;
-                initNetworkTopology();
+                if (!network) {
+                    initNetworkTopology();
+                } else if (nodesDataSet && edgesDataSet) {
+                    // Actualización en caliente - NO sobrescribir x e y para no desacomodar el lienzo
+                    const mappedNodes = (data.nodes || []).map(node => {
+                        const cData = node.customData || {};
+                        const nombre = cData.nombre || node.label || '';
+                        const imgInfo = getDeviceImageAndRole(cData.modelo, nombre, cData.sysDescr);
+                        const imagenRuta = cData.image || imgInfo.image || null;
+                        const esInfra = imagenRuta ? true : false;
+                        
+                        // Extraer x e y para omitirlos en la actualización en caliente y preservar el lienzo
+                        const { x, y, ...nodeWithoutPos } = node;
+
+                        return {
+                            ...nodeWithoutPos,
+                            id: node.id,
+                            label: node.label || nombre || 'Desconocido',
+                            shape: esInfra ? 'image' : 'dot',
+                            image: esInfra ? (imagenRuta || '/img/renders/switch_default.png') : undefined,
+                            size: node.size || imgInfo.size || (esInfra ? 145 : 120),
+                            customData: {
+                                ...cData,
+                                rol: esInfra ? (cData.rol || imgInfo.rol) : 'ENDPOINT',
+                                tipo_equipo: esInfra ? (cData.tipo_equipo || imgInfo.tipo_equipo) : 'Dispositivo Final'
+                            }
+                        };
+                    });
+                    nodesDataSet.update(mappedNodes);
+                }
             } catch (error) {
                 console.error("Error haciendo fetch de la topología:", error);
             }
@@ -928,68 +1179,112 @@
         function getDeviceImageAndRole(modelo, nombre, sysDescr) {
             const haystack = ((nombre || '') + ' ' + (modelo || '') + ' ' + (sysDescr || '')).toLowerCase();
 
-            // 1. Chasis modular Nexus / 7000
+            // 1. Teléfonos IP / VoIP
+            if (haystack.includes('phone') || haystack.includes('telefono') || haystack.includes('teléfono') || haystack.includes('cp-') || haystack.includes('sip') || haystack.includes('voip') || haystack.includes('7841') || haystack.includes('8841') || haystack.includes('7960')) {
+                return {
+                    image: '{{ asset("images/topology/ip-phone.svg") }}',
+                    rol: 'VOIP / TELEFONIA',
+                    tipo_equipo: 'Teléfono IP / VoIP Endpoint',
+                    factor_forma: 'Desktop VoIP Appliance',
+                    size: 120
+                };
+            }
+
+            // 2. Servidores / Data Center / Rack / Blade / Server / Linux / Windows
+            if ((haystack.includes('server') || haystack.includes('servidor') || haystack.includes('srv') || haystack.includes('data_center') || haystack.includes('datacenter') || haystack.includes('mdf-data') || haystack.includes('poweredge') || haystack.includes('proliant') || haystack.includes('ucs') || haystack.includes('esxi') || haystack.includes('hyper-v') || haystack.includes('linux') || haystack.includes('windows server')) && !haystack.includes('ip phone')) {
+                return {
+                    image: '{{ asset("images/topology/server.png") }}',
+                    rol: 'SERVIDOR / DATA CENTER',
+                    tipo_equipo: 'Servidor Enterprise / Data Center',
+                    factor_forma: '2U Rackmount Enterprise',
+                    size: 210
+                };
+            }
+
+            // 3. Puntos de Acceso Inalámbrico (Access Points / Wi-Fi)
+            if (haystack.includes('ap') || haystack.includes('access point') || haystack.includes('air-') || haystack.includes('c91') || haystack.includes('wifi') || haystack.includes('wireless') || haystack.includes('unifi') || haystack.includes('aruba') || haystack.includes('meraki')) {
+                return {
+                    image: '{{ asset("images/topology/access-point.svg") }}',
+                    rol: 'WIFI / ACCESS POINT',
+                    tipo_equipo: 'Punto de Acceso Wi-Fi Enterprise',
+                    factor_forma: 'Ceiling / Wall Mount',
+                    size: 120
+                };
+            }
+
+            // 4. Routers de borde WAN (ISR / Router / 1841 / 4400 / 4451 / 4331 / CUBE / GW / SAT)
+            if (
+                (haystack.includes('isr') || haystack.includes('router') || haystack.includes('1841') || haystack.includes('4400') || haystack.includes('4451') || haystack.includes('4331') || haystack.includes('cube') || haystack.includes('gw-') || haystack.includes('rtr') || haystack.includes('edge') || haystack.includes('sat')) &&
+                !haystack.includes('catalyst') && !haystack.includes('cat9k') && !haystack.includes('ws-c') && !((nombre || '').toLowerCase().startsWith('sw-'))
+            ) {
+                return {
+                    image: '{{ asset("images/topology/router.svg") }}',
+                    rol: 'ROUTER / EDGE',
+                    tipo_equipo: 'Router de Borde WAN',
+                    factor_forma: 'Router Cisco',
+                    size: 140
+                };
+            }
+
+            // 5. Chasis modular Nexus / 7000 / 9000
             if (haystack.includes('nexus') || haystack.includes('7000') || haystack.includes('n7000') || haystack.includes('nx-os') || haystack.includes('n9k') || haystack.includes('n3000')) {
                 return {
                     image: '{{ asset("images/topology/switch-nexus.svg") }}',
                     rol: 'CORE / MODULAR',
                     tipo_equipo: 'Chasis Modular de Núcleo',
                     factor_forma: 'Modular (Multi-Slot)',
-                    size: 30
+                    size: 170
                 };
             }
 
-            // 2. Cisco Catalyst 9300 / 93 / 9600 / 9800
+            // 6. Cisco Catalyst 9300 / 93 / 9600 / 9800
             if (haystack.includes('9300') || haystack.includes('catalyst 93') || haystack.includes('cat9k') || haystack.includes('c93') || haystack.includes('c9606') || haystack.includes('c9800')) {
                 return {
                     image: '{{ asset("images/topology/switch-core.svg") }}',
                     rol: 'DISTRIBUTION / CORE',
                     tipo_equipo: 'Switch Multicapa L3 Enterprise',
                     factor_forma: '1U Rackmount Enterprise',
-                    size: 26
+                    size: 155
                 };
             }
 
-            // 3. Switch de acceso 24/48 puertos (2960 / SG200 / C1000 / 3750 / 9200)
-            if (haystack.includes('2960') || haystack.includes('sg200') || haystack.includes('c1000') || haystack.includes('3750') || haystack.includes('c9200')) {
+            // 7. Switches de acceso (WS-C, WS-X, Catalyst, 2960, 3750, 3560, 3850, 9200, SG200, SG300, C1000)
+            if (
+                haystack.includes('ws-c') || haystack.includes('ws-x') || haystack.includes('catalyst') ||
+                haystack.includes('2960') || haystack.includes('sg200') || haystack.includes('sg220') || haystack.includes('sg300') ||
+                haystack.includes('c1000') || haystack.includes('3750') || haystack.includes('3560') || haystack.includes('3850') ||
+                haystack.includes('c9200') || haystack.includes('9200l') || haystack.includes('switch')
+            ) {
                 return {
                     image: '{{ asset("images/topology/switch-access.svg") }}',
-                    rol: 'ACCESS',
+                    rol: 'ACCESS / SWITCH',
                     tipo_equipo: 'Switch de Acceso Gigabit Managed',
                     factor_forma: '1U Rackmount Fixed',
-                    size: 26
+                    size: 145
                 };
             }
 
-            // 4. Chasis del router de borde (ISR / Router / 1841 / 4400 / edge)
-            if (haystack.includes('isr') || haystack.includes('router') || haystack.includes('1841') || haystack.includes('4400') || haystack.includes('edge')) {
+            // 8. PCs / Workstations / Estaciones de Trabajo
+            if (
+                (haystack.startsWith('pc-') || haystack.startsWith('desktop-') || haystack.startsWith('laptop-') || haystack.includes('workstation')) &&
+                !haystack.includes('cisco') && !haystack.includes('switch') && !haystack.includes('ws-c') && !haystack.includes('ios')
+            ) {
                 return {
-                    image: '{{ asset("images/topology/router-edge.svg") }}',
-                    rol: 'ROUTER / EDGE',
-                    tipo_equipo: 'Router de Borde WAN',
-                    factor_forma: '1U/2U Modular Router',
-                    size: 26
+                    image: '{{ asset("images/topology/pc.svg") }}',
+                    rol: 'ENDPOINT / PC',
+                    tipo_equipo: 'Estación de Trabajo / PC',
+                    factor_forma: 'Desktop Tower / SFF',
+                    size: 120
                 };
             }
 
-            // 5. Nodos Genéricos / Computadoras (Endpoints)
-            if (haystack.includes('genérico') || haystack.includes('computadora') || haystack.includes('endpoint') || haystack.includes('generico')) {
-                return {
-                    image: null,
-                    rol: 'ENDPOINT',
-                    tipo_equipo: 'Dispositivo Final (PC/Servidor)',
-                    factor_forma: 'Endpoint',
-                    size: 18
-                };
-            }
-
-            // 6. Switch estándar limpio de 1U por defecto
+            // 9. Switch estándar limpio de 1U por defecto
             return {
                 image: '{{ asset("images/topology/switch-standard-1u.svg") }}',
                 rol: 'SWITCH 1U',
                 tipo_equipo: 'Switch Gestionado 1U',
                 factor_forma: '1U Rackmount',
-                size: 26
+                size: 145
             };
         }
 
@@ -997,9 +1292,14 @@
             const container = document.getElementById('networkTopologyCanvas');
             if (!container) return;
 
-
-            const savedPositions = JSON.parse(localStorage.getItem('vis_positions_v1')) || {};
-            const hasSavedPositions = Object.keys(savedPositions).length > 0;
+            const isDark = document.documentElement.classList.contains('dark');
+            const userSavedPositions = initialGrafoData.userPosiciones || {};
+            const localSavedPositions = JSON.parse(localStorage.getItem('vis_positions_user'))
+                || JSON.parse(localStorage.getItem('vis_positions_v6'))
+                || JSON.parse(localStorage.getItem('vis_positions_v5'))
+                || {};
+            const savedPositions = Object.keys(userSavedPositions).length > 0 ? userSavedPositions : localSavedPositions;
+            const hasSavedPositions = initialGrafoData.hasSavedPositions || Object.keys(savedPositions).length > 0;
 
             // Enriquecer nodos con render frontal según el modelo real
             const mappedNodes = (initialGrafoData.nodes || []).map(node => {
@@ -1023,17 +1323,24 @@
                     label: nombre || 'Desconocido',
                     shape: esInfra ? 'image' : 'dot',
                     image: esInfra ? (imagenRuta || '/img/renders/switch_default.png') : undefined,
-                    size: esInfra ? 45 : 18, // Switches grandes, endpoints medianos
-                    color: esInfra ? undefined : { background: '#0ea5e9', border: '#0284c7' }, // Nodos genéricos en azul claro para que destaquen
-                    font: { color: '#334155', face: 'Inter', size: 12 },
+                    size: node.size || imgInfo.size || (esInfra ? 145 : 120),
+                    color: esInfra ? undefined : { background: '#0ea5e9', border: '#0284c7' },
+                    font: { 
+                        color: isDark ? '#f8fafc' : '#0f172a', 
+                        face: 'Inter, system-ui, sans-serif', 
+                        size: 16,
+                        vadjust: 38,
+                        strokeWidth: 3.5,
+                        strokeColor: isDark ? '#090d16' : '#ffffff'
+                    },
                     customData: {
                         ...cData,
                         rol: esInfra ? (cData.rol || imgInfo.rol) : 'ENDPOINT',
                         tipo_equipo: esInfra ? (cData.tipo_equipo || imgInfo.tipo_equipo) : 'Dispositivo Final'
                     },
                     title: undefined,
-                    x: savedPositions[node.id] ? savedPositions[node.id].x : undefined,
-                    y: savedPositions[node.id] ? savedPositions[node.id].y : undefined
+                    x: savedPositions[node.id] ? savedPositions[node.id].x : (node.x !== undefined ? node.x : undefined),
+                    y: savedPositions[node.id] ? savedPositions[node.id].y : (node.y !== undefined ? node.y : undefined)
                 };
             });
 
@@ -1060,7 +1367,7 @@
                     ...edge,
                     label: lbl,
                     to_is_endpoint: isEndpoint,
-                    length: isEndpoint ? 100 : 250
+                    length: isEndpoint ? 260 : 480
                 };
             });
 
@@ -1071,59 +1378,53 @@
                 edges: edgesDataSet
             };
 
-            const isDark = document.documentElement.classList.contains('dark');
-
             const options = {
                 layout: {
                     improvedLayout: true,
-                    hierarchical: hasSavedPositions ? false : {
-                        enabled: true,
-                        direction: 'UD',
-                        sortMethod: 'directed',
-                        nodeSpacing: 250,
-                        levelSeparation: 300
-                    }
+                    hierarchical: false
                 },
                 nodes: {
                     borderWidth: 0,
                     borderWidthSelected: 0,
                     font: {
-                        size: 11,
-                        color: '#e2e8f0',
+                        size: 16,
+                        color: isDark ? '#f8fafc' : '#0f172a',
                         face: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                        vadjust: 14,
-                        strokeWidth: 0,
+                        vadjust: 38,
+                        strokeWidth: 3.5,
+                        strokeColor: isDark ? '#090d16' : '#ffffff',
                         align: 'center'
                     },
                     shadow: {
                         enabled: true,
-                        color: 'rgba(15, 23, 42, 0.12)',
-                        size: 8,
+                        color: 'rgba(15, 23, 42, 0.25)',
+                        size: 16,
                         x: 0,
-                        y: 3
+                        y: 6
                     }
                 },
                 edges: {
                     font: {
-                        size: 8.5,
-                        color: isDark ? '#94a3b8' : '#64748b',
-                        background: isDark ? 'rgba(13, 16, 23, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+                        size: 11,
+                        color: isDark ? '#94a3b8' : '#475569',
+                        background: isDark ? 'rgba(13, 16, 23, 0.88)' : 'rgba(255, 255, 255, 0.95)',
                         strokeWidth: 0,
                         align: 'horizontal'
                     },
                     smooth: { type: 'continuous' },
                     color: { color: '#10b981', opacity: 0.5 },
-                    width: 1.5
+                    width: 2.5
                 },
                 physics: {
                     enabled: !hasSavedPositions,
                     solver: 'barnesHut',
                     barnesHut: {
-                        gravitationalConstant: -30000,
-                        centralGravity: 0.1,
-                        springLength: 250,
-                        springConstant: 0.05,
-                        damping: 0.09
+                        gravitationalConstant: -55000,
+                        centralGravity: 0.05,
+                        springLength: 520,
+                        springConstant: 0.04,
+                        damping: 0.09,
+                        avoidOverlap: 1
                     },
                     stabilization: {
                         enabled: true,
@@ -1145,27 +1446,39 @@
             // Iniciar ciclo de animación a 60 FPS para Haces de Red (MagicUI Animated Beams)
             startTrafficAnimationLoop();
 
-            // Encuadre automático con amplio padding (80px) y CONGELACIÓN de física al estabilizar
+            // Vista general completa sin auto-zoom a nodos específicos
+            function frameInitialView() {
+                if (!network) return;
+                network.fit({
+                    animation: { duration: 600, easingFunction: 'easeInOutQuad' },
+                    padding: 80
+                });
+            }
+
+            if (hasSavedPositions) {
+                physicsEnabled = false;
+                const btnPhys = document.getElementById('btnTogglePhysics');
+                const labelPhys = document.getElementById('physicsStatusLabel');
+                if (btnPhys) btnPhys.classList.remove('active');
+                if (labelPhys) labelPhys.textContent = 'Física Pausada';
+                setTimeout(frameInitialView, 150);
+            }
+
+            // Encuadre automático y CONGELACIÓN de física al estabilizar
             network.once('stabilizationIterationsDone', function() {
                 network.storePositions();
-                network.setOptions({ physics: { enabled: false }, layout: { hierarchical: false } });
+                network.setOptions({ physics: { enabled: false } });
                 physicsEnabled = false;
                 
                 const currentPositions = network.getPositions();
-                localStorage.setItem('vis_positions_v1', JSON.stringify(currentPositions));
+                saveNodePositionsToDatabase(currentPositions);
 
                 const btnPhys = document.getElementById('btnTogglePhysics');
                 const labelPhys = document.getElementById('physicsStatusLabel');
                 if (btnPhys) btnPhys.classList.remove('active');
                 if (labelPhys) labelPhys.textContent = 'Física Pausada';
 
-                network.fit({
-                    animation: {
-                        duration: 800,
-                        easingFunction: 'easeInOutQuad'
-                    },
-                    padding: 80
-                });
+                setTimeout(frameInitialView, 150);
             });
 
             // ==================== TOOLTIP OLED INTELIGENTE ====================
@@ -1173,10 +1486,7 @@
             // Guardar posiciones al terminar de arrastrar nodos
             network.on('dragEnd', function (params) {
                 if (params.nodes && params.nodes.length > 0) {
-                    const currentPositions = network.getPositions();
-                    const saved = JSON.parse(localStorage.getItem('vis_positions_v1')) || {};
-                    Object.assign(saved, currentPositions);
-                    localStorage.setItem('vis_positions_v1', JSON.stringify(saved));
+                    saveNodePositionsToDatabase();
                 }
             });
 
@@ -1342,7 +1652,7 @@
                 }
 
                 // ----------------------------------------------------
-                // CAPA 2: MICRO-LEDS DE ESTADO EN HARDWARE (8px)
+                // CAPA 2: MICRO-LEDS DE ESTADO EN HARDWARE
                 // ----------------------------------------------------
                 nodeIds.forEach(id => {
                     const pos = nodePositions[id];
@@ -1352,11 +1662,11 @@
                     if (!node || !node.customData) return;
 
                     const estado = node.customData.estado || 'online';
-                    const nodeSize = node.size || 26;
+                    const nodeSize = node.size || 120;
 
-                    const ledX = pos.x + (nodeSize * 2.5) - 3;
-                    const ledY = pos.y - (nodeSize * 0.5) + 3;
-                    const ledRadius = 4;
+                    const ledX = pos.x + (nodeSize * 0.92);
+                    const ledY = pos.y - (nodeSize * 0.55);
+                    const ledRadius = 6;
 
                     ctx.save();
                     ctx.beginPath();
@@ -1364,21 +1674,21 @@
 
                     if (estado === 'online') {
                         ctx.fillStyle = '#10b981';
-                        ctx.shadowColor = 'rgba(16, 185, 129, 0.6)';
-                        ctx.shadowBlur = 5;
+                        ctx.shadowColor = 'rgba(16, 185, 129, 0.8)';
+                        ctx.shadowBlur = 8;
                         ctx.fill();
 
                         ctx.strokeStyle = '#ffffff';
-                        ctx.lineWidth = 1.2;
+                        ctx.lineWidth = 1.5;
                         ctx.stroke();
                     } else {
                         ctx.fillStyle = '#ef4444';
-                        ctx.shadowColor = 'rgba(239, 68, 68, 0.7)';
-                        ctx.shadowBlur = 5;
+                        ctx.shadowColor = 'rgba(239, 68, 68, 0.9)';
+                        ctx.shadowBlur = 8;
                         ctx.fill();
 
                         ctx.strokeStyle = '#ffffff';
-                        ctx.lineWidth = 1.2;
+                        ctx.lineWidth = 1.5;
                         ctx.stroke();
                     }
                     ctx.restore();
@@ -1503,7 +1813,7 @@
             }
 
             if (d.image) {
-                document.getElementById('drawerDeviceIcon').innerHTML = `<img src="${d.image}" class="w-7 h-7 object-contain drop-shadow" alt="${d.nombre}">`;
+                document.getElementById('drawerDeviceIcon').innerHTML = `<img src="${d.image}" class="w-9 h-9 object-contain drop-shadow" alt="${d.nombre}">`;
                 const chassisImg = document.getElementById('drawerDeviceChassisImage');
                 if (chassisImg) {
                     chassisImg.src = d.image;
@@ -1557,6 +1867,45 @@
                         `;
                         connList.appendChild(item);
                     });
+                }
+            }
+            // Sección Especial: Dispositivo en Puerto PC (Pass-Through)
+            const pcSection = document.getElementById('drawerPhonePcSection');
+            if (pcSection) {
+                if (d.pc_conectada && d.pc_conectada.has_attached_pc) {
+                    const pc = d.pc_conectada;
+                    pcSection.classList.remove('hidden');
+                    document.getElementById('drawerPhonePcHostname').textContent = pc.hostname;
+                    document.getElementById('drawerPhonePcVendor').textContent = pc.vendor;
+                    document.getElementById('drawerPhonePcIp').textContent = pc.ip;
+                    document.getElementById('drawerPhonePcMac').textContent = pc.mac;
+                    document.getElementById('drawerPhonePcSpeed').textContent = pc.speed;
+                    document.getElementById('drawerPhonePcVlan').textContent = pc.vlan;
+                    document.getElementById('drawerPhonePcSwitchPort').textContent = `${pc.switch_name} (${pc.switch_port})`;
+                    
+                    const pcBadge = document.getElementById('drawerPhonePcStatusBadge');
+                    if (pcBadge) {
+                        pcBadge.className = 'text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300';
+                        pcBadge.textContent = 'CONECTADA';
+                    }
+                } else if (d.pc_conectada && d.pc_conectada.status === 'standby') {
+                    const pc = d.pc_conectada;
+                    pcSection.classList.remove('hidden');
+                    document.getElementById('drawerPhonePcHostname').textContent = 'Puerto PC Disponible';
+                    document.getElementById('drawerPhonePcVendor').textContent = 'Sin computadora transmitiendo';
+                    document.getElementById('drawerPhonePcIp').textContent = 'Standby';
+                    document.getElementById('drawerPhonePcMac').textContent = 'Puerto 10/100/1000';
+                    document.getElementById('drawerPhonePcSpeed').textContent = '1.0 Gbps Capacidad';
+                    document.getElementById('drawerPhonePcVlan').textContent = 'VLAN Datos';
+                    document.getElementById('drawerPhonePcSwitchPort').textContent = `${pc.switch_name} (${pc.switch_port})`;
+                    
+                    const pcBadge = document.getElementById('drawerPhonePcStatusBadge');
+                    if (pcBadge) {
+                        pcBadge.className = 'text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300';
+                        pcBadge.textContent = 'STANDBY';
+                    }
+                } else {
+                    pcSection.classList.add('hidden');
                 }
             }
 
@@ -1660,6 +2009,8 @@
             }
         }
 
+
+
         function togglePhysics() {
             physicsEnabled = !physicsEnabled;
             if (network) {
@@ -1678,7 +2029,6 @@
 
         function setLayout(type) {
             if (!network) return;
-            localStorage.removeItem('vis_positions_v1');
 
             const btnTree = document.getElementById('btnLayoutTree');
             const btnFree = document.getElementById('btnLayoutFree');
@@ -1693,8 +2043,8 @@
                             enabled: true,
                             direction: 'UD',
                             sortMethod: 'directed',
-                            nodeSpacing: 250,
-                            levelSeparation: 300
+                            nodeSpacing: 450,
+                            levelSeparation: 480
                         }
                     },
                     physics: { enabled: false }
@@ -1705,7 +2055,7 @@
                 network.setOptions({ layout: { hierarchical: false } });
                 
                 const currentPositions = network.getPositions();
-                localStorage.setItem('vis_positions_v1', JSON.stringify(currentPositions));
+                saveNodePositionsToDatabase(currentPositions);
 
                 physicsEnabled = false;
                 const btnPhys = document.getElementById('btnTogglePhysics');
@@ -1724,11 +2074,12 @@
                         enabled: true,
                         solver: 'barnesHut',
                         barnesHut: {
-                            gravitationalConstant: -30000,
-                            centralGravity: 0.1,
-                            springLength: 250,
-                            springConstant: 0.05,
-                            damping: 0.09
+                            gravitationalConstant: -55000,
+                            centralGravity: 0.05,
+                            springLength: 520,
+                            springConstant: 0.04,
+                            damping: 0.09,
+                            avoidOverlap: 1
                         },
                         stabilization: {
                             enabled: true,
@@ -1747,7 +2098,7 @@
                     if (labelPhys) labelPhys.textContent = 'Física Pausada';
                     
                     const currentPositions = network.getPositions();
-                    localStorage.setItem('vis_positions_v1', JSON.stringify(currentPositions));
+                    saveNodePositionsToDatabase(currentPositions);
                     
                     network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' }, padding: 80 });
                 });
@@ -1759,18 +2110,132 @@
             }
         }
 
+        // ==================== TOGGLE BARRA DE BÚSQUEDA Y FILTROS ====================
+        function toggleRightFilterBar() {
+            const exp = document.getElementById('rightFilterBarExpanded');
+            const col = document.getElementById('rightFilterBarCollapsed');
+            if (!exp || !col) return;
+            const isHidden = exp.classList.contains('hidden');
+            if (isHidden) {
+                exp.classList.remove('hidden');
+                col.classList.add('hidden');
+                localStorage.setItem('topo_right_bar_collapsed', '0');
+            } else {
+                exp.classList.add('hidden');
+                col.classList.remove('hidden');
+                localStorage.setItem('topo_right_bar_collapsed', '1');
+            }
+        }
 
+        // ==================== FILTRADO DE DISPOSITIVOS Y BUSCADOR ====================
+        function filterDeviceCategory(category, btn) {
+            document.querySelectorAll('.device-filter-btn').forEach(b => {
+                b.classList.remove('active');
+            });
+            if (btn) {
+                btn.classList.add('active');
+            }
 
+            if (!nodesDataSet || !network) return;
 
+            const allNodes = nodesDataSet.get();
+            if (category === 'all') {
+                allNodes.forEach(node => {
+                    nodesDataSet.update({ id: node.id, opacity: 1 });
+                });
+                network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' }, padding: 80 });
+                return;
+            }
+
+            const matchedNodeIds = [];
+            allNodes.forEach(node => {
+                const rol = (node.customData?.rol || '').toLowerCase();
+                const nombre = (node.label || node.customData?.nombre || '').toLowerCase();
+                const tipo = (node.customData?.tipo_equipo || '').toLowerCase();
+                const modelo = (node.customData?.modelo || '').toLowerCase();
+                const hay = rol + ' ' + nombre + ' ' + tipo + ' ' + modelo;
+
+                let match = false;
+                if (category === 'router') {
+                    match = (hay.includes('router') || hay.includes('isr') || hay.includes('1841') || hay.includes('4400') || hay.includes('4451') || hay.includes('4331') || hay.includes('cube') || hay.includes('gw')) && !hay.includes('catalyst') && !nombre.startsWith('sw-');
+                } else if (category === 'switch') {
+                    match = (hay.includes('switch') || hay.includes('nexus') || hay.includes('catalyst') || hay.includes('core') || hay.includes('access') || hay.includes('ws-c')) && !hay.includes('server') && !hay.includes('servidor') && !hay.includes('srv');
+                } else if (category === 'access_point') {
+                    match = hay.includes('ap') || hay.includes('wifi') || hay.includes('access point') || hay.includes('wireless') || hay.includes('c9115');
+                } else if (category === 'phone') {
+                    match = hay.includes('phone') || hay.includes('telefono') || hay.includes('teléfono') || hay.includes('voip') || hay.includes('sep');
+                } else if (category === 'servidor') {
+                    match = hay.includes('server') || hay.includes('servidor') || hay.includes('srv') || hay.includes('data_center') || hay.includes('datacenter') || hay.includes('mdf-data') || hay.includes('poweredge') || hay.includes('proliant') || hay.includes('ucs') || hay.includes('esxi') || hay.includes('hyper-v') || hay.includes('linux') || hay.includes('windows server');
+                }
+
+                if (match) {
+                    matchedNodeIds.push(node.id);
+                    nodesDataSet.update({ id: node.id, opacity: 1 });
+                } else {
+                    nodesDataSet.update({ id: node.id, opacity: 0.18 });
+                }
+            });
+
+            if (matchedNodeIds.length > 0) {
+                network.fit({
+                    nodes: matchedNodeIds,
+                    animation: { duration: 800, easingFunction: 'easeInOutQuad' },
+                    padding: 100
+                });
+            }
+        }
+
+        function searchTopologyDevice(query) {
+            query = (query || '').trim().toLowerCase();
+            if (!nodesDataSet || !network) return;
+
+            const allNodes = nodesDataSet.get();
+            if (!query) {
+                allNodes.forEach(node => {
+                    nodesDataSet.update({ id: node.id, opacity: 1 });
+                });
+                return;
+            }
+
+            const matchedNodeIds = [];
+            allNodes.forEach(node => {
+                const nombre = (node.label || node.customData?.nombre || '').toLowerCase();
+                const ip = (node.customData?.ip || '').toLowerCase();
+                const modelo = (node.customData?.modelo || '').toLowerCase();
+                const rol = (node.customData?.rol || '').toLowerCase();
+
+                if (nombre.includes(query) || ip.includes(query) || modelo.includes(query) || rol.includes(query)) {
+                    matchedNodeIds.push(node.id);
+                    nodesDataSet.update({ id: node.id, opacity: 1 });
+                } else {
+                    nodesDataSet.update({ id: node.id, opacity: 0.12 });
+                }
+            });
+
+            if (matchedNodeIds.length === 1) {
+                network.focus(matchedNodeIds[0], {
+                    scale: 1.15,
+                    animation: { duration: 600, easingFunction: 'easeInOutQuad' }
+                });
+                network.selectNodes([matchedNodeIds[0]]);
+                showDeviceDetails(matchedNodeIds[0]);
+            } else if (matchedNodeIds.length > 1) {
+                network.fit({
+                    nodes: matchedNodeIds,
+                    animation: { duration: 600, easingFunction: 'easeInOutQuad' },
+                    padding: 100
+                });
+            }
+        }
 
         function filterEdges(filter, btn) {
             currentFilter = filter;
-            document.querySelectorAll('[onclick^="filterEdges"]').forEach(b => {
-                b.classList.remove('bg-slate-900', 'text-white');
-                b.classList.add('text-slate-600');
+            document.querySelectorAll('.filter-pill-btn').forEach(b => {
+                b.classList.remove('active');
             });
-            btn.classList.add('bg-slate-900', 'text-white');
-            btn.classList.remove('text-slate-600');
+            if (btn) {
+                btn.classList.add('active');
+            }
 
             if (!edgesDataSet) return;
 

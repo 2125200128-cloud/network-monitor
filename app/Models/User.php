@@ -37,16 +37,32 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Retorna la URL completa del avatar del usuario o un fallback con iniciales
+     */
+    public function getAvatarUrlAttribute(): string
+    {
+        if (!empty($this->avatar) && file_exists(public_path('storage/' . $this->avatar))) {
+            return asset('storage/' . $this->avatar);
+        }
+
+        $bg = strtolower($this->role ?? '') === 'admin' ? '3b5998' : (strtolower($this->role ?? '') === 'operador' ? '16a34a' : 'f26419');
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name ?? 'User') . '&background=' . $bg . '&color=fff&size=128';
+    }
+
+    /**
+     * Posiciones personalizadas del mapa de topología de red guardadas por la cuenta
+     */
+    public function posicionTopologia()
+    {
+        return $this->hasOne(PosicionTopologia::class);
     }
 }

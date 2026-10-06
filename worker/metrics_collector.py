@@ -197,10 +197,10 @@ def collect_global_metrics(devices, active_nodes):
             if metrics.get('ram') is not None:
                 ram_readings.append(metrics['ram'])
             
-            # GET TRAFFIC VIA TEST_SNMP.PY (Robusto y Probado)
+            # Tráfico vía snmp_traffic.py (mismo directorio worker/)
             try:
-                root_test_snmp = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'test_snmp.py')
-                out = subprocess.run([sys.executable, root_test_snmp], capture_output=True, text=True, timeout=10)
+                traffic_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'snmp_traffic.py')
+                out = subprocess.run([sys.executable, traffic_script], capture_output=True, text=True, timeout=10)
                 if out.returncode == 0:
                     for line in out.stdout.splitlines():
                         if line.startswith('{'):
@@ -212,7 +212,7 @@ def collect_global_metrics(devices, active_nodes):
                                 traffic_readings.append(total_mbps)
                                 metrics['traffic_mbps'] = total_mbps
             except Exception as e:
-                logger.debug(f"Error parseando test_snmp.py: {e}")
+                logger.debug(f"Error parseando snmp_traffic.py: {e}")
 
             logger.info(
                 f"  [{ip}] SNMP OK -> CPU {metrics.get('cpu','N/A')} % | "

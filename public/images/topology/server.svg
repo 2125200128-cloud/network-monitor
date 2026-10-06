@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 110" width="260" height="110">
+  <defs>
+    <linearGradient id="srvBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="40%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="srvBezel" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="50%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    <linearGradient id="srvEar" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="50%" stop-color="#cbd5e1"/>
+      <stop offset="100%" stop-color="#64748b"/>
+    </linearGradient>
+    <linearGradient id="driveTray" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="50%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="oledGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <filter id="srvShadow" x="-10%" y="-15%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#020617" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#srvShadow)">
+    <!-- Left Rack Ear 2U/3U -->
+    <path d="M 4 8 L 16 8 L 16 102 L 4 102 Z" fill="url(#srvEar)" stroke="#475569" stroke-width="0.9"/>
+    <circle cx="10" cy="18" r="3" fill="#1e293b" stroke="#334155" stroke-width="0.8"/>
+    <circle cx="10" cy="55" r="3" fill="#1e293b" stroke="#334155" stroke-width="0.8"/>
+    <circle cx="10" cy="92" r="3" fill="#1e293b" stroke="#334155" stroke-width="0.8"/>
+
+    <!-- Right Rack Ear 2U/3U -->
+    <path d="M 244 8 L 256 8 L 256 102 L 244 102 Z" fill="url(#srvEar)" stroke="#475569" stroke-width="0.9"/>
+    <circle cx="250" cy="18" r="3" fill="#1e293b" stroke="#334155" stroke-width="0.8"/>
+    <circle cx="250" cy="55" r="3" fill="#1e293b" stroke="#334155" stroke-width="0.8"/>
+    <circle cx="250" cy="92" r="3" fill="#1e293b" stroke="#334155" stroke-width="0.8"/>
+
+    <!-- Main Server 2U/3U Chassis Enclosure -->
+    <rect x="16" y="8" width="228" height="94" rx="3" fill="url(#srvBody)" stroke="#475569" stroke-width="1.2"/>
+    <line x1="16" y1="10" x2="244" y2="10" stroke="#64748b" stroke-width="1.2"/>
+
+    <!-- Top Server Header Bezel -->
+    <rect x="20" y="12" width="220" height="18" rx="2" fill="url(#srvBezel)" stroke="#334155" stroke-width="0.8"/>
+    
+    <!-- OLED Diagnostics Screen -->
+    <rect x="24" y="15" width="48" height="12" rx="1.5" fill="#030712" stroke="#0891b2" stroke-width="0.8"/>
+    <rect x="26" y="17" width="44" height="8" rx="1" fill="url(#oledGlow)" opacity="0.85"/>
+    <text x="28" y="23" font-family="ui-monospace, monospace" font-size="5" font-weight="900" fill="#ffffff" letter-spacing="0.5">SRV-NODE-01</text>
+
+    <!-- Server Brand & Model -->
+    <text x="78" y="24" font-family="ui-monospace, monospace" font-size="6.5" font-weight="900" fill="#f8fafc" letter-spacing="0.8">ENTERPRISE SERVER</text>
+    <text x="175" y="24" font-family="ui-monospace, monospace" font-size="5" font-weight="700" fill="#38bdf8">2U DUAL XEON</text>
+
+    <!-- Power & Status Activity LEDs -->
+    <circle cx="226" cy="21" r="2.2" fill="#10b981" stroke="#ffffff" stroke-width="0.5"/>
+    <circle cx="233" cy="21" r="2.2" fill="#38bdf8" stroke="#ffffff" stroke-width="0.5"/>
+
+    <!-- Hot-Swap NVMe/SAS Drive Bays (8 Drive Trays Grid) -->
+    <!-- Row 1 Trays (4 bays) -->
+    <g transform="translate(22, 34)">
+      <!-- Bay 1 -->
+      <rect x="0" y="0" width="50" height="30" rx="2" fill="url(#driveTray)" stroke="#334155" stroke-width="0.8"/>
+      <line x1="4" y1="8" x2="40" y2="8" stroke="#475569" stroke-width="0.8"/>
+      <line x1="4" y1="14" x2="40" y2="14" stroke="#475569" stroke-width="0.8"/>
+      <line x1="4" y1="20" x2="40" y2="20" stroke="#475569" stroke-width="0.8"/>
+      <rect x="42" y="6" width="5" height="18" rx="1" fill="#0f172a" stroke="#64748b" stroke-width="0.5"/>
+      <circle cx="44.5" cy="10" r="1" fill="#10b981"/>
+      <circle cx="44.5" cy="20" r="1" fill="#10b981"/>
+
+      <!-- Bay 2 -->
+      <rect x="55" y="0" width="50" height="30" rx="2" fill="url(#driveTray)" stroke="#334155" stroke-width="0.8"/>
+      <line x1="59" y1="8" x2="95" y2="8" stroke="#475569" stroke-width="0.8"/>
+      <line x1="59" y1="14" x2="95" y2="14" stroke="#475569" stroke-width="0.8"/>
+      <line x1="59" y1="20" x2="95" y2="20" stroke="#475569" stroke-width="0.8"/>
+      <rect x="97" y="6" width="5" height="18" rx="1" fill="#0f172a" stroke="#64748b" stroke-width="0.5"/>
+      <circle cx="99.5" cy="10" r="1" fill="#10b981"/>
+      <circle cx="99.5" cy="20" r="1" fill="#10b981"/>
+
+      <!-- Bay 3 -->
+      <rect x="110" y="0" width="50" height="30" rx="2" fill="url(#driveTray)" stroke="#334155" stroke-width="0.8"/>
+      <line x1="114" y1="8" x2="150" y2="8" stroke="#475569" stroke-width="0.8"/>
+      <line x1="114" y1="14" x2="150" y2="14" stroke="#475569" stroke-width="0.8"/>
+      <line x1="114" y1="20" x2="150" y2="20" stroke="#475569" stroke-width="0.8"/>
+      <rect x="152" y="6" width="5" height="18" rx="1" fill="#0f172a" stroke="#64748b" stroke-width="0.5"/>
+      <circle cx="154.5" cy="10" r="1" fill="#10b981"/>
+      <circle cx="154.5" cy="20" r="1" fill="#10b981"/>
+
+      <!-- Bay 4 -->
+      <rect x="165" y="0" width="50" height="30" rx="2" fill="url(#driveTray)" stroke="#334155" stroke-width="0.8"/>
+      <line x1="169" y1="8" x2="205" y2="8" stroke="#475569" stroke-width="0.8"/>
+      <line x1="169" y1="14" x2="205" y2="14" stroke="#475569" stroke-width="0.8"/>
+      <line x1="169" y1="20" x2="205" y2="20" stroke="#475569" stroke-width="0.8"/>
+      <rect x="207" y="6" width="5" height="18" rx="1" fill="#0f172a" stroke="#64748b" stroke-width="0.5"/>
+      <circle cx="209.5" cy="10" r="1" fill="#10b981"/>
+      <circle cx="209.5" cy="20" r="1" fill="#10b981"/>
+    </g>
+
+    <!-- Row 2 Trays (4 bays) -->
+    <g transform="translate(22, 68)">
+      <!-- Bay 5 -->
+      <rect x="0" y="0" width="50" height="30" rx="2" fill="url(#driveTray)" stroke="#334155" stroke-width="0.8"/>
+      <line x1="4" y1="8" x2="40" y2="8" stroke="#475569" stroke-width="0.8"/>
+      <line x1="4" y1="14" x2="40" y2="14" stroke="#475569" stroke-width="0.8"/>
+      <line x1="4" y1="20" x2="40" y2="20" stroke="#475569" stroke-width="0.8"/>
+      <rect x="42" y="6" width="5" height="18" rx="1" fill="#0f172a" stroke="#64748b" stroke-width="0.5"/>
+      <circle cx="44.5" cy="10" r="1" fill="#10b981"/>
+      <circle cx="44.5" cy="20" r="1" fill="#10b981"/>
+
+      <!-- Bay 6 -->
+      <rect x="55" y="0" width="50" height="30" rx="2" fill="url(#driveTray)" stroke="#334155" stroke-width="0.8"/>
+      <line x1="59" y1="8" x2="95" y2="8" stroke="#475569" stroke-width="0.8"/>
+      <line x1="59" y1="14" x2="95" y2="14" stroke="#475569" stroke-width="0.8"/>
+      <line x1="59" y1="20" x2="95" y2="20" stroke="#475569" stroke-width="0.8"/>
+      <rect x="97" y="6" width="5" height="18" rx="1" fill="#0f172a" stroke="#64748b" stroke-width="0.5"/>
+      <circle cx="99.5" cy="10" r="1" fill="#10b981"/>
+      <circle cx="99.5" cy="20" r="1" fill="#10b981"/>
+
+      <!-- Bay 7 -->
+      <rect x="110" y="0" width="50" height="30" rx="2" fill="url(#driveTray)" stroke="#334155" stroke-width="0.8"/>
+      <line x1="114" y1="8" x2="150" y2="8" stroke="#475569" stroke-width="0.8"/>
+      <line x1="114" y1="14" x2="150" y2="14" stroke="#475569" stroke-width="0.8"/>
+      <line x1="114" y1="20" x2="150" y2="20" stroke="#475569" stroke-width="0.8"/>
+      <rect x="152" y="6" width="5" height="18" rx="1" fill="#0f172a" stroke="#64748b" stroke-width="0.5"/>
+      <circle cx="154.5" cy="10" r="1" fill="#10b981"/>
+      <circle cx="154.5" cy="20" r="1" fill="#10b981"/>
+
+      <!-- Bay 8 -->
+      <rect x="165" y="0" width="50" height="30" rx="2" fill="url(#driveTray)" stroke="#334155" stroke-width="0.8"/>
+      <line x1="169" y1="8" x2="205" y2="8" stroke="#475569" stroke-width="0.8"/>
+      <line x1="169" y1="14" x2="205" y2="14" stroke="#475569" stroke-width="0.8"/>
+      <line x1="169" y1="20" x2="205" y2="20" stroke="#475569" stroke-width="0.8"/>
+      <rect x="207" y="6" width="5" height="18" rx="1" fill="#0f172a" stroke="#64748b" stroke-width="0.5"/>
+      <circle cx="209.5" cy="10" r="1" fill="#10b981"/>
+      <circle cx="209.5" cy="20" r="1" fill="#10b981"/>
+    </g>
+  </g>
+</svg>

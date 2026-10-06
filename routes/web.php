@@ -47,6 +47,7 @@ Route::middleware(['auth'])->group(function () {
     
     Route::get('/topologia', [App\Http\Controllers\TopologiaController::class, 'index'])->name('topologia.index');
     Route::get('/api/topologia/nodos-enlaces', [App\Http\Controllers\TopologiaController::class, 'datosGrafos'])->name('topologia.datos');
+    Route::post('/topologia/guardar-posiciones', [App\Http\Controllers\TopologiaController::class, 'guardarPosiciones'])->name('topologia.guardar_posiciones');
     Route::post('/topologia/descubrir', [App\Http\Controllers\DiscoveryController::class, 'run'])->name('topologia.descubrir');
     Route::post('/topologia/escanear-local', [App\Http\Controllers\DiscoveryController::class, 'scanLocalInterface'])->name('topologia.escanear_local');
     
@@ -54,4 +55,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/snmp/live-traffic', [App\Http\Controllers\DashboardController::class, 'snmpLiveTraffic'])->name('snmp.live_traffic');
     Route::get('/api/cdp/live', [App\Http\Controllers\DashboardController::class, 'cdpLive'])->name('cdp.live');
     Route::get('/api/kpi/live', [App\Http\Controllers\DashboardController::class, 'kpiLive'])->name('kpi.live');
+    Route::post('/api/notificaciones/marcar-leida', [App\Http\Controllers\DashboardController::class, 'marcarNotificacionLeida'])->name('notificaciones.marcar_leida');
+    Route::post('/api/notificaciones/descartar', [App\Http\Controllers\DashboardController::class, 'descartarNotificacion'])->name('notificaciones.descartar');
+
+    // ==========================================
+    // MONITOREO DE SERVICIOS Y PÁGINAS WEB
+    // ==========================================
+    Route::get('/servicios-web', [App\Http\Controllers\ServicioWebController::class, 'index'])->name('servicios_web.index');
+    Route::post('/servicios-web', [App\Http\Controllers\ServicioWebController::class, 'store'])->name('servicios_web.store');
+    Route::put('/servicios-web/{id}', [App\Http\Controllers\ServicioWebController::class, 'update'])->name('servicios_web.update');
+    Route::delete('/servicios-web/{id}', [App\Http\Controllers\ServicioWebController::class, 'destroy'])->name('servicios_web.destroy');
+    Route::post('/servicios-web/reprobar-todos', [App\Http\Controllers\ServicioWebController::class, 'reprobarTodos'])->name('servicios_web.reprobar_todos');
+    Route::post('/servicios-web/{id}/reprobar', [App\Http\Controllers\ServicioWebController::class, 'reprobar'])->name('servicios_web.reprobar');
+    Route::get('/api/servicios-web/live', [App\Http\Controllers\ServicioWebController::class, 'apiLive'])->name('servicios_web.api_live');
 });
+

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Dispositivo;
 use App\Models\EnlaceRed;
+use App\Models\PosicionTopologia;
 
 class TopologiaController extends Controller
 {
@@ -72,6 +73,43 @@ class TopologiaController extends Controller
     }
 
     /**
+     * Guarda la disposición cartográfica / coordenadas de los nodos de la topología para la cuenta autenticada
+     */
+    public function guardarPosiciones(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
+        }
+
+        $posiciones = $request->input('posiciones');
+        if (!is_array($posiciones)) {
+            return response()->json(['success' => false, 'message' => 'Estructura de posiciones inválida'], 400);
+        }
+
+        $posicionesSanitizadas = [];
+        foreach ($posiciones as $nodeId => $pos) {
+            if (is_array($pos) && isset($pos['x']) && isset($pos['y'])) {
+                $posicionesSanitizadas[$nodeId] = [
+                    'x' => round((float)$pos['x'], 2),
+                    'y' => round((float)$pos['y'], 2),
+                ];
+            }
+        }
+
+        PosicionTopologia::updateOrCreate(
+            ['user_id' => $user->id],
+            ['posiciones' => $posicionesSanitizadas]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Acomodo de topología guardado correctamente para la cuenta.',
+            'saved_count' => count($posicionesSanitizadas)
+        ]);
+    }
+
+    /**
      * Ajusta la velocidad y el estado en vivo de los enlaces según la salud de los equipos conectados
      */
     private function enriquecerEnlacesConTelemetriaViva($enlaces)
@@ -113,6 +151,15 @@ class TopologiaController extends Controller
     {
         $nodes = [];
         $edges = [];
+
+        // Cargar posiciones personalizadas guardadas para la cuenta autenticada
+        $userPosiciones = [];
+        if (auth()->check()) {
+            $posModel = PosicionTopologia::where('user_id', auth()->id())->first();
+            if ($posModel && is_array($posModel->posiciones)) {
+                $userPosiciones = $posModel->posiciones;
+            }
+        }
 
         // Coordenadas predeterminadas tipo Blueprint para un layout limpio inicial
         $coordenadas = [
@@ -205,7 +252,15 @@ class TopologiaController extends Controller
                 $statusColor = '#ef4444';
             }
 
-            $pos = $coordenadas[$disp->id] ?? ['x' => rand(-200, 200), 'y' => rand(-200, 200)];
+            if (isset($userPosiciones[$disp->id]) && isset($userPosiciones[$disp->id]['x']) && isset($userPosiciones[$disp->id]['y'])) {
+                $pos = [
+                    'x' => (float)$userPosiciones[$disp->id]['x'],
+                    'y' => (float)$userPosiciones[$disp->id]['y'],
+                ];
+            } else {
+                $pos = $coordenadas[$disp->id] ?? ['x' => rand(-200, 200), 'y' => rand(-200, 200)];
+            }
+
             $imageUrl = $imagePath ? asset($imagePath) : null;
 
             $nodes[] = [
@@ -221,18 +276,19 @@ class TopologiaController extends Controller
                 'borderWidthSelected' => 0,
                 'font' => [
                     'color' => '#1e293b',
-                    'size' => 11,
+                    'size' => 15,
                     'face' => 'Inter, system-ui, sans-serif',
-                    'strokeWidth' => 0,
-                    'vadjust' => 14,
+                    'strokeWidth' => 3,
+                    'strokeColor' => '#ffffff',
+                    'vadjust' => 34,
                     'align' => 'center'
                 ],
                 'shadow' => [
                     'enabled' => true,
-                    'color' => 'rgba(15, 23, 42, 0.12)',
-                    'size' => 8,
+                    'color' => 'rgba(15, 23, 42, 0.22)',
+                    'size' => 14,
                     'x' => 0,
-                    'y' => 3
+                    'y' => 5
                 ],
                 'customData' => [
                     'id' => $disp->id,
@@ -254,7 +310,8 @@ class TopologiaController extends Controller
                     'url' => route('dispositivos.show', $disp->id),
                     'image' => $imageUrl,
                     'conexiones' => $conexionesPorDispositivo[$disp->id] ?? [],
-                    'sensores_temperatura' => $disp->telemetriaChasis->sensores_temperatura ?? []
+                    'sensores_temperatura' => $disp->telemetriaChasis->sensores_temperatura ?? [],
+                    'pc_conectada' => (str_starts_with(strtoupper($disp->nombre), 'SEP') || str_contains(strtoupper($rol), 'VOIP') || str_contains(strtoupper($disp->nombre), 'PHONE')) ? \App\Services\PhonePcLinkResolver::resolveAttachedPc($disp) : null
                 ]
             ];
         }
@@ -364,7 +421,9 @@ class TopologiaController extends Controller
 
         return [
             'nodes' => $nodes,
-            'edges' => $edges
+            'edges' => $edges,
+            'hasSavedPositions' => !empty($userPosiciones),
+            'userPosiciones' => $userPosiciones
         ];
     }
 
@@ -375,62 +434,126 @@ class TopologiaController extends Controller
     {
         $haystack = strtolower($nombre . ' ' . $modelo . ' ' . $sysDescr);
 
-        // 1. Chasis modular Nexus / 7000
-        if (str_contains($haystack, 'nexus') || str_contains($haystack, '7000') || str_contains($haystack, 'n7000') || str_contains($haystack, 'nx-os') || str_contains($haystack, 'n9k') || str_contains($haystack, 'n3000')) {
+        // 1. Teléfonos IP Cisco (VoIP)
+        if (str_starts_with(strtoupper($nombre), 'SEP') || str_contains($haystack, 'ip phone') || str_contains($haystack, 'cp-') || str_contains($haystack, 'voip')) {
+            return [
+                'image' => 'images/topology/ip-phone.svg',
+                'rol' => 'TELÉFONO IP (VOIP)',
+                'tipo_equipo' => 'Teléfono IP Cisco',
+                'factor_forma' => 'VoIP Endpoint',
+                'size' => 110
+            ];
+        }
+
+        // 2. Access Points & Wireless Controllers (Wi-Fi)
+        if (str_contains($haystack, 'c9115') || str_contains($haystack, 'air-ap') || str_contains($haystack, 'air-cap') || str_contains($haystack, 'ap software') || str_contains($haystack, 'ap-') || str_contains($haystack, 'wap') || str_contains($haystack, 'c9800') || str_contains($haystack, 'wlc') || str_contains($haystack, 'wifi')) {
+            return [
+                'image' => 'images/topology/access-point.svg',
+                'rol' => 'ACCESS POINT WI-FI',
+                'tipo_equipo' => 'Punto de Acceso Inalámbrico',
+                'factor_forma' => 'Ceiling / Wall Mount AP',
+                'size' => 110
+            ];
+        }
+
+        // 3. Servidores Enterprise / IBM / Dell / HPE / Cisco UCS / ESXi / Linux / Windows / Data Center
+        if (
+            str_contains($haystack, 'ibm') || str_contains($haystack, 'system x') || str_contains($haystack, 'bladecenter') || str_contains($haystack, 'imm') ||
+            str_contains($haystack, 'thinksystem') || str_contains($haystack, 'poweredge') || str_contains($haystack, 'proliant') || str_contains($haystack, 'ucs') ||
+            str_contains($haystack, 'esxi') || str_contains($haystack, 'hyper-v') || str_contains($haystack, 'windows server') ||
+            (str_contains($haystack, 'linux') && !str_contains($haystack, 'iosd') && !str_contains($haystack, 'cisco ios')) ||
+            str_contains($haystack, 'srv') || str_contains($haystack, 'server') || str_contains($haystack, 'servidor') ||
+            str_contains($haystack, 'data_center') || str_contains($haystack, 'datacenter') || str_contains($haystack, 'mdf-data') || str_contains($haystack, 'mdf_data')
+        ) {
+            $tipoStr = 'Servidor Enterprise';
+            if (str_contains($haystack, 'ibm') || str_contains($haystack, 'system x') || str_contains($haystack, 'bladecenter')) {
+                $tipoStr = 'Servidor IBM System x / BladeCenter';
+            }
+            return [
+                'image' => 'images/topology/server.png',
+                'rol' => 'SERVIDOR',
+                'tipo_equipo' => $tipoStr,
+                'factor_forma' => 'Rackmount / Blade Enterprise',
+                'size' => 210
+            ];
+        }
+
+        // 4. Routers de borde WAN y Voice Gateways (ISR / Router / 1841 / 4400 / 4451 / 4331 / CUBE / GW)
+        if (
+            (str_contains($haystack, 'isr') || str_contains($haystack, 'router') || str_contains($haystack, '1841') || str_contains($haystack, '4400') || str_contains($haystack, '4451') || str_contains($haystack, '4331') || str_contains($haystack, 'cube') || str_contains($haystack, 'gw-') || str_contains($haystack, '-gw') || str_contains($haystack, 'rtr') || str_contains($haystack, 'edge') || str_contains($haystack, 'sat')) &&
+            !str_contains($haystack, 'catalyst') && !str_contains($haystack, 'cat9k') && !str_contains($haystack, 'ws-c') && !str_starts_with(strtolower($nombre), 'sw-')
+        ) {
+            return [
+                'image' => 'images/topology/router.svg',
+                'rol' => 'ROUTER / EDGE',
+                'tipo_equipo' => 'Router de Borde WAN',
+                'factor_forma' => 'Router Cisco',
+                'size' => 140
+            ];
+        }
+
+        // 5. Chasis modular Nexus / 7000 / 9000 / 3000
+        if (str_contains($haystack, 'nexus') || str_contains($haystack, '7000') || str_contains($haystack, 'n7000') || str_contains($haystack, 'nx-os') || str_contains($haystack, 'n9k') || str_contains($haystack, 'n3000') || str_contains($haystack, '93180') || str_contains($haystack, '93240') || str_contains($haystack, '9372')) {
             return [
                 'image' => 'images/topology/switch-nexus.svg',
                 'rol' => 'CORE / MODULAR',
                 'tipo_equipo' => 'Chasis Modular de Núcleo',
                 'factor_forma' => 'Modular (Multi-Slot Chassis)',
-                'size' => 30
+                'size' => 170
             ];
         }
 
-        // 2. Cisco Catalyst 9300 / 93 / 9600 / 9800
-        if (str_contains($haystack, '9300') || str_contains($haystack, 'catalyst 93') || str_contains($haystack, 'cat9k') || str_contains($haystack, 'c93') || str_contains($haystack, 'c9606') || str_contains($haystack, 'c9800')) {
+        // 6. Cisco Catalyst 9300 / 9600 / Core L3
+        if (str_contains($haystack, '9300') || str_contains($haystack, 'catalyst 93') || str_contains($haystack, 'cat9k') || str_contains($haystack, 'c93') || str_contains($haystack, 'c9606')) {
             return [
                 'image' => 'images/topology/switch-core.svg',
                 'rol' => 'DISTRIBUTION / CORE',
                 'tipo_equipo' => 'Switch Multicapa L3 Enterprise',
                 'factor_forma' => '1U Rackmount Enterprise',
-                'size' => 26
+                'size' => 155
             ];
         }
 
-        // 3. Switch de acceso 24/48 puertos (2960 / SG200 / C1000 / 3750 / 9200)
-        if (str_contains($haystack, '2960') || str_contains($haystack, 'sg200') || str_contains($haystack, 'c1000') || str_contains($haystack, '3750') || str_contains($haystack, 'c9200')) {
+        // 7. Switches de acceso (2960 / SG200 / SG220 / SG300 / C1000 / 3750 / 3560 / 3850 / 9200 / WS-C / WS-X)
+        if (
+            str_contains($haystack, 'ws-c') || str_contains($haystack, 'ws-x') || str_contains($haystack, 'catalyst') ||
+            str_contains($haystack, '2960') || str_contains($haystack, 'sg200') || str_contains($haystack, 'sg220') || str_contains($haystack, 'sg300') ||
+            str_contains($haystack, 'c1000') || str_contains($haystack, '3750') || str_contains($haystack, '3560') || str_contains($haystack, '3850') ||
+            str_contains($haystack, 'c9200') || str_contains($haystack, '9200l') || str_contains($haystack, 'cisco switch') || str_contains($haystack, 'switch')
+        ) {
             return [
                 'image' => 'images/topology/switch-access.svg',
-                'rol' => 'ACCESS',
+                'rol' => 'ACCESS / SWITCH',
                 'tipo_equipo' => 'Switch de Acceso Gigabit Managed',
                 'factor_forma' => '1U Rackmount Fixed',
-                'size' => 26
+                'size' => 145
             ];
         }
 
-        // 4. Chasis del router de borde (ISR / Router / 1841 / 4400 / edge)
-        if (str_contains($haystack, 'isr') || str_contains($haystack, 'router') || str_contains($haystack, '1841') || str_contains($haystack, '4400') || str_contains($haystack, 'edge')) {
+        // 8. PC / Workstation / Desktop
+        if (
+            (str_starts_with(strtoupper($nombre), 'PC-') || str_starts_with(strtoupper($nombre), 'DESKTOP-') || str_starts_with(strtoupper($nombre), 'LAPTOP-') || str_starts_with(strtoupper($nombre), 'HOST-') || str_contains($haystack, 'workstation')) &&
+            !str_contains($haystack, 'cisco') && !str_contains($haystack, 'switch') && !str_contains($haystack, 'ws-c') && !str_contains($haystack, 'ios')
+        ) {
             return [
-                'image' => 'images/topology/router-edge.svg',
-                'rol' => 'ROUTER / EDGE',
-                'tipo_equipo' => 'Router de Borde WAN',
-                'factor_forma' => '1U/2U Modular Router',
-                'size' => 26
+                'image' => 'images/topology/pc.svg',
+                'rol' => 'PC / WORKSTATION',
+                'tipo_equipo' => 'Estación de Trabajo / PC',
+                'factor_forma' => 'Desktop / Host',
+                'size' => 120
             ];
         }
 
-        // 5. Nodos Genéricos / Computadoras (Endpoints)
-        if (str_contains($haystack, 'genérico') || str_contains($haystack, 'computadora') || str_contains($haystack, 'endpoint') || str_contains($haystack, 'generico') || str_contains($haystack, 'pc') || empty($modelo)) {
-            
-            // Heurística de conexiones para detectar Switches no administrados o sin SNMP
+        // 9. Nodos Genéricos / Endpoints
+        if (str_contains($haystack, 'genérico') || str_contains($haystack, 'computadora') || str_contains($haystack, 'endpoint') || str_contains($haystack, 'generico') || empty($modelo)) {
             if ($numConexiones > 3) {
                 if (str_contains(strtolower($vendor), 'cisco')) {
                     return [
                         'image' => 'images/topology/switch-l2.svg',
                         'rol' => 'CISCO SWITCH (SIN SNMP)',
-                        'tipo_equipo' => 'Switch Infraestructura Cisco (SNMP Fallido)',
+                        'tipo_equipo' => 'Switch Infraestructura Cisco',
                         'factor_forma' => 'Switch Detectado por MAC y CDP',
-                        'size' => 26
+                        'size' => 120
                     ];
                 } else {
                     return [
@@ -438,27 +561,27 @@ class TopologiaController extends Controller
                         'rol' => 'SWITCH NO ADMINISTRADO',
                         'tipo_equipo' => 'Switch Genérico (Deducido por enlaces)',
                         'factor_forma' => 'Switch 1U Genérico',
-                        'size' => 26
+                        'size' => 120
                     ];
                 }
             }
 
             return [
-                'image' => 'images/topology/switch-access.svg',
+                'image' => 'images/topology/pc.svg',
                 'rol' => 'ENDPOINT',
-                'tipo_equipo' => 'Dispositivo Final (PC/Servidor/Impresora)',
+                'tipo_equipo' => 'Dispositivo Final (PC/Host)',
                 'factor_forma' => 'Endpoint',
-                'size' => 35
+                'size' => 90
             ];
         }
 
-        // 6. Switch estándar limpio de 1U por defecto
+        // 10. Switch estándar limpio de 1U por defecto
         return [
             'image' => 'images/topology/switch-standard-1u.svg',
             'rol' => 'SWITCH 1U',
             'tipo_equipo' => 'Switch Gestionado 1U',
             'factor_forma' => '1U Rackmount',
-            'size' => 26
+            'size' => 120
         ];
     }
 }

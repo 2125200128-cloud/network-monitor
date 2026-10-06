@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use App\Models\TelemetriaInterfaz;
 use App\Models\ConfiguracionDispositivo;
+use App\Models\NotificacionLeida;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -97,7 +98,7 @@ class DashboardController extends Controller
             }
         }
 
-        // Attach latest metrics and platform info to each device for the inventory table
+        // Attach latest metrics, type info and platform info to each device for the inventory table
         foreach ($dispositivos as $device) {
             $latest = $latestMetricsForAvg->firstWhere('dispositivo_id', $device->id)
                 ?? $device->metricas()->orderByDesc('fecha_registro')->first();
@@ -105,9 +106,13 @@ class DashboardController extends Controller
             $device->latest_loss = $latest ? $latest->packet_loss : 0;
             $device->latest_ping = $latest ? $latest->ping_ms : 0;
 
-            // Clean model name
-            $rawModel = $device->telemetriaChasis->model_name ?? null;
-            $device->clean_model = $this->cleanDeviceModel($rawModel);
+            // Resolve Type, Icon & Clean Model Info
+            $typeInfo = $device->resolveTypeInfo();
+            $device->tipo_dispositivo = $typeInfo['tipo'];
+            $device->tipo_label = $typeInfo['label'];
+            $device->clean_model = $typeInfo['clean_model'];
+            $device->tipo_badge_classes = $typeInfo['badge_classes'];
+            $device->tipo_icon_container_classes = $typeInfo['icon_container'];
 
             // Clean Uptime
             $uptimeStr = $device->telemetriaChasis->uptime_str ?? null;
@@ -121,6 +126,14 @@ class DashboardController extends Controller
                 : 'Offline';
         }
 
+        // Conteos por categoría de dispositivo
+        $totalSwitches = $dispositivos->where('tipo_dispositivo', 'switch')->count();
+        $totalTelefonos = $dispositivos->where('tipo_dispositivo', 'telefono')->count();
+        $totalServidores = $dispositivos->where('tipo_dispositivo', 'servidor')->count();
+        $totalPCs = $dispositivos->where('tipo_dispositivo', 'pc')->count();
+        $totalRouters = $dispositivos->where('tipo_dispositivo', 'router')->count();
+        $totalAPs = $dispositivos->where('tipo_dispositivo', 'access_point')->count();
+
         // Compilar notificaciones inteligentes de red
         $notificaciones = $this->compilarNotificaciones($dispositivos);
         $unreadNotificaciones = count(array_filter($notificaciones, fn($n) => !$n['leida']));
@@ -131,6 +144,12 @@ class DashboardController extends Controller
             'dispositivosOnline', 
             'dispositivosOffline', 
             'dispositivosWarning', 
+            'totalSwitches',
+            'totalTelefonos',
+            'totalServidores',
+            'totalPCs',
+            'totalRouters',
+            'totalAPs',
             'avgPing',
             'avgPacketLoss',
             'avgCpu',
@@ -150,127 +169,12 @@ class DashboardController extends Controller
     }
 
     /**
-     * Compila todas las alertas en tiempo real (interfaces err-disabled, offline, warning, térmicas, cpu y backups).
+     * Compila todas las alertas en tiempo real con análisis de CAUSA RAÍZ (desconexiones, cascada, puertos, térmicas, cpu).
      */
     public function compilarNotificaciones($dispositivos = null): array
     {
-        if (!$dispositivos) {
-            $dispositivos = Dispositivo::with('telemetriaChasis')->get();
-        }
-
-        $notificaciones = [];
-
-        // 1. Interfaces en Err-Disabled (Crítica)
-        $errDisabled = TelemetriaInterfaz::where('is_errdisabled', true)
-            ->with('interfaz.dispositivo')
-            ->get();
-
-        foreach ($errDisabled as $telemetria) {
-            $interfaz = $telemetria->interfaz;
-            $disp = $interfaz ? $interfaz->dispositivo : null;
-            $dispNombre = $disp ? $disp->nombre : 'Switch Catalyst';
-            $dispId = $disp ? $disp->id : 1;
-            $intfNombre = $interfaz ? $interfaz->nombre : 'Puerto';
-            $motivo = strtoupper($telemetria->errdisabled_reason ?? 'BPDU-Guard');
-
-            $notificaciones[] = [
-                'id' => 'errdis-' . $telemetria->id,
-                'tipo' => 'critica',
-                'categoria' => 'interfaz',
-                'titulo' => "Puerto {$intfNombre} en Err-Disabled",
-                'mensaje' => "El puerto {$intfNombre} en {$dispNombre} fue suspendido por protección {$motivo}.",
-                'tiempo' => 'En tiempo real',
-                'dispositivo' => $dispNombre,
-                'leida' => false,
-                'link' => route('dispositivos.show', $dispId),
-                'accion' => 'Inspeccionar Puerto'
-            ];
-        }
-
-        // 2. Dispositivos Offline (Crítica)
-        foreach ($dispositivos->where('estado', 'offline') as $devOff) {
-            $notificaciones[] = [
-                'id' => 'off-' . $devOff->id,
-                'tipo' => 'critica',
-                'categoria' => 'dispositivo',
-                'titulo' => "Equipo Inaccesible ({$devOff->nombre})",
-                'mensaje' => "Sin respuesta a sondeos ICMP/SNMP en {$devOff->ip} ({$devOff->ubicacion}).",
-                'tiempo' => 'Inaccesible',
-                'dispositivo' => $devOff->nombre,
-                'leida' => false,
-                'link' => route('dispositivos.show', $devOff->id),
-                'accion' => 'Diagnosticar'
-            ];
-        }
-
-        // 3. Dispositivos en Warning (Advertencia)
-        foreach ($dispositivos->where('estado', 'warning') as $devWarn) {
-            $loss = $devWarn->latest_loss ?: 6.2;
-            $notificaciones[] = [
-                'id' => 'warn-' . $devWarn->id,
-                'tipo' => 'advertencia',
-                'categoria' => 'dispositivo',
-                'titulo' => "Degradación de Enlace ({$devWarn->nombre})",
-                'mensaje' => "Latencia elevada y pérdida de paquetes detectada ({$loss}%) en {$devWarn->ip}.",
-                'tiempo' => 'En monitoreo',
-                'dispositivo' => $devWarn->nombre,
-                'leida' => false,
-                'link' => route('dispositivos.show', $devWarn->id),
-                'accion' => 'Ver Métricas'
-            ];
-        }
-
-        // 4. Alertas Térmicas Críticas (Temperatura >= 55°C)
-        foreach ($dispositivos as $disp) {
-            $temp = (float)($disp->telemetriaChasis->temperatura_c ?? 0);
-            if ($temp >= 55.0) {
-                $notificaciones[] = [
-                    'id' => 'temp-' . $disp->id,
-                    'tipo' => 'advertencia',
-                    'categoria' => 'hardware',
-                    'titulo' => "Alerta Térmica ({$disp->nombre})",
-                    'mensaje' => "Chasis o núcleos operando a {$temp}°C (Umbral térmico elevado).",
-                    'tiempo' => 'Térmico',
-                    'dispositivo' => $disp->nombre,
-                    'leida' => false,
-                    'link' => route('dispositivos.show', $disp->id),
-                    'accion' => 'Ver Sensores'
-                ];
-            }
-        }
-
-        // 5. Último respaldo de configuración NCM (Sistema)
-        $ultimoBackup = ConfiguracionDispositivo::with('dispositivo')->latest()->first();
-        if ($ultimoBackup && $ultimoBackup->dispositivo) {
-            $notificaciones[] = [
-                'id' => 'ncm-' . $ultimoBackup->id,
-                'tipo' => 'sistema',
-                'categoria' => 'ncm',
-                'titulo' => "Instantánea NCM Generada",
-                'mensaje' => "Respaldo {$ultimoBackup->tipo}-config verificado para {$ultimoBackup->dispositivo->nombre}.",
-                'tiempo' => $ultimoBackup->created_at->diffForHumans(),
-                'dispositivo' => $ultimoBackup->dispositivo->nombre,
-                'leida' => true,
-                'link' => route('dispositivos.show', $ultimoBackup->dispositivo_id),
-                'accion' => 'Ver Snapshot'
-            ];
-        }
-
-        // 6. Estado del Motor SNMP (Sistema)
-        $notificaciones[] = [
-            'id' => 'snmp-poller',
-            'tipo' => 'sistema',
-            'categoria' => 'poller',
-            'titulo' => "Sincronización SNMP Exitosa",
-            'mensaje' => "Ciclo de sondeo MIB-II completado para " . $dispositivos->count() . " equipos de red.",
-            'tiempo' => 'Activo',
-            'dispositivo' => 'Core Poller',
-            'leida' => true,
-            'link' => route('settings.index', ['section' => 'general']),
-            'accion' => 'Ajustes SNMP'
-        ];
-
-        return $notificaciones;
+        $diagnosisService = new \App\Services\AlarmDiagnosisService();
+        return $diagnosisService->diagnosticarAlarmasRed();
     }
 
     /**
@@ -325,23 +229,102 @@ class DashboardController extends Controller
         ]);
     }
 
+    /**
+     * Marca una o todas las notificaciones como leídas para la cuenta autenticada.
+     */
+    public function marcarNotificacionLeida(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
+        }
+
+        $all = $request->boolean('all');
+        $id = $request->input('id');
+
+        if ($all) {
+            $diagnosisService = new \App\Services\AlarmDiagnosisService();
+            $alarmas = $diagnosisService->diagnosticarAlarmasRed();
+            foreach ($alarmas as $alarma) {
+                NotificacionLeida::updateOrCreate(
+                    ['user_id' => $user->id, 'notificacion_id' => $alarma['id']],
+                    ['estado' => 'leida', 'fecha_evento' => now()]
+                );
+            }
+        } elseif ($id) {
+            NotificacionLeida::updateOrCreate(
+                ['user_id' => $user->id, 'notificacion_id' => $id],
+                ['estado' => 'leida', 'fecha_evento' => now()]
+            );
+        }
+
+        $notificaciones = $this->compilarNotificaciones();
+        $unreadCount = count(array_filter($notificaciones, fn($n) => !$n['leida']));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Notificaciones marcadas como leídas',
+            'unread_notif_count' => $unreadCount
+        ]);
+    }
+
+    /**
+     * Descarta/elimina una o todas las notificaciones de la vista para la cuenta autenticada.
+     */
+    public function descartarNotificacion(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
+        }
+
+        $all = $request->boolean('all');
+        $id = $request->input('id');
+
+        if ($all) {
+            $diagnosisService = new \App\Services\AlarmDiagnosisService();
+            $alarmas = $diagnosisService->diagnosticarAlarmasRed();
+            foreach ($alarmas as $alarma) {
+                NotificacionLeida::updateOrCreate(
+                    ['user_id' => $user->id, 'notificacion_id' => $alarma['id']],
+                    ['estado' => 'descartada', 'fecha_evento' => now()]
+                );
+            }
+        } elseif ($id) {
+            NotificacionLeida::updateOrCreate(
+                ['user_id' => $user->id, 'notificacion_id' => $id],
+                ['estado' => 'descartada', 'fecha_evento' => now()]
+            );
+        }
+
+        $notificaciones = $this->compilarNotificaciones();
+        $unreadCount = count(array_filter($notificaciones, fn($n) => !$n['leida']));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Notificación descartada correctamente',
+            'unread_notif_count' => $unreadCount,
+            'remaining_count' => count($notificaciones)
+        ]);
+    }
+
     public function descargarInventarioPdf(\App\Services\PdfReportService $pdfService)
     {
         return $pdfService->descargarReporteInventario();
     }
 
     /**
-     * Ejecuta test_snmp.py y retorna la telemetría de tráfico en tiempo real como JSON.
+     * Ejecuta worker/snmp_traffic.py y retorna la telemetría de tráfico en tiempo real como JSON.
      * Llamado por el frontend vía fetch() cada 3 segundos.
      */
     public function snmpLiveTraffic(): \Illuminate\Http\JsonResponse
     {
-        $scriptPath = base_path('test_snmp.py');
+        $scriptPath = base_path('worker/snmp_traffic.py');
 
         if (!file_exists($scriptPath)) {
             return response()->json([
                 'status'   => 'error',
-                'message'  => 'Script test_snmp.py no encontrado.',
+                'message'  => 'Script worker/snmp_traffic.py no encontrado.',
                 'in_mbps'  => 0,
                 'out_mbps' => 0,
             ], 404);
