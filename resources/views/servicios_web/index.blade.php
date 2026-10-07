@@ -1,6 +1,41 @@
 @extends('layouts.app')
 
-@section('title', 'Monitoreo de Servicios| NOC Monitor')
+@section('title', 'Monitoreo de Servicios | NOC Monitor')
+
+@section('styles')
+<style>
+/* From Uiverse.io by milley69 */ 
+.loading svg polyline {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.loading svg polyline#back {
+  fill: none;
+  stroke: #ff4d5033;
+}
+
+.loading svg polyline#front {
+  fill: none;
+  stroke: #ff4d4f;
+  stroke-dasharray: 48, 144;
+  stroke-dashoffset: 192;
+  animation: dash_682 1.4s linear infinite;
+}
+
+@keyframes dash_682 {
+  72.5% {
+    opacity: 0;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+</style>
+@endsection
 
 @section('content')
 <div class="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-6 space-y-5">
@@ -16,10 +51,13 @@
             <div>
                 <div class="flex items-center gap-2.5">
                     <h1 class="text-xl font-black text-gray-900 dark:text-white tracking-tight">Monitoreo de Servicios</h1>
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span id="liveStatusLabel">En vivo • Auto-refresco</span>
-                    </span>
+                    <!-- From Uiverse.io by milley69 -->
+                    <div class="loading inline-flex items-center" title="Monitoreo en vivo activo">
+                        <svg width="48px" height="28px" viewBox="0 0 64 48">
+                            <polyline points="0.157 23.954, 14 23.954, 21.843 48, 43 0, 50 24, 64 24" id="back"></polyline>
+                            <polyline points="0.157 23.954, 14 23.954, 21.843 48, 43 0, 50 24, 64 24" id="front"></polyline>
+                        </svg>
+                    </div>
                 </div>
                 <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 font-medium">
                     Disponibilidad HTTP/HTTPS, latencia de respuesta y estado en tiempo real.
