@@ -17,14 +17,17 @@
 
     /* ==================== SPEEDTEST.NET HIGH-FIDELITY GAUGE ==================== */
     .speedtest-container {
-        background: #0d0f1a;
-        background-image: radial-gradient(circle at 50% 120%, #151a30 0%, #080911 100%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 2rem;
-        color: #ffffff;
-        box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.6);
-        position: relative;
-        overflow: hidden;
+        background: #090b14 !important;
+        background-image: radial-gradient(circle at 50% 120%, #151a32 0%, #06070c 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 1.75rem !important;
+        color: #ffffff !important;
+        box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.7) !important;
+        position: relative !important;
+        width: 100% !important;
+        min-height: 480px !important;
+        display: block !important;
+        box-sizing: border-box !important;
     }
 
     .st-tab-btn {
@@ -44,7 +47,7 @@
         height: 3px;
         background: #00e5ff;
         border-radius: 3px;
-        box-shadow: 0 0 10px #00e5ff;
+        box-shadow: 0 0 12px #00e5ff;
     }
     .st-tab-btn.active-up {
         color: #ffffff;
@@ -58,11 +61,11 @@
         height: 3px;
         background: #ec4899;
         border-radius: 3px;
-        box-shadow: 0 0 10px #ec4899;
+        box-shadow: 0 0 12px #ec4899;
     }
 
     .st-gauge-arc-bg {
-        stroke: rgba(255, 255, 255, 0.09);
+        stroke: rgba(255, 255, 255, 0.10);
         stroke-width: 14;
         stroke-linecap: round;
         fill: none;
@@ -71,15 +74,15 @@
         stroke-width: 14;
         stroke-linecap: round;
         fill: none;
-        transition: stroke-dashoffset 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transition: stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .st-needle-wedge {
         transform-origin: 160px 160px;
-        transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     .st-tick-label {
-        font-family: 'Inter', sans-serif;
+        font-family: 'Inter', system-ui, sans-serif;
         font-size: 11px;
         font-weight: 700;
         fill: #94a3b8;

@@ -231,9 +231,8 @@
         .fancy-sm:hover::before {
             width: 0.55rem;
         }
-        
-        @yield('styles')
     </style>
+    @yield('styles')
 </head>
 <body class="text-gray-800 dark:text-slate-100 antialiased min-h-screen selection:bg-[#f26419] selection:text-white overflow-hidden bg-[#e8eef3] dark:bg-[#07090e] transition-colors duration-200">
     
