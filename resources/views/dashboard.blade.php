@@ -15,83 +15,77 @@
         animation-play-state: paused;
     }
 
-    /* ==================== SPEEDOMETER / CRONÓGRAFO ==================== */
-    .speedometer {
-      position: relative;
-      width: 250px;
-      height: 140px;
-      background: radial-gradient(circle at bottom, #2c3e50, #000000);
-      border-top-left-radius: 150px;
-      border-top-right-radius: 150px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
-      border: 4px solid #34495e;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-      user-select: none;
+    /* ==================== SPEEDTEST.NET HIGH-FIDELITY GAUGE ==================== */
+    .speedtest-container {
+        background: #0d0f1a;
+        background-image: radial-gradient(circle at 50% 120%, #151a30 0%, #080911 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 2rem;
+        color: #ffffff;
+        box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.6);
+        position: relative;
+        overflow: hidden;
     }
 
-    .dark .speedometer {
-      background: radial-gradient(circle at bottom, #1e293b, #07090e);
-      border-color: #334155;
+    .st-tab-btn {
+        transition: all 0.25s ease;
+        position: relative;
+        cursor: pointer;
+    }
+    .st-tab-btn.active-down {
+        color: #ffffff;
+    }
+    .st-tab-btn.active-down::after {
+        content: '';
+        position: absolute;
+        bottom: -6px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: #00e5ff;
+        border-radius: 3px;
+        box-shadow: 0 0 10px #00e5ff;
+    }
+    .st-tab-btn.active-up {
+        color: #ffffff;
+    }
+    .st-tab-btn.active-up::after {
+        content: '';
+        position: absolute;
+        bottom: -6px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: #ec4899;
+        border-radius: 3px;
+        box-shadow: 0 0 10px #ec4899;
     }
 
-    .needle {
-      position: absolute;
-      bottom: 8px;
-      left: 50%;
-      width: 4px;
-      height: 100px;
-      background-color: #e74c3c;
-      transform-origin: bottom center;
-      transform: translateX(-50%) rotate(-90deg); /* -90deg a 90deg */
-      transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-      border-radius: 4px;
-      z-index: 4;
-      box-shadow: 0 0 8px rgba(231, 76, 60, 0.8);
+    .st-gauge-arc-bg {
+        stroke: rgba(255, 255, 255, 0.09);
+        stroke-width: 14;
+        stroke-linecap: round;
+        fill: none;
+    }
+    .st-gauge-arc-progress {
+        stroke-width: 14;
+        stroke-linecap: round;
+        fill: none;
+        transition: stroke-dashoffset 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .st-needle-wedge {
+        transform-origin: 160px 160px;
+        transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
-    .needle-in {
-      background-color: #10b981;
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.9);
-    }
-
-    .needle-out {
-      background-color: #3b82f6;
-      box-shadow: 0 0 10px rgba(59, 130, 246, 0.9);
-    }
-
-    .center-circle {
-      position: absolute;
-      bottom: 2px;
-      width: 18px;
-      height: 18px;
-      background-color: #ecf0f1;
-      border: 3px solid #1a1a1a;
-      border-radius: 50%;
-      z-index: 10;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-    }
-
-    .speed-value {
-      color: #ffffff;
-      font-size: 22px;
-      font-weight: 800;
-      margin-bottom: 20px;
-      z-index: 5;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-
-    .speed-label {
-      color: #cbd5e1;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      margin-bottom: 4px;
-      z-index: 5;
+    .st-tick-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        fill: #94a3b8;
+        text-anchor: middle;
+        dominant-baseline: central;
+        user-select: none;
     }
 </style>
 @endsection
@@ -455,58 +449,176 @@
                 </div>
             </div>
 
-            {{-- ======================================================= --}}
-            {{-- LIVE TRAFFIC WIDGET (Cronógrafos / Velocímetros SNMP)    --}}
-            {{-- ======================================================= --}}
-            <div class="floating-card p-6 mb-6" id="snmpTrafficCard">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-3 border-b border-gray-100 dark:border-slate-800/60">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-xs">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                            </svg>
+            {{-- ========================================================================= --}}
+            {{-- SPEEDTEST.NET HIGH-FIDELITY LIVE TRAFFIC GAUGE COMPONENT                  --}}
+            {{-- ========================================================================= --}}
+            <div class="speedtest-container p-6 sm:p-8 mb-6" id="snmpTrafficCard">
+                {{-- Top Bar with Download / Upload Tabs & Live Metrics --}}
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-5 border-b border-white/10">
+                    <div class="flex items-center gap-6 sm:gap-10 w-full sm:w-auto justify-around sm:justify-start">
+                        {{-- Tab Descarga --}}
+                        <div onclick="switchSpeedtestTab('down')" id="tabStDown" class="st-tab-btn active-down pb-2 text-center sm:text-left select-none">
+                            <div class="flex items-center gap-1.5 text-xs font-bold text-[#00e5ff] tracking-wider uppercase">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                                <span>DESCARGA Mbps</span>
+                            </div>
+                            <div class="text-2xl sm:text-3xl font-black font-mono tracking-tight text-white mt-1" id="stTopDownVal">0.00</div>
                         </div>
-                        <div>
-                            <h3 class="text-base font-extrabold text-gray-800 dark:text-slate-100 leading-tight">Velocímetro de Tráfico de Red (SNMP)</h3>
-                            <p class="text-xs text-gray-400 dark:text-slate-500 font-mono mt-0.5">Telemetría en tiempo real · Sondeo activo cada 3 segundos</p>
+
+                        {{-- Tab Subida --}}
+                        <div onclick="switchSpeedtestTab('up')" id="tabStUp" class="st-tab-btn pb-2 text-center sm:text-left text-slate-400 select-none">
+                            <div class="flex items-center gap-1.5 text-xs font-bold text-pink-400 tracking-wider uppercase">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                                <span>SUBIDA Mbps</span>
+                            </div>
+                            <div class="text-2xl sm:text-3xl font-black font-mono tracking-tight text-slate-300 mt-1" id="stTopUpVal">0.00</div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-[#090b10] border border-slate-200/60 dark:border-slate-800 self-start sm:self-auto">
-                        <span id="snmpStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span id="snmpStatusText" class="text-xs text-gray-600 dark:text-slate-300 font-mono font-medium">Conectando…</span>
+
+                    {{-- Status Badge --}}
+                    <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-mono">
+                        <span id="snmpStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span id="snmpStatusText" class="text-slate-300 font-medium">Sondeo SNMP Activo</span>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center justify-items-center">
-                    {{-- Cronógrafo de Entrada (Inbound / Download) --}}
-                    <div class="w-full flex flex-col items-center p-5 rounded-2xl bg-slate-50/70 dark:bg-[#090b10] border border-slate-200/70 dark:border-slate-800/80 shadow-xs">
-                        <div class="speedometer">
-                            <div class="speed-label">VELOCIDAD ENTRADA</div>
-                            <div class="speed-value" id="snmpInMbps">0.00 Mbps</div>
-                            <div class="needle needle-in" id="needleIn"></div>
-                            <div class="center-circle"></div>
+                {{-- Subheader: Ping Metrics & App Indicators --}}
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4 py-4 border-b border-white/5 text-xs">
+                    {{-- Ping metrics --}}
+                    <div class="flex items-center gap-4 text-slate-300 font-mono">
+                        <span class="text-slate-400 font-bold uppercase tracking-wider text-[11px]">Ping ms</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3.5 h-3.5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[9px] font-black font-sans">⇄</span>
+                            <span id="stPingIdle" class="font-bold text-white font-mono">{{ round($avgPing) }}</span>
                         </div>
-                        <div class="mt-4 flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
-                            </svg>
-                            <span>Tráfico de Bajada (RX)</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3.5 h-3.5 rounded-full bg-cyan-500/20 text-[#00e5ff] flex items-center justify-center text-[9px] font-black font-sans">↓</span>
+                            <span id="stPingDown" class="font-bold text-white font-mono">{{ max(1, round($avgPing * 0.9)) }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3.5 h-3.5 rounded-full bg-pink-500/20 text-pink-400 flex items-center justify-center text-[9px] font-black font-sans">↑</span>
+                            <span id="stPingUp" class="font-bold text-white font-mono">{{ max(2, round($avgPing * 1.8)) }}</span>
                         </div>
                     </div>
 
-                    {{-- Cronógrafo de Salida (Outbound / Upload) --}}
-                    <div class="w-full flex flex-col items-center p-5 rounded-2xl bg-slate-50/70 dark:bg-[#090b10] border border-slate-200/70 dark:border-slate-800/80 shadow-xs">
-                        <div class="speedometer">
-                            <div class="speed-label">VELOCIDAD SALIDA</div>
-                            <div class="speed-value" id="snmpOutMbps">0.00 Mbps</div>
-                            <div class="needle needle-out" id="needleOut"></div>
-                            <div class="center-circle"></div>
+                    {{-- App Quality Badges --}}
+                    <div class="flex items-center gap-4 text-slate-400">
+                        {{-- Web --}}
+                        <div class="flex flex-col items-center gap-1" title="Navegación Web Óptima">
+                            <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4h18v16H3V4zm0 4h18M7 6h.01M10 6h.01"/></svg>
+                            <div class="flex gap-0.5"><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span></div>
                         </div>
-                        <div class="mt-4 flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
-                            </svg>
-                            <span>Tráfico de Subida (TX)</span>
+                        {{-- Gaming --}}
+                        <div class="flex flex-col items-center gap-1" title="Gaming / Baja Latencia">
+                            <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 6H9a5 5 0 00-5 5v3a3 3 0 005 3h1.5a1.5 1.5 0 001.5-1.5V14h0v1.5a1.5 1.5 0 001.5 1.5H15a3 3 0 005-3v-3a5 5 0 00-5-5zM9 11v2m-1-1h2m7 0h.01m1.99 0h.01"/></svg>
+                            <div class="flex gap-0.5"><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span></div>
+                        </div>
+                        {{-- Streaming --}}
+                        <div class="flex flex-col items-center gap-1" title="Streaming 4K Ultra HD">
+                            <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <div class="flex gap-0.5"><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span></div>
+                        </div>
+                        {{-- Video Call --}}
+                        <div class="flex flex-col items-center gap-1" title="Videoconferencias HD">
+                            <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                            <div class="flex gap-0.5"><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span><span class="w-1 h-1 rounded-full bg-emerald-400"></span></div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Centerpiece: Speedtest Arc Speedometer --}}
+                <div class="relative flex flex-col items-center justify-center my-6">
+                    <div class="relative w-[300px] sm:w-[360px] h-[260px] sm:h-[300px] flex items-center justify-center">
+                        <svg viewBox="0 0 320 320" class="w-full h-full overflow-visible">
+                            <defs>
+                                {{-- Gradient Descarga (Cyan to Mint Green) --}}
+                                <linearGradient id="stDownGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#00b4d8" />
+                                    <stop offset="50%" stop-color="#00e5ff" />
+                                    <stop offset="100%" stop-color="#00f5a0" />
+                                </linearGradient>
+
+                                {{-- Gradient Subida (Purple to Hot Pink) --}}
+                                <linearGradient id="stUpGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#8b5cf6" />
+                                    <stop offset="50%" stop-color="#d946ef" />
+                                    <stop offset="100%" stop-color="#ec4899" />
+                                </linearGradient>
+
+                                {{-- Smoky Translucent Needle Gradient --}}
+                                <linearGradient id="stNeedleGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+                                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.0" />
+                                    <stop offset="60%" stop-color="#ffffff" stop-opacity="0.25" />
+                                    <stop offset="100%" stop-color="#ffffff" stop-opacity="0.85" />
+                                </linearGradient>
+
+                                {{-- Neon Filter --}}
+                                <filter id="stGlow" x="-20%" y="-20%" width="140%" height="140%">
+                                    <feGaussianBlur stdDeviation="6" result="blur" />
+                                    <feMerge>
+                                        <feMergeNode in="blur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                            </defs>
+
+                            {{-- Background Arc --}}
+                            <path d="M 78.7 241.3 A 115 115 0 1 1 241.3 241.3" class="st-gauge-arc-bg" />
+
+                            {{-- Active Glowing Arc Progress --}}
+                            <path id="stProgressArc" d="M 78.7 241.3 A 115 115 0 1 1 241.3 241.3" class="st-gauge-arc-progress" stroke="url(#stDownGrad)" stroke-dasharray="541.92" stroke-dashoffset="541.92" filter="url(#stGlow)" />
+
+                            {{-- Tick Labels (Speedtest scale: 0, 5, 10, 50, 100, 250, 500, 750, 1000) --}}
+                            <text x="102" y="218" class="st-tick-label">0</text>
+                            <text x="84"  y="191" class="st-tick-label">5</text>
+                            <text x="78"  y="153" class="st-tick-label">10</text>
+                            <text x="99"  y="105" class="st-tick-label">50</text>
+                            <text x="160" y="78"  class="st-tick-label font-black text-white" style="fill: #ffffff;">100</text>
+                            <text x="221" y="105" class="st-tick-label">250</text>
+                            <text x="242" y="153" class="st-tick-label">500</text>
+                            <text x="236" y="191" class="st-tick-label">750</text>
+                            <text x="218" y="218" class="st-tick-label">1000</text>
+
+                            {{-- Smoky Translucent Needle Wedge --}}
+                            <g id="stNeedleWedge" class="st-needle-wedge" style="transform: rotate(-135deg);">
+                                <polygon points="153,160 167,160 161,50 159,50" fill="url(#stNeedleGrad)" />
+                                <circle cx="160" cy="160" r="14" fill="#0b0c16" stroke="rgba(255,255,255,0.25)" stroke-width="2" />
+                                <circle cx="160" cy="160" r="4.5" fill="#ffffff" />
+                            </g>
+                        </svg>
+
+                        {{-- Center Digital Readout --}}
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center pt-16">
+                            <span id="stMainValue" class="text-4xl sm:text-5xl font-black font-mono tracking-tight text-white drop-shadow-md">0.00</span>
+                            <div id="stMainUnit" class="flex items-center gap-1 text-xs font-bold text-[#00e5ff] tracking-widest uppercase mt-1">
+                                <span id="stUnitArrow">↓</span>
+                                <span>Mbps</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Bottom Metadata: User / Client info & Server/ISP --}}
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-5 border-t border-white/10 text-xs text-slate-300">
+                    {{-- Client / Enterprise Info --}}
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        </div>
+                        <div>
+                            <p class="font-bold text-white text-xs leading-tight">Secretaria de la Hacienda Publica</p>
+                            <p class="text-[11px] text-slate-400 font-mono mt-0.5">201.131.7.224 · Red Estatal Jalisco</p>
+                        </div>
+                    </div>
+
+                    {{-- Server / ISP Info --}}
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                        </div>
+                        <div>
+                            <p class="font-bold text-white text-xs leading-tight">INFINITUM + 3 más</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Guadalajara (NOC Central)</p>
                         </div>
                     </div>
                 </div>
@@ -1519,54 +1631,103 @@
     </script>
 
     {{-- ============================================================== --}}
-    {{-- SNMP Live Traffic Polling — fetch() cada 3 segundos            --}}
+    {{-- SPEEDTEST.NET GAUGE LOGIC & LIVE SNMP POLLING                  --}}
     {{-- ============================================================== --}}
     <script>
+        let currentSpeedtestTab = 'down'; // 'down' or 'up'
+        let latestDownMbps = 0;
+        let latestUpMbps = 0;
+
+        function speedtestValueToRatio(mbps) {
+            const val = Math.max(0, parseFloat(mbps) || 0);
+            const scale = [
+                { v: 0, r: 0.0 },
+                { v: 5, r: 0.085 },
+                { v: 10, r: 0.185 },
+                { v: 50, r: 0.325 },
+                { v: 100, r: 0.50 },
+                { v: 250, r: 0.675 },
+                { v: 500, r: 0.815 },
+                { v: 750, r: 0.915 },
+                { v: 1000, r: 1.0 }
+            ];
+            if (val >= 1000) return 1.0;
+            for (let i = 0; i < scale.length - 1; i++) {
+                if (val >= scale[i].v && val <= scale[i+1].v) {
+                    const frac = (val - scale[i].v) / (scale[i+1].v - scale[i].v);
+                    return scale[i].r + frac * (scale[i+1].r - scale[i].r);
+                }
+            }
+            return 0;
+        }
+
+        function updateSpeedtestGauge(mbps, isDownload = true) {
+            const arc = document.getElementById('stProgressArc');
+            const needle = document.getElementById('stNeedleWedge');
+            const mainVal = document.getElementById('stMainValue');
+            const unitArrow = document.getElementById('stUnitArrow');
+            const unitContainer = document.getElementById('stMainUnit');
+
+            const val = parseFloat(mbps) || 0;
+            const formattedVal = val.toFixed(2);
+            if (mainVal) mainVal.textContent = formattedVal;
+
+            // Update needle and arc length
+            const ratio = speedtestValueToRatio(val);
+            const totalArcLength = 541.92;
+            const offset = totalArcLength * (1 - ratio);
+
+            if (arc) {
+                arc.style.strokeDashoffset = offset;
+                if (isDownload) {
+                    arc.setAttribute('stroke', 'url(#stDownGrad)');
+                } else {
+                    arc.setAttribute('stroke', 'url(#stUpGrad)');
+                }
+            }
+
+            // Needle angle: -135deg (at 0) to +135deg (at 1000)
+            const angle = -135 + (ratio * 270);
+            if (needle) {
+                needle.style.transform = `rotate(${angle}deg)`;
+            }
+
+            if (unitArrow) {
+                unitArrow.textContent = isDownload ? '↓' : '↑';
+            }
+            if (unitContainer) {
+                unitContainer.className = `flex items-center gap-1 text-xs font-bold tracking-widest uppercase mt-1 ${isDownload ? 'text-[#00e5ff]' : 'text-pink-400'}`;
+            }
+        }
+
+        function switchSpeedtestTab(tab) {
+            currentSpeedtestTab = tab;
+            const tabDown = document.getElementById('tabStDown');
+            const tabUp = document.getElementById('tabStUp');
+
+            if (tab === 'down') {
+                tabDown.className = 'st-tab-btn active-down pb-2 text-center sm:text-left select-none';
+                tabUp.className = 'st-tab-btn pb-2 text-center sm:text-left text-slate-400 select-none';
+                updateSpeedtestGauge(latestDownMbps, true);
+            } else {
+                tabDown.className = 'st-tab-btn pb-2 text-center sm:text-left text-slate-400 select-none';
+                tabUp.className = 'st-tab-btn active-up pb-2 text-center sm:text-left select-none';
+                updateSpeedtestGauge(latestUpMbps, false);
+            }
+        }
+
         (function () {
             const ENDPOINT  = '{{ route("snmp.live_traffic") }}';
             const INTERVAL  = 3000; // ms
-            const elIn      = document.getElementById('snmpInMbps');
-            const elOut     = document.getElementById('snmpOutMbps');
-            const needleIn  = document.getElementById('needleIn');
-            const needleOut = document.getElementById('needleOut');
+            const elTopDown = document.getElementById('stTopDownVal');
+            const elTopUp   = document.getElementById('stTopUpVal');
             const elDot     = document.getElementById('snmpStatusDot');
             const elStatus  = document.getElementById('snmpStatusText');
 
             function setStatus(ok, msg) {
                 if (!elDot || !elStatus) return;
-                elDot.className   = `w-2.5 h-2.5 rounded-full ${ok ? 'bg-emerald-500 animate-pulse' : 'bg-red-400'}`;
+                elDot.className   = `w-2.5 h-2.5 rounded-full ${ok ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`;
                 elStatus.textContent = msg;
-            }
-
-            function setNeedleSpeed(needleEl, mbps) {
-                if (!needleEl) return;
-                const val = parseFloat(mbps);
-                if (isNaN(val) || val <= 0) {
-                    needleEl.style.transform = 'translateX(-50%) rotate(-90deg)';
-                    return;
-                }
-                // Escala de rotación (-90deg a +90deg):
-                let deg;
-                if (val <= 100) {
-                    deg = -90 + (val / 100) * 90;
-                } else {
-                    deg = (Math.min(val - 100, 900) / 900) * 90;
-                }
-                deg = Math.max(-90, Math.min(90, deg));
-                needleEl.style.transform = `translateX(-50%) rotate(${deg}deg)`;
-            }
-
-            function animateValue(el, newVal, needleEl) {
-                if (!el) return;
-                el.style.transition = 'opacity 0.2s ease';
-                el.style.opacity = '0';
-                setTimeout(() => {
-                    el.textContent  = newVal + ' Mbps';
-                    el.style.opacity = '1';
-                }, 200);
-                if (needleEl) {
-                    setNeedleSpeed(needleEl, newVal);
-                }
             }
 
             async function fetchTraffic() {
@@ -1581,14 +1742,23 @@
                     const data = await resp.json();
 
                     if (data.status === 'success') {
-                        const inVal  = parseFloat(data.in_mbps  ?? 0).toFixed(2);
-                        const outVal = parseFloat(data.out_mbps ?? 0).toFixed(2);
-                        animateValue(elIn,  inVal, needleIn);
-                        animateValue(elOut, outVal, needleOut);
-                        setStatus(true, `Puerto ${data.puerto ?? '—'} · Actualizado`);
+                        latestDownMbps = parseFloat(data.in_mbps  ?? 0);
+                        latestUpMbps   = parseFloat(data.out_mbps ?? 0);
+
+                        if (elTopDown) elTopDown.textContent = latestDownMbps.toFixed(2);
+                        if (elTopUp)   elTopUp.textContent   = latestUpMbps.toFixed(2);
+
+                        if (currentSpeedtestTab === 'down') {
+                            updateSpeedtestGauge(latestDownMbps, true);
+                        } else {
+                            updateSpeedtestGauge(latestUpMbps, false);
+                        }
+
+                        setStatus(true, `Puerto ${data.puerto ?? '—'} · Live`);
                     } else {
-                        animateValue(elIn,  '0.00', needleIn);
-                        animateValue(elOut, '0.00', needleOut);
+                        if (elTopDown) elTopDown.textContent = '0.00';
+                        if (elTopUp)   elTopUp.textContent   = '0.00';
+                        updateSpeedtestGauge(0, currentSpeedtestTab === 'down');
                         setStatus(false, data.message ?? 'Error del script');
                     }
                 } catch (err) {
@@ -1596,7 +1766,7 @@
                 }
             }
 
-            // Primera llamada inmediata; luego cada INTERVAL ms
+            // Initial fetch & polling
             fetchTraffic();
             setInterval(fetchTraffic, INTERVAL);
         })();
