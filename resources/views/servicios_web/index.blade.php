@@ -15,7 +15,11 @@
             </div>
             <div>
                 <div class="flex items-center gap-2.5">
-                    <h1 class="text-xl font-black text-gray-900 dark:text-white tracking-tight">Monitoreo de Servicios </h1>
+                    <h1 class="text-xl font-black text-gray-900 dark:text-white tracking-tight">Monitoreo de Servicios</h1>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span id="liveStatusLabel">En vivo • Auto-refresco</span>
+                    </span>
                 </div>
                 <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 font-medium">
                     Disponibilidad HTTP/HTTPS, latencia de respuesta y estado en tiempo real.
@@ -163,7 +167,7 @@
                             {{-- Name & URL --}}
                             <td class="p-3.5 pl-5">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border 
+                                    <div class="web-icon-box w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border 
                                         {{ $web->estado === 'online' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/60' : ($web->estado === 'warning' ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/60' : 'bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400 border-red-200/60 dark:border-red-800/60') }}">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
@@ -187,7 +191,7 @@
                             </td>
 
                             {{-- Status Badge --}}
-                            <td class="p-3.5">
+                            <td class="p-3.5 cell-status">
                                 @if($web->estado === 'online')
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60">
                                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -207,7 +211,7 @@
                             </td>
 
                             {{-- Latency --}}
-                            <td class="p-3.5 font-mono text-xs">
+                            <td class="p-3.5 font-mono text-xs cell-latency">
                                 @if($web->tiempo_respuesta_ms)
                                     <span class="font-bold {{ $web->tiempo_respuesta_ms > 3500 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-800 dark:text-slate-200' }}">
                                         {{ number_format($web->tiempo_respuesta_ms, 1) }} ms
@@ -218,7 +222,7 @@
                             </td>
 
                             {{-- Last Check --}}
-                            <td class="p-3.5 text-gray-500 dark:text-slate-400 font-mono text-[11px]">
+                            <td class="p-3.5 text-gray-500 dark:text-slate-400 font-mono text-[11px] cell-last-check">
                                 {{ $web->ultimo_chequeo ? $web->ultimo_chequeo->diffForHumans() : 'Pendiente' }}
                             </td>
 
@@ -416,6 +420,70 @@
         }
     }
 
+    function updateTableRow(s) {
+        const row = document.querySelector(`.web-row[data-id="${s.id}"]`);
+        if (!row) return;
+
+        // Update dataset for instant category/status filtering
+        row.dataset.estado = s.estado;
+
+        // 1. Icon Box
+        const iconBox = row.querySelector('.web-icon-box');
+        if (iconBox) {
+            iconBox.className = `web-icon-box w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border ${
+                s.estado === 'online' 
+                    ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/60'
+                    : (s.estado === 'warning'
+                        ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/60'
+                        : 'bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400 border-red-200/60 dark:border-red-800/60')
+            }`;
+        }
+
+        // 2. Status Badge Cell
+        const statusCell = row.querySelector('.cell-status');
+        if (statusCell) {
+            if (s.estado === 'online') {
+                statusCell.innerHTML = `
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        ${s.codigo_http ? 'HTTP ' + s.codigo_http : '200 OK'}
+                    </span>`;
+            } else if (s.estado === 'warning') {
+                statusCell.innerHTML = `
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/70 dark:border-amber-800/60" title="${s.detalles_error || ''}">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        ${s.codigo_http ? 'HTTP ' + s.codigo_http : 'Advertencia'}
+                    </span>`;
+            } else {
+                statusCell.innerHTML = `
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-400 border border-red-200/70 dark:border-red-800/60" title="${s.detalles_error || ''}">
+                        <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                        ${s.codigo_http ? 'HTTP ' + s.codigo_http : 'Caído'}
+                    </span>`;
+            }
+        }
+
+        // 3. Latency Cell
+        const latencyCell = row.querySelector('.cell-latency');
+        if (latencyCell) {
+            if (s.tiempo_respuesta_ms !== null && s.tiempo_respuesta_ms !== undefined) {
+                const isHigh = s.tiempo_respuesta_ms > 3500;
+                latencyCell.innerHTML = `
+                    <span class="font-bold ${isHigh ? 'text-amber-600 dark:text-amber-400' : 'text-slate-800 dark:text-slate-200'}">
+                        ${s.tiempo_respuesta_ms} ms
+                    </span>`;
+            } else {
+                latencyCell.innerHTML = `<span class="text-gray-400">—</span>`;
+            }
+        }
+
+        // 4. Last Check Cell
+        const lastCheckCell = row.querySelector('.cell-last-check');
+        if (lastCheckCell) {
+            lastCheckCell.textContent = s.ultimo_chequeo_humano || 'Pendiente';
+        }
+    }
+
     async function refreshLiveServices() {
         try {
             const resp = await fetch('{{ route("servicios_web.api_live") }}', {
@@ -425,18 +493,33 @@
             const data = await resp.json();
 
             if (data.success) {
-                document.getElementById('kpiTotal').textContent = data.stats.total;
-                document.getElementById('kpiOnline').textContent = data.stats.online;
-                document.getElementById('kpiWarning').textContent = data.stats.warning;
-                document.getElementById('kpiOffline').textContent = data.stats.offline;
-                document.getElementById('kpiLatency').textContent = data.stats.avg_latency + ' ms';
+                // Update KPI Cards
+                if (data.stats) {
+                    const elTotal = document.getElementById('kpiTotal');
+                    const elOnline = document.getElementById('kpiOnline');
+                    const elWarning = document.getElementById('kpiWarning');
+                    const elOffline = document.getElementById('kpiOffline');
+                    const elLatency = document.getElementById('kpiLatency');
+
+                    if (elTotal) elTotal.textContent = data.stats.total;
+                    if (elOnline) elOnline.textContent = data.stats.online;
+                    if (elWarning) elWarning.textContent = data.stats.warning;
+                    if (elOffline) elOffline.textContent = data.stats.offline;
+                    if (elLatency) elLatency.textContent = data.stats.avg_latency + ' ms';
+                }
+
+                // Update Individual Table Rows
+                if (Array.isArray(data.servicios)) {
+                    data.servicios.forEach(updateTableRow);
+                    applyFilters();
+                }
             }
         } catch (err) {
             console.error('Error refreshing live web services:', err);
         }
     }
 
-    // Auto-refresh every 20 seconds
-    setInterval(refreshLiveServices, 20000);
+    // Auto-refresh dynamically every 8 seconds
+    setInterval(refreshLiveServices, 8000);
 </script>
 @endsection

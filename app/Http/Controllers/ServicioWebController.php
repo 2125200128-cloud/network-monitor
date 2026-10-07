@@ -151,7 +151,19 @@ class ServicioWebController extends Controller
 
     public function apiLive(): JsonResponse
     {
-        $servicios = ServicioWeb::orderBy('categoria')->orderBy('nombre')->get();
+        $servicios = ServicioWeb::orderBy('categoria')->orderBy('nombre')->get()->map(function ($s) {
+            return [
+                'id' => $s->id,
+                'nombre' => $s->nombre,
+                'url' => $s->url,
+                'categoria' => $s->categoria,
+                'estado' => $s->estado,
+                'codigo_http' => $s->codigo_http,
+                'tiempo_respuesta_ms' => $s->tiempo_respuesta_ms !== null ? round((float)$s->tiempo_respuesta_ms, 1) : null,
+                'ultimo_chequeo_humano' => $s->ultimo_chequeo ? $s->ultimo_chequeo->diffForHumans() : 'Pendiente',
+                'detalles_error' => $s->detalles_error,
+            ];
+        });
 
         $stats = [
             'total' => ServicioWeb::count(),

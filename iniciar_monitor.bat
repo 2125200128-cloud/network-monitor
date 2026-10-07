@@ -20,8 +20,8 @@ start "NOC - SNMP Poller" cmd /k %PY% -u worker\snmp_poller.py
 echo [3/4] Colector SNMP detallado (cada 5 min)...
 start "NOC - SNMP Detalle" cmd /k %PY% -u worker\snmp_detail_collector.py
 
-echo [4/4] Metricas globales + Servicios Web (cada 60s)...
-start "NOC - Metricas y Webs" cmd /k "for /l %%i in (0,0,1) do (%PY% worker\metrics_collector.py & %PHP% artisan web:poll & timeout /t 60 /nobreak >nul)"
+echo [4/4] Metricas globales + Servicios Web (cada 15s)...
+start "NOC - Metricas y Webs" cmd /k "for /l %%i in (0,0,1) do (%PY% worker\metrics_collector.py & %PHP% artisan web:poll & timeout /t 15 /nobreak >nul)"
 
 echo.
 echo Todos los servicios fueron lanzados en ventanas separadas.
