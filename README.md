@@ -1,70 +1,133 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+ï»¿# Network Monitor NOC â€” Enterprise Infrastructure Platform
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+[![PHP Version](https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=flat-square&logo=php&logoColor=white)](https://php.net)
+[![Laravel Version](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
+[![Python Version](https://img.shields.io/badge/Python-3.12%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-v4.0-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![SNMP Protocol](https://img.shields.io/badge/SNMP-v2c%20%2F%20v3-0A66C2?style=flat-square)](https://en.wikipedia.org/wiki/Simple_Network_Management_Protocol)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-## About Laravel
+**Network Monitor NOC** es una plataforma integral de monitoreo de infraestructura de red y servicios web diseÃ±ada para centros de operaciones de red (NOC) empresariales y gubernamentales. Ofrece supervisiÃ³n en tiempo real de conmutadores (Switches L2/L3, Nexus, Core), routers WAN, gateways de voz, telÃ©fonos IP, controladores inalÃ¡mbricos (WLC) y servicios web crÃ­ticos.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Modulos y Capacidades Principales
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 1. Mapa de Topologia Dinamica e Interactiva (L2 / L3)
+* **Visualizacion de Grafos en Tiempo Real:** Motor de fisica interactivo con **Vis.js** que renderiza enlaces troncales, interfaces origen/destino, VLANs permitidas y porcentaje de saturacion de ancho de banda (1G, 10G, 40G).
+* **Mapeo de Hardware:** Identificacion automatica y renderizado de hardware especifico:
+  * **Cisco Nexus / Modular:** Nexus 7000, 9000, 3000, ACI Leaf/Spine.
+  * **Switches Core / Distribucion:** Catalyst 9300, 9600, 6500.
+  * **Switches de Acceso:** Catalyst 2960, 3750, 3560, 9200, SG200.
+  * **Routers de Borde WAN & Gateways:** Cisco ISR 4400, 4300, 1841, CUBE Voice Gateways.
+  * **Telefonia VoIP:** Telefonos IP Cisco Serie 7900, 7800, 8800 con vinculacion automatica a estaciones de trabajo PC adjuntas.
+* **Persistencia de Coordenadas:** Guardado y restauracion de posiciones personalizadas por operador.
 
-## Learning Laravel
+### 2. Telemetria y Monitoreo SNMP en Vivo
+* **Motor Asincrono de Sondeo (Python AsyncIO):** `worker/snmp_poller.py` realiza barridos continuos de baja latencia con sondeo de CPU, memoria RAM, ping ICMP, estado operacional de puertos y trafico In/Out.
+* **Colector de Chasis y Sensores:** Deteccion de numero de serie, version de firmware (IOS/NX-OS), uptime, sensores de temperatura y estado de fuentes de alimentacion.
+* **Gestion de Alarmas y Notificaciones:** Deteccion instantanea de enlaces caidos, saturacion excesiva de ancho de banda y degradacion de latencia.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 3. Monitoreo de Servicios & Paginas Web
+* **Vigilancia HTTP/HTTPS:** Verificacion de portales web, aplicaciones de recaudacion y endpoints bancarios (`Multipagos`, `Bancos Reimprime`, `Tramites`).
+* **Metricas de Rendimiento:** Latencia en milisegundos, codigos de respuesta HTTP (200 OK, 4xx, 5xx) y deteccion de caidas/timeouts.
+* **Dashboard:** Interfaz compacta con filtros por categoria y verificacion masiva concurrente.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 4. Auto-Descubrimiento de Red (Network Discovery Crawler)
+* **Descubrimiento por Vecindad CDP / LLDP:** Mapeo automatico de topologia saltando de equipo semilla a dispositivos vecinos.
+* **Barrido por Rango CIDR:** Escaneo de subredes completas con resolucion de MAC Vendor y deteccion de servicios SNMP.
 
-## Laravel Sponsors
+### 5. Aprovisionamiento de VLANs y Switchports
+* **Gestion de VLANs:** Creacion, edicion y asignacion de VLANs e interfaces SVI.
+* **Asignacion de Puertos:** Configuracion de puertos en modo *Access* o *Trunk*.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+---
 
-### Premium Partners
+## Stack Tecnologico
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+| Capa | Tecnologias |
+| :--- | :--- |
+| **Backend** | PHP 8.3+, Laravel 12, Eloquent ORM, Fortify |
+| **Workers de Red** | Python 3.12+, AsyncIO, PySNMP, Requests |
+| **Frontend** | Blade Templates, Tailwind CSS, Alpine.js, Vis.js Network |
+| **Base de Datos** | MySQL / MariaDB / SQLite |
+| **Protocolos de Red** | SNMP v2c/v3, ICMP Ping, CDP, LLDP, HTTP/HTTPS, ARP |
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Arquitectura del Proyecto
 
-## Code of Conduct
+```
+network-monitor/
+|-- app/
+|   |-- Console/Commands/        # Comandos Artisan (Polling, Web Checks)
+|   |-- Http/Controllers/       # Controladores (Topologia, Dispositivos, ServiciosWeb, Discovery)
+|   |-- Models/                 # Modelos Eloquent (Dispositivo, EnlaceRed, MetricaRed, ServicioWeb)
+|   `-- Services/               # Servicios (WebServicePoller, PhonePcLinkResolver, MacVendorResolver)
+|-- resources/
+|   |-- views/                  # Vistas Blade (Topologia, Dashboard, Servicios Web, VLANs)
+|   |-- css/                    # Estilos Tailwind CSS
+|   `-- js/                     # Scripts y componentes frontend
+|-- worker/
+|   |-- snmp_poller.py          # Worker asincrono de sondeo continuo
+|   |-- snmp_detail_collector.py# Colector detallado de hardware y tablas MAC/ARP
+|   |-- network_discovery.py    # Crawler de auto-descubrimiento CDP/LLDP y CIDR
+|   `-- metrics_collector.py    # Agregador de metricas historicas
+|-- public/
+|   `-- images/topology/        # Iconos de hardware (Nexus, Core, Access, Routers, VoIP, Servers)
+`-- iniciar_monitor.bat         # Lanzador de todos los servicios del NOC
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## Instalacion y Puesta en Marcha
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Prerrequisitos
+* PHP >= 8.3 con extensiones `pdo`, `mbstring`, `openssl`, `curl`, `snmp`
+* Composer
+* Node.js & NPM
+* Python >= 3.10 con dependencias de red (`pysnmp`, `requests`)
 
-## License
+### Pasos de Instalacion
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+1. **Clonar el repositorio:**
+   ```bash
+   git clone https://github.com/2125200128-cloud/network-monitor.git
+   cd network-monitor
+   ```
 
-## Estructura del proyecto
+2. **Instalar dependencias de PHP y Node:**
+   ```bash
+   composer install
+   npm install && npm run build
+   ```
 
-| Carpeta | Contenido |
-|---|---|
-| `app/` , `routes/` , `resources/` , `database/` | Aplicación Laravel (controladores, vistas, migraciones) |
-| `worker/` | Servicios Python: sondeo SNMP, descubrimiento, ejecución SSH, recolección de tráfico (`snmp_traffic.py`) |
-| `tools/maintenance/` | Utilidades de mantenimiento manual (depuración de dispositivos/interfaces, diagnóstico de equipos offline) |
-| `tests/` | Pruebas automatizadas (PHPUnit) |
-| `public/images/topology/` | Iconos de la topología |
+3. **Configurar el entorno:**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
+4. **Ejecutar migraciones y seeds:**
+   ```bash
+   php artisan migrate --seed
+   ```
+
+5. **Iniciar la plataforma (Servidor Web + Workers de Red):**
+   ```bash
+   # En Windows:
+   iniciar_monitor.bat
+
+   # O manualmente:
+   php artisan serve --host=0.0.0.0 --port=8000
+   python worker/snmp_poller.py
+   ```
+
+6. **Abrir en el navegador:**
+   Accede a `http://localhost:8000` o `http://<IP-DEL-SERVIDOR>:8000`.
+
+---
+
+## Licencia
+
+Este proyecto esta bajo la Licencia MIT.
