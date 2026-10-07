@@ -61,8 +61,11 @@
                         <label class="block text-sm font-medium text-gray-700">Máscara de Subred (Opcional)</label>
                         <input type="text" id="subnet_mask" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm" placeholder="Ej. 255.255.255.0">
                     </div>
-                    <button type="button" id="btn-create-vlan" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#5c8096] hover:bg-[#4a6b7d] focus:outline-none">
-                        Crear VLAN y Guardar
+                    <button type="button" id="btn-create-vlan" class="fancy w-full justify-center">
+                        <span class="top-key"></span>
+                        <span class="text">Crear VLAN y Guardar</span>
+                        <span class="bottom-key-1"></span>
+                        <span class="bottom-key-2"></span>
                     </button>
                 </form>
             </div>
@@ -86,8 +89,11 @@
                         <label class="block text-sm font-medium text-gray-700">VLAN ID (solo modo access)</label>
                         <input type="number" id="port_vlan_id" min="2" max="4094" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm">
                     </div>
-                    <button type="button" id="btn-assign-port" class="w-full mt-4 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#e67e22] hover:bg-[#d67118] focus:outline-none">
-                        Aplicar Configuración
+                    <button type="button" id="btn-assign-port" class="fancy w-full justify-center mt-4">
+                        <span class="top-key"></span>
+                        <span class="text">Aplicar Configuración</span>
+                        <span class="bottom-key-1"></span>
+                        <span class="bottom-key-2"></span>
                     </button>
                 </form>
             </div>
@@ -134,7 +140,12 @@
 
                 btn.disabled = true;
                 const originalText = btn.innerHTML;
-                btn.innerHTML = 'Procesando...';
+                const textSpan = btn.querySelector('.text');
+                if (textSpan) {
+                    textSpan.innerText = 'Procesando...';
+                } else {
+                    btn.innerHTML = 'Procesando...';
+                }
                 
                 terminalOutput.textContent += `\n\n> Enviando configuración al dispositivo ${dispositivoId}...\n`;
                 scrollToBottom();

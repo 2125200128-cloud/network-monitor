@@ -105,8 +105,11 @@
                 </div>
 
                 <div class="mt-8 flex justify-end">
-                    <button type="submit" class="bg-hacienda-blue hover:bg-[#4a6b7d] text-white font-bold py-3 px-8 rounded-md transition shadow-sm">
-                        Registrar Dispositivo
+                    <button type="submit" class="fancy">
+                        <span class="top-key"></span>
+                        <span class="text">Registrar Dispositivo</span>
+                        <span class="bottom-key-1"></span>
+                        <span class="bottom-key-2"></span>
                     </button>
                 </div>
             </form>

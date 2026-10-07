@@ -514,9 +514,14 @@
                     </div>
 
                     <div class="flex justify-end mt-4">
-                        <button type="submit" class="btn-primary">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
-                            Guardar Parámetros
+                        <button type="submit" class="fancy">
+                            <span class="top-key"></span>
+                            <span class="text">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                                Guardar Parámetros
+                            </span>
+                            <span class="bottom-key-1"></span>
+                            <span class="bottom-key-2"></span>
                         </button>
                     </div>
                 </form>
@@ -626,9 +631,14 @@
                             </div>
                         </div>
                         <div class="flex justify-end">
-                            <button type="submit" class="btn-primary">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
-                                Crear Cuenta
+                            <button type="submit" class="fancy">
+                                <span class="top-key"></span>
+                                <span class="text">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                                    Crear Cuenta
+                                </span>
+                                <span class="bottom-key-1"></span>
+                                <span class="bottom-key-2"></span>
                             </button>
                         </div>
                     </form>
@@ -872,9 +882,14 @@
                             {{-- Footer --}}
                             <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3">
                                 <button type="button" onclick="closeEditModal()" class="px-5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm font-bold text-gray-600 transition">Cancelar</button>
-                                <button type="submit" class="btn-primary">
-                                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
-                                    Guardar Cambios
+                                <button type="submit" class="fancy fancy-sm">
+                                    <span class="top-key"></span>
+                                    <span class="text">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                                        Guardar Cambios
+                                    </span>
+                                    <span class="bottom-key-1"></span>
+                                    <span class="bottom-key-2"></span>
                                 </button>
                             </div>
                         </form>

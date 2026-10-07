@@ -65,19 +65,29 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-2.5">
-            <button type="button" onclick="reprobarTodosServicios()" id="btnScanAll" class="px-4 py-2 rounded-xl bg-[#3b5998] hover:bg-[#2d4373] text-white text-xs font-bold transition-all shadow-sm hover:shadow flex items-center gap-2 group">
-                <svg id="iconScanAll" class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                </svg>
-                <span>Verificar Todos</span>
+        <div class="flex items-center gap-3">
+            <button type="button" onclick="reprobarTodosServicios()" id="btnScanAll" class="fancy">
+                <span class="top-key"></span>
+                <span class="text">
+                    <svg id="iconScanAll" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Verificar Todos
+                </span>
+                <span class="bottom-key-1"></span>
+                <span class="bottom-key-2"></span>
             </button>
 
-            <button type="button" onclick="openAddModal()" class="px-4 py-2 rounded-xl bg-[#f26419] hover:bg-[#d8530f] text-white text-xs font-bold transition-all shadow-sm hover:shadow flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
-                </svg>
-                <span>Agregar Sitio</span>
+            <button type="button" onclick="openAddModal()" class="fancy">
+                <span class="top-key"></span>
+                <span class="text">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Agregar Sitio
+                </span>
+                <span class="bottom-key-1"></span>
+                <span class="bottom-key-2"></span>
             </button>
         </div>
     </div>
@@ -347,12 +357,15 @@
                 </div>
             </div>
 
-            <div class="pt-2.5 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800 mt-2">
-                <button type="button" onclick="closeAddModal()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-gray-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 mt-2">
+                <button type="button" onclick="closeAddModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-gray-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
                     Cancelar
                 </button>
-                <button type="submit" class="px-4 py-1.5 rounded-lg bg-[#3b5998] hover:bg-[#2d4373] text-white text-xs font-bold transition shadow-xs">
-                    Guardar
+                <button type="submit" class="fancy fancy-sm">
+                    <span class="top-key"></span>
+                    <span class="text">Guardar Sitio</span>
+                    <span class="bottom-key-1"></span>
+                    <span class="bottom-key-2"></span>
                 </button>
             </div>
         </form>

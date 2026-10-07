@@ -72,6 +72,166 @@
         .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
         .dark .custom-scrollbar { scrollbar-color: #334155 #07090e; }
         
+        /* ======================== FANCY BUTTON (UIVERSE) ======================== */
+        .fancy {
+            background-color: transparent;
+            border: 2px solid #0f172a;
+            border-radius: 0;
+            box-sizing: border-box;
+            color: #0f172a;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            margin: 0;
+            outline: none;
+            overflow: visible;
+            padding: 0.65em 1.4em;
+            position: relative;
+            text-align: center;
+            text-decoration: none;
+            text-transform: uppercase;
+            transition: all 0.3s ease-in-out;
+            user-select: none;
+            font-size: 12px;
+            line-height: 1.2;
+            vertical-align: middle;
+        }
+
+        .fancy::before {
+            content: " ";
+            width: 1.3rem;
+            height: 2px;
+            background: #0f172a;
+            top: 50%;
+            left: 1.1em;
+            position: absolute;
+            transform: translateY(-50%);
+            transform-origin: center;
+            transition: background 0.3s linear, width 0.3s linear;
+        }
+
+        .fancy .text {
+            font-size: 1.05em;
+            line-height: 1.33333em;
+            padding-left: 1.6em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            text-align: left;
+            transition: all 0.3s ease-in-out;
+            text-transform: uppercase;
+            text-decoration: none;
+            color: #0f172a;
+        }
+
+        .fancy .top-key {
+            height: 2px;
+            width: 1.5625rem;
+            top: -2px;
+            left: 0.625rem;
+            position: absolute;
+            background: #ffffff;
+            transition: width 0.5s ease-out, left 0.3s ease-out;
+        }
+
+        .fancy .bottom-key-1 {
+            height: 2px;
+            width: 1.5625rem;
+            right: 1.875rem;
+            bottom: -2px;
+            position: absolute;
+            background: #ffffff;
+            transition: width 0.5s ease-out, right 0.3s ease-out;
+        }
+
+        .fancy .bottom-key-2 {
+            height: 2px;
+            width: 0.625rem;
+            right: 0.625rem;
+            bottom: -2px;
+            position: absolute;
+            background: #ffffff;
+            transition: width 0.5s ease-out, right 0.3s ease-out;
+        }
+
+        .fancy:hover {
+            color: #ffffff;
+            background: #0f172a;
+        }
+
+        .fancy:hover::before {
+            width: 0.8rem;
+            background: #ffffff;
+        }
+
+        .fancy:hover .text {
+            color: #ffffff;
+            padding-left: 1.25em;
+        }
+
+        .fancy:hover .top-key {
+            left: -2px;
+            width: 0px;
+        }
+
+        .fancy:hover .bottom-key-1,
+        .fancy:hover .bottom-key-2 {
+            right: 0;
+            width: 0px;
+        }
+
+        /* Dark mode for .fancy */
+        .dark .fancy {
+            border-color: #cbd5e1;
+            color: #f1f5f9;
+        }
+        .dark .fancy::before {
+            background: #cbd5e1;
+        }
+        .dark .fancy .text {
+            color: #f1f5f9;
+        }
+        .dark .fancy .top-key,
+        .dark .fancy .bottom-key-1,
+        .dark .fancy .bottom-key-2 {
+            background: #0d1017;
+        }
+        .dark .fancy:hover {
+            color: #0f172a;
+            background: #f8fafc;
+            border-color: #f8fafc;
+        }
+        .dark .fancy:hover::before {
+            background: #0f172a;
+        }
+        .dark .fancy:hover .text {
+            color: #0f172a;
+        }
+
+        /* Compact variant */
+        .fancy-sm {
+            padding: 0.4em 0.85em;
+            font-size: 11px;
+        }
+        .fancy-sm::before {
+            left: 0.65em;
+            width: 0.9rem;
+        }
+        .fancy-sm .text {
+            padding-left: 1.2em;
+            font-size: 0.95em;
+            gap: 0.3rem;
+        }
+        .fancy-sm:hover .text {
+            padding-left: 0.95em;
+        }
+        .fancy-sm:hover::before {
+            width: 0.55rem;
+        }
+        
         @yield('styles')
     </style>
 </head>

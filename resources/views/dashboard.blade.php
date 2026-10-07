@@ -27,10 +27,15 @@
                     <input type="text" class="w-full bg-white dark:bg-[#0d1017] border border-gray-100 dark:border-slate-800/60 rounded-full py-2.5 sm:py-3 pl-12 pr-4 shadow-sm dark:shadow-none focus:ring-2 focus:ring-hacienda-blue dark:focus:ring-blue-500 text-sm text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500" placeholder="Buscar IPs, alertas, switches...">
                 </div>
                 
-                <div class="flex items-center justify-end gap-2.5">
-                    <a href="{{ route('reportes.inventario_pdf') }}" target="_blank" class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-[#0d1017] hover:bg-gray-50 dark:hover:bg-slate-800/60 text-gray-700 dark:text-slate-300 text-xs font-bold rounded-full shadow-sm dark:shadow-none transition border border-gray-100 dark:border-slate-800/60 hover:border-gray-200 dark:hover:border-slate-700" title="Descargar Reporte Ejecutivo de Inventario en PDF">
-                        <svg class="w-4 h-4 text-[#3b5998]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <span>Reporte PDF</span>
+                <div class="flex items-center justify-end gap-3">
+                    <a href="{{ route('reportes.inventario_pdf') }}" target="_blank" class="fancy fancy-sm hidden sm:inline-flex" title="Descargar Reporte Ejecutivo de Inventario en PDF">
+                        <span class="top-key"></span>
+                        <span class="text">
+                            <svg class="w-3.5 h-3.5 text-[#3b5998]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            Reporte PDF
+                        </span>
+                        <span class="bottom-key-1"></span>
+                        <span class="bottom-key-2"></span>
                     </a>
                     <a href="{{ route('setup-2fa') }}" class="w-10 h-10 bg-white dark:bg-[#0d1017] rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400 hover:text-hacienda-blue dark:hover:text-blue-400 shadow-sm dark:shadow-none border border-gray-100 dark:border-slate-800/60 transition" title="Configurar 2FA">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
