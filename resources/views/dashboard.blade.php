@@ -462,7 +462,7 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
                                 <span>DESCARGA Mbps</span>
                             </div>
-                            <div class="text-2xl sm:text-3xl font-black font-mono tracking-tight text-white mt-1" id="stTopDownVal">{{ number_format($todayTraffic * 0.58, 2) }}</div>
+                            <div class="text-2xl sm:text-3xl font-black font-mono tracking-tight text-white mt-1" id="stTopDownVal">{{ number_format($avgConexiones * 0.58, 2) }}</div>
                         </div>
 
                         {{-- Tab Subida --}}
@@ -471,7 +471,7 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
                                 <span>SUBIDA Mbps</span>
                             </div>
-                            <div class="text-2xl sm:text-3xl font-black font-mono tracking-tight text-slate-300 mt-1" id="stTopUpVal">{{ number_format($todayTraffic * 0.42, 2) }}</div>
+                            <div class="text-2xl sm:text-3xl font-black font-mono tracking-tight text-slate-300 mt-1" id="stTopUpVal">{{ number_format($avgConexiones * 0.42, 2) }}</div>
                         </div>
                     </div>
 
@@ -589,7 +589,7 @@
 
                         {{-- Center Digital Readout --}}
                         <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center pt-16">
-                            <span id="stMainValue" class="text-4xl sm:text-5xl font-black font-mono tracking-tight text-white drop-shadow-md">{{ number_format($todayTraffic * 0.58, 2) }}</span>
+                            <span id="stMainValue" class="text-4xl sm:text-5xl font-black font-mono tracking-tight text-white drop-shadow-md">{{ number_format($avgConexiones * 0.58, 2) }}</span>
                             <div id="stMainUnit" class="flex items-center gap-1 text-xs font-bold text-[#00e5ff] tracking-widest uppercase mt-1">
                                 <span id="stUnitArrow">↓</span>
                                 <span>Mbps</span>
@@ -1635,8 +1635,8 @@
     {{-- ============================================================== --}}
     <script>
         let currentSpeedtestTab = 'down'; // 'down' or 'up'
-        let latestDownMbps = {{ round($todayTraffic * 0.58, 2) }};
-        let latestUpMbps = {{ round($todayTraffic * 0.42, 2) }};
+        let latestDownMbps = {{ round($avgConexiones * 0.58, 2) }};
+        let latestUpMbps = {{ round($avgConexiones * 0.42, 2) }};
 
         function speedtestValueToRatio(mbps) {
             const val = Math.max(0, parseFloat(mbps) || 0);
