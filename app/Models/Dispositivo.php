@@ -51,12 +51,12 @@ class Dispositivo extends Model
 
     public function telemetriaChasis()
     {
-        return $this->hasOne(TelemetriaChasis::class, 'dispositivo_id');
+        return $this->hasOne(TelemetriaChasis::class, 'dispositivo_id')->latestOfMany();
     }
 
     public function tablasDispositivo()
     {
-        return $this->hasOne(TablasDispositivo::class, 'dispositivo_id');
+        return $this->hasOne(TablasDispositivo::class, 'dispositivo_id')->latestOfMany();
     }
 
     public function enlacesOrigen()
