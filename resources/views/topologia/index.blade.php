@@ -1178,9 +1178,10 @@
          */
         function getDeviceImageAndRole(modelo, nombre, sysDescr) {
             const haystack = ((nombre || '') + ' ' + (modelo || '') + ' ' + (sysDescr || '')).toLowerCase();
+            const nomLower = (nombre || '').toLowerCase();
 
             // 1. Teléfonos IP / VoIP
-            if (haystack.includes('phone') || haystack.includes('telefono') || haystack.includes('teléfono') || haystack.includes('cp-') || haystack.includes('sip') || haystack.includes('voip') || haystack.includes('7841') || haystack.includes('8841') || haystack.includes('7960')) {
+            if (nomLower.startsWith('sep') || haystack.includes('phone') || haystack.includes('telefono') || haystack.includes('teléfono') || haystack.includes('cp-') || haystack.includes('sip') || haystack.includes('voip') || haystack.includes('7841') || haystack.includes('8841') || haystack.includes('7960')) {
                 return {
                     image: '{{ asset("images/topology/ip-phone.svg") }}',
                     rol: 'VOIP / TELEFONIA',
@@ -1190,84 +1191,93 @@
                 };
             }
 
-            // 2. Servidores / Data Center / Rack / Blade / Server / Linux / Windows
-            if ((haystack.includes('server') || haystack.includes('servidor') || haystack.includes('srv') || haystack.includes('data_center') || haystack.includes('datacenter') || haystack.includes('mdf-data') || haystack.includes('poweredge') || haystack.includes('proliant') || haystack.includes('ucs') || haystack.includes('esxi') || haystack.includes('hyper-v') || haystack.includes('linux') || haystack.includes('windows server')) && !haystack.includes('ip phone')) {
+            // 2. Puntos de Acceso Inalámbrico (Access Points / WLC / Wi-Fi)
+            if (
+                haystack.includes('wlc') || haystack.includes('c9800') || haystack.includes('air-ct') ||
+                haystack.includes('-ap0') || haystack.includes('-ap1') || haystack.includes('-ap2') || haystack.includes('-ap3') || haystack.includes('-ap4') ||
+                haystack.includes('-ap') || nomLower.startsWith('ap-') || nomLower.startsWith('wap-') ||
+                (
+                    (haystack.includes('c9115') || haystack.includes('air-ap') || haystack.includes('air-cap') || haystack.includes('ap software')) &&
+                    !haystack.includes('switch') && !nomLower.startsWith('sw')
+                )
+            ) {
+                return {
+                    image: '{{ asset("images/topology/access-point.svg") }}',
+                    rol: 'WIFI / ACCESS POINT',
+                    tipo_equipo: 'Punto de Acceso Wi-Fi Enterprise / WLC',
+                    factor_forma: 'Ceiling / Wall Mount',
+                    size: 125
+                };
+            }
+
+            // 3. Routers de borde WAN (ISR / Router / 1841 / 4400 / 4451 / 4331 / CUBE / GW / SAT)
+            if (
+                (
+                    haystack.includes('isr') || haystack.includes('router') || haystack.includes('1841') || haystack.includes('4400') || haystack.includes('4451') || haystack.includes('4331') || haystack.includes('cube') || haystack.includes('gw-') || haystack.includes('-gw') || haystack.includes('gw_') || haystack.includes('rtr') || haystack.includes('edge') || haystack.includes('sat.') || haystack.includes('-sat')
+                ) &&
+                !haystack.includes('catalyst') && !haystack.includes('cat9k') && !haystack.includes('ws-c') && !nomLower.startsWith('sw') && !nomLower.includes('swc') && !nomLower.includes('swe') && !haystack.includes('switch') && !nomLower.startsWith('nx') && !haystack.includes('nexus')
+            ) {
+                return {
+                    image: '{{ asset("images/topology/router.svg") }}',
+                    rol: 'ROUTER / EDGE',
+                    tipo_equipo: 'Router de Borde WAN / Voice Gateway',
+                    factor_forma: 'Router Cisco ISR',
+                    size: 140
+                };
+            }
+
+            // 4. Chasis modular Nexus / Datacenter / ACI / 7000 / 9000 / 3000
+            if (
+                haystack.includes('nexus') || haystack.includes('nx-os') || haystack.includes('nxos') ||
+                haystack.includes('7000') || haystack.includes('n7000') || haystack.includes('n7k') || haystack.includes('nx7k') ||
+                haystack.includes('n9k') || haystack.includes('nx9k') || haystack.includes('n3k') || haystack.includes('nx3k') ||
+                haystack.includes('leaf') || haystack.includes('spine') || haystack.includes('aci-') ||
+                haystack.includes('93180') || haystack.includes('93240') || haystack.includes('9372')
+            ) {
+                return {
+                    image: '{{ asset("images/topology/switch-nexus.svg") }}',
+                    rol: 'NEXUS / DATACENTER',
+                    tipo_equipo: 'Switch Cisco Nexus Datacenter / ACI',
+                    factor_forma: 'Modular Multi-Slot Chassis',
+                    size: 170
+                };
+            }
+
+            // 5. Switches Core / Distribución / Multicapa (Catalyst 9300 / 9600 / 6500 / Core / MDF)
+            if (
+                haystack.includes('9300') || haystack.includes('catalyst 93') || haystack.includes('cat9k') || haystack.includes('c93') || haystack.includes('c9606') || haystack.includes('6500') || haystack.includes('core01') || haystack.includes('core-') || haystack.includes('core_') || haystack.includes('mdf')
+            ) {
+                return {
+                    image: '{{ asset("images/topology/switch-core.svg") }}',
+                    rol: 'DISTRIBUTION / CORE',
+                    tipo_equipo: 'Switch Multicapa L3 Enterprise Core',
+                    factor_forma: '1U/Modular Enterprise Chassis',
+                    size: 155
+                };
+            }
+
+            // 6. Servidores Enterprise Físicos Dedicados (IBM / Dell / HPE / Cisco UCS / ESXi)
+            if (
+                (
+                    haystack.includes('ibm') || haystack.includes('system x') || haystack.includes('bladecenter') || haystack.includes('imm') ||
+                    haystack.includes('thinksystem') || haystack.includes('poweredge') || haystack.includes('proliant') || haystack.includes('ucs-b') ||
+                    haystack.includes('esxi') || haystack.includes('hyper-v') || haystack.includes('windows server')
+                ) &&
+                !nomLower.startsWith('sw') && !nomLower.startsWith('nx') && !haystack.includes('switch') && !haystack.includes('catalyst') && !haystack.includes('nexus')
+            ) {
                 return {
                     image: '{{ asset("images/topology/server.png") }}',
                     rol: 'SERVIDOR / DATA CENTER',
-                    tipo_equipo: 'Servidor Enterprise / Data Center',
+                    tipo_equipo: 'Servidor Enterprise Dedicado',
                     factor_forma: '2U Rackmount Enterprise',
                     size: 210
                 };
             }
 
-            // 3. Puntos de Acceso Inalámbrico (Access Points / Wi-Fi)
-            if (haystack.includes('ap') || haystack.includes('access point') || haystack.includes('air-') || haystack.includes('c91') || haystack.includes('wifi') || haystack.includes('wireless') || haystack.includes('unifi') || haystack.includes('aruba') || haystack.includes('meraki')) {
-                return {
-                    image: '{{ asset("images/topology/access-point.svg") }}',
-                    rol: 'WIFI / ACCESS POINT',
-                    tipo_equipo: 'Punto de Acceso Wi-Fi Enterprise',
-                    factor_forma: 'Ceiling / Wall Mount',
-                    size: 120
-                };
-            }
-
-            // 4. Routers de borde WAN (ISR / Router / 1841 / 4400 / 4451 / 4331 / CUBE / GW / SAT)
+            // 7. PCs / Workstations / Estaciones de Trabajo
             if (
-                (haystack.includes('isr') || haystack.includes('router') || haystack.includes('1841') || haystack.includes('4400') || haystack.includes('4451') || haystack.includes('4331') || haystack.includes('cube') || haystack.includes('gw-') || haystack.includes('rtr') || haystack.includes('edge') || haystack.includes('sat')) &&
-                !haystack.includes('catalyst') && !haystack.includes('cat9k') && !haystack.includes('ws-c') && !((nombre || '').toLowerCase().startsWith('sw-'))
-            ) {
-                return {
-                    image: '{{ asset("images/topology/router.svg") }}',
-                    rol: 'ROUTER / EDGE',
-                    tipo_equipo: 'Router de Borde WAN',
-                    factor_forma: 'Router Cisco',
-                    size: 140
-                };
-            }
-
-            // 5. Chasis modular Nexus / 7000 / 9000
-            if (haystack.includes('nexus') || haystack.includes('7000') || haystack.includes('n7000') || haystack.includes('nx-os') || haystack.includes('n9k') || haystack.includes('n3000')) {
-                return {
-                    image: '{{ asset("images/topology/switch-nexus.svg") }}',
-                    rol: 'CORE / MODULAR',
-                    tipo_equipo: 'Chasis Modular de Núcleo',
-                    factor_forma: 'Modular (Multi-Slot)',
-                    size: 170
-                };
-            }
-
-            // 6. Cisco Catalyst 9300 / 93 / 9600 / 9800
-            if (haystack.includes('9300') || haystack.includes('catalyst 93') || haystack.includes('cat9k') || haystack.includes('c93') || haystack.includes('c9606') || haystack.includes('c9800')) {
-                return {
-                    image: '{{ asset("images/topology/switch-core.svg") }}',
-                    rol: 'DISTRIBUTION / CORE',
-                    tipo_equipo: 'Switch Multicapa L3 Enterprise',
-                    factor_forma: '1U Rackmount Enterprise',
-                    size: 155
-                };
-            }
-
-            // 7. Switches de acceso (WS-C, WS-X, Catalyst, 2960, 3750, 3560, 3850, 9200, SG200, SG300, C1000)
-            if (
-                haystack.includes('ws-c') || haystack.includes('ws-x') || haystack.includes('catalyst') ||
-                haystack.includes('2960') || haystack.includes('sg200') || haystack.includes('sg220') || haystack.includes('sg300') ||
-                haystack.includes('c1000') || haystack.includes('3750') || haystack.includes('3560') || haystack.includes('3850') ||
-                haystack.includes('c9200') || haystack.includes('9200l') || haystack.includes('switch')
-            ) {
-                return {
-                    image: '{{ asset("images/topology/switch-access.svg") }}',
-                    rol: 'ACCESS / SWITCH',
-                    tipo_equipo: 'Switch de Acceso Gigabit Managed',
-                    factor_forma: '1U Rackmount Fixed',
-                    size: 145
-                };
-            }
-
-            // 8. PCs / Workstations / Estaciones de Trabajo
-            if (
-                (haystack.startsWith('pc-') || haystack.startsWith('desktop-') || haystack.startsWith('laptop-') || haystack.includes('workstation')) &&
-                !haystack.includes('cisco') && !haystack.includes('switch') && !haystack.includes('ws-c') && !haystack.includes('ios')
+                (nomLower.startsWith('pc-') || nomLower.startsWith('desktop-') || nomLower.startsWith('laptop-') || nomLower.startsWith('host-') || haystack.includes('workstation')) &&
+                !haystack.includes('cisco') && !haystack.includes('switch') && !nomLower.startsWith('sw') && !haystack.includes('ws-c') && !haystack.includes('ios')
             ) {
                 return {
                     image: '{{ asset("images/topology/pc.svg") }}',
@@ -1278,12 +1288,12 @@
                 };
             }
 
-            // 9. Switch estándar limpio de 1U por defecto
+            // 8. Switches de acceso por defecto (WS-C, Catalyst 2960, 3750, 9200, SG200, etc.)
             return {
-                image: '{{ asset("images/topology/switch-standard-1u.svg") }}',
-                rol: 'SWITCH 1U',
-                tipo_equipo: 'Switch Gestionado 1U',
-                factor_forma: '1U Rackmount',
+                image: '{{ asset("images/topology/switch-access.svg") }}',
+                rol: 'ACCESS / SWITCH',
+                tipo_equipo: 'Switch de Acceso Gigabit Managed',
+                factor_forma: '1U Rackmount Fixed',
                 size: 145
             };
         }
@@ -2156,16 +2166,17 @@
                 const hay = rol + ' ' + nombre + ' ' + tipo + ' ' + modelo;
 
                 let match = false;
+                const nomLower = nombre.toLowerCase();
                 if (category === 'router') {
-                    match = (hay.includes('router') || hay.includes('isr') || hay.includes('1841') || hay.includes('4400') || hay.includes('4451') || hay.includes('4331') || hay.includes('cube') || hay.includes('gw')) && !hay.includes('catalyst') && !nombre.startsWith('sw-');
+                    match = (hay.includes('router') || hay.includes('isr') || hay.includes('1841') || hay.includes('4400') || hay.includes('4451') || hay.includes('4331') || hay.includes('cube') || hay.includes('gw-') || hay.includes('-gw') || hay.includes('gw_') || hay.includes('sat.') || hay.includes('-sat')) && !hay.includes('catalyst') && !nomLower.startsWith('sw') && !nomLower.includes('swc') && !nomLower.includes('swe') && !nomLower.startsWith('nx') && !hay.includes('nexus');
                 } else if (category === 'switch') {
-                    match = (hay.includes('switch') || hay.includes('nexus') || hay.includes('catalyst') || hay.includes('core') || hay.includes('access') || hay.includes('ws-c')) && !hay.includes('server') && !hay.includes('servidor') && !hay.includes('srv');
+                    match = (hay.includes('switch') || hay.includes('nexus') || hay.includes('catalyst') || hay.includes('core') || hay.includes('access') || hay.includes('ws-c') || nomLower.startsWith('sw') || nomLower.startsWith('nx') || nomLower.includes('idf') || nomLower.includes('mdf')) && !nomLower.startsWith('sep');
                 } else if (category === 'access_point') {
-                    match = hay.includes('ap') || hay.includes('wifi') || hay.includes('access point') || hay.includes('wireless') || hay.includes('c9115');
+                    match = (hay.includes('ap') || hay.includes('wifi') || hay.includes('access point') || hay.includes('wireless') || hay.includes('c9115') || hay.includes('wlc') || hay.includes('c9800')) && !nomLower.startsWith('sw');
                 } else if (category === 'phone') {
-                    match = hay.includes('phone') || hay.includes('telefono') || hay.includes('teléfono') || hay.includes('voip') || hay.includes('sep');
+                    match = nomLower.startsWith('sep') || hay.includes('phone') || hay.includes('telefono') || hay.includes('teléfono') || hay.includes('voip');
                 } else if (category === 'servidor') {
-                    match = hay.includes('server') || hay.includes('servidor') || hay.includes('srv') || hay.includes('data_center') || hay.includes('datacenter') || hay.includes('mdf-data') || hay.includes('poweredge') || hay.includes('proliant') || hay.includes('ucs') || hay.includes('esxi') || hay.includes('hyper-v') || hay.includes('linux') || hay.includes('windows server');
+                    match = (hay.includes('ibm') || hay.includes('system x') || hay.includes('bladecenter') || hay.includes('imm') || hay.includes('thinksystem') || hay.includes('poweredge') || hay.includes('proliant') || hay.includes('ucs-b') || hay.includes('esxi') || hay.includes('hyper-v') || hay.includes('windows server')) && !nomLower.startsWith('sw') && !nomLower.startsWith('nx') && !hay.includes('switch') && !hay.includes('catalyst');
                 }
 
                 if (match) {

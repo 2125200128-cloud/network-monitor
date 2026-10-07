@@ -456,6 +456,12 @@ class TopologiaController extends Controller
             str_contains($haystack, 'wlc') || 
             str_contains($haystack, 'c9800') || 
             str_contains($haystack, 'air-ct') ||
+            str_contains($haystack, '-ap0') ||
+            str_contains($haystack, '-ap1') ||
+            str_contains($haystack, '-ap2') ||
+            str_contains($haystack, '-ap3') ||
+            str_contains($haystack, '-ap4') ||
+            str_contains($haystack, '-ap') ||
             (
                 (str_contains($haystack, 'c9115') || str_contains($haystack, 'air-ap') || str_contains($haystack, 'air-cap') || str_contains($haystack, 'ap software') || str_starts_with($nombreUpper, 'AP-') || str_starts_with($nombreUpper, 'WAP-')) &&
                 !str_contains($haystack, 'switch') && !str_starts_with($nombreUpper, 'SW')
