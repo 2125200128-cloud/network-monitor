@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Monitoreo de Servicios y Páginas Web | NOC Monitor')
+@section('title', 'Monitoreo de Servicios| NOC Monitor')
 
 @section('content')
 <div class="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-6 space-y-5">
@@ -15,7 +15,7 @@
             </div>
             <div>
                 <div class="flex items-center gap-2.5">
-                    <h1 class="text-xl font-black text-gray-900 dark:text-white tracking-tight">Monitoreo de Servicios & Páginas Web</h1>
+                    <h1 class="text-xl font-black text-gray-900 dark:text-white tracking-tight">Monitoreo de Servicios </h1>
                 </div>
                 <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 font-medium">
                     Disponibilidad HTTP/HTTPS, latencia de respuesta y estado en tiempo real.
