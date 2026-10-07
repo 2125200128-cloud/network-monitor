@@ -98,10 +98,37 @@ class Dispositivo extends Model
             ];
         }
 
-        // 2. Routers WAN / ISR / Gateways de Voz
+        // 2. Access Points & Wireless Controllers (Wi-Fi)
         if (
-            (str_contains($model, 'ISR') || str_contains($model, '1841') || str_contains($descr, 'ISR SOFTWARE') || str_contains($nombre, 'ROUTER') || str_contains($nombre, 'RTR') || str_contains($nombre, 'CUBE') || str_contains($nombre, 'GW-') || str_contains($nombre, '-GW') || str_contains($nombre, 'SAT')) &&
-            !str_contains($full, 'CATALYST') && !str_contains($full, 'CAT9K') && !str_contains($full, 'WS-C') && !str_starts_with($nombre, 'SW-')
+            str_contains($full, 'WLC') || str_contains($model, 'C9800') || str_contains($model, 'AIR-CT') ||
+            (
+                (str_contains($model, 'C9115') || str_contains($model, 'AIR-AP') || str_contains($model, 'AIR-CAP') || str_contains($descr, 'AP SOFTWARE') || str_starts_with($nombre, 'AP-') || str_starts_with($nombre, 'WAP-')) &&
+                !str_contains($full, 'SWITCH') && !str_starts_with($nombre, 'SW')
+            )
+        ) {
+            $clean = 'Cisco Access Point / WLC';
+            if (str_contains($full, '9115')) $clean = 'Cisco Catalyst 9115AX AP';
+            elseif (str_contains($full, '9800') || str_contains($full, 'WLC')) $clean = 'Cisco Catalyst 9800 WLC';
+            return [
+                'tipo' => 'access_point',
+                'label' => 'Access Point / WLC',
+                'clean_model' => $clean,
+                'badge_classes' => 'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/40',
+                'icon_container' => 'bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400'
+            ];
+        }
+
+        // 3. Routers WAN / ISR / Gateways de Voz
+        if (
+            (
+                str_contains($model, 'ISR') || str_contains($model, '1841') || str_contains($descr, 'ISR SOFTWARE') || 
+                str_contains($nombre, 'ROUTER') || str_contains($nombre, 'RTR') || str_contains($nombre, 'CUBE') || 
+                str_contains($nombre, 'GW-') || str_contains($nombre, '-GW') || str_contains($nombre, 'GW_') ||
+                str_contains($full, 'SAT.') || str_contains($full, '-SAT')
+            ) &&
+            !str_contains($full, 'CATALYST') && !str_contains($full, 'CAT9K') && !str_contains($full, 'WS-C') && 
+            !str_starts_with($nombre, 'SW') && !str_contains($nombre, 'SWC') && !str_contains($nombre, 'SWE') &&
+            !str_starts_with($nombre, 'NX') && !str_contains($nombre, 'NEXUS')
         ) {
             $clean = 'Cisco Router WAN / Gateway';
             if (str_contains($full, '4451')) $clean = 'Cisco ISR 4451-X';
@@ -117,14 +144,14 @@ class Dispositivo extends Model
             ];
         }
 
-        // 3. Servidores Enterprise / Servidores Dedicados (IBM, Dell, HPE, Cisco UCS, ESXi, Linux, Windows, Data Center)
+        // 4. Servidores Enterprise Físicos Dedicados (IBM, Dell, HPE, Cisco UCS, ESXi)
         if (
-            str_contains($full, 'IBM') || str_contains($full, 'SYSTEM X') || str_contains($full, 'BLADECENTER') || str_contains($full, 'IMM') ||
-            str_contains($full, 'THINKSYSTEM') || str_contains($full, 'POWEREDGE') || str_contains($full, 'PROLIANT') || str_contains($full, 'UCS') ||
-            str_contains($full, 'ESXI') || str_contains($full, 'HYPER-V') || str_contains($descr, 'WINDOWS SERVER') ||
-            (str_contains($full, 'LINUX') && !str_contains($full, 'IOSD') && !str_contains($full, 'CISCO IOS')) ||
-            str_contains($nombre, 'SRV') || str_contains($nombre, 'SERVER') || str_contains($nombre, 'SERVIDOR') ||
-            str_contains($nombre, 'DATA_CENTER') || str_contains($nombre, 'DATACENTER') || str_contains($nombre, 'MDF-DATA') || str_contains($nombre, 'MDF_DATA')
+            (
+                str_contains($full, 'IBM') || str_contains($full, 'SYSTEM X') || str_contains($full, 'BLADECENTER') || str_contains($full, 'IMM') ||
+                str_contains($full, 'THINKSYSTEM') || str_contains($full, 'POWEREDGE') || str_contains($full, 'PROLIANT') || str_contains($full, 'UCS-B') ||
+                str_contains($full, 'ESXI') || str_contains($full, 'HYPER-V') || str_contains($descr, 'WINDOWS SERVER')
+            ) &&
+            !str_starts_with($nombre, 'SW') && !str_starts_with($nombre, 'NX') && !str_contains($full, 'SWITCH') && !str_contains($full, 'CATALYST')
         ) {
             $clean = 'Servidor Dedicado Enterprise';
             if (str_contains($full, 'IBM') || str_contains($full, 'SYSTEM X') || str_contains($full, 'BLADECENTER') || str_contains($full, 'THINKSYSTEM')) {
@@ -135,10 +162,6 @@ class Dispositivo extends Model
                 $clean = 'Servidor HPE ProLiant';
             } elseif (str_contains($full, 'UCS')) {
                 $clean = 'Servidor Cisco UCS';
-            } elseif (str_contains($full, 'LINUX') || str_contains($full, 'UBUNTU') || str_contains($full, 'DEBIAN') || str_contains($full, 'CENTOS') || str_contains($full, 'RHEL')) {
-                $clean = 'Servidor Linux Enterprise';
-            } elseif (str_contains($full, 'WINDOWS')) {
-                $clean = 'Servidor Windows Server';
             }
 
             return [
@@ -150,24 +173,10 @@ class Dispositivo extends Model
             ];
         }
 
-        // 4. Access Points & Wireless Controllers
-        if (str_contains($model, 'C9115') || str_contains($model, 'AIR-AP') || str_contains($model, 'AIR-CAP') || str_contains($descr, 'AP SOFTWARE') || str_contains($nombre, 'AP-') || str_contains($nombre, 'WAP') || str_contains($model, 'C9800') || str_contains($nombre, 'WLC')) {
-            $clean = 'Cisco Access Point Wi-Fi';
-            if (str_contains($full, '9115')) $clean = 'Cisco Catalyst 9115AX AP';
-            elseif (str_contains($full, '9800') || str_contains($full, 'WLC')) $clean = 'Cisco Catalyst 9800 WLC';
-            return [
-                'tipo' => 'access_point',
-                'label' => 'Access Point Wi-Fi',
-                'clean_model' => $clean,
-                'badge_classes' => 'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/40',
-                'icon_container' => 'bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400'
-            ];
-        }
-
-        // 5. PC / Workstations
+        // 5. PC / Workstations (Solo si explícitamente es una estación de trabajo)
         if (
-            (str_starts_with($nombre, 'PC-') || str_starts_with($nombre, 'DESKTOP') || str_starts_with($nombre, 'LAPTOP') || str_starts_with($nombre, 'HOST') || str_contains($full, 'WORKSTATION')) &&
-            !str_contains($full, 'CISCO') && !str_contains($full, 'SWITCH') && !str_contains($full, 'WS-C') && !str_contains($full, 'IOS')
+            (str_starts_with($nombre, 'PC-') || str_starts_with($nombre, 'DESKTOP-') || str_starts_with($nombre, 'LAPTOP-') || str_starts_with($nombre, 'HOST-') || str_contains($full, 'WORKSTATION')) &&
+            !str_contains($full, 'CISCO') && !str_contains($full, 'SWITCH') && !str_starts_with($nombre, 'SW') && !str_contains($full, 'WS-C') && !str_contains($full, 'IOS')
         ) {
             return [
                 'tipo' => 'pc',
@@ -178,14 +187,14 @@ class Dispositivo extends Model
             ];
         }
 
-        // 6. Switches L2/L3 (Nexus, Catalyst, SG)
+        // 6. Switches L2/L3 / Nexus / Catalyst / SG / Core / Distribución / Acceso
         $clean = 'Cisco Switch L2/L3';
-        if (str_contains($full, 'N7000') || str_contains($full, 'NEXUS 7')) $clean = 'Cisco Nexus 7000';
-        elseif (str_contains($full, 'N3000') || str_contains($full, 'NEXUS 3')) $clean = 'Cisco Nexus 3000';
-        elseif (str_contains($full, 'N9K') || str_contains($full, 'NEXUS 9') || str_contains($full, 'NX-OS') || str_contains($full, 'NXOS') || str_contains($full, '93180') || str_contains($full, '93240') || str_contains($full, '9372')) $clean = 'Cisco Nexus 9000';
-        elseif (str_contains($full, 'C9606')) $clean = 'Cisco Catalyst 9606R';
+        if (str_contains($full, 'N7000') || str_contains($full, 'NEXUS 7') || str_contains($full, 'N7K')) $clean = 'Cisco Nexus 7000';
+        elseif (str_contains($full, 'N3000') || str_contains($full, 'NEXUS 3') || str_contains($full, 'NX3K') || str_contains($full, 'N3K')) $clean = 'Cisco Nexus 3000';
+        elseif (str_contains($full, 'N9K') || str_contains($full, 'NX9K') || str_contains($full, 'NEXUS 9') || str_contains($full, 'NX-OS') || str_contains($full, 'NXOS') || str_contains($full, 'LEAF') || str_contains($full, 'SPINE') || str_contains($full, 'ACI-') || str_contains($full, '93180') || str_contains($full, '93240') || str_contains($full, '9372')) $clean = 'Cisco Nexus 9000';
+        elseif (str_contains($full, 'C9606') || str_contains($full, '9600')) $clean = 'Cisco Catalyst 9606R Core';
         elseif (str_contains($full, 'C9200') || str_contains($full, '9200L')) $clean = 'Cisco Catalyst 9200L';
-        elseif (str_contains($full, 'C9300') || str_contains($full, '9300L')) $clean = 'Cisco Catalyst 9300';
+        elseif (str_contains($full, 'C9300') || str_contains($full, '9300L') || str_contains($full, '9300')) $clean = 'Cisco Catalyst 9300 Core/Dist';
         elseif (str_contains($full, 'C1000')) $clean = 'Cisco Catalyst 1000';
         elseif (str_contains($full, 'CAT9K') || str_contains($full, 'CATALYST L3 SWITCH SOFTWARE (CAT9K')) $clean = 'Cisco Catalyst 9000-L';
         elseif (str_contains($full, '2960X') || str_contains($full, '2960-X')) $clean = 'Cisco Catalyst 2960X';
@@ -198,8 +207,9 @@ class Dispositivo extends Model
         elseif (str_contains($full, 'SG200')) $clean = 'Cisco SG200-26';
         elseif (str_contains($full, 'SG220')) $clean = 'Cisco SG220-50P';
         elseif (str_contains($full, 'SG300')) $clean = 'Cisco SG300-28P';
-        elseif (str_contains($full, 'S2T54')) $clean = 'Cisco Catalyst 6500 / Sup2T';
-        elseif (str_contains($full, 'CAT3K')) $clean = 'Cisco Catalyst 3850/3650';
+        elseif (str_contains($full, 'S2T54') || str_contains($full, '6500')) $clean = 'Cisco Catalyst 6500 / Sup2T';
+        elseif (str_contains($full, 'CAT3K') || str_contains($full, '3850')) $clean = 'Cisco Catalyst 3850/3650';
+        elseif (str_contains($full, 'CORE')) $clean = 'Cisco Switch Core L3';
 
         return [
             'tipo' => 'switch',

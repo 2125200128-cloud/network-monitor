@@ -432,10 +432,16 @@ class TopologiaController extends Controller
      */
     protected function resolveDeviceImageAndRole(string $nombre, string $modelo, string $sysDescr = '', int $numConexiones = 0, string $vendor = ''): array
     {
+        $nombreUpper = strtoupper(trim($nombre));
         $haystack = strtolower($nombre . ' ' . $modelo . ' ' . $sysDescr);
 
         // 1. Teléfonos IP Cisco (VoIP)
-        if (str_starts_with(strtoupper($nombre), 'SEP') || str_contains($haystack, 'ip phone') || str_contains($haystack, 'cp-') || str_contains($haystack, 'voip')) {
+        if (
+            str_starts_with($nombreUpper, 'SEP') || 
+            str_contains($haystack, 'ip phone') || 
+            str_contains($haystack, 'cp-') || 
+            str_contains($haystack, 'voip')
+        ) {
             return [
                 'image' => 'images/topology/ip-phone.svg',
                 'rol' => 'TELÉFONO IP (VOIP)',
@@ -445,25 +451,101 @@ class TopologiaController extends Controller
             ];
         }
 
-        // 2. Access Points & Wireless Controllers (Wi-Fi)
-        if (str_contains($haystack, 'c9115') || str_contains($haystack, 'air-ap') || str_contains($haystack, 'air-cap') || str_contains($haystack, 'ap software') || str_contains($haystack, 'ap-') || str_contains($haystack, 'wap') || str_contains($haystack, 'c9800') || str_contains($haystack, 'wlc') || str_contains($haystack, 'wifi')) {
+        // 2. Wireless LAN Controllers (WLC) y Access Points dedicados (Wi-Fi)
+        if (
+            str_contains($haystack, 'wlc') || 
+            str_contains($haystack, 'c9800') || 
+            str_contains($haystack, 'air-ct') ||
+            (
+                (str_contains($haystack, 'c9115') || str_contains($haystack, 'air-ap') || str_contains($haystack, 'air-cap') || str_contains($haystack, 'ap software') || str_starts_with($nombreUpper, 'AP-') || str_starts_with($nombreUpper, 'WAP-')) &&
+                !str_contains($haystack, 'switch') && !str_starts_with($nombreUpper, 'SW')
+            )
+        ) {
             return [
                 'image' => 'images/topology/access-point.svg',
-                'rol' => 'ACCESS POINT WI-FI',
-                'tipo_equipo' => 'Punto de Acceso Inalámbrico',
+                'rol' => 'ACCESS POINT / WLC',
+                'tipo_equipo' => 'Controlador / AP Inalámbrico Cisco',
                 'factor_forma' => 'Ceiling / Wall Mount AP',
-                'size' => 110
+                'size' => 125
             ];
         }
 
-        // 3. Servidores Enterprise / IBM / Dell / HPE / Cisco UCS / ESXi / Linux / Windows / Data Center
+        // 3. Routers de borde WAN y Voice Gateways (ISR / Router / 1841 / 4400 / 4451 / 4331 / CUBE / GW)
         if (
-            str_contains($haystack, 'ibm') || str_contains($haystack, 'system x') || str_contains($haystack, 'bladecenter') || str_contains($haystack, 'imm') ||
-            str_contains($haystack, 'thinksystem') || str_contains($haystack, 'poweredge') || str_contains($haystack, 'proliant') || str_contains($haystack, 'ucs') ||
-            str_contains($haystack, 'esxi') || str_contains($haystack, 'hyper-v') || str_contains($haystack, 'windows server') ||
-            (str_contains($haystack, 'linux') && !str_contains($haystack, 'iosd') && !str_contains($haystack, 'cisco ios')) ||
-            str_contains($haystack, 'srv') || str_contains($haystack, 'server') || str_contains($haystack, 'servidor') ||
-            str_contains($haystack, 'data_center') || str_contains($haystack, 'datacenter') || str_contains($haystack, 'mdf-data') || str_contains($haystack, 'mdf_data')
+            (
+                str_contains($haystack, 'isr') || str_contains($haystack, 'router') || 
+                str_contains($haystack, '1841') || str_contains($haystack, '4400') || 
+                str_contains($haystack, '4451') || str_contains($haystack, '4331') || 
+                str_contains($haystack, 'cube') || str_contains($haystack, 'gw-') || 
+                str_contains($haystack, '-gw') || str_contains($haystack, 'gw_') || 
+                str_contains($haystack, 'rtr') || str_contains($haystack, 'edge') || 
+                str_contains($haystack, 'sat.') || str_contains($haystack, '-sat')
+            ) &&
+            !str_contains($haystack, 'catalyst') && !str_contains($haystack, 'cat9k') && 
+            !str_contains($haystack, 'ws-c') && !str_starts_with($nombreUpper, 'SW') && 
+            !str_contains($haystack, 'swc') && !str_contains($haystack, 'swe') && 
+            !str_contains($haystack, 'switch') && !str_starts_with($nombreUpper, 'NX') && 
+            !str_contains($haystack, 'nexus')
+        ) {
+            return [
+                'image' => 'images/topology/router.svg',
+                'rol' => 'ROUTER / EDGE',
+                'tipo_equipo' => 'Router de Borde WAN / Gateway',
+                'factor_forma' => 'Router Cisco ISR',
+                'size' => 140
+            ];
+        }
+
+        // 4. Chasis modular Nexus / Datacenter / ACI (Nexus 7000 / 9000 / 3000 / Leaf / Spine)
+        if (
+            str_contains($haystack, 'nexus') || str_contains($haystack, 'nx-os') || 
+            str_contains($haystack, 'nxos') || str_contains($haystack, 'n7000') || 
+            str_contains($haystack, 'n7k') || str_contains($haystack, 'nx7k') || 
+            str_contains($haystack, 'n9k') || str_contains($haystack, 'nx9k') || 
+            str_contains($haystack, 'n3k') || str_contains($haystack, 'nx3k') || 
+            str_contains($haystack, 'leaf') || str_contains($haystack, 'spine') || 
+            str_contains($haystack, 'aci-') || str_contains($haystack, 'aci_') ||
+            str_contains($haystack, '93180') || str_contains($haystack, '93240') || 
+            str_contains($haystack, '9372')
+        ) {
+            return [
+                'image' => 'images/topology/switch-nexus.svg',
+                'rol' => 'NEXUS / DATACENTER',
+                'tipo_equipo' => 'Switch Cisco Nexus Datacenter / ACI',
+                'factor_forma' => 'Modular Multi-Slot Chassis',
+                'size' => 170
+            ];
+        }
+
+        // 5. Switches Core / Distribución / Multicapa (Catalyst 9300 / 9600 / 6500 / Core / MDF)
+        if (
+            str_contains($haystack, '9300') || str_contains($haystack, 'catalyst 93') || 
+            str_contains($haystack, 'cat9k') || str_contains($haystack, 'c93') || 
+            str_contains($haystack, 'c9606') || str_contains($haystack, '6500') || 
+            str_contains($haystack, 'core01') || str_contains($haystack, 'core-') || 
+            str_contains($haystack, 'core_') || str_contains($haystack, 'mdf')
+        ) {
+            return [
+                'image' => 'images/topology/switch-core.svg',
+                'rol' => 'DISTRIBUTION / CORE',
+                'tipo_equipo' => 'Switch Multicapa L3 Enterprise Core',
+                'factor_forma' => '1U/Modular Enterprise Chassis',
+                'size' => 155
+            ];
+        }
+
+        // 6. Servidores Enterprise Físicos Dedicados (IBM / Dell / HPE / Cisco UCS / ESXi)
+        if (
+            (
+                str_contains($haystack, 'ibm') || str_contains($haystack, 'system x') || 
+                str_contains($haystack, 'bladecenter') || str_contains($haystack, 'imm') || 
+                str_contains($haystack, 'thinksystem') || str_contains($haystack, 'poweredge') || 
+                str_contains($haystack, 'proliant') || str_contains($haystack, 'ucs-b') || 
+                str_contains($haystack, 'esxi') || str_contains($haystack, 'hyper-v') || 
+                str_contains($haystack, 'windows server')
+            ) &&
+            !str_starts_with($nombreUpper, 'SW') && !str_starts_with($nombreUpper, 'NX') && 
+            !str_contains($haystack, 'switch') && !str_contains($haystack, 'catalyst')
         ) {
             $tipoStr = 'Servidor Enterprise';
             if (str_contains($haystack, 'ibm') || str_contains($haystack, 'system x') || str_contains($haystack, 'bladecenter')) {
@@ -474,66 +556,23 @@ class TopologiaController extends Controller
                 'rol' => 'SERVIDOR',
                 'tipo_equipo' => $tipoStr,
                 'factor_forma' => 'Rackmount / Blade Enterprise',
-                'size' => 210
+                'size' => 200
             ];
         }
 
-        // 4. Routers de borde WAN y Voice Gateways (ISR / Router / 1841 / 4400 / 4451 / 4331 / CUBE / GW)
+        // 7. PC / Workstation / Desktop (Solo estaciones de trabajo explícitas)
         if (
-            (str_contains($haystack, 'isr') || str_contains($haystack, 'router') || str_contains($haystack, '1841') || str_contains($haystack, '4400') || str_contains($haystack, '4451') || str_contains($haystack, '4331') || str_contains($haystack, 'cube') || str_contains($haystack, 'gw-') || str_contains($haystack, '-gw') || str_contains($haystack, 'rtr') || str_contains($haystack, 'edge') || str_contains($haystack, 'sat')) &&
-            !str_contains($haystack, 'catalyst') && !str_contains($haystack, 'cat9k') && !str_contains($haystack, 'ws-c') && !str_starts_with(strtolower($nombre), 'sw-')
-        ) {
-            return [
-                'image' => 'images/topology/router.svg',
-                'rol' => 'ROUTER / EDGE',
-                'tipo_equipo' => 'Router de Borde WAN',
-                'factor_forma' => 'Router Cisco',
-                'size' => 140
-            ];
-        }
-
-        // 5. Chasis modular Nexus / 7000 / 9000 / 3000
-        if (str_contains($haystack, 'nexus') || str_contains($haystack, '7000') || str_contains($haystack, 'n7000') || str_contains($haystack, 'nx-os') || str_contains($haystack, 'n9k') || str_contains($haystack, 'n3000') || str_contains($haystack, '93180') || str_contains($haystack, '93240') || str_contains($haystack, '9372')) {
-            return [
-                'image' => 'images/topology/switch-nexus.svg',
-                'rol' => 'CORE / MODULAR',
-                'tipo_equipo' => 'Chasis Modular de Núcleo',
-                'factor_forma' => 'Modular (Multi-Slot Chassis)',
-                'size' => 170
-            ];
-        }
-
-        // 6. Cisco Catalyst 9300 / 9600 / Core L3
-        if (str_contains($haystack, '9300') || str_contains($haystack, 'catalyst 93') || str_contains($haystack, 'cat9k') || str_contains($haystack, 'c93') || str_contains($haystack, 'c9606')) {
-            return [
-                'image' => 'images/topology/switch-core.svg',
-                'rol' => 'DISTRIBUTION / CORE',
-                'tipo_equipo' => 'Switch Multicapa L3 Enterprise',
-                'factor_forma' => '1U Rackmount Enterprise',
-                'size' => 155
-            ];
-        }
-
-        // 7. Switches de acceso (2960 / SG200 / SG220 / SG300 / C1000 / 3750 / 3560 / 3850 / 9200 / WS-C / WS-X)
-        if (
-            str_contains($haystack, 'ws-c') || str_contains($haystack, 'ws-x') || str_contains($haystack, 'catalyst') ||
-            str_contains($haystack, '2960') || str_contains($haystack, 'sg200') || str_contains($haystack, 'sg220') || str_contains($haystack, 'sg300') ||
-            str_contains($haystack, 'c1000') || str_contains($haystack, '3750') || str_contains($haystack, '3560') || str_contains($haystack, '3850') ||
-            str_contains($haystack, 'c9200') || str_contains($haystack, '9200l') || str_contains($haystack, 'cisco switch') || str_contains($haystack, 'switch')
-        ) {
-            return [
-                'image' => 'images/topology/switch-access.svg',
-                'rol' => 'ACCESS / SWITCH',
-                'tipo_equipo' => 'Switch de Acceso Gigabit Managed',
-                'factor_forma' => '1U Rackmount Fixed',
-                'size' => 145
-            ];
-        }
-
-        // 8. PC / Workstation / Desktop
-        if (
-            (str_starts_with(strtoupper($nombre), 'PC-') || str_starts_with(strtoupper($nombre), 'DESKTOP-') || str_starts_with(strtoupper($nombre), 'LAPTOP-') || str_starts_with(strtoupper($nombre), 'HOST-') || str_contains($haystack, 'workstation')) &&
-            !str_contains($haystack, 'cisco') && !str_contains($haystack, 'switch') && !str_contains($haystack, 'ws-c') && !str_contains($haystack, 'ios')
+            (
+                str_starts_with($nombreUpper, 'PC-') || 
+                str_starts_with($nombreUpper, 'DESKTOP-') || 
+                str_starts_with($nombreUpper, 'LAPTOP-') || 
+                str_starts_with($nombreUpper, 'HOST-') || 
+                str_contains($haystack, 'workstation')
+            ) &&
+            !str_contains($haystack, 'cisco') && !str_contains($haystack, 'switch') && 
+            !str_starts_with($nombreUpper, 'SW') && !str_contains($haystack, 'sw-') && 
+            !str_contains($haystack, 'sw_') && !str_contains($haystack, 'swc') && 
+            !str_contains($haystack, 'ws-c') && !str_contains($haystack, 'ios')
         ) {
             return [
                 'image' => 'images/topology/pc.svg',
@@ -544,44 +583,13 @@ class TopologiaController extends Controller
             ];
         }
 
-        // 9. Nodos Genéricos / Endpoints
-        if (str_contains($haystack, 'genérico') || str_contains($haystack, 'computadora') || str_contains($haystack, 'endpoint') || str_contains($haystack, 'generico') || empty($modelo)) {
-            if ($numConexiones > 3) {
-                if (str_contains(strtolower($vendor), 'cisco')) {
-                    return [
-                        'image' => 'images/topology/switch-l2.svg',
-                        'rol' => 'CISCO SWITCH (SIN SNMP)',
-                        'tipo_equipo' => 'Switch Infraestructura Cisco',
-                        'factor_forma' => 'Switch Detectado por MAC y CDP',
-                        'size' => 120
-                    ];
-                } else {
-                    return [
-                        'image' => 'images/topology/switch-standard-1u.svg',
-                        'rol' => 'SWITCH NO ADMINISTRADO',
-                        'tipo_equipo' => 'Switch Genérico (Deducido por enlaces)',
-                        'factor_forma' => 'Switch 1U Genérico',
-                        'size' => 120
-                    ];
-                }
-            }
-
-            return [
-                'image' => 'images/topology/pc.svg',
-                'rol' => 'ENDPOINT',
-                'tipo_equipo' => 'Dispositivo Final (PC/Host)',
-                'factor_forma' => 'Endpoint',
-                'size' => 90
-            ];
-        }
-
-        // 10. Switch estándar limpio de 1U por defecto
+        // 8. Por defecto en infraestructura -> Switch de Acceso L2/L3 Gestionado
         return [
-            'image' => 'images/topology/switch-standard-1u.svg',
-            'rol' => 'SWITCH 1U',
-            'tipo_equipo' => 'Switch Gestionado 1U',
-            'factor_forma' => '1U Rackmount',
-            'size' => 120
+            'image' => 'images/topology/switch-access.svg',
+            'rol' => 'ACCESS / SWITCH',
+            'tipo_equipo' => 'Switch de Acceso Gigabit Managed',
+            'factor_forma' => '1U Rackmount Fixed',
+            'size' => 145
         ];
     }
 }
