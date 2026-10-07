@@ -2,7 +2,7 @@
 title Network Monitor NOC - Lanzador
 cd /d "%~dp0"
 
-set PY="C:\Users\ssocial_redes1\AppData\Local\Programs\Python\Python312\python.exe"
+set PY="%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
 if not exist %PY% set PY=python
 set PHP="C:\MAMP\bin\php\php8.3.1\php.exe"
 if not exist %PHP% set PHP=php
