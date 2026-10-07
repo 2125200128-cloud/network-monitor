@@ -19,15 +19,7 @@
 
 @section('content')
             <!-- Top Bar -->
-            <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mb-4 sm:mb-6">
-                <div class="relative w-full sm:w-80 md:w-96">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    </span>
-                    <input type="text" class="w-full bg-white dark:bg-[#0d1017] border border-gray-100 dark:border-slate-800/60 rounded-full py-2.5 sm:py-3 pl-12 pr-4 shadow-sm dark:shadow-none focus:ring-2 focus:ring-hacienda-blue dark:focus:ring-blue-500 text-sm text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500" placeholder="Buscar IPs, alertas, switches...">
-                </div>
-                
-                <div class="flex items-center justify-end gap-3">
+            <div class="flex justify-end items-center gap-3 mb-4 sm:mb-6">
                     <a href="{{ route('reportes.inventario_pdf') }}" target="_blank" class="fancy fancy-sm hidden sm:inline-flex" title="Descargar Reporte Ejecutivo de Inventario en PDF">
                         <span class="top-key"></span>
                         <span class="text">
@@ -880,48 +872,6 @@
                         </button>
                     </div>
                 </div>
-            </div>
-@endsection
-
-@section('right-sidebar')
-            <!-- Top Dispositivos (Ocupa de manera natural la parte superior sin My Profile) -->
-            <div class="floating-card flex-1 flex flex-col p-6 h-full">
-                <div class="flex justify-between items-center mb-5 pb-3 border-b border-gray-100 dark:border-slate-800/40">
-                    <div>
-                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono">Infraestructura Core</h3>
-                        <p class="text-sm font-extrabold text-hacienda-blue dark:text-blue-400 mt-0.5">Top Switches L2/L3</p>
-                    </div>
-                    <span class="text-xs font-bold font-mono px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-hacienda-blue dark:text-blue-400 border border-blue-100 dark:border-blue-900/40">
-                        {{ $totalDispositivos }} nodos
-                    </span>
-                </div>
-                
-                <div class="space-y-3.5 overflow-y-auto custom-scrollbar flex-1 pb-4 pr-1">
-                    @forelse($dispositivos as $device)
-                    <div class="flex items-center relative pl-4 hover:bg-blue-50/30 dark:hover:bg-slate-800/40 p-2 rounded-xl transition group">
-                        <!-- Timeline bullet -->
-                        <div class="absolute left-1 top-3 w-2 h-2 rounded-full {{ $device->estado == 'online' ? 'bg-[#3b5998]' : ($device->estado == 'warning' ? 'bg-[#f26419]' : 'bg-red-500') }}"></div>
-                        
-                        <div class="flex-1 min-w-0">
-                            <div class="flex justify-between items-center gap-2">
-                                <a href="{{ route('dispositivos.show', $device->id) }}" class="text-xs font-bold text-gray-800 dark:text-slate-200 group-hover:text-hacienda-blue dark:group-hover:text-blue-400 group-hover:underline transition truncate min-w-0" title="{{ $device->nombre }}">{{ $device->nombre }}</a>
-                                <span class="text-[11px] text-gray-400 font-mono flex-shrink-0">{{ $device->ip }}</span>
-                            </div>
-                            <div class="flex items-center justify-between mt-1 text-[11px] text-gray-500">
-                                <span class="truncate text-gray-400 max-w-[110px] text-[10px]">{{ $device->clean_model }}</span>
-                                <span class="font-mono text-[10px] text-gray-500 dark:text-slate-400">CPU: <strong class="text-gray-700 dark:text-slate-200">{{ $device->latest_cpu }}%</strong> | Loss: <strong class="{{ $device->latest_loss > 0 ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400' }}">{{ number_format($device->latest_loss, 1) }}%</strong></span>
-                            </div>
-                            <div class="border-b border-dashed border-gray-100 dark:border-slate-800/40 w-full mt-2"></div>
-                        </div>
-                    </div>
-                    @empty
-                    <p class="text-sm text-gray-500 dark:text-slate-400 text-center py-4">No hay dispositivos registrados.</p>
-                    @endforelse
-                </div>
-                
-                <a href="{{ route('dispositivos.create') }}" class="mt-4 py-2.5 text-center text-xs font-bold text-hacienda-blue dark:text-blue-400 uppercase tracking-widest hover:bg-blue-50 dark:hover:bg-slate-800/60 rounded-xl transition block border border-dashed border-blue-200 dark:border-blue-900/40">
-                    + Añadir Nuevo Switch
-                </a>
             </div>
 @endsection
 
