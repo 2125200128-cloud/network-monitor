@@ -16,9 +16,6 @@
             <div>
                 <div class="flex items-center gap-2.5">
                     <h1 class="text-xl font-black text-gray-900 dark:text-white tracking-tight">Monitoreo de Servicios & Páginas Web</h1>
-                    <span class="px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase bg-blue-50 dark:bg-blue-950/70 text-[#3b5998] dark:text-blue-300 border border-blue-200 dark:border-blue-900/60">
-                        {{ $stats['total'] }} Sitios
-                    </span>
                 </div>
                 <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 font-medium">
                     Disponibilidad HTTP/HTTPS, latencia de respuesta y estado en tiempo real.
