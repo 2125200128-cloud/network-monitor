@@ -14,6 +14,85 @@
     .animate-noc-marquee:hover {
         animation-play-state: paused;
     }
+
+    /* ==================== SPEEDOMETER / CRONÓGRAFO ==================== */
+    .speedometer {
+      position: relative;
+      width: 250px;
+      height: 140px;
+      background: radial-gradient(circle at bottom, #2c3e50, #000000);
+      border-top-left-radius: 150px;
+      border-top-right-radius: 150px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      border: 4px solid #34495e;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      user-select: none;
+    }
+
+    .dark .speedometer {
+      background: radial-gradient(circle at bottom, #1e293b, #07090e);
+      border-color: #334155;
+    }
+
+    .needle {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      width: 4px;
+      height: 100px;
+      background-color: #e74c3c;
+      transform-origin: bottom center;
+      transform: translateX(-50%) rotate(-90deg); /* -90deg a 90deg */
+      transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border-radius: 4px;
+      z-index: 4;
+      box-shadow: 0 0 8px rgba(231, 76, 60, 0.8);
+    }
+
+    .needle-in {
+      background-color: #10b981;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.9);
+    }
+
+    .needle-out {
+      background-color: #3b82f6;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.9);
+    }
+
+    .center-circle {
+      position: absolute;
+      bottom: 2px;
+      width: 18px;
+      height: 18px;
+      background-color: #ecf0f1;
+      border: 3px solid #1a1a1a;
+      border-radius: 50%;
+      z-index: 10;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+
+    .speed-value {
+      color: #ffffff;
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 20px;
+      z-index: 5;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .speed-label {
+      color: #cbd5e1;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+      z-index: 5;
+    }
 </style>
 @endsection
 
@@ -219,7 +298,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
             {{-- Alerta Superior NOC estilo Monitor de Noticias Ticker --}}
             @if($unreadNotificaciones > 0)
@@ -378,44 +456,58 @@
             </div>
 
             {{-- ======================================================= --}}
-            {{-- LIVE TRAFFIC WIDGET (SNMP en tiempo real, refresh 3s)    --}}
+            {{-- LIVE TRAFFIC WIDGET (Cronógrafos / Velocímetros SNMP)    --}}
             {{-- ======================================================= --}}
-            <div class="floating-card p-5 mb-6" id="snmpTrafficCard">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <div class="floating-card p-6 mb-6" id="snmpTrafficCard">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-3 border-b border-gray-100 dark:border-slate-800/60">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-xs">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-sm font-bold text-gray-800 dark:text-slate-100 leading-tight">Tráfico en Vivo (SNMP)</h3>
-                            <p class="text-[10px] text-gray-400 dark:text-slate-500 font-mono">Actualización automática cada 3 segundos</p>
+                            <h3 class="text-base font-extrabold text-gray-800 dark:text-slate-100 leading-tight">Velocímetro de Tráfico de Red (SNMP)</h3>
+                            <p class="text-xs text-gray-400 dark:text-slate-500 font-mono mt-0.5">Telemetría en tiempo real · Sondeo activo cada 3 segundos</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-1.5">
-                        <span id="snmpStatusDot" class="w-2 h-2 rounded-full bg-gray-300 dark:bg-slate-600"></span>
-                        <span id="snmpStatusText" class="text-[10px] text-gray-400 dark:text-slate-500 font-mono">Conectando…</span>
+                    <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-[#090b10] border border-slate-200/60 dark:border-slate-800 self-start sm:self-auto">
+                        <span id="snmpStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span id="snmpStatusText" class="text-xs text-gray-600 dark:text-slate-300 font-mono font-medium">Conectando…</span>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    {{-- Entrada --}}
-                    <div class="flex flex-col items-center justify-center py-4 px-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/40">
-                        <svg class="w-5 h-5 text-emerald-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
-                        </svg>
-                        <span class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono leading-none" id="snmpInMbps">—</span>
-                        <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mt-1">Mbps Entrada</span>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center justify-items-center">
+                    {{-- Cronógrafo de Entrada (Inbound / Download) --}}
+                    <div class="w-full flex flex-col items-center p-5 rounded-2xl bg-slate-50/70 dark:bg-[#090b10] border border-slate-200/70 dark:border-slate-800/80 shadow-xs">
+                        <div class="speedometer">
+                            <div class="speed-label">VELOCIDAD ENTRADA</div>
+                            <div class="speed-value" id="snmpInMbps">0.00 Mbps</div>
+                            <div class="needle needle-in" id="needleIn"></div>
+                            <div class="center-circle"></div>
+                        </div>
+                        <div class="mt-4 flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                            </svg>
+                            <span>Tráfico de Bajada (RX)</span>
+                        </div>
                     </div>
 
-                    {{-- Salida --}}
-                    <div class="flex flex-col items-center justify-center py-4 px-5 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40">
-                        <svg class="w-5 h-5 text-blue-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
-                        </svg>
-                        <span class="text-2xl font-extrabold text-blue-600 dark:text-blue-400 font-mono leading-none" id="snmpOutMbps">—</span>
-                        <span class="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-1">Mbps Salida</span>
+                    {{-- Cronógrafo de Salida (Outbound / Upload) --}}
+                    <div class="w-full flex flex-col items-center p-5 rounded-2xl bg-slate-50/70 dark:bg-[#090b10] border border-slate-200/70 dark:border-slate-800/80 shadow-xs">
+                        <div class="speedometer">
+                            <div class="speed-label">VELOCIDAD SALIDA</div>
+                            <div class="speed-value" id="snmpOutMbps">0.00 Mbps</div>
+                            <div class="needle needle-out" id="needleOut"></div>
+                            <div class="center-circle"></div>
+                        </div>
+                        <div class="mt-4 flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+                            </svg>
+                            <span>Tráfico de Subida (TX)</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1435,23 +1527,46 @@
             const INTERVAL  = 3000; // ms
             const elIn      = document.getElementById('snmpInMbps');
             const elOut     = document.getElementById('snmpOutMbps');
+            const needleIn  = document.getElementById('needleIn');
+            const needleOut = document.getElementById('needleOut');
             const elDot     = document.getElementById('snmpStatusDot');
             const elStatus  = document.getElementById('snmpStatusText');
 
             function setStatus(ok, msg) {
                 if (!elDot || !elStatus) return;
-                elDot.className   = `w-2 h-2 rounded-full ${ok ? 'bg-emerald-500 animate-pulse' : 'bg-red-400'}`;
+                elDot.className   = `w-2.5 h-2.5 rounded-full ${ok ? 'bg-emerald-500 animate-pulse' : 'bg-red-400'}`;
                 elStatus.textContent = msg;
             }
 
-            function animateValue(el, newVal) {
+            function setNeedleSpeed(needleEl, mbps) {
+                if (!needleEl) return;
+                const val = parseFloat(mbps);
+                if (isNaN(val) || val <= 0) {
+                    needleEl.style.transform = 'translateX(-50%) rotate(-90deg)';
+                    return;
+                }
+                // Escala de rotación (-90deg a +90deg):
+                let deg;
+                if (val <= 100) {
+                    deg = -90 + (val / 100) * 90;
+                } else {
+                    deg = (Math.min(val - 100, 900) / 900) * 90;
+                }
+                deg = Math.max(-90, Math.min(90, deg));
+                needleEl.style.transform = `translateX(-50%) rotate(${deg}deg)`;
+            }
+
+            function animateValue(el, newVal, needleEl) {
                 if (!el) return;
                 el.style.transition = 'opacity 0.2s ease';
                 el.style.opacity = '0';
                 setTimeout(() => {
-                    el.textContent  = newVal;
+                    el.textContent  = newVal + ' Mbps';
                     el.style.opacity = '1';
                 }, 200);
+                if (needleEl) {
+                    setNeedleSpeed(needleEl, newVal);
+                }
             }
 
             async function fetchTraffic() {
@@ -1466,12 +1581,14 @@
                     const data = await resp.json();
 
                     if (data.status === 'success') {
-                        animateValue(elIn,  parseFloat(data.in_mbps  ?? 0).toFixed(2));
-                        animateValue(elOut, parseFloat(data.out_mbps ?? 0).toFixed(2));
+                        const inVal  = parseFloat(data.in_mbps  ?? 0).toFixed(2);
+                        const outVal = parseFloat(data.out_mbps ?? 0).toFixed(2);
+                        animateValue(elIn,  inVal, needleIn);
+                        animateValue(elOut, outVal, needleOut);
                         setStatus(true, `Puerto ${data.puerto ?? '—'} · Actualizado`);
                     } else {
-                        animateValue(elIn,  '—');
-                        animateValue(elOut, '—');
+                        animateValue(elIn,  '0.00', needleIn);
+                        animateValue(elOut, '0.00', needleOut);
                         setStatus(false, data.message ?? 'Error del script');
                     }
                 } catch (err) {
