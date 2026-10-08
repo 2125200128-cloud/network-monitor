@@ -11,21 +11,26 @@ echo ==========================================================
 echo   NETWORK MONITOR NOC - Iniciando servicios
 echo ==========================================================
 
+echo [0/4] Limpiando cache de vistas y configuracion...
+%PHP% artisan optimize:clear >nul 2>&1
+
 echo [1/4] Servidor web (http://10.4.25.191:8000)...
-start "NOC - Servidor Web" cmd /k %PHP% artisan serve --host=0.0.0.0 --port=8000
+start "NOC - Servidor Web" cmd /k "%PHP% artisan serve --host=0.0.0.0 --port=8000"
 
 echo [2/4] Sondeo SNMP en vivo (cada 15s)...
-start "NOC - SNMP Poller" cmd /k %PY% -u worker\snmp_poller.py
+start "NOC - SNMP Poller" cmd /k "%PY% -u worker\snmp_poller.py"
 
 echo [3/4] Colector SNMP detallado (cada 5 min)...
-start "NOC - SNMP Detalle" cmd /k %PY% -u worker\snmp_detail_collector.py
+start "NOC - SNMP Detalle" cmd /k "%PY% -u worker\snmp_detail_collector.py"
 
 echo [4/4] Metricas globales + Servicios Web (cada 15s)...
 start "NOC - Metricas y Webs" cmd /k "for /l %%i in (0,0,1) do (%PY% worker\metrics_collector.py & %PHP% artisan web:poll & timeout /t 15 /nobreak >nul)"
 
 echo.
-echo Todos los servicios fueron lanzados en ventanas separadas.
-echo NO cierres esas ventanas mientras quieras monitorear.
-echo Abre en el navegador: http://10.4.25.191:8000
+echo ==========================================================
+echo  Todos los servicios fueron lanzados en ventanas separadas.
+echo  NO cierres esas ventanas mientras quieras monitorear.
+echo  Abre en tu navegador: http://10.4.25.191:8000
+echo ==========================================================
 echo.
 pause
