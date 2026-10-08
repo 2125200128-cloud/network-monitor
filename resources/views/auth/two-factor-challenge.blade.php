@@ -4,6 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Verificación MFA - NOC</title>
+    @if(file_exists(public_path('build/manifest.json')))
+        @php
+            $manifestData = json_decode(@file_get_contents(public_path('build/manifest.json')), true);
+            $cssAsset = $manifestData['resources/css/app.css']['file'] ?? null;
+        @endphp
+        @if($cssAsset)
+            <link rel="stylesheet" href="{{ asset('build/' . $cssAsset) }}">
+        @endif
+    @endif
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         body {

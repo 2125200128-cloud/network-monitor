@@ -4,7 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Network Dashboard')</title>
-    <!-- Tailwind CSS (via Vite) -->
+    <!-- Tailwind CSS (via Vite & Direct Asset Fallback) -->
+    @if(file_exists(public_path('build/manifest.json')))
+        @php
+            $manifestData = json_decode(@file_get_contents(public_path('build/manifest.json')), true);
+            $cssAsset = $manifestData['resources/css/app.css']['file'] ?? null;
+        @endphp
+        @if($cssAsset)
+            <link rel="stylesheet" href="{{ asset('build/' . $cssAsset) }}">
+        @endif
+    @endif
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
