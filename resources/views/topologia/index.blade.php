@@ -159,6 +159,7 @@
 
 @section('content')
 <div class="flex flex-col h-full space-y-4">
+    @include('components.alert-banner')
     
     {{-- ==================== 1. TOP HEADER & METRICS ==================== --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#12161f] rounded-[2rem] p-5 lg:p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex-shrink-0">

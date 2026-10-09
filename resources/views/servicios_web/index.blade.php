@@ -39,6 +39,7 @@
 
 @section('content')
 <div class="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-6 space-y-5">
+    @include('components.alert-banner')
 
     {{-- Header Top --}}
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#0d1017] p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
