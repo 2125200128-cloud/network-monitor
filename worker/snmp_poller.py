@@ -159,6 +159,9 @@ async def poll_device(dev, snmpEngine, sem):
                 ObjectType(ObjectIdentity('1.3.6.1.4.1.9.9.109.1.1.1.1.12.1')), # 6: Mem Usada Nexus NX-OS (KB)
                 ObjectType(ObjectIdentity('1.3.6.1.4.1.9.9.109.1.1.1.1.13.1')), # 7: Mem Libre Nexus NX-OS (KB)
                 ObjectType(ObjectIdentity('1.3.6.1.4.1.9.9.109.1.1.1.1.7.1')),  # 8: CPU 1min fallback
+                ObjectType(ObjectIdentity('1.3.6.1.4.1.12356.101.4.1.3.0')),     # 9: FortiGate CPU Usage (%)
+                ObjectType(ObjectIdentity('1.3.6.1.4.1.12356.101.4.1.4.0')),     # 10: FortiGate RAM Usage (%)
+                ObjectType(ObjectIdentity('1.3.6.1.4.1.12356.101.4.1.8.0')),     # 11: FortiGate Active Sessions Count
             )
 
             if not errInd and not errStat:
@@ -178,9 +181,9 @@ async def poll_device(dev, snmpEngine, sem):
                         sys_descr = raw_descr
                 except Exception:
                     pass
-                # CPU
+                # CPU (Cisco Catalyst/Nexus or FortiGate)
                 cpu_cand = None
-                for idx in (2, 3, 8):
+                for idx in (9, 2, 3, 8):
                     try:
                         v = int(varBinds[idx][1])
                         if 0 <= v <= 100:
@@ -191,19 +194,37 @@ async def poll_device(dev, snmpEngine, sem):
                 if cpu_cand is not None:
                     cpu_usage = cpu_cand
 
-                # RAM Total & Used
+                # RAM Total & Used (FortiGate, Catalyst, Nexus)
                 ram_total_mb = None
                 ram_used_mb = None
-                # Intentar primero Catalyst (bytes)
+                # FortiGate Mem Usage % (index 10)
                 try:
-                    m_used = int(varBinds[4][1])
-                    m_free = int(varBinds[5][1])
-                    if m_used + m_free > 0:
-                        mem_usage = round((m_used / (m_used + m_free)) * 100, 1)
-                        ram_used_mb = round(m_used / (1024 * 1024))
-                        ram_total_mb = round((m_used + m_free) / (1024 * 1024))
+                    fg_mem = int(varBinds[10][1])
+                    if 0 <= fg_mem <= 100:
+                        mem_usage = fg_mem
                 except Exception:
                     pass
+
+                # Active Sessions (FortiGate index 11)
+                active_sessions = 0
+                try:
+                    fg_ses = int(varBinds[11][1])
+                    if fg_ses > 0:
+                        active_sessions = fg_ses
+                except Exception:
+                    pass
+
+                # Intentar primero Catalyst (bytes)
+                if mem_usage == 25:
+                    try:
+                        m_used = int(varBinds[4][1])
+                        m_free = int(varBinds[5][1])
+                        if m_used + m_free > 0:
+                            mem_usage = round((m_used / (m_used + m_free)) * 100, 1)
+                            ram_used_mb = round(m_used / (1024 * 1024))
+                            ram_total_mb = round((m_used + m_free) / (1024 * 1024))
+                    except Exception:
+                        pass
                 # Si no, intentar Nexus NX-OS (KB)
                 if mem_usage == 25:
                     try:

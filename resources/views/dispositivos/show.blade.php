@@ -51,6 +51,11 @@
             border-color: #2e3e52 !important;
             box-shadow: inset 0 1px 2px rgba(59, 89, 152, 0.25), inset 0 -2px 6px rgba(0, 0, 0, 0.9), 0 12px 30px rgba(0, 0, 0, 0.35) !important;
         }
+        .chassis-firewall {
+            background: linear-gradient(180deg, #221519 0%, #170d11 50%, #0c0609 100%) !important;
+            border-color: #e11d48 !important;
+            box-shadow: inset 0 1px 2px rgba(225, 29, 72, 0.3), inset 0 -2px 6px rgba(0, 0, 0, 0.9), 0 12px 30px rgba(0, 0, 0, 0.4) !important;
+        }
         .chassis-router {
             background: linear-gradient(180deg, #1a2027 0%, #14191f 50%, #0b0e12 100%) !important;
             border-color: #3b4754 !important;
@@ -470,15 +475,17 @@
         $rol = $deviceHardware['rol'] ?? '';
         $tipo = $deviceHardware['tipo'] ?? 'switch';
         $haystack = strtolower($dispositivo->nombre . ' ' . ($chasis->model_name ?? '') . ' ' . ($dispositivo->modelo ?? ''));
-        $isRouter = ($tipo === 'router') || ($rol === 'ROUTER / EDGE') || str_contains($haystack, '1841') || str_contains($haystack, 'router') || str_contains($haystack, 'isr');
+        $isFirewall = ($tipo === 'firewall') || str_contains($haystack, 'forti') || str_contains($haystack, 'fg-') || str_contains($haystack, 'fw-') || str_contains($haystack, 'firewall');
+        $isRouter = (($tipo === 'router') || ($rol === 'ROUTER / EDGE') || str_contains($haystack, '1841') || str_contains($haystack, 'router') || str_contains($haystack, 'isr')) && !$isFirewall;
         $isPhone = ($tipo === 'telefono');
         $isAP = ($tipo === 'access_point');
         $isServer = ($tipo === 'servidor');
         $isPC = ($tipo === 'pc');
-        $isNexus = ($rol === 'CORE / MODULAR') && !$isRouter && !$isPhone && !$isAP && !$isServer && !$isPC;
-        $isCatalyst = ($rol === 'DISTRIBUTION / CORE') && !$isRouter && !$isPhone && !$isAP && !$isServer && !$isPC;
+        $isNexus = ($rol === 'CORE / MODULAR') && !$isRouter && !$isPhone && !$isAP && !$isServer && !$isPC && !$isFirewall;
+        $isCatalyst = ($rol === 'DISTRIBUTION / CORE') && !$isRouter && !$isPhone && !$isAP && !$isServer && !$isPC && !$isFirewall;
 
         $chassisClass = match(true) {
+            $isFirewall => 'chassis-firewall',
             $isPhone => 'chassis-phone',
             $isAP => 'chassis-ap',
             $isServer => 'chassis-server',
@@ -489,6 +496,7 @@
             default => 'chassis-access'
         };
         $badgeBg = match(true) {
+            $isFirewall => 'bg-rose-600',
             $isPhone => 'bg-blue-600',
             $isAP => 'bg-emerald-600',
             $isServer => 'bg-purple-600',
@@ -504,7 +512,9 @@
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2.5">
                 <div class="px-3 py-1.5 rounded-lg {{ $badgeBg }} flex items-center justify-center text-white font-black text-xs shadow-sm font-mono tracking-wider">
-                    @if($isPhone)
+                    @if($isFirewall)
+                        FIREWALL NGFW 1U
+                    @elseif($isPhone)
                         TELÉFONO VOIP
                     @elseif($isAP)
                         ACCESS POINT WI-FI 6
@@ -520,7 +530,9 @@
                 </div>
                 <div>
                     <h2 class="text-base font-extrabold text-gray-900 dark:text-white leading-tight">
-                        @if($isPhone)
+                        @if($isFirewall)
+                            Panel Frontal de Seguridad & Telemetría (FortiGate NGFW Faceplate)
+                        @elseif($isPhone)
                             Panel Trasero de Conectividad & Puertos (VoIP Faceplate)
                         @elseif($isAP)
                             Panel de Enlace de Red & Radios RF (Wi-Fi 6 Faceplate)
@@ -570,7 +582,24 @@
             </div>
 
             {{-- Brand Logo & Status Panel Customized to Device --}}
-            @if($isPhone)
+            @if($isFirewall)
+                <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-rose-900/40 pr-4 flex-shrink-0">
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-sm bg-rose-500 shadow-[0_0_8px_#f43f5e]"></span>
+                            <span class="text-xs font-black text-rose-300 tracking-wider">FORTINET</span>
+                        </div>
+                        <p class="text-[9px] font-mono text-rose-200 uppercase tracking-tight mt-0.5 truncate max-w-[130px]">{{ $deviceHardware['clean_model'] ?? 'FORTIGATE NGFW' }}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-x-2 gap-y-1">
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full {{ $dispositivo->estado === 'online' ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500' }} shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">PWR</span></div>
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full {{ $dispositivo->estado === 'online' ? 'bg-emerald-400' : 'bg-gray-500' }} shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">STA</span></div>
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">HA</span></div>
+                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-rose-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">IPS</span></div>
+                    </div>
+                    <div class="text-[8px] text-rose-400 font-mono">FortiOS 7.x • NGFW</div>
+                </div>
+            @elseif($isPhone)
                 <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-blue-900/40 pr-4 flex-shrink-0">
                     <div>
                         <div class="flex items-center gap-1.5">

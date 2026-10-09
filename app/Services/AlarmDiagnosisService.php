@@ -169,6 +169,64 @@ class AlarmDiagnosisService
         }
 
         // -------------------------------------------------------------
+        // 3.B. ANÁLISIS DE INTERFACES WAN Y TÚNELES VPN FORTIGATE (DOWN)
+        // -------------------------------------------------------------
+        $fortiInterfacesDown = TelemetriaInterfaz::where('oper_status', 'down')
+            ->whereHas('interfaz', function($q) {
+                $q->where(function($sub) {
+                    $sub->where('nombre', 'LIKE', '%wan%')
+                        ->orWhere('nombre', 'LIKE', '%port1%')
+                        ->orWhere('nombre', 'LIKE', '%port2%')
+                        ->orWhere('nombre', 'LIKE', '%ipsec%')
+                        ->orWhere('nombre', 'LIKE', '%vpn%')
+                        ->orWhere('nombre', 'LIKE', '%ssl%');
+                });
+            })
+            ->with(['interfaz.dispositivo'])
+            ->get();
+
+        foreach ($fortiInterfacesDown as $tIf) {
+            $intf = $tIf->interfaz;
+            $disp = $intf ? $intf->dispositivo : null;
+            $isForti = $disp && (str_contains(strtolower($disp->nombre . ' ' . $disp->comunidad_snmp), 'forti') || str_starts_with(strtolower($disp->nombre), 'fg-') || str_starts_with(strtolower($disp->nombre), 'fw-'));
+
+            if ($isForti) {
+                $intfNombre = $intf->nombre;
+                $dispNombre = $disp->nombre;
+                $dt = $tIf->updated_at ? \Carbon\Carbon::parse($tIf->updated_at) : now();
+                $fechaFalla = $dt->format('d/m/Y H:i:s');
+                $horaFalla = $dt->format('h:i:s A');
+
+                $isVpn = str_contains(strtolower($intfNombre), 'vpn') || str_contains(strtolower($intfNombre), 'ipsec') || str_contains(strtolower($intfNombre), 'ssl');
+
+                $alarmas[] = [
+                    'id' => 'forti-if-down-' . $tIf->id,
+                    'dispositivo_id' => $disp->id,
+                    'interfaz_id' => $intf->id,
+                    'tipo' => 'critica',
+                    'severidad' => 'critica',
+                    'categoria' => $isVpn ? 'vpn' : 'wan',
+                    'codigo_evento' => $isVpn ? 'VPN_TUNNEL_DOWN' : 'FORTI_WAN_DOWN',
+                    'titulo' => $isVpn ? "Túnel VPN FortiGate Caído ({$intfNombre})" : "Interfaz WAN FortiGate Inaccesible ({$intfNombre})",
+                    'dispositivo' => $dispNombre,
+                    'ip' => $disp->ip,
+                    'ubicacion' => $disp->ubicacion ?? 'Seguridad Perimetral',
+                    'mensaje' => $isVpn ? "El túnel VPN IPsec/SSL '{$intfNombre}' en {$dispNombre} perdió conectividad." : "La interfaz WAN '{$intfNombre}' de {$dispNombre} cambió a estado DOWN.",
+                    'causa_raiz' => $isVpn ? "Falló la fase 1/2 IKE del túnel IPsec o se perdió la IP pública del extremo remoto." : "Corte de enlace con el Proveedor de Internet (ISP) o caída de port port1/port2.",
+                    'impacto' => $isVpn ? "Pérdida de comunicación segura entre sedes/sitios remotos." : "Conmutación por failover a enlace secundario o pérdida de conectividad a Internet.",
+                    'accion_sugerida' => $isVpn ? "Ejecutar 'diagnose vpn tunnel list' en la consola CLI e inspeccionar las llaves IKE." : "Comprobar enlace físico del módem/ONT ISP y revisar tabla SD-WAN SLA.",
+                    'fecha_falla' => $fechaFalla,
+                    'hora_falla' => $horaFalla,
+                    'hace_cuanto' => $dt->diffForHumans(),
+                    'tiempo' => $horaFalla . ' (' . $dt->diffForHumans() . ')',
+                    'leida' => false,
+                    'link' => route('dispositivos.show', $disp->id),
+                    'accion' => 'Inspeccionar WAN/VPN'
+                ];
+            }
+        }
+
+        // -------------------------------------------------------------
         // 4. ANÁLISIS DE ALERTAS TÉRMICAS DE HARDWARE
         // -------------------------------------------------------------
         foreach ($dispositivos as $disp) {
@@ -265,6 +323,35 @@ class AlarmDiagnosisService
                     'leida' => false,
                     'link' => route('dispositivos.show', $disp->id),
                     'accion' => 'Ver Memoria'
+                ];
+            }
+
+            // 6. ANÁLISIS ESPECIAL DE FIREWALL FORTINET / FORTIGATE (SESIONES ACTIVAS Y SEGURIDAD)
+            $isForti = str_contains(strtolower($disp->nombre . ' ' . $disp->comunidad_snmp), 'forti') || str_starts_with(strtolower($disp->nombre), 'fg-') || str_starts_with(strtolower($disp->nombre), 'fw-');
+            if ($isForti && $ultimaMetrica && ($ultimaMetrica->conexiones_activas > 50000)) {
+                $ses = number_format($ultimaMetrica->conexiones_activas);
+                $alarmas[] = [
+                    'id' => 'forti-ses-' . $disp->id,
+                    'dispositivo_id' => $disp->id,
+                    'tipo' => 'critica',
+                    'severidad' => 'critica',
+                    'categoria' => 'seguridad',
+                    'codigo_evento' => 'FORTI_SESSION_OVERLOAD',
+                    'titulo' => "Saturación de Tabla de Sesiones Firewall ({$ses} sesiones)",
+                    'dispositivo' => $disp->nombre,
+                    'ip' => $disp->ip,
+                    'ubicacion' => $disp->ubicacion ?? '',
+                    'mensaje' => "El Firewall FortiGate registra {$ses} sesiones concurrentes en la tabla NAT/Stateful.",
+                    'causa_raiz' => "Posible ataque de denegación de servicio (DDoS SYN Flood), botnet o ráfaga inusual de conexiones desde la red interna.",
+                    'impacto' => "Agotamiento de la tabla de conexiones de FortiOS, denegación de nuevos accesos web/VPN e incremento en la latencia.",
+                    'accion_sugerida' => "Ejecutar 'diagnose sys session stat' en la consola CLI de FortiGate e inspeccionar las políticas de DoS / rate-limit.",
+                    'fecha_falla' => $fechaFalla,
+                    'hora_falla' => $horaFalla,
+                    'hace_cuanto' => $dt->diffForHumans(),
+                    'tiempo' => $horaFalla . " ({$ses} ses.)",
+                    'leida' => false,
+                    'link' => route('dispositivos.show', $disp->id),
+                    'accion' => 'Inspeccionar Sesiones CLI'
                 ];
             }
         }

@@ -16,7 +16,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $dispositivos = Dispositivo::with('telemetriaChasis')
+        $dispositivos = Dispositivo::with(['telemetriaChasis', 'ultimaMetrica'])
             ->orderByRaw("FIELD(estado, 'online', 'warning', 'offline')")
             ->orderBy('nombre')
             ->get();
@@ -26,19 +26,11 @@ class DashboardController extends Controller
         $dispositivosOffline = $dispositivos->where('estado', 'offline')->count();
         $dispositivosWarning = $dispositivos->where('estado', 'warning')->count();
 
-        $dispositivoIds = $dispositivos->pluck('id');
-
         // -----------------------------------------------------------------------
         // Global Averages — FUENTE PRIMARIA: global_metrics (collector)
-        // Fallback: promedios de metricas_red por dispositivo
+        // Fallback: promedios de ultimaMetrica por dispositivo
         // -----------------------------------------------------------------------
-        $latestMetricsForAvg = collect();
-        foreach ($dispositivos as $disp) {
-            $latest = $disp->metricas()->orderByDesc('fecha_registro')->first();
-            if ($latest) {
-                $latestMetricsForAvg->push($latest);
-            }
-        }
+        $latestMetricsForAvg = $dispositivos->map(fn($d) => $d->ultimaMetrica)->filter()->values();
 
         // Promedios de per-device (CPU, RAM, Temp, Errores)
         $avgCpu  = round($latestMetricsForAvg->avg('cpu_usage') ?? 0, 1);
@@ -52,7 +44,7 @@ class DashboardController extends Controller
         $uptimeHours  = floor(($globalUptime % 86400) / 3600);
         $formattedUptime = "{$uptimeDays}d {$uptimeHours}h";
 
-        // KPIs de red desde global_metrics (fuente real: metrics_collector.py)
+        // KPIs de red desde global_metrics
         $globalRow = DB::table('global_metrics')->latest('recorded_at')->first();
         if ($globalRow) {
             $avgPing        = round($globalRow->latency_ms, 1);
@@ -100,8 +92,7 @@ class DashboardController extends Controller
 
         // Attach latest metrics, type info and platform info to each device for the inventory table
         foreach ($dispositivos as $device) {
-            $latest = $latestMetricsForAvg->firstWhere('dispositivo_id', $device->id)
-                ?? $device->metricas()->orderByDesc('fecha_registro')->first();
+            $latest = $device->ultimaMetrica;
             $device->latest_cpu = $latest ? $latest->cpu_usage : 0;
             $device->latest_loss = $latest ? $latest->packet_loss : 0;
             $device->latest_ping = $latest ? $latest->ping_ms : 0;
@@ -189,43 +180,57 @@ class DashboardController extends Controller
         $data = \Illuminate\Support\Facades\Cache::remember('kpi_live_fast', 5, function () {
             $g = DB::table('global_metrics')->latest('recorded_at')->first();
 
-            $online  = DB::table('dispositivos')->where('estado', 'online')->count();
-            $offline = DB::table('dispositivos')->where('estado', 'offline')->count();
-            $warning = DB::table('dispositivos')->where('estado', 'warning')->count();
-            $total   = $online + $offline + $warning;
+            $counts = DB::table('dispositivos')
+                ->selectRaw("
+                    COUNT(*) as total,
+                    SUM(CASE WHEN estado = 'online' THEN 1 ELSE 0 END) as online,
+                    SUM(CASE WHEN estado = 'offline' THEN 1 ELSE 0 END) as offline,
+                    SUM(CASE WHEN estado = 'warning' THEN 1 ELSE 0 END) as warning
+                ")->first();
 
-            $perDevice = DB::table('metricas_red as m')
-                ->joinSub(
-                    DB::table('metricas_red')
-                        ->select('dispositivo_id', DB::raw('MAX(fecha_registro) as last_ts'))
-                        ->groupBy('dispositivo_id'),
-                    'latest', fn($j) => $j->on('m.dispositivo_id', '=', 'latest.dispositivo_id')
-                                           ->on('m.fecha_registro', '=', 'latest.last_ts')
-                )
-                ->select(
-                    DB::raw('AVG(m.cpu_usage) as cpu, AVG(m.memory_usage) as ram, AVG(m.ping_ms) as ping, MIN(m.uptime) as uptime'),
-                    DB::raw('SUM(CASE WHEN (m.cpu_usage > 0 OR m.memory_usage > 0) AND m.fecha_registro >= NOW() - INTERVAL 5 MINUTE THEN 1 ELSE 0 END) as snmp_online_count')
-                )
-                ->first();
+            $online  = (int) ($counts->online ?? 0);
+            $offline = (int) ($counts->offline ?? 0);
+            $warning = (int) ($counts->warning ?? 0);
+            $total   = (int) ($counts->total ?? 0);
+
+            $cpu = $g ? (float) $g->cpu_avg_pct : 0;
+            $ram = $g ? (float) $g->ram_avg_pct : 0;
+            $ping = $g ? (float) $g->latency_ms : 0;
+            $uptimeMin = 86400 * 30;
+
+            if (!$g || ($cpu <= 0 && $ram <= 0)) {
+                $perDevice = DB::table('metricas_red as m')
+                    ->joinSub(
+                        DB::table('metricas_red')
+                            ->select('dispositivo_id', DB::raw('MAX(fecha_registro) as last_ts'))
+                            ->groupBy('dispositivo_id'),
+                        'latest', fn($j) => $j->on('m.dispositivo_id', '=', 'latest.dispositivo_id')
+                                               ->on('m.fecha_registro', '=', 'latest.last_ts')
+                    )
+                    ->selectRaw('AVG(m.cpu_usage) as cpu, AVG(m.memory_usage) as ram, AVG(m.ping_ms) as ping, MIN(m.uptime) as uptime')
+                    ->first();
+                if ($perDevice) {
+                    if ($cpu <= 0) $cpu = round($perDevice->cpu ?? 0, 1);
+                    if ($ram <= 0) $ram = round($perDevice->ram ?? 0, 1);
+                    if ($ping <= 0) $ping = round($perDevice->ping ?? 0, 1);
+                    $uptimeMin = $perDevice->uptime ?? 0;
+                }
+            }
 
             $notificaciones = $this->compilarNotificaciones();
             $unreadCount = count(array_filter($notificaciones, fn($n) => !$n['leida']));
 
             return [
                 'traffic_mbps'       => $g ? round($g->traffic_mbps, 2)       : 0,
-                'latency_ms'         => $g ? round($g->latency_ms, 1)          : round($perDevice->ping ?? 0, 1),
+                'latency_ms'         => round($ping, 1),
                 'packet_loss_pct'    => $g ? round($g->packet_loss_pct, 2)     : 0,
-                'cpu_avg_pct'        => $g && $g->cpu_avg_pct > 0
-                                            ? round($g->cpu_avg_pct, 1)
-                                            : round($perDevice->cpu ?? 0, 1),
-                'ram_avg_pct'        => $g && $g->ram_avg_pct > 0
-                                            ? round($g->ram_avg_pct, 1)
-                                            : round($perDevice->ram ?? 0, 1),
+                'cpu_avg_pct'        => round($cpu, 1),
+                'ram_avg_pct'        => round($ram, 1),
                 'port_saturation_pct'=> $g ? round($g->port_saturation_pct, 1) : 0,
                 'active_nodes'       => $g ? $g->active_nodes : $online,
-                'snmp_online'        => (int) ($perDevice->snmp_online_count ?? 0),
+                'snmp_online'        => $online,
                 'dispositivos'       => compact('online', 'offline', 'warning', 'total'),
-                'uptime_min'         => $perDevice->uptime ?? 0,
+                'uptime_min'         => $uptimeMin,
                 'recorded_at'        => $g ? $g->recorded_at : now()->toIso8601String(),
                 'notificaciones'     => $notificaciones,
                 'unread_notif_count' => $unreadCount,

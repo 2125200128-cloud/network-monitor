@@ -40,7 +40,11 @@ class ServicioWebController extends Controller
 
         $categorias = ServicioWeb::select('categoria')->distinct()->pluck('categoria');
 
-        return view('servicios_web.index', compact('servicios', 'stats', 'categorias'));
+        // Compilar notificaciones para el banner carrusel NOC LIVE
+        $notificaciones = (new \App\Http\Controllers\DashboardController)->compilarNotificaciones();
+        $unreadNotificaciones = count(array_filter($notificaciones, fn($n) => !$n['leida']));
+
+        return view('servicios_web.index', compact('servicios', 'stats', 'categorias', 'notificaciones', 'unreadNotificaciones'));
     }
 
     public function store(Request $request)

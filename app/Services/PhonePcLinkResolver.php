@@ -14,7 +14,7 @@ class PhonePcLinkResolver
      * @param Dispositivo $phone
      * @return array
      */
-    public static function resolveAttachedPc(Dispositivo $phone): array
+    public static function resolveAttachedPc(Dispositivo $phone, ?EnlaceRed $preloadedEnlace = null): array
     {
         $nombre = strtoupper($phone->nombre ?? '');
         $isPhone = str_starts_with($nombre, 'SEP') || str_contains($nombre, 'PHONE') || str_contains(strtoupper($phone->modelo ?? ''), 'PHONE');
@@ -29,8 +29,8 @@ class PhonePcLinkResolver
             $phoneMacRaw = strtolower(implode(':', str_split($m[1], 2)));
         }
 
-        // 2. Encontrar el switch y puerto físico de acceso donde está conectado el teléfono
-        $enlace = EnlaceRed::where(function($q) use ($phone) {
+        // 2. Usar enlace precargado o consultar BD
+        $enlace = $preloadedEnlace ?: EnlaceRed::where(function($q) use ($phone) {
                 $q->where('origen_dispositivo_id', $phone->id)
                   ->orWhere('destino_dispositivo_id', $phone->id);
             })

@@ -168,12 +168,22 @@ def process_device(device):
             mbps_in = 18500000
             mbps_out = 9200000
         
-        # Insert Telemetry
-        cursor.execute("""INSERT INTO telemetria_interfaces (interfaz_id, oper_status, in_octets, out_octets, in_errors, out_errors, in_discards, out_discards)
-                          VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""", 
-                       (interfaz_id, oper_st, mbps_in, mbps_out, 
-                        in_err.get(if_index,0), out_err.get(if_index,0), 
-                        in_disc.get(if_index,0), out_disc.get(if_index,0)))
+        # Upsert Telemetry per interface
+        cursor.execute("""
+            INSERT INTO telemetria_interfaces (interfaz_id, oper_status, in_octets, out_octets, in_errors, out_errors, in_discards, out_discards, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
+            ON DUPLICATE KEY UPDATE
+                oper_status=VALUES(oper_status),
+                in_octets=VALUES(in_octets),
+                out_octets=VALUES(out_octets),
+                in_errors=VALUES(in_errors),
+                out_errors=VALUES(out_errors),
+                in_discards=VALUES(in_discards),
+                out_discards=VALUES(out_discards),
+                updated_at=NOW()
+        """, (interfaz_id, oper_st, mbps_in, mbps_out, 
+              in_err.get(if_index,0), out_err.get(if_index,0), 
+              in_disc.get(if_index,0), out_disc.get(if_index,0)))
     
     # 2. Chassis Telemetry (Cisco specific fallback)
     temps = snmp_walk(ip, community, OID_TEMP)
@@ -182,8 +192,15 @@ def process_device(device):
     psus = snmp_walk(ip, community, OID_PSU)
     fans = snmp_walk(ip, community, OID_FAN)
     
-    cursor.execute("""INSERT INTO telemetria_chasis (dispositivo_id, temperatura_c, estado_fuentes, estado_ventiladores)
-                      VALUES (%s, %s, %s, %s)""", (dev_id, temp_avg, json.dumps(psus), json.dumps(fans)))
+    cursor.execute("""
+        INSERT INTO telemetria_chasis (dispositivo_id, temperatura_c, estado_fuentes, estado_ventiladores, updated_at)
+        VALUES (%s, %s, %s, %s, NOW())
+        ON DUPLICATE KEY UPDATE
+            temperatura_c=VALUES(temperatura_c),
+            estado_fuentes=VALUES(estado_fuentes),
+            estado_ventiladores=VALUES(estado_ventiladores),
+            updated_at=NOW()
+    """, (dev_id, temp_avg, json.dumps(psus), json.dumps(fans)))
                       
     # 3. MAC & ARP Tables - Clean dynamic structure
     mac_table = []

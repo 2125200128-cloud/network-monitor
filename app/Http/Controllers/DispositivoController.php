@@ -42,19 +42,17 @@ class DispositivoController extends Controller
 
         // 1. Crear telemetría de chasis inicial
         $nombreLower = strtolower($dispositivo->nombre);
-        $modelo = $validated['modelo'] ?? (str_contains($nombreLower, 'sg200') ? 'Cisco SG200-26 Smart Switch' : 'Cisco Catalyst Switch');
+        $isForti = str_contains($nombreLower, 'forti') || str_starts_with($nombreLower, 'fg-') || str_starts_with($nombreLower, 'fw-');
+        $modelo = $validated['modelo'] ?? ($isForti ? 'FortiGate-100F NGFW' : (str_contains($nombreLower, 'sg200') ? 'Cisco SG200-26 Smart Switch' : 'Cisco Catalyst Switch'));
         \App\Models\TelemetriaChasis::create([
             'dispositivo_id' => $dispositivo->id,
             'model_name' => $modelo,
-            'serial_number' => 'SN-' . strtoupper(substr(md5($dispositivo->ip . time()), 0, 10)),
-            'hardware_version' => 'V02',
-            'rom_version' => '1.4.11.02',
-            'uptime_str' => '0d 2h 45m',
-            'mac_address' => '00:1E:F7:28:44:99',
-            'power_supply_1_status' => 'normal',
-            'power_supply_2_status' => 'not_present',
-            'temperature_celsius' => 34,
-            'fan_status' => 'operational'
+            'serial_number' => $isForti ? 'FG100FTK21004859' : ('SN-' . strtoupper(substr(md5($dispositivo->ip . time()), 0, 10))),
+            'os_version' => $isForti ? 'FortiOS v7.2.5' : '1.4.11.02',
+            'uptime_str' => '14d 6h 22m',
+            'temperatura_c' => 38,
+            'cpu_utilization' => rand(8, 18),
+            'ram_utilization' => rand(25, 42),
         ]);
 
         // 2. Registrar métrica inicial para que aparezca online de inmediato

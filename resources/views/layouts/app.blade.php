@@ -4,7 +4,21 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Network Dashboard')</title>
-    <!-- Tailwind CSS (via Vite & Direct Asset Fallback) -->
+    <!-- Tailwind CSS (via CDN & Vite) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'hacienda-blue': '#3b5998',
+                        'hacienda-orange': '#f26419'
+                    }
+                }
+            }
+        }
+    </script>
     @if(file_exists(public_path('build/manifest.json')))
         @php
             $manifestData = json_decode(@file_get_contents(public_path('build/manifest.json')), true);
@@ -81,6 +95,20 @@
         .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
         .dark .custom-scrollbar { scrollbar-color: #334155 #07090e; }
         
+        /* NOC Live Marquee Banner Animation */
+        @keyframes nocMarquee {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+        .animate-noc-marquee {
+            display: flex;
+            width: max-content;
+            animation: nocMarquee 35s linear infinite;
+        }
+        .animate-noc-marquee:hover {
+            animation-play-state: paused;
+        }
+
         /* ======================== FANCY BUTTON (UIVERSE) ======================== */
         .fancy {
             background-color: transparent;
@@ -286,88 +314,14 @@
                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
                 </a>
                 
-                <!-- Submenú Desplegable: Gestión de Red L2/L3 -->
-                <div class="relative w-full flex justify-center" x-data="{ open: false }" @click.outside="open = false">
-                    @php
-                        $isNetworkMgmtActive = request()->is('consola*') || request()->is('vlans*') || request()->is('configuraciones*');
-                    @endphp
-                    <!-- Botón Padre -->
-                    <button 
-                        @click="open = !open" 
-                        type="button"
-                        class="w-12 h-12 {{ $isNetworkMgmtActive ? 'bg-white dark:bg-slate-800/90 text-hacienda-blue dark:text-blue-400 shadow-md dark:shadow-none transform scale-110 border border-transparent dark:border-slate-700/50' : 'text-blue-100 dark:text-slate-400 hover:bg-white/20 dark:hover:bg-slate-800/50' }} rounded-xl flex items-center justify-center transition relative group"
-                        title="Gestión de Red L2/L3 (Consola, VLANs, NCM)">
-                        <!-- Ícono L2/L3 / Switches & Servidor unificado -->
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
-                        </svg>
-                        
-                        <!-- Indicador Activo -->
-                        @if($isNetworkMgmtActive)
-                            <span class="absolute -top-1 -right-1 w-3 h-3 bg-hacienda-orange rounded-full border-2 border-hacienda-blue dark:border-[#090b10]"></span>
-                        @endif
-                    </button>
-
-                    <!-- Panel Desplegable (Flyout hacia la derecha) -->
-                    <div 
-                        x-show="open" 
-                        x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="opacity-0 translate-x-2"
-                        x-transition:enter-end="opacity-100 translate-x-0"
-                        x-transition:leave="transition ease-in duration-150"
-                        x-transition:leave-start="opacity-100 translate-x-0"
-                        x-transition:leave-end="opacity-0 translate-x-2"
-                        class="absolute left-16 top-0 w-64 bg-white dark:bg-[#0d1017] rounded-2xl shadow-2xl dark:shadow-none border border-gray-100 dark:border-slate-800/50 p-3 z-50 flex flex-col gap-1.5 text-gray-800 dark:text-slate-200"
-                        style="display: none;">
-                        
-                        <div class="px-3 py-2 border-b border-gray-100 dark:border-slate-800/50 mb-1 flex items-center justify-between">
-                            <div>
-                                <p class="text-xs font-extrabold text-hacienda-blue dark:text-blue-400 uppercase tracking-wider">Gestión de Red</p>
-                                <p class="text-[10px] text-gray-400 dark:text-slate-400">Módulos L2 / L3</p>
-                            </div>
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        </div>
-
-                        <!-- Opción 1: Consola Segura CLI -->
-                        <a href="{{ route('consola.index') }}" 
-                           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition {{ request()->is('consola*') ? 'bg-blue-50 dark:bg-slate-800/80 text-hacienda-blue dark:text-blue-400 font-bold border border-blue-100 dark:border-slate-700/60' : 'hover:bg-gray-50 dark:hover:bg-slate-800/50 text-gray-700 dark:text-slate-300' }}"
-                           title="Consola CLI - Ejecución remota de comandos de diagnóstico y configuración">
-                            <div class="w-8 h-8 rounded-lg bg-gray-900 text-emerald-400 flex items-center justify-center flex-shrink-0 font-mono text-xs shadow-sm border border-slate-700">
-                                &gt;_
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="leading-tight truncate">Consola Segura CLI</p>
-                                <p class="text-[10px] text-gray-400 dark:text-slate-400 font-normal truncate">Diagnóstico y comandos</p>
-                            </div>
-                        </a>
-
-                        <!-- Opción 2: Configuración de VLANs -->
-                        <a href="{{ route('vlans.index') }}" 
-                           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition {{ request()->is('vlans*') ? 'bg-blue-50 dark:bg-slate-800/80 text-hacienda-blue dark:text-blue-400 font-bold border border-blue-100 dark:border-slate-700/60' : 'hover:bg-gray-50 dark:hover:bg-slate-800/50 text-gray-700 dark:text-slate-300' }}"
-                           title="Configuración de VLANs - Segmentación y asignación de puertos">
-                            <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center flex-shrink-0 border border-indigo-200/40 dark:border-indigo-800/40">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="leading-tight truncate">Configuración VLANs</p>
-                                <p class="text-[10px] text-gray-400 dark:text-slate-400 font-normal truncate">Segmentación de puertos</p>
-                            </div>
-                        </a>
-
-                        <!-- Opción 3: Respaldos NCM -->
-                        <a href="{{ route('configuraciones.index') }}" 
-                           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition {{ request()->is('configuraciones*') ? 'bg-blue-50 dark:bg-slate-800/80 text-hacienda-blue dark:text-blue-400 font-bold border border-blue-100 dark:border-slate-700/60' : 'hover:bg-gray-50 dark:hover:bg-slate-800/50 text-gray-700 dark:text-slate-300' }}"
-                           title="Respaldos NCM - Gestión de configuraciones running-config y diff">
-                            <div class="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-hacienda-orange flex items-center justify-center flex-shrink-0 border border-amber-200/40 dark:border-amber-800/40">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="leading-tight truncate">Respaldos NCM</p>
-                                <p class="text-[10px] text-gray-400 dark:text-slate-400 font-normal truncate">Running-config y Diff</p>
-                            </div>
-                        </a>
+                <!-- Consola Segura CLI Directa -->
+                <a href="{{ route('consola.index') }}" 
+                   class="w-12 h-12 {{ request()->is('consola*') ? 'bg-white dark:bg-slate-800/90 text-hacienda-blue dark:text-blue-400 shadow-md dark:shadow-none transform scale-110 border border-transparent dark:border-slate-700/50' : 'text-blue-100 dark:text-slate-400 hover:bg-white/20 dark:hover:bg-slate-800/50' }} rounded-xl flex items-center justify-center transition group relative" 
+                   title="Consola Segura CLI">
+                    <div class="w-8 h-8 rounded-lg bg-gray-950 text-emerald-400 font-mono text-xs flex items-center justify-center font-bold border border-slate-700/80 shadow-inner group-hover:border-emerald-500/50 group-hover:text-emerald-300 transition">
+                        &gt;_
                     </div>
-                </div>
+                </a>
 
                 <!-- Mapa de Topología -->
                 <a href="{{ route('topologia.index') }}" class="w-12 h-12 {{ request()->is('topologia*') ? 'bg-white dark:bg-slate-800/90 text-hacienda-blue dark:text-blue-400 shadow-md dark:shadow-none transform scale-110 border border-transparent dark:border-slate-700/50' : 'text-blue-100 dark:text-slate-400 hover:bg-white/20 dark:hover:bg-slate-800/50' }} rounded-xl flex items-center justify-center transition" title="Mapa de Topología">
@@ -393,6 +347,7 @@
 
         <!-- ==================== MAIN CONTENT ==================== -->
         <main class="flex-1 flex flex-col h-full overflow-y-auto custom-scrollbar pr-0 md:pr-2 pb-24 md:pb-0 relative">
+            @include('partials.alert_banner')
             @yield('content')
         </main>
 
@@ -423,63 +378,11 @@
                 <span class="text-[10px] leading-none">Webs</span>
             </a>
 
-            <!-- L2/L3 Flyout Trigger -->
-            <div class="relative">
-                @php
-                    $isMobileL2L3Active = request()->is('consola*') || request()->is('vlans*') || request()->is('configuraciones*');
-                @endphp
-                <button type="button" @click="openL2L3Mobile = !openL2L3Mobile" class="flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-bold transition relative {{ $isMobileL2L3Active ? 'text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-slate-800/80' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg>
-                    <span class="text-[10px] leading-none">L2 / L3</span>
-                    @if($isMobileL2L3Active)
-                        <span class="absolute top-1 right-1 w-2 h-2 bg-hacienda-orange rounded-full"></span>
-                    @endif
-                </button>
-
-                <!-- Flyout Menu for Mobile -->
-                <div 
-                    x-show="openL2L3Mobile" 
-                    @click.outside="openL2L3Mobile = false" 
-                    x-transition:enter="transition ease-out duration-200"
-                    x-transition:enter-start="opacity-0 translate-y-2 scale-95"
-                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                    x-transition:leave="transition ease-in duration-150"
-                    x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-                    x-transition:leave-end="opacity-0 translate-y-2 scale-95"
-                    class="absolute bottom-16 left-1/2 -translate-x-1/2 w-60 bg-white dark:bg-[#0d1017] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-2.5 flex flex-col gap-1.5 z-50"
-                    style="display: none;">
-                    
-                    <div class="px-2 py-1 border-b border-slate-100 dark:border-slate-800 mb-0.5">
-                        <p class="text-[11px] font-extrabold text-hacienda-blue dark:text-blue-400 uppercase tracking-wider">Gestión de Red</p>
-                    </div>
-
-                    <a href="{{ route('consola.index') }}" class="flex items-center gap-3 p-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
-                        <span class="w-7 h-7 rounded-lg bg-gray-900 text-emerald-400 font-mono text-xs flex items-center justify-center shrink-0 border border-slate-700">&gt;_</span>
-                        <div class="min-w-0">
-                            <p class="leading-tight">Consola CLI</p>
-                            <p class="text-[9px] text-slate-400 font-normal">Comandos y diagnóstico</p>
-                        </div>
-                    </a>
-                    <a href="{{ route('vlans.index') }}" class="flex items-center gap-3 p-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
-                        <span class="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-200/40 dark:border-indigo-800/40">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                        </span>
-                        <div class="min-w-0">
-                            <p class="leading-tight">VLANs</p>
-                            <p class="text-[9px] text-slate-400 font-normal">Segmentación de puertos</p>
-                        </div>
-                    </a>
-                    <a href="{{ route('configuraciones.index') }}" class="flex items-center gap-3 p-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
-                        <span class="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-hacienda-orange flex items-center justify-center shrink-0 border border-amber-200/40 dark:border-amber-800/40">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
-                        </span>
-                        <div class="min-w-0">
-                            <p class="leading-tight">Respaldos NCM</p>
-                            <p class="text-[9px] text-slate-400 font-normal">Running-config y Diff</p>
-                        </div>
-                    </a>
-                </div>
-            </div>
+            <!-- Consola CLI Directa -->
+            <a href="{{ route('consola.index') }}" class="flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-bold transition {{ request()->is('consola*') ? 'text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-slate-800/80' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}">
+                <span class="w-5 h-5 rounded bg-gray-950 text-emerald-400 font-mono text-[10px] flex items-center justify-center font-bold border border-slate-700/60">&gt;_</span>
+                <span class="text-[10px] leading-none">CLI</span>
+            </a>
 
             <!-- Agregar Switch -->
             <a href="{{ route('dispositivos.create') }}" class="flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-bold transition {{ request()->is('dispositivos/create') ? 'text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-slate-800/80' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}">

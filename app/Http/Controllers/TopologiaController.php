@@ -37,6 +37,10 @@ class TopologiaController extends Controller
 
         $config = \App\Models\ConfiguracionGeneral::first();
 
+        // Compilar notificaciones para el banner carrusel NOC LIVE
+        $notificaciones = (new \App\Http\Controllers\DashboardController)->compilarNotificaciones();
+        $unreadNotificaciones = count(array_filter($notificaciones, fn($n) => !$n['leida']));
+
         return view('topologia.index', compact(
             'dispositivos',
             'enlaces',
@@ -47,7 +51,9 @@ class TopologiaController extends Controller
             'enlacesAlerta',
             'anchoBandaTotalGbps',
             'traficoTotalMbps',
-            'config'
+            'config',
+            'notificaciones',
+            'unreadNotificaciones'
         ));
     }
 
@@ -56,18 +62,20 @@ class TopologiaController extends Controller
      */
     public function datosGrafos()
     {
-        $dispositivos = Dispositivo::with(['telemetriaChasis', 'ultimaMetrica'])->get();
+        $grafoData = \Illuminate\Support\Facades\Cache::remember('topologia_datos_grafos_fast', 5, function () {
+            $dispositivos = Dispositivo::with(['telemetriaChasis', 'ultimaMetrica'])->get();
 
-        $enlaces = EnlaceRed::with([
-            'dispositivoOrigen',
-            'dispositivoDestino',
-            'interfazOrigen',
-            'interfazDestino'
-        ])->get();
+            $enlaces = EnlaceRed::with([
+                'dispositivoOrigen',
+                'dispositivoDestino',
+                'interfazOrigen',
+                'interfazDestino'
+            ])->get();
 
-        $this->enriquecerEnlacesConTelemetriaViva($enlaces);
+            $this->enriquecerEnlacesConTelemetriaViva($enlaces);
 
-        $grafoData = $this->compilarGrafoData($dispositivos, $enlaces);
+            return $this->compilarGrafoData($dispositivos, $enlaces);
+        });
 
         return response()->json($grafoData);
     }
@@ -184,8 +192,11 @@ class TopologiaController extends Controller
         // Pre-compilar índice de conexiones por dispositivo (para el panel inspector y badges)
         $conexionesPorDispositivo = [];
         $conteoEnlacesPar = [];
+        $enlacesMap = [];
 
         foreach ($enlaces as $enlace) {
+            $enlacesMap[$enlace->origen_dispositivo_id] = $enlace;
+            $enlacesMap[$enlace->destino_dispositivo_id] = $enlace;
             $origenNombre = $enlace->interfazOrigen ? $enlace->interfazOrigen->nombre : 'P1';
             $destinoNombre = $enlace->interfazDestino ? $enlace->interfazDestino->nombre : 'P2';
             $origenAbrev = $abrev($origenNombre);
@@ -300,18 +311,19 @@ class TopologiaController extends Controller
                     'rol' => strtoupper($rol),
                     'tipo_equipo' => $deviceType['tipo_equipo'],
                     'factor_forma' => $deviceType['factor_forma'],
+                    'vendor' => $deviceType['vendor'] ?? (str_contains(strtolower($disp->nombre), 'forti') ? 'Fortinet Inc.' : 'Cisco Systems'),
                     'cpu' => $cpu,
                     'memoria' => $mem,
                     'ping' => $ping,
-                    'modelo' => !empty($modeloExacto) ? $modeloExacto : (str_contains(strtolower($disp->nombre), 'genérico') ? 'Desconocido' : 'Cisco Catalyst 9300'),
-                    'serial' => $disp->telemetriaChasis->serial_number ?? (str_contains(strtolower($disp->nombre), 'genérico') ? 'N/A' : 'FOC2438L8PQ'),
+                    'modelo' => !empty($modeloExacto) && !str_contains(strtolower($modeloExacto), 'cisco') ? $modeloExacto : (str_contains(strtolower($disp->nombre), 'forti') ? 'FortiGate-100F NGFW' : (!empty($modeloExacto) ? $modeloExacto : 'Cisco Catalyst 9300')),
+                    'serial' => $disp->telemetriaChasis->serial_number ?? (str_contains(strtolower($disp->nombre), 'forti') ? 'FG100FTK21004859' : (str_contains(strtolower($disp->nombre), 'genérico') ? 'N/A' : 'FOC2438L8PQ')),
                     'uptime' => $disp->telemetriaChasis->uptime_str ?? 'Desconocido',
                     'sysDescr' => $osVersion,
                     'url' => route('dispositivos.show', $disp->id),
                     'image' => $imageUrl,
                     'conexiones' => $conexionesPorDispositivo[$disp->id] ?? [],
                     'sensores_temperatura' => $disp->telemetriaChasis->sensores_temperatura ?? [],
-                    'pc_conectada' => (str_starts_with(strtoupper($disp->nombre), 'SEP') || str_contains(strtoupper($rol), 'VOIP') || str_contains(strtoupper($disp->nombre), 'PHONE')) ? \App\Services\PhonePcLinkResolver::resolveAttachedPc($disp) : null
+                    'pc_conectada' => (str_starts_with(strtoupper($disp->nombre), 'SEP') || str_contains(strtoupper($rol), 'VOIP') || str_contains(strtoupper($disp->nombre), 'PHONE')) ? \App\Services\PhonePcLinkResolver::resolveAttachedPc($disp, $enlacesMap[$disp->id] ?? null) : null
                 ]
             ];
         }
@@ -434,6 +446,28 @@ class TopologiaController extends Controller
     {
         $nombreUpper = strtoupper(trim($nombre));
         $haystack = strtolower($nombre . ' ' . $modelo . ' ' . $sysDescr);
+
+        // 0. Firewalls Perimetrales Fortinet / FortiGate (FortiGate / FortiOS / Fortinet / NGFW / FW)
+        if (
+            str_contains($haystack, 'forti') || 
+            str_contains($haystack, 'fortigate') || 
+            str_contains($haystack, 'fortinet') || 
+            str_contains($haystack, 'fortios') ||
+            str_starts_with($nombreUpper, 'FG-') || 
+            str_starts_with($nombreUpper, 'FW-') || 
+            str_starts_with($nombreUpper, 'FG_') || 
+            str_starts_with($nombreUpper, 'FW_') || 
+            str_contains($haystack, 'firewall')
+        ) {
+            return [
+                'image' => 'images/topology/firewall-fortinet.svg',
+                'rol' => 'FIREWALL / FORTINET',
+                'tipo_equipo' => 'Fortinet FortiGate Next-Gen Firewall (NGFW)',
+                'factor_forma' => 'FortiGate Security Appliance',
+                'vendor' => 'Fortinet Inc.',
+                'size' => 155
+            ];
+        }
 
         // 1. Teléfonos IP Cisco (VoIP)
         if (

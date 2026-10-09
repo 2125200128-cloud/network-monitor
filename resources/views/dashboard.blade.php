@@ -15,61 +15,81 @@
         animation-play-state: paused;
     }
 
-    /* ==================== SPEEDTEST.NET HIGH-FIDELITY GAUGE ==================== */
-    .speedtest-container {
-        background: #090b14 !important;
-        background-image: radial-gradient(circle at 50% 120%, #151a32 0%, #06070c 100%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        border-radius: 1.75rem !important;
-        color: #ffffff !important;
-        box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.7) !important;
-        position: relative !important;
-        width: 100% !important;
-        min-height: 480px !important;
-        display: block !important;
-        box-sizing: border-box !important;
+    /* ==================== NOC DYNAMIC DUAL TRAFFIC GAUGES ==================== */
+    .traffic-gauge-card {
+        border-radius: 1.75rem;
+        transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     }
 
-    .st-tab-btn {
-        transition: all 0.25s ease;
-        position: relative;
-        cursor: pointer;
+    /* Modo Claro (Colores Institucionales: Azul Hacienda & Naranja Hacienda) */
+    html:not(.dark) .traffic-gauge-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        color: #0f172a;
     }
-    .st-tab-btn.active-down {
-        color: #ffffff;
+    html:not(.dark) .traffic-gauge-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
     }
-    .st-tab-btn.active-down::after {
-        content: '';
-        position: absolute;
-        bottom: -6px;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: #00e5ff;
-        border-radius: 3px;
-        box-shadow: 0 0 12px #00e5ff;
+    html:not(.dark) .st-gauge-arc-bg {
+        stroke: #cbd5e1;
+        stroke-width: 14;
+        stroke-linecap: round;
+        fill: none;
     }
-    .st-tab-btn.active-up {
-        color: #ffffff;
+    html:not(.dark) .st-tick-label {
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        fill: #64748b;
+        text-anchor: middle;
+        dominant-baseline: central;
+        user-select: none;
     }
-    .st-tab-btn.active-up::after {
-        content: '';
-        position: absolute;
-        bottom: -6px;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: #ec4899;
-        border-radius: 3px;
-        box-shadow: 0 0 12px #ec4899;
+    html:not(.dark) .st-needle-pointer {
+        fill: #0f172a;
+    }
+    html:not(.dark) .st-needle-cap-bg {
+        fill: #ffffff;
+        stroke: #0f172a;
     }
 
-    .st-gauge-arc-bg {
+    /* Modo Oscuro (NOC Neón: Cian & Magenta) */
+    .dark .traffic-gauge-card {
+        background: #090b14;
+        background-image: radial-gradient(circle at 50% 120%, #151a32 0%, #06070c 100%);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.7);
+        color: #ffffff;
+    }
+    .dark .traffic-gauge-box {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .dark .st-gauge-arc-bg {
         stroke: rgba(255, 255, 255, 0.10);
         stroke-width: 14;
         stroke-linecap: round;
         fill: none;
     }
+    .dark .st-tick-label {
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        fill: #94a3b8;
+        text-anchor: middle;
+        dominant-baseline: central;
+        user-select: none;
+    }
+    .dark .st-needle-pointer {
+        fill: #ffffff;
+    }
+    .dark .st-needle-cap-bg {
+        fill: #0b0c16;
+        stroke: rgba(255, 255, 255, 0.3);
+    }
+
     .st-gauge-arc-progress {
         stroke-width: 14;
         stroke-linecap: round;
@@ -79,16 +99,6 @@
     .st-needle-wedge {
         transform-origin: 160px 160px;
         transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    .st-tick-label {
-        font-family: 'Inter', system-ui, sans-serif;
-        font-size: 11px;
-        font-weight: 700;
-        fill: #94a3b8;
-        text-anchor: middle;
-        dominant-baseline: central;
-        user-select: none;
     }
 </style>
 @endsection
@@ -296,7 +306,11 @@
                     </div>
                 </div>
 
+<<<<<<< HEAD
             @include('components.alert-banner')
+=======
+
+>>>>>>> 2215af3 (feat: optimizaciones de rendimiento NOC, consola SSH interactiva, deduplicacion de telemetria y mejoras UI)
 
             <!-- Hero Banner -->
             <div class="bg-white dark:bg-[#0d1017] border border-gray-100 dark:border-slate-800/40 rounded-[2rem] p-6 lg:p-8 text-gray-800 dark:text-slate-100 mb-8 relative overflow-hidden shadow-sm dark:shadow-none flex flex-col md:flex-row md:items-center justify-between gap-4 lg:gap-6 min-h-min">
@@ -388,6 +402,7 @@
             {{-- ========================================================================= --}}
             {{-- LIVE TRAFFIC DUAL GAUGES (DOWNLOAD & UPLOAD)                              --}}
             {{-- ========================================================================= --}}
+<<<<<<< HEAD
             <div class="floating-card p-6 sm:p-8 mb-6 bg-[#0b0f19] dark:bg-[#07090e] border border-slate-200 dark:border-slate-800" id="snmpTrafficCard">
                 <div class="flex items-center justify-between mb-6 border-b border-gray-200 dark:border-white/10 pb-4">
                     <h3 class="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider font-mono">Tráfico de Red en Vivo</h3>
@@ -481,6 +496,168 @@
                                 <span id="stMainValueUp" class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-gray-900 dark:text-white">{{ number_format($avgConexiones * 0.42, 2) }}</span>
                                 <span class="text-[10px] font-bold text-gray-500 dark:text-slate-400 font-mono">Mbps</span>
                             </div>
+=======
+            {{-- ========================================================================= --}}
+            {{-- NOC DYNAMIC DUAL TRAFFIC GAUGES (INSTITUTIONAL LIGHT & DARK MODE)          --}}
+            {{-- ========================================================================= --}}
+            <div class="traffic-gauge-card p-6 sm:p-8 mb-6" id="snmpTrafficCard">
+                {{-- Header: Título Institucional + Status SNMP --}}
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-white/10">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-[#3b5998]/10 dark:bg-white/10 text-[#3b5998] dark:text-blue-400 flex items-center justify-center font-bold">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white tracking-tight">Monitoreo de Tráfico de Red en Tiempo Real</h3>
+                            <p class="text-xs text-gray-500 dark:text-slate-400">Telemetría de la Red Estatal Jalisco · Enlace Principal Core</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-mono">
+                        <span id="snmpStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
+                        <span id="snmpStatusText" class="text-gray-700 dark:text-slate-300 font-medium">Sondeo SNMP Activo</span>
+                    </div>
+                </div>
+
+                {{-- Centerpiece: Dual Speedometer Arc Gauges (Descarga & Subida Side-by-Side) --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
+                    {{-- Gauge 1: DESCARGA (DOWN) --}}
+                    <div class="traffic-gauge-box relative flex flex-col items-center justify-center p-5 sm:p-6 rounded-2xl transition">
+                        <div class="flex items-center gap-2 text-xs font-black text-[#3b5998] dark:text-[#00e5ff] tracking-widest uppercase mb-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                            <span>TRÁFICO DE DESCARGA (DOWN)</span>
+                        </div>
+                        <div class="relative w-[260px] sm:w-[300px] h-[220px] sm:h-[250px] flex items-center justify-center">
+                            <svg viewBox="0 0 320 320" class="w-full h-full overflow-visible">
+                                <defs>
+                                    <linearGradient id="stDownGradDark" x1="0%" y1="100%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#00b4d8" />
+                                        <stop offset="50%" stop-color="#00e5ff" />
+                                        <stop offset="100%" stop-color="#00f5a0" />
+                                    </linearGradient>
+                                    <linearGradient id="stDownGradLight" x1="0%" y1="100%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#3b5998" />
+                                        <stop offset="50%" stop-color="#2563eb" />
+                                        <stop offset="100%" stop-color="#1d4ed8" />
+                                    </linearGradient>
+                                    <filter id="stDownGlow" x="-20%" y="-20%" width="140%" height="140%">
+                                        <feGaussianBlur stdDeviation="5" result="blur" />
+                                        <feMerge>
+                                            <feMergeNode in="blur" />
+                                            <feMergeNode in="SourceGraphic" />
+                                        </feMerge>
+                                    </filter>
+                                </defs>
+
+                                <path d="M 78.7 241.3 A 115 115 0 1 1 241.3 241.3" class="st-gauge-arc-bg" />
+                                <path id="stDownProgressArc" d="M 78.7 241.3 A 115 115 0 1 1 241.3 241.3" class="st-gauge-arc-progress" stroke="url(#stDownGradLight)" stroke-dasharray="541.92" stroke-dashoffset="541.92" filter="url(#stDownGlow)" />
+
+                                <text x="102" y="218" class="st-tick-label">0</text>
+                                <text x="84"  y="191" class="st-tick-label">5</text>
+                                <text x="78"  y="153" class="st-tick-label">10</text>
+                                <text x="99"  y="105" class="st-tick-label">50</text>
+                                <text x="160" y="78"  class="st-tick-label font-black text-gray-900 dark:text-white" style="font-size: 12px;">100</text>
+                                <text x="221" y="105" class="st-tick-label">250</text>
+                                <text x="242" y="153" class="st-tick-label">500</text>
+                                <text x="236" y="191" class="st-tick-label">750</text>
+                                <text x="218" y="218" class="st-tick-label">1000</text>
+
+                                {{-- Prominent Visible Needle Pointer --}}
+                                <g id="stDownNeedleWedge" class="st-needle-wedge" style="transform: rotate(-135deg);">
+                                    <polygon points="156,160 164,160 161.5,42 158.5,42" class="st-needle-pointer drop-shadow-md" />
+                                    <circle cx="160" cy="160" r="13" class="st-needle-cap-bg" stroke-width="2.5" />
+                                    <circle cx="160" cy="160" r="5" fill="#3b5998" class="dark:fill-[#00e5ff]" />
+                                </g>
+                            </svg>
+
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center pt-14">
+                                <span id="stDownMainValue" class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-gray-900 dark:text-white drop-shadow-xs">{{ number_format($avgConexiones * 0.58, 2) }}</span>
+                                <div class="flex items-center gap-1 text-xs font-bold text-[#3b5998] dark:text-[#00e5ff] tracking-widest uppercase mt-0.5">
+                                    <span>↓ Mbps</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Gauge 2: SUBIDA (UP) --}}
+                    <div class="traffic-gauge-box relative flex flex-col items-center justify-center p-5 sm:p-6 rounded-2xl transition">
+                        <div class="flex items-center gap-2 text-xs font-black text-[#f26419] dark:text-pink-400 tracking-widest uppercase mb-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                            <span>TRÁFICO DE SUBIDA (UP)</span>
+                        </div>
+                        <div class="relative w-[260px] sm:w-[300px] h-[220px] sm:h-[250px] flex items-center justify-center">
+                            <svg viewBox="0 0 320 320" class="w-full h-full overflow-visible">
+                                <defs>
+                                    <linearGradient id="stUpGradDark" x1="0%" y1="100%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#8b5cf6" />
+                                        <stop offset="50%" stop-color="#d946ef" />
+                                        <stop offset="100%" stop-color="#ec4899" />
+                                    </linearGradient>
+                                    <linearGradient id="stUpGradLight" x1="0%" y1="100%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#f26419" />
+                                        <stop offset="50%" stop-color="#ea580c" />
+                                        <stop offset="100%" stop-color="#c2410c" />
+                                    </linearGradient>
+                                    <filter id="stUpGlow" x="-20%" y="-20%" width="140%" height="140%">
+                                        <feGaussianBlur stdDeviation="5" result="blur" />
+                                        <feMerge>
+                                            <feMergeNode in="blur" />
+                                            <feMergeNode in="SourceGraphic" />
+                                        </feMerge>
+                                    </filter>
+                                </defs>
+
+                                <path d="M 78.7 241.3 A 115 115 0 1 1 241.3 241.3" class="st-gauge-arc-bg" />
+                                <path id="stUpProgressArc" d="M 78.7 241.3 A 115 115 0 1 1 241.3 241.3" class="st-gauge-arc-progress" stroke="url(#stUpGradLight)" stroke-dasharray="541.92" stroke-dashoffset="541.92" filter="url(#stUpGlow)" />
+
+                                <text x="102" y="218" class="st-tick-label">0</text>
+                                <text x="84"  y="191" class="st-tick-label">5</text>
+                                <text x="78"  y="153" class="st-tick-label">10</text>
+                                <text x="99"  y="105" class="st-tick-label">50</text>
+                                <text x="160" y="78"  class="st-tick-label font-black text-gray-900 dark:text-white" style="font-size: 12px;">100</text>
+                                <text x="221" y="105" class="st-tick-label">250</text>
+                                <text x="242" y="153" class="st-tick-label">500</text>
+                                <text x="236" y="191" class="st-tick-label">750</text>
+                                <text x="218" y="218" class="st-tick-label">1000</text>
+
+                                {{-- Prominent Visible Needle Pointer --}}
+                                <g id="stUpNeedleWedge" class="st-needle-wedge" style="transform: rotate(-135deg);">
+                                    <polygon points="156,160 164,160 161.5,42 158.5,42" class="st-needle-pointer drop-shadow-md" />
+                                    <circle cx="160" cy="160" r="13" class="st-needle-cap-bg" stroke-width="2.5" />
+                                    <circle cx="160" cy="160" r="5" fill="#f26419" class="dark:fill-[#ec4899]" />
+                                </g>
+                            </svg>
+
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center pt-14">
+                                <span id="stUpMainValue" class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-gray-900 dark:text-white drop-shadow-xs">{{ number_format($avgConexiones * 0.42, 2) }}</span>
+                                <div class="flex items-center gap-1 text-xs font-bold text-[#f26419] dark:text-pink-400 tracking-widest uppercase mt-0.5">
+                                    <span>↑ Mbps</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Footer: Metadata Institucional --}}
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200 dark:border-white/10 text-xs text-gray-600 dark:text-slate-300">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-[#3b5998]/10 dark:bg-white/10 flex items-center justify-center text-[#3b5998] dark:text-slate-300 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-900 dark:text-white text-xs leading-tight">Secretaría de la Hacienda Pública</p>
+                            <p class="text-[11px] text-gray-500 dark:text-slate-400 font-mono mt-0.5">Red Estatal de Comunicaciones · Jalisco</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-[#f26419]/10 dark:bg-white/10 flex items-center justify-center text-[#f26419] dark:text-slate-300 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-900 dark:text-white text-xs leading-tight">Switch Core Cisco 3850</p>
+                            <p class="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">NOC Central · Guadalajara</p>
+>>>>>>> 2215af3 (feat: optimizaciones de rendimiento NOC, consola SSH interactiva, deduplicacion de telemetria y mejoras UI)
                         </div>
                     </div>
                 </div>
@@ -1527,76 +1704,91 @@
             return 1.0;
         }
 
-        function updateGauge(mbps, type) {
-            const arcId = type === 'down' ? 'stProgressArcDown' : 'stProgressArcUp';
-            const needleId = type === 'down' ? 'stNeedleWedgeDown' : 'stNeedleWedgeUp';
-            const valId = type === 'down' ? 'stMainValueDown' : 'stMainValueUp';
+        function updateDualSpeedtestGauges(downMbps, upMbps) {
+            const downVal = parseFloat(downMbps) || 0;
+            const upVal   = parseFloat(upMbps) || 0;
+            const isDark  = document.documentElement.classList.contains('dark');
 
-            const arc = document.getElementById(arcId);
-            const needle = document.getElementById(needleId);
-            const valEl = document.getElementById(valId);
+            // Down Gauge
+            const downRatio = speedtestValueToRatio(downVal);
+            const downArc = document.getElementById('stDownProgressArc');
+            const downNeedle = document.getElementById('stDownNeedleWedge');
+            const downText = document.getElementById('stDownMainValue');
+            const topDownText = document.getElementById('stTopDownVal');
 
-            if (!arc || !needle || !valEl) return;
+            if (downText) downText.textContent = downVal.toFixed(2);
+            if (topDownText) topDownText.textContent = downVal.toFixed(2);
+            if (downArc) {
+                downArc.style.strokeDashoffset = (541.92 * (1 - downRatio)).toFixed(2);
+                downArc.setAttribute('stroke', isDark ? 'url(#stDownGradDark)' : 'url(#stDownGradLight)');
+            }
+            if (downNeedle) downNeedle.style.transform = `rotate(${-135 + downRatio * 270}deg)`;
 
-            const val = Math.max(0, parseFloat(mbps) || 0);
-            valEl.textContent = val.toFixed(2);
+            // Up Gauge
+            const upRatio = speedtestValueToRatio(upVal);
+            const upArc = document.getElementById('stUpProgressArc');
+            const upNeedle = document.getElementById('stUpNeedleWedge');
+            const upText = document.getElementById('stUpMainValue');
+            const topUpText = document.getElementById('stTopUpVal');
 
-            const ratio = speedtestValueToRatio(val);
-            const totalArcLength = 541.92;
-            const offset = totalArcLength * (1 - ratio);
-            arc.style.strokeDashoffset = offset;
-
-            const baseAngle = -135;
-            const sweep = 270;
-            const needleAngle = baseAngle + (ratio * sweep);
-            needle.style.transform = `rotate(${needleAngle}deg)`;
+            if (upText) upText.textContent = upVal.toFixed(2);
+            if (topUpText) topUpText.textContent = upVal.toFixed(2);
+            if (upArc) {
+                upArc.style.strokeDashoffset = (541.92 * (1 - upRatio)).toFixed(2);
+                upArc.setAttribute('stroke', isDark ? 'url(#stUpGradDark)' : 'url(#stUpGradLight)');
+            }
+            if (upNeedle) upNeedle.style.transform = `rotate(${-135 + upRatio * 270}deg)`;
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-                        function setStatus(isOk) {
-                const loader = document.getElementById('snmpLoader');
-                if (loader) {
-                    if (isOk) {
-                        loader.classList.remove('error');
+        window.addEventListener('theme-changed', function() {
+            updateDualSpeedtestGauges(latestDownMbps, latestUpMbps);
+        });
+
+        (function () {
+            const ENDPOINT  = '{{ route("snmp.live_traffic") }}';
+            const INTERVAL  = 3000; // ms
+            const elTopDown = document.getElementById('stTopDownVal');
+            const elTopUp   = document.getElementById('stTopUpVal');
+            const elDot     = document.getElementById('snmpStatusDot');
+            const elStatus  = document.getElementById('snmpStatusText');
+
+            function setStatus(ok, msg) {
+                if (!elDot || !elStatus) return;
+                elDot.className   = `w-2.5 h-2.5 rounded-full ${ok ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`;
+                elStatus.textContent = msg;
+            }
+
+            async function fetchTraffic() {
+                try {
+                    const resp = await fetch(ENDPOINT, {
+                        method: 'GET',
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+                    const data = await resp.json();
+
+                    if (data.status === 'success') {
+                        latestDownMbps = parseFloat(data.in_mbps  ?? 0);
+                        latestUpMbps   = parseFloat(data.out_mbps ?? 0);
+
+                        updateDualSpeedtestGauges(latestDownMbps, latestUpMbps);
+                        setStatus(true, `Puerto ${data.puerto ?? '—'} · Live`);
                     } else {
-                        loader.classList.add('error');
+                        updateDualSpeedtestGauges(0, 0);
+                        setStatus(false, data.message ?? 'Error del script');
                     }
+                } catch (err) {
+                    setStatus(false, `Sin respuesta (${err.message})`);
                 }
             }
 
-            function fetchTraffic() {
-                const INTERVAL = 15000;
-                fetch('{{ route("snmp.live_traffic") }}')
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status !== 'error' && data.in_mbps !== undefined) {
-                            latestDownMbps = data.in_mbps ?? 0;
-                            latestUpMbps = data.out_mbps ?? 0;
-
-                            updateGauge(latestDownMbps, 'down');
-                            updateGauge(latestUpMbps, 'up');
-                            setStatus(true);
-                        } else {
-                            updateGauge(0, 'down');
-                            updateGauge(0, 'up');
-                            setStatus(false);
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Error fetching live traffic:', err);
-                        updateGauge(0, 'down');
-                        updateGauge(0, 'up');
-                        setStatus(false);
-                    });
-            }
-
-            // Initial render
-            updateGauge(latestDownMbps, 'down');
-            updateGauge(latestUpMbps, 'up');
-            
+            // Initial render, fetch & polling
+            updateDualSpeedtestGauges(latestDownMbps, latestUpMbps);
             fetchTraffic();
-            setInterval(fetchTraffic, 15000);
-        });
+            setInterval(fetchTraffic, INTERVAL);
+        })();
     </script>
 
     {{-- ============================================================== --}}

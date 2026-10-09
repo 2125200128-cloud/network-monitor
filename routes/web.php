@@ -7,7 +7,7 @@ use App\Http\Controllers\ConsolaSeguraController;
 use App\Http\Controllers\VlanController;
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/', [DashboardController::class, 'index']);
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     
     Route::get('/setup-2fa', function () {
         return view('auth.setup-2fa');
@@ -15,20 +15,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware(['password.confirm:password.confirm,900', 'check.admin'])->group(function () {
         // ==========================================
-        // RUTAS CRÍTICAS (Requieren Password Confirm & Admin)
+        // RUTAS ADMINISTRATIVAS
         // ==========================================
-        Route::get('/consola', [ConsolaSeguraController::class, 'index'])->name('consola.index');
-        Route::post('/consola/ejecutar', [ConsolaSeguraController::class, 'ejecutar'])->name('consola.ejecutar');
-
-        Route::get('/vlans', [VlanController::class, 'index'])->name('vlans.index');
-        Route::post('/vlans/provision', [VlanController::class, 'provisionVlan'])->name('vlans.provision');
-        Route::post('/vlans/assign-port', [VlanController::class, 'assignPort'])->name('vlans.assign_port');
-        
-        Route::get('/configuraciones', [App\Http\Controllers\ConfiguracionDispositivoController::class, 'index'])->name('configuraciones.index');
-        Route::post('/configuraciones/respaldar', [App\Http\Controllers\ConfiguracionDispositivoController::class, 'respaldar'])->name('configuraciones.respaldar');
-        Route::get('/configuraciones/{id}/descargar', [App\Http\Controllers\ConfiguracionDispositivoController::class, 'descargar'])->name('configuraciones.descargar');
-        Route::get('/configuraciones/{id}/pdf', [App\Http\Controllers\ConfiguracionDispositivoController::class, 'descargarPdf'])->name('configuraciones.pdf');
-        
         Route::get('/settings', [App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
         Route::post('/settings', [App\Http\Controllers\SettingController::class, 'update'])->name('settings.update');
         Route::post('/settings/role/{user}', [App\Http\Controllers\SettingController::class, 'updateRole'])->name('settings.update_role');
@@ -40,6 +28,10 @@ Route::middleware(['auth'])->group(function () {
     // ==========================================
     // RUTAS ESTÁNDAR (Solo requieren Auth normal)
     // ==========================================
+    Route::get('/consola', [ConsolaSeguraController::class, 'index'])->name('consola.index');
+    Route::post('/consola/ejecutar', [ConsolaSeguraController::class, 'ejecutar'])->name('consola.ejecutar');
+    Route::post('/consola/guardar-credenciales', [ConsolaSeguraController::class, 'guardarCredenciales'])->name('consola.guardar_credenciales');
+    Route::post('/consola/probar-conexion', [ConsolaSeguraController::class, 'probarConexion'])->name('consola.probar_conexion');
     Route::get('/dispositivos/create', [App\Http\Controllers\DispositivoController::class, 'create'])->name('dispositivos.create');
     Route::post('/dispositivos', [App\Http\Controllers\DispositivoController::class, 'store'])->name('dispositivos.store');
     Route::get('/dispositivos/{id}', [App\Http\Controllers\DispositivoShowController::class, 'show'])->name('dispositivos.show');

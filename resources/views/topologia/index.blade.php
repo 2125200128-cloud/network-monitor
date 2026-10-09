@@ -161,6 +161,8 @@
 <div class="flex flex-col h-full space-y-4">
     @include('components.alert-banner')
     
+
+
     {{-- ==================== 1. TOP HEADER & METRICS ==================== --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#12161f] rounded-[2rem] p-5 lg:p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex-shrink-0">
         <div class="flex items-center gap-3.5">
@@ -1181,6 +1183,21 @@
             const haystack = ((nombre || '') + ' ' + (modelo || '') + ' ' + (sysDescr || '')).toLowerCase();
             const nomLower = (nombre || '').toLowerCase();
 
+            // 0. Firewalls Fortinet / FortiGate (FortiGate, Fortinet, FG-, FW, FortiOS)
+            if (
+                haystack.includes('forti') || haystack.includes('fortigate') || haystack.includes('fortinet') ||
+                haystack.includes('fortios') || nomLower.startsWith('fg-') || nomLower.startsWith('fw-') ||
+                nomLower.startsWith('fg_') || nomLower.startsWith('fw_') || haystack.includes('firewall')
+            ) {
+                return {
+                    image: '{{ asset("images/topology/firewall-fortinet.svg") }}',
+                    rol: 'FIREWALL / FORTINET',
+                    tipo_equipo: 'Fortinet FortiGate Next-Gen Firewall (NGFW)',
+                    factor_forma: 'FortiGate Security Appliance',
+                    size: 160
+                };
+            }
+
             // 1. Teléfonos IP / VoIP
             if (nomLower.startsWith('sep') || haystack.includes('phone') || haystack.includes('telefono') || haystack.includes('teléfono') || haystack.includes('cp-') || haystack.includes('sip') || haystack.includes('voip') || haystack.includes('7841') || haystack.includes('8841') || haystack.includes('7960')) {
                 return {
@@ -1837,6 +1854,9 @@
             }
             if (document.getElementById('drawerDeviceFactorForma')) {
                 document.getElementById('drawerDeviceFactorForma').textContent = d.factor_forma || '1U Rackmount';
+            }
+            if (document.getElementById('drawerDeviceVendor')) {
+                document.getElementById('drawerDeviceVendor').textContent = d.vendor || (d.rol && d.rol.includes('FORTI') ? 'Fortinet Inc.' : 'Cisco Systems');
             }
 
             // Renderizar lista de conexiones activas / cables del equipo

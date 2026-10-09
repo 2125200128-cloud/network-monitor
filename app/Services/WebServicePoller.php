@@ -87,15 +87,100 @@ class WebServicePoller
     }
 
     /**
-     * Revisa la totalidad de servicios web activos.
+     * Revisa la totalidad de servicios web activos en paralelo (concurrente no bloqueante).
      */
     public function checkAllServices(): array
     {
         $servicios = ServicioWeb::where('es_activo', true)->get();
-        $resultados = [];
+        if ($servicios->isEmpty()) {
+            return [];
+        }
 
+        $startTimes = [];
+        foreach ($servicios as $s) {
+            $startTimes[$s->id] = microtime(true);
+        }
+
+        // Ejecutar todas las peticiones HTTP concurrentemente con timeout de 4s
+        $responses = Http::pool(function (\Illuminate\Http\Client\Pool $pool) use ($servicios) {
+            $requests = [];
+            foreach ($servicios as $servicio) {
+                $method = strtolower($servicio->metodo ?: 'get');
+                $requests[$servicio->id] = $pool->as((string)$servicio->id)
+                    ->timeout(4)
+                    ->withHeaders([
+                        'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) NOC-NetworkMonitor/2.0'
+                    ])
+                    ->withOptions([
+                        'verify' => false,
+                        'allow_redirects' => [
+                            'max' => 5,
+                            'strict' => false,
+                            'referer' => true,
+                            'protocols' => ['http', 'https']
+                        ]
+                    ])
+                    ->$method($servicio->url);
+            }
+            return $requests;
+        });
+
+        $resultados = [];
         foreach ($servicios as $servicio) {
-            $resultados[] = $this->checkService($servicio);
+            $idStr = (string)$servicio->id;
+            $res = $responses[$idStr] ?? null;
+            $latency = isset($startTimes[$servicio->id])
+                ? round((microtime(true) - $startTimes[$servicio->id]) * 1000, 2)
+                : 0.0;
+
+            $status = 'offline';
+            $httpCode = 0;
+            $errorMsg = null;
+
+            if ($res instanceof \Illuminate\Http\Client\Response) {
+                $httpCode = $res->status();
+                if ($httpCode >= 200 && $httpCode < 400) {
+                    $status = ($latency > 3500) ? 'warning' : 'online';
+                } elseif ($httpCode >= 400 && $httpCode < 500) {
+                    $status = 'warning';
+                    $errorMsg = "Respuesta HTTP {$httpCode} - Cliente/Recurso no encontrado o restringido.";
+                } else {
+                    $status = 'offline';
+                    $errorMsg = "Respuesta HTTP {$httpCode} - Error de servidor.";
+                }
+            } else {
+                $status = 'offline';
+                $errorMsg = ($res instanceof \Throwable) ? $res->getMessage() : 'Sin respuesta / Timeout / Error de conexión';
+            }
+
+            // Actualizar Servicio Web en BD
+            $servicio->update([
+                'estado' => $status,
+                'codigo_http' => $httpCode,
+                'tiempo_respuesta_ms' => $latency,
+                'detalles_error' => $errorMsg,
+                'ultimo_chequeo' => now(),
+            ]);
+
+            // Registrar Histórico
+            HistoricoServicioWeb::create([
+                'servicio_web_id' => $servicio->id,
+                'estado' => $status,
+                'codigo_http' => $httpCode,
+                'tiempo_respuesta_ms' => $latency,
+                'detalles_error' => $errorMsg,
+                'created_at' => now(),
+            ]);
+
+            $resultados[] = [
+                'id' => $servicio->id,
+                'nombre' => $servicio->nombre,
+                'url' => $servicio->url,
+                'estado' => $status,
+                'codigo_http' => $httpCode,
+                'tiempo_respuesta_ms' => $latency,
+                'detalles_error' => $errorMsg,
+            ];
         }
 
         return $resultados;
