@@ -306,11 +306,6 @@
                     </div>
                 </div>
 
-<<<<<<< HEAD
-            @include('components.alert-banner')
-=======
-
->>>>>>> 2215af3 (feat: optimizaciones de rendimiento NOC, consola SSH interactiva, deduplicacion de telemetria y mejoras UI)
 
             <!-- Hero Banner -->
             <div class="bg-white dark:bg-[#0d1017] border border-gray-100 dark:border-slate-800/40 rounded-[2rem] p-6 lg:p-8 text-gray-800 dark:text-slate-100 mb-8 relative overflow-hidden shadow-sm dark:shadow-none flex flex-col md:flex-row md:items-center justify-between gap-4 lg:gap-6 min-h-min">
@@ -402,101 +397,6 @@
             {{-- ========================================================================= --}}
             {{-- LIVE TRAFFIC DUAL GAUGES (DOWNLOAD & UPLOAD)                              --}}
             {{-- ========================================================================= --}}
-<<<<<<< HEAD
-            <div class="floating-card p-6 sm:p-8 mb-6 bg-[#0b0f19] dark:bg-[#07090e] border border-slate-200 dark:border-slate-800" id="snmpTrafficCard">
-                <div class="flex items-center justify-between mb-6 border-b border-gray-200 dark:border-white/10 pb-4">
-                    <h3 class="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider font-mono">Tráfico de Red en Vivo</h3>
-                    <div class="flex items-center gap-3">
-                        
-                        <div class="snmp-loader-container" title="Sondeo en Vivo">
-                            <div id="snmpLoader" class="snmp-loader">
-                              <div class="snmp-loader__bar"></div>
-                              <div class="snmp-loader__bar"></div>
-                              <div class="snmp-loader__bar"></div>
-                              <div class="snmp-loader__bar"></div>
-                              <div class="snmp-loader__bar"></div>
-                              <div class="snmp-loader__ball"></div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-                    {{-- Download Gauge (Blue) --}}
-                    <div class="relative flex flex-col items-center justify-center">
-                        <div class="flex items-center gap-1.5 text-xs font-bold text-[#3b5998] dark:text-blue-400 tracking-wider uppercase mb-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
-                            <span>Descarga</span>
-                        </div>
-                        <div class="relative w-[240px] sm:w-[280px] h-[200px] sm:h-[240px] flex items-center justify-center">
-                            <svg viewBox="0 0 320 320" class="w-full h-full overflow-visible">
-                                <defs>
-                                    <linearGradient id="stDownGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#3b5998" />
-                                        <stop offset="100%" stop-color="#60a5fa" />
-                                    </linearGradient>
-                                    <linearGradient id="stNeedleGrad1" x1="0%" y1="100%" x2="0%" y2="0%">
-                                        <stop offset="0%" stop-color="#3b5998" stop-opacity="0.0" />
-                                        <stop offset="100%" stop-color="#3b5998" stop-opacity="0.85" />
-                                    </linearGradient>
-                                </defs>
-                                <path d="M 78.7 241.3 A 115 115 0 1 1 241.3 241.3" fill="none" stroke="currentColor" stroke-width="20" class="text-gray-200 dark:text-slate-800" stroke-linecap="round" />
-                                <path id="stProgressArcDown" d="M 78.7 241.3 A 115 115 0 1 1 241.3 241.3" fill="none" stroke="url(#stDownGrad)" stroke-width="20" stroke-dasharray="541.92" stroke-dashoffset="541.92" stroke-linecap="round" class="transition-all duration-700 ease-out" />
-                                
-                                <text x="102" y="218" class="text-xs font-mono fill-gray-400 dark:fill-slate-500">0</text>
-                                <text x="160" y="78"  class="text-xs font-mono font-bold fill-gray-800 dark:fill-white">100</text>
-                                <text x="218" y="218" class="text-xs font-mono fill-gray-400 dark:fill-slate-500">1000</text>
-
-                                <g id="stNeedleWedgeDown" class="transition-transform duration-700 ease-out origin-center" style="transform: rotate(-135deg); transform-origin: 160px 160px;">
-                                    <polygon points="155,160 165,160 160,50" fill="url(#stNeedleGrad1)" />
-                                    <circle cx="160" cy="160" r="10" fill="#3b5998" />
-                                    <circle cx="160" cy="160" r="4" fill="#ffffff" />
-                                </g>
-                            </svg>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center pt-12">
-                                <span id="stMainValueDown" class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-gray-900 dark:text-white">{{ number_format($avgConexiones * 0.58, 2) }}</span>
-                                <span class="text-[10px] font-bold text-gray-500 dark:text-slate-400 font-mono">Mbps</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Upload Gauge (Orange) --}}
-                    <div class="relative flex flex-col items-center justify-center">
-                        <div class="flex items-center gap-1.5 text-xs font-bold text-[#f26419] dark:text-orange-400 tracking-wider uppercase mb-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
-                            <span>Subida</span>
-                        </div>
-                        <div class="relative w-[240px] sm:w-[280px] h-[200px] sm:h-[240px] flex items-center justify-center">
-                            <svg viewBox="0 0 320 320" class="w-full h-full overflow-visible">
-                                <defs>
-                                    <linearGradient id="stUpGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#f26419" />
-                                        <stop offset="100%" stop-color="#fb923c" />
-                                    </linearGradient>
-                                    <linearGradient id="stNeedleGrad2" x1="0%" y1="100%" x2="0%" y2="0%">
-                                        <stop offset="0%" stop-color="#f26419" stop-opacity="0.0" />
-                                        <stop offset="100%" stop-color="#f26419" stop-opacity="0.85" />
-                                    </linearGradient>
-                                </defs>
-                                <path d="M 78.7 241.3 A 115 115 0 1 1 241.3 241.3" fill="none" stroke="currentColor" stroke-width="20" class="text-gray-200 dark:text-slate-800" stroke-linecap="round" />
-                                <path id="stProgressArcUp" d="M 78.7 241.3 A 115 115 0 1 1 241.3 241.3" fill="none" stroke="url(#stUpGrad)" stroke-width="20" stroke-dasharray="541.92" stroke-dashoffset="541.92" stroke-linecap="round" class="transition-all duration-700 ease-out" />
-                                
-                                <text x="102" y="218" class="text-xs font-mono fill-gray-400 dark:fill-slate-500">0</text>
-                                <text x="160" y="78"  class="text-xs font-mono font-bold fill-gray-800 dark:fill-white">100</text>
-                                <text x="218" y="218" class="text-xs font-mono fill-gray-400 dark:fill-slate-500">1000</text>
-
-                                <g id="stNeedleWedgeUp" class="transition-transform duration-700 ease-out origin-center" style="transform: rotate(-135deg); transform-origin: 160px 160px;">
-                                    <polygon points="155,160 165,160 160,50" fill="url(#stNeedleGrad2)" />
-                                    <circle cx="160" cy="160" r="10" fill="#f26419" />
-                                    <circle cx="160" cy="160" r="4" fill="#ffffff" />
-                                </g>
-                            </svg>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center pt-12">
-                                <span id="stMainValueUp" class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-gray-900 dark:text-white">{{ number_format($avgConexiones * 0.42, 2) }}</span>
-                                <span class="text-[10px] font-bold text-gray-500 dark:text-slate-400 font-mono">Mbps</span>
-                            </div>
-=======
             {{-- ========================================================================= --}}
             {{-- NOC DYNAMIC DUAL TRAFFIC GAUGES (INSTITUTIONAL LIGHT & DARK MODE)          --}}
             {{-- ========================================================================= --}}
@@ -657,7 +557,6 @@
                         <div>
                             <p class="font-bold text-gray-900 dark:text-white text-xs leading-tight">Switch Core Cisco 3850</p>
                             <p class="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">NOC Central · Guadalajara</p>
->>>>>>> 2215af3 (feat: optimizaciones de rendimiento NOC, consola SSH interactiva, deduplicacion de telemetria y mejoras UI)
                         </div>
                     </div>
                 </div>

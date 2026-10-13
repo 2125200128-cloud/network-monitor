@@ -39,7 +39,6 @@
 
 @section('content')
 <div class="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-6 space-y-5">
-    @include('components.alert-banner')
 
 
 

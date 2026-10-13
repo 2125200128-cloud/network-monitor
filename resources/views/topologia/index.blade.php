@@ -159,7 +159,6 @@
 
 @section('content')
 <div class="flex flex-col h-full space-y-4">
-    @include('components.alert-banner')
     
 
 
