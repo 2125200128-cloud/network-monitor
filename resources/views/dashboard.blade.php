@@ -2,19 +2,6 @@
 
 @section('styles')
 <style>
-    @keyframes nocMarquee {
-        0% { transform: translateX(0%); }
-        100% { transform: translateX(-50%); }
-    }
-    .animate-noc-marquee {
-        display: flex;
-        width: max-content;
-        animation: nocMarquee 35s linear infinite;
-    }
-    .animate-noc-marquee:hover {
-        animation-play-state: paused;
-    }
-
     /* ==================== NOC DYNAMIC DUAL TRAFFIC GAUGES ==================== */
     .traffic-gauge-card {
         border-radius: 1.75rem;
@@ -331,7 +318,15 @@
                         $nombreCompleto = $prefijo ? $prefijo . ' ' . $nombreUsuario : $nombreUsuario;
                     @endphp
                     <h2 class="text-2xl lg:text-4xl font-bold mb-2 text-gray-900 dark:text-white leading-tight">{{ $saludo }}, {{ $nombreCompleto }}!</h2>
-                    <p class="text-gray-500 dark:text-slate-400 text-sm lg:text-lg max-w-2xl">Estado de la red estable. Tienes <span class="font-bold text-hacienda-blue dark:text-blue-400">{{ $dispositivosOnline }}</span> dispositivos monitoreados activos y respondiendo correctamente.</p>
+                    <p class="text-gray-500 dark:text-slate-400 text-sm lg:text-lg max-w-2xl">
+                        <span class="font-bold text-hacienda-blue dark:text-blue-400">{{ $dispositivosOnline }}</span> de {{ $totalDispositivos }} dispositivos responden al sondeo.
+                        @if($dispositivosOffline > 0)
+                            <span class="font-bold text-red-600">{{ $dispositivosOffline }} sin respuesta</span>.
+                        @endif
+                        @if($dispositivosWarning > 0)
+                            <span class="font-bold text-amber-600">{{ $dispositivosWarning }} con advertencia</span>.
+                        @endif
+                    </p>
                 </div>
                 
                 <!-- Illustration Placeholder -->
@@ -348,11 +343,11 @@
                         <div>
                             <p class="text-xs font-bold text-gray-400 uppercase tracking-wider font-mono">Tráfico de Red</p>
                             <div class="flex items-baseline gap-1 mt-1">
-                                <span class="text-2xl font-bold text-gray-900 dark:text-white font-mono tracking-tight" id="kpiTraffic">{{ number_format($avgConexiones) }}</span>
+                                <span class="text-2xl font-bold text-gray-900 dark:text-white font-mono tracking-tight" id="kpiTraffic">{{ $trafficTotal !== null ? number_format($trafficTotal, 1) : 'Sin dato' }}</span>
                                 <span class="text-xs font-mono text-gray-500">Mbps</span>
                             </div>
                         </div>
-                        <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100 font-mono">+12% vs avg</span>
+                        <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100 font-mono" title="Suma de puertos físicos (entrada + salida) de todos los equipos">Σ puertos</span>
                     </div>
                     <div class="w-full h-20 relative">
                         <canvas id="sparkTraffic"></canvas>
@@ -365,11 +360,11 @@
                         <div>
                             <p class="text-xs font-bold text-gray-400 uppercase tracking-wider font-mono">Latencia Global</p>
                             <div class="flex items-baseline gap-1 mt-1">
-                                <span class="text-2xl font-bold text-gray-900 dark:text-white font-mono tracking-tight" id="kpiPing">{{ round($avgPing) }}</span>
+                                <span class="text-2xl font-bold text-gray-900 dark:text-white font-mono tracking-tight" id="kpiPing">{{ $avgPing !== null ? $avgPing : 'Sin dato' }}</span>
                                 <span class="text-xs font-mono text-gray-500">ms</span>
                             </div>
                         </div>
-                        <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 font-mono">Óptima</span>
+                        <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 font-mono" title="Promedio ICMP de los equipos en línea">ICMP prom.</span>
                     </div>
                     <div class="w-full h-20 relative">
                         <canvas id="sparkPing"></canvas>
@@ -382,11 +377,11 @@
                         <div>
                             <p class="text-xs font-bold text-gray-400 uppercase tracking-wider font-mono">Pérdida Pkts</p>
                             <div class="flex items-baseline gap-1 mt-1">
-                                <span class="text-2xl font-bold text-gray-900 dark:text-white font-mono tracking-tight" id="kpiLoss">{{ number_format($avgPacketLoss, 2) }}</span>
+                                <span class="text-2xl font-bold text-gray-900 dark:text-white font-mono tracking-tight" id="kpiLoss">{{ $avgPacketLoss !== null ? number_format($avgPacketLoss, 2) : 'Sin dato' }}</span>
                                 <span class="text-xs font-mono text-gray-500">%</span>
                             </div>
                         </div>
-                        <span class="text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-100 font-mono">0.0% dev</span>
+                        <span class="text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-100 font-mono" title="Promedio de pérdida ICMP; los equipos sin respuesta cuentan como 100%">ICMP</span>
                     </div>
                     <div class="w-full h-20 relative">
                         <canvas id="sparkLoss"></canvas>
@@ -409,7 +404,7 @@
                         </div>
                         <div>
                             <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white tracking-tight">Monitoreo de Tráfico de Red en Tiempo Real</h3>
-                            <p class="text-xs text-gray-500 dark:text-slate-400">Telemetría de la Red Estatal Jalisco · Enlace Principal Core</p>
+                            <p class="text-xs text-gray-500 dark:text-slate-400" id="snmpTrafficSource">Fuente: switch core configurado en Ajustes (o suma de todos los equipos)</p>
                         </div>
                     </div>
 
@@ -471,7 +466,7 @@
                             </svg>
 
                             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center pt-14">
-                                <span id="stDownMainValue" class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-gray-900 dark:text-white drop-shadow-xs">{{ number_format($avgConexiones * 0.58, 2) }}</span>
+                                <span id="stDownMainValue" class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-gray-900 dark:text-white drop-shadow-xs">{{ $trafficInNow !== null ? number_format($trafficInNow, 2) : '—' }}</span>
                                 <div class="flex items-center gap-1 text-xs font-bold text-[#3b5998] dark:text-[#00e5ff] tracking-widest uppercase mt-0.5">
                                     <span>↓ Mbps</span>
                                 </div>
@@ -529,7 +524,7 @@
                             </svg>
 
                             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center pt-14">
-                                <span id="stUpMainValue" class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-gray-900 dark:text-white drop-shadow-xs">{{ number_format($avgConexiones * 0.42, 2) }}</span>
+                                <span id="stUpMainValue" class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-gray-900 dark:text-white drop-shadow-xs">{{ $trafficOutNow !== null ? number_format($trafficOutNow, 2) : '—' }}</span>
                                 <div class="flex items-center gap-1 text-xs font-bold text-[#f26419] dark:text-pink-400 tracking-widest uppercase mt-0.5">
                                     <span>↑ Mbps</span>
                                 </div>
@@ -555,8 +550,8 @@
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
                         </div>
                         <div>
-                            <p class="font-bold text-gray-900 dark:text-white text-xs leading-tight">Switch Core Cisco 3850</p>
-                            <p class="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">NOC Central · Guadalajara</p>
+                            <p class="font-bold text-gray-900 dark:text-white text-xs leading-tight" id="snmpTrafficDevice">—</p>
+                            <p class="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5" id="snmpTrafficMeasured">Esperando medición</p>
                         </div>
                     </div>
                 </div>
@@ -579,12 +574,12 @@
                         <div class="relative w-44 h-44 flex-shrink-0">
                             <canvas id="mainDoughnut"></canvas>
                             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                                <span class="text-2xl font-extrabold text-gray-900 dark:text-white font-mono leading-none tracking-tight">{{ round($avgCpu) }}<span class="text-xs text-gray-400 dark:text-slate-500 font-sans ml-0.5">%</span></span>
+                                <span class="text-2xl font-extrabold text-gray-900 dark:text-white font-mono leading-none tracking-tight">{{ $avgCpu !== null ? round($avgCpu) : '—' }}<span class="text-xs text-gray-400 dark:text-slate-500 font-sans ml-0.5">%</span></span>
                                 <span class="text-[9px] font-bold text-[#f26419] font-mono uppercase tracking-widest mt-0.5">CPU CORE</span>
                                 <div class="mt-1 flex items-center gap-1 font-mono text-[11px] text-gray-500">
                                     <span class="w-1.5 h-1.5 rounded-full bg-[#3b5998]"></span>
                                     <span>RAM</span>
-                                    <span class="font-bold text-[#3b5998]">{{ round($avgMem) }}%</span>
+                                    <span class="font-bold text-[#3b5998]">{{ $avgMem !== null ? round($avgMem) . '%' : 'Sin dato' }}</span>
                                 </div>
                             </div>
                         </div>
@@ -598,7 +593,7 @@
                                         <p class="text-[10px] text-gray-400 dark:text-slate-500 font-mono">Track: 0 - 100%</p>
                                     </div>
                                 </div>
-                                <span class="text-lg font-extrabold text-gray-900 dark:text-white font-mono" id="kpiCpuValue">{{ round($avgCpu) }}%</span>
+                                <span class="text-lg font-extrabold text-gray-900 dark:text-white font-mono" id="kpiCpuValue">{{ $avgCpu !== null ? round($avgCpu) . '%' : 'Sin dato' }}</span>
                             </div>
 
                             <div class="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/70 dark:bg-[#090b10] border border-gray-100 dark:border-slate-800/40">
@@ -609,7 +604,7 @@
                                         <p class="text-[10px] text-gray-400 dark:text-slate-500 font-mono">Track: 0 - 100%</p>
                                     </div>
                                 </div>
-                                <span class="text-lg font-extrabold text-gray-900 dark:text-white font-mono" id="kpiMemValue">{{ round($avgMem) }}%</span>
+                                <span class="text-lg font-extrabold text-gray-900 dark:text-white font-mono" id="kpiMemValue">{{ $avgMem !== null ? round($avgMem) . '%' : 'Sin dato' }}</span>
                             </div>
 
                             <div class="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/70 dark:bg-[#090b10] border border-gray-100 dark:border-slate-800/40">
@@ -638,15 +633,15 @@
                         <div>
                             <div class="flex justify-between text-sm mb-2">
                                 <span class="font-medium text-gray-600 dark:text-slate-400">Temperatura Promedio Global</span>
-                                <span class="font-bold text-gray-800 dark:text-slate-200">{{ round($avgTemp) }} °C</span>
+                                <span class="font-bold text-gray-800 dark:text-slate-200">{{ $avgTemp !== null ? round($avgTemp) . ' °C' : 'Sin sensores reportados' }}</span>
                             </div>
                             
                             <!-- Speedometer animado para Dashboard -->
                             @php
                                 $dasharray = 125.6;
-                                $percentage = min(100, max(0, ($avgTemp / 80) * 100)); // Escala hasta 80°C
+                                $percentage = $avgTemp === null ? 0 : min(100, max(0, ($avgTemp / 80) * 100)); // Escala hasta 80°C
                                 $dashoffset = 125.6 - (125.6 * $percentage / 100);
-                                $color = $avgTemp >= 60 ? '#ef4444' : ($avgTemp >= 45 ? '#f59e0b' : '#10b981');
+                                $color = $avgTemp === null ? '#94a3b8' : ($avgTemp >= 60 ? '#ef4444' : ($avgTemp >= 45 ? '#f59e0b' : '#10b981'));
                             @endphp
                             <div class="relative w-full h-20 overflow-hidden flex justify-center mt-3">
                                 <svg viewBox="0 0 100 50" class="w-40 h-20 drop-shadow-md">
@@ -659,8 +654,8 @@
                                           style="--dash-target-offset: {{ $dashoffset }};"/>
                                 </svg>
                                 <div class="absolute bottom-0 left-0 w-full text-center flex flex-col items-center">
-                                    <span class="text-2xl font-extrabold text-gray-800 dark:text-white font-mono leading-none">{{ round($avgTemp) }}<span class="text-sm text-gray-400">°C</span></span>
-                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">{{ $avgTemp < 45 ? 'ÓPTIMO' : 'ALERTA' }}</span>
+                                    <span class="text-2xl font-extrabold text-gray-800 dark:text-white font-mono leading-none">{{ $avgTemp !== null ? round($avgTemp) : '—' }}<span class="text-sm text-gray-400">°C</span></span>
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">{{ $avgTemp === null ? 'SIN DATO' : ($avgTemp < 45 ? 'NORMAL' : 'ELEVADA') }}</span>
                                 </div>
                             </div>
                             
@@ -678,22 +673,22 @@
                         <!-- Conexiones -->
                         <div>
                             <div class="flex justify-between text-sm mb-2">
-                                <span class="font-medium text-gray-600 dark:text-slate-400">Saturación de Puertos</span>
-                                <span class="font-bold text-gray-800 dark:text-slate-200">{{ round(min(100, $avgConexiones / 15)) }}%</span>
+                                <span class="font-medium text-gray-600 dark:text-slate-400" title="% de puertos físicos activos con utilización ≥ 80%">Puertos saturados (≥80%)</span>
+                                <span class="font-bold text-gray-800 dark:text-slate-200">{{ $avgPortSat !== null ? $avgPortSat . '%' : 'Sin dato' }}</span>
                             </div>
                             <div class="w-full bg-gray-100 dark:bg-slate-800/80 rounded-full h-2">
-                                <div class="bg-hacienda-orange h-2 rounded-full" style="width: {{ round(min(100, $avgConexiones / 15)) }}%"></div>
+                                <div class="bg-hacienda-orange h-2 rounded-full" style="width: {{ $avgPortSat ?? 0 }}%"></div>
                             </div>
                         </div>
 
                         <!-- Errores -->
                         <div>
                             <div class="flex justify-between text-sm mb-2">
-                                <span class="font-medium text-gray-600 dark:text-slate-400">Tasa de Errores</span>
-                                <span class="font-bold text-gray-800 dark:text-slate-200">{{ round($avgErrores) }} / 100</span>
+                                <span class="font-medium text-gray-600 dark:text-slate-400" title="Errores de entrada+salida en puertos físicos durante el último ciclo de sondeo (15 s)">Errores de interfaz (último ciclo)</span>
+                                <span class="font-bold text-gray-800 dark:text-slate-200">{{ $erroresUltimoCiclo !== null ? number_format($erroresUltimoCiclo) : 'Sin dato' }}</span>
                             </div>
                             <div class="w-full bg-gray-100 dark:bg-slate-800/80 rounded-full h-2">
-                                @php $errPercent = min(100, max(0, $avgErrores)); @endphp
+                                @php $errPercent = $erroresUltimoCiclo ? min(100, $erroresUltimoCiclo) : 0; @endphp
                                 <div class="bg-pink-400 h-2 rounded-full" style="width: {{ $errPercent }}%"></div>
                             </div>
                         </div>
@@ -890,7 +885,10 @@
                                         <div class="flex items-center gap-2.5">
                                             <!-- Icono según el tipo real -->
                                             <div class="w-9 h-9 rounded-xl {{ $disp->tipo_icon_container_classes }} flex items-center justify-center flex-shrink-0 font-bold shadow-xs border border-transparent dark:border-white/5" title="{{ $disp->tipo_label }}">
-                                                @if($disp->tipo_dispositivo === 'telefono')
+                                                @if($disp->tipo_dispositivo === 'firewall')
+                                                    <!-- Firewall -->
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l8 4v5c0 4.5-3.4 8.4-8 9-4.6-.6-8-4.5-8-9V7l8-4z"></path></svg>
+                                                @elseif($disp->tipo_dispositivo === 'telefono')
                                                     <!-- Teléfono IP (VoIP) -->
                                                     <img src="{{ asset('images/topology/ip-phone.png') }}" class="w-6 h-6 object-contain" alt="Teléfono">
                                                 @elseif($disp->tipo_dispositivo === 'servidor')
@@ -1019,25 +1017,11 @@
 @endsection
 
 @php
-    $now = now();
-    $defaultTimestamps = [];
-    for ($i = 6; $i >= 0; $i--) {
-        $defaultTimestamps[] = $now->copy()->subMinutes($i * 5)->format('H:i:s');
-    }
-    
-    $formattedLabels = count($labels) >= 4 
-        ? array_map(fn($t) => strlen($t) <= 5 ? $t . ':00' : $t, array_slice($labels, -7))
-        : $defaultTimestamps;
-
-    $finalTraffic = (count($trafficIn) >= 4)
-        ? array_slice($trafficIn, -7)
-        : [14.2, 18.5, 16.1, 24.8, 19.3, 27.6, max(5, round($avgConexiones, 1))];
-
-    $finalPing = (count($pingData) >= 4)
-        ? array_slice($pingData, -7)
-        : [12.4, 11.8, 15.2, 13.1, 12.0, 14.5, max(1, round($avgPing, 1))];
-
-    $finalLoss = [0.0, 0.0, 0.4, 0.0, 0.2, 0.0, round($avgPacketLoss, 2)];
+    // Últimas 7 muestras reales de global_metrics (null = sin dato en esa muestra)
+    $formattedLabels = array_slice($labels, -7);
+    $finalTraffic = array_slice($trafficData, -7);
+    $finalPing = array_slice($pingData, -7);
+    $finalLoss = array_slice($lossData, -7);
 @endphp
 
 @section('scripts')
@@ -1048,8 +1032,8 @@
             const pingData = @json($finalPing);
             const lossData = @json($finalLoss);
 
-            const avgCpu = {{ round($avgCpu) }};
-            const avgMem = {{ round($avgMem) }};
+            const avgCpu = {{ $avgCpu !== null ? round($avgCpu) : 0 }};
+            const avgMem = {{ $avgMem !== null ? round($avgMem) : 0 }};
 
             window.dashboardCharts = [];
 
@@ -1573,8 +1557,8 @@
     {{-- DUAL GAUGE LOGIC & LIVE SNMP POLLING                           --}}
     {{-- ============================================================== --}}
     <script>
-        let latestDownMbps = {{ round($avgConexiones * 0.58, 2) }};
-        let latestUpMbps = {{ round($avgConexiones * 0.42, 2) }};
+        let latestDownMbps = {{ $trafficInNow !== null ? round($trafficInNow, 2) : 0 }};
+        let latestUpMbps = {{ $trafficOutNow !== null ? round($trafficOutNow, 2) : 0 }};
 
         function speedtestValueToRatio(mbps) {
             const val = Math.max(0, parseFloat(mbps) || 0);
@@ -1668,15 +1652,25 @@
 
                     const data = await resp.json();
 
+                    const elDevice = document.getElementById('snmpTrafficDevice');
+                    const elMeasured = document.getElementById('snmpTrafficMeasured');
                     if (data.status === 'success') {
-                        latestDownMbps = parseFloat(data.in_mbps  ?? 0);
-                        latestUpMbps   = parseFloat(data.out_mbps ?? 0);
+                        latestDownMbps = parseFloat(data.in_mbps);
+                        latestUpMbps   = parseFloat(data.out_mbps);
 
                         updateDualSpeedtestGauges(latestDownMbps, latestUpMbps);
-                        setStatus(true, `Puerto ${data.puerto ?? '—'} · Live`);
+                        setStatus(true, data.fuente === 'core' ? 'Switch core · SNMP' : 'Suma global · SNMP');
+                        if (elDevice) elDevice.textContent = data.ip ? `${data.dispositivo} (${data.ip})` : data.dispositivo;
+                        if (elMeasured) elMeasured.textContent = `Medido: ${data.medido_en}`;
                     } else {
                         updateDualSpeedtestGauges(0, 0);
-                        setStatus(false, data.message ?? 'Error del script');
+                        ['stDownMainValue', 'stUpMainValue', 'stTopDownVal', 'stTopUpVal'].forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el) el.textContent = '—';
+                        });
+                        setStatus(false, 'Sin datos');
+                        if (elDevice) elDevice.textContent = '—';
+                        if (elMeasured) elMeasured.textContent = data.message ?? 'Sin mediciones recientes';
                     }
                 } catch (err) {
                     setStatus(false, `Sin respuesta (${err.message})`);
@@ -1715,11 +1709,12 @@
                         if(el && el.textContent != val) el.textContent = val;
                     };
 
-                    setVal('kpiTraffic', data.traffic_mbps);
-                    setVal('kpiPing', data.latency_ms);
-                    setVal('kpiLoss', data.packet_loss_pct);
-                    setVal('kpiCpuValue', data.cpu_avg_pct + '%');
-                    setVal('kpiMemValue', data.ram_avg_pct + '%');
+                    const orNd = (v, suffix = '') => v === null || v === undefined ? 'Sin dato' : v + suffix;
+                    setVal('kpiTraffic', orNd(data.traffic_mbps));
+                    setVal('kpiPing', orNd(data.latency_ms));
+                    setVal('kpiLoss', orNd(data.packet_loss_pct));
+                    setVal('kpiCpuValue', orNd(data.cpu_avg_pct, '%'));
+                    setVal('kpiMemValue', orNd(data.ram_avg_pct, '%'));
                     setVal('kpiNodesValue', `${data.dispositivos.online} / ${data.dispositivos.total}`);
 
                     // Actualizar Alertas y Notificaciones en Vivo

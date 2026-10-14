@@ -3,12 +3,30 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Dispositivo;
 use App\Models\EnlaceRed;
-use App\Models\PosicionTopologia;
+use App\Models\NotaDispositivo;
+use App\Models\TopologiaPlano;
+use App\Models\ZonaTopologia;
 
 class TopologiaController extends Controller
 {
+    private const CACHE_GRAFO = 'topologia_datos_grafos_fast';
+
+    /**
+     * El grafo serializado (~1 MB) supera max_allowed_packet de MySQL: se cachea en archivo.
+     */
+    public static function cacheGrafo(): \Illuminate\Contracts\Cache\Repository
+    {
+        return Cache::store('file');
+    }
+
+    public static function olvidarCacheGrafo(): void
+    {
+        self::cacheGrafo()->forget(self::CACHE_GRAFO);
+    }
+
     /**
      * Vista principal del mapa de topología de red
      */
@@ -19,39 +37,29 @@ class TopologiaController extends Controller
         $enlaces = EnlaceRed::with([
             'dispositivoOrigen',
             'dispositivoDestino',
-            'interfazOrigen',
-            'interfazDestino'
+            'interfazOrigen.ultimaTelemetria',
+            'interfazDestino.ultimaTelemetria'
         ])->get();
 
         $this->enriquecerEnlacesConTelemetriaViva($enlaces);
 
         $grafoData = $this->compilarGrafoData($dispositivos, $enlaces);
-
-        // Métricas de topología precisas
-        $totalNodos = $dispositivos->count();
-        $totalEnlaces = $enlaces->count();
-        $enlacesActivos = $enlaces->where('estado', 'up')->count();
-        $enlacesAlerta = $enlaces->where('estado', '!=', 'up')->count();
-        $anchoBandaTotalGbps = round($enlaces->sum('velocidad_mbps') / 1000, 1);
-        $traficoTotalMbps = round($enlaces->sum('trafico_in_mbps') + $enlaces->sum('trafico_out_mbps'), 1);
+        $resumen = $grafoData['resumen'];
+        $totalEnlaces = $resumen['enl_total'];
 
         $config = \App\Models\ConfiguracionGeneral::first();
+        $puedeEditar = in_array(auth()->user()?->role, ['Admin', 'Operador'], true);
 
         // Compilar notificaciones para el banner carrusel NOC LIVE
         $notificaciones = (new \App\Http\Controllers\DashboardController)->compilarNotificaciones();
         $unreadNotificaciones = count(array_filter($notificaciones, fn($n) => !$n['leida']));
 
         return view('topologia.index', compact(
-            'dispositivos',
-            'enlaces',
             'grafoData',
-            'totalNodos',
+            'resumen',
             'totalEnlaces',
-            'enlacesActivos',
-            'enlacesAlerta',
-            'anchoBandaTotalGbps',
-            'traficoTotalMbps',
             'config',
+            'puedeEditar',
             'notificaciones',
             'unreadNotificaciones'
         ));
@@ -62,14 +70,15 @@ class TopologiaController extends Controller
      */
     public function datosGrafos()
     {
-        $grafoData = \Illuminate\Support\Facades\Cache::remember('topologia_datos_grafos_fast', 5, function () {
+        // El plano es compartido: una sola caché para todos
+        $grafoData = self::cacheGrafo()->remember(self::CACHE_GRAFO, 5, function () {
             $dispositivos = Dispositivo::with(['telemetriaChasis', 'ultimaMetrica'])->get();
 
             $enlaces = EnlaceRed::with([
                 'dispositivoOrigen',
                 'dispositivoDestino',
-                'interfazOrigen',
-                'interfazDestino'
+                'interfazOrigen.ultimaTelemetria',
+                'interfazDestino.ultimaTelemetria'
             ])->get();
 
             $this->enriquecerEnlacesConTelemetriaViva($enlaces);
@@ -81,40 +90,86 @@ class TopologiaController extends Controller
     }
 
     /**
-     * Guarda la disposición cartográfica / coordenadas de los nodos de la topología para la cuenta autenticada
+     * Guarda el acomodo del plano compartido (Admin/Operador). Admite actualización parcial:
+     * solo se reemplazan los nodos enviados.
      */
     public function guardarPosiciones(Request $request)
     {
-        $user = auth()->user();
-        if (!$user) {
-            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
-        }
-
         $posiciones = $request->input('posiciones');
         if (!is_array($posiciones)) {
             return response()->json(['success' => false, 'message' => 'Estructura de posiciones inválida'], 400);
         }
 
-        $posicionesSanitizadas = [];
+        $plano = TopologiaPlano::actual();
+        $actuales = is_array($plano->posiciones) ? $plano->posiciones : [];
+
+        $guardados = 0;
         foreach ($posiciones as $nodeId => $pos) {
-            if (is_array($pos) && isset($pos['x']) && isset($pos['y'])) {
-                $posicionesSanitizadas[$nodeId] = [
-                    'x' => round((float)$pos['x'], 2),
-                    'y' => round((float)$pos['y'], 2),
+            if (is_numeric($nodeId) && is_array($pos) && is_numeric($pos['x'] ?? null) && is_numeric($pos['y'] ?? null)) {
+                $actuales[(int) $nodeId] = [
+                    'x' => round((float) $pos['x'], 2),
+                    'y' => round((float) $pos['y'], 2),
                 ];
+                $guardados++;
             }
         }
 
-        PosicionTopologia::updateOrCreate(
-            ['user_id' => $user->id],
-            ['posiciones' => $posicionesSanitizadas]
-        );
+        $plano->update(['posiciones' => $actuales, 'updated_by' => auth()->id()]);
+        self::olvidarCacheGrafo();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Acomodo de topología guardado correctamente para la cuenta.',
-            'saved_count' => count($posicionesSanitizadas)
+        return response()->json(['success' => true, 'saved_count' => $guardados]);
+    }
+
+    // ==================== ZONAS (recuadros tipo Packet Tracer) ====================
+
+    private function validarZona(Request $request): array
+    {
+        return $request->validate([
+            'nombre' => 'required|string|max:80',
+            'color' => ['required', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            // Lista separada por comas: 10.4.155.0/24, 10.4.20.*, 10.4.1.10-10.4.1.50, 10.4.9.7
+            'rangos_ip' => ['nullable', 'string', 'max:500', 'regex:/^[0-9.\/*\-,\s]*$/'],
+            'x' => 'required|numeric|between:-1000000,1000000',
+            'y' => 'required|numeric|between:-1000000,1000000',
+            'ancho' => 'required|numeric|between:50,1000000',
+            'alto' => 'required|numeric|between:50,1000000',
         ]);
+    }
+
+    public function guardarZona(Request $request)
+    {
+        $zona = ZonaTopologia::create($this->validarZona($request) + ['created_by' => auth()->id()]);
+        self::olvidarCacheGrafo();
+
+        return response()->json(['success' => true, 'zona' => $zona]);
+    }
+
+    public function actualizarZona(Request $request, int $id)
+    {
+        $data = $this->validarZona($request);
+        // Si la zona ya no existe (borrada desde otra pestaña) se vuelve a crear con lo que el mapa muestra
+        $zona = ZonaTopologia::find($id) ?? new ZonaTopologia(['created_by' => auth()->id()]);
+        $zona->fill($data)->save();
+        self::olvidarCacheGrafo();
+
+        return response()->json(['success' => true, 'zona' => $zona]);
+    }
+
+    public function eliminarZona(int $id)
+    {
+        // Idempotente: si ya no existe (otra pestaña la borró), el resultado es el mismo
+        ZonaTopologia::whereKey($id)->delete();
+        self::olvidarCacheGrafo();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function eliminarTodasLasZonas()
+    {
+        $n = ZonaTopologia::query()->delete();
+        self::olvidarCacheGrafo();
+
+        return response()->json(['success' => true, 'eliminadas' => $n]);
     }
 
     /**
@@ -141,14 +196,26 @@ class TopologiaController extends Controller
                 $enlace->tipo_medio = 'cobre_utp';
             }
 
-            // Estado dinámico: si alguno de los equipos de los extremos está caído, el enlace físico se reporta como caído (DOWN)
-            $origEstado = $enlace->dispositivoOrigen->estado ?? 'online';
-            $destEstado = $enlace->dispositivoDestino->estado ?? 'online';
-            if ($origEstado === 'offline' || $destEstado === 'offline') {
+            // Estado: primero el estado operativo SNMP de los puertos de cada extremo;
+            // si no hay dato de puertos, se infiere del estado de los equipos.
+            $operO = $enlace->interfazOrigen?->ultimaTelemetria?->oper_status;
+            $operD = $enlace->interfazDestino?->ultimaTelemetria?->oper_status;
+            $origEstado = $enlace->dispositivoOrigen->estado ?? null;
+            $destEstado = $enlace->dispositivoDestino->estado ?? null;
+            if ($operO === 'down' || $operD === 'down' || $origEstado === 'offline' || $destEstado === 'offline') {
                 $enlace->estado = 'down';
-            } elseif ($origEstado === 'warning' || $destEstado === 'warning') {
-                $enlace->estado = 'degraded';
+            } elseif ($operO === 'up' || $operD === 'up') {
+                $enlace->estado = ($origEstado === 'warning' || $destEstado === 'warning') ? 'degraded' : 'up';
+            } else {
+                $enlace->estado = 'unknown';
             }
+
+            // Utilización real (%) medida por el poller en los puertos de cada extremo
+            $utils = array_filter([
+                $enlace->interfazOrigen?->ultimaTelemetria?->bandwidth_util_pct,
+                $enlace->interfazDestino?->ultimaTelemetria?->bandwidth_util_pct,
+            ], fn ($v) => $v !== null);
+            $enlace->utilizacion_pct = $utils ? round(max(array_map('floatval', $utils)), 1) : null;
         });
     }
 
@@ -160,14 +227,12 @@ class TopologiaController extends Controller
         $nodes = [];
         $edges = [];
 
-        // Cargar posiciones personalizadas guardadas para la cuenta autenticada
-        $userPosiciones = [];
-        if (auth()->check()) {
-            $posModel = PosicionTopologia::where('user_id', auth()->id())->first();
-            if ($posModel && is_array($posModel->posiciones)) {
-                $userPosiciones = $posModel->posiciones;
-            }
-        }
+        // Acomodo del plano compartido del NOC
+        $plano = TopologiaPlano::actual();
+        $userPosiciones = is_array($plano->posiciones) ? $plano->posiciones : [];
+
+        $notasPorDispositivo = NotaDispositivo::selectRaw('dispositivo_id, COUNT(*) n')
+            ->groupBy('dispositivo_id')->pluck('n', 'dispositivo_id');
 
         // Coordenadas predeterminadas tipo Blueprint para un layout limpio inicial
         $coordenadas = [
@@ -236,9 +301,9 @@ class TopologiaController extends Controller
 
         foreach ($dispositivos as $disp) {
             $ultimaMetrica = $disp->ultimaMetrica;
-            $cpu = $ultimaMetrica && isset($ultimaMetrica->cpu_usage) ? $ultimaMetrica->cpu_usage : 15;
-            $mem = $ultimaMetrica && isset($ultimaMetrica->memory_usage) ? $ultimaMetrica->memory_usage : 30;
-            $ping = $ultimaMetrica && isset($ultimaMetrica->ping_ms) ? $ultimaMetrica->ping_ms : 1.2;
+            $cpu = $ultimaMetrica?->cpu_usage;
+            $mem = $ultimaMetrica?->memory_usage;
+            $ping = $ultimaMetrica?->ping_ms;
 
             $modeloExacto = $disp->telemetriaChasis->model_name ?? '';
             $osVersion = $disp->telemetriaChasis->os_version ?? '';
@@ -248,9 +313,9 @@ class TopologiaController extends Controller
             if (!empty($disp->mac_address)) {
                 $macVendor = \App\Services\MacVendorResolver::resolveVendor($disp->mac_address);
             }
-            $numConexiones = count($conexionesPorDispositivo[$disp->id] ?? []);
 
-            $deviceType = $this->resolveDeviceImageAndRole($disp->nombre, $modeloExacto, $osVersion, $numConexiones, $macVendor);
+            // Tipo por evidencia (SNMP/CDP/LLDP), corrección manual o, en último caso, nombre
+            $deviceType = $disp->resolveTypeInfo();
             $rol = $deviceType['rol'];
             $imagePath = $deviceType['image'];
             $nodeSize = $deviceType['size'];
@@ -294,13 +359,6 @@ class TopologiaController extends Controller
                     'vadjust' => 34,
                     'align' => 'center'
                 ],
-                'shadow' => [
-                    'enabled' => true,
-                    'color' => 'rgba(15, 23, 42, 0.22)',
-                    'size' => 14,
-                    'x' => 0,
-                    'y' => 5
-                ],
                 'customData' => [
                     'id' => $disp->id,
                     'nombre' => $disp->nombre,
@@ -309,21 +367,27 @@ class TopologiaController extends Controller
                     'estado' => $disp->estado,
                     'statusColor' => $statusColor,
                     'rol' => strtoupper($rol),
-                    'tipo_equipo' => $deviceType['tipo_equipo'],
-                    'factor_forma' => $deviceType['factor_forma'],
-                    'vendor' => $deviceType['vendor'] ?? (str_contains(strtolower($disp->nombre), 'forti') ? 'Fortinet Inc.' : 'Cisco Systems'),
+                    'tipo' => $deviceType['tipo'],
+                    'tipo_confianza' => $deviceType['confianza'],
+                    'tipo_fuente' => $deviceType['fuente'],
+                    'tipo_evidencia' => $deviceType['evidencia'],
+                    'tipo_manual' => $disp->tipo_manual,
+                    'tipo_equipo' => $deviceType['label'],
+                    'factor_forma' => $deviceType['modelo'],
+                    'vendor' => $deviceType['fabricante'] ?? ($macVendor !== '' && $macVendor !== 'Desconocido' ? $macVendor : null),
                     'cpu' => $cpu,
                     'memoria' => $mem,
                     'ping' => $ping,
-                    'modelo' => !empty($modeloExacto) && !str_contains(strtolower($modeloExacto), 'cisco') ? $modeloExacto : (str_contains(strtolower($disp->nombre), 'forti') ? 'FortiGate-100F NGFW' : (!empty($modeloExacto) ? $modeloExacto : 'Cisco Catalyst 9300')),
-                    'serial' => $disp->telemetriaChasis->serial_number ?? (str_contains(strtolower($disp->nombre), 'forti') ? 'FG100FTK21004859' : (str_contains(strtolower($disp->nombre), 'genérico') ? 'N/A' : 'FOC2438L8PQ')),
-                    'uptime' => $disp->telemetriaChasis->uptime_str ?? 'Desconocido',
+                    'modelo' => $deviceType['modelo'] ?? ($modeloExacto !== '' ? \Illuminate\Support\Str::limit($modeloExacto, 80) : null),
+                    'serial' => $disp->telemetriaChasis->serial_number ?? null,
+                    'uptime' => $disp->telemetriaChasis->uptime_str ?? null,
                     'sysDescr' => $osVersion,
                     'url' => route('dispositivos.show', $disp->id),
                     'image' => $imageUrl,
                     'conexiones' => $conexionesPorDispositivo[$disp->id] ?? [],
                     'sensores_temperatura' => $disp->telemetriaChasis->sensores_temperatura ?? [],
-                    'pc_conectada' => (str_starts_with(strtoupper($disp->nombre), 'SEP') || str_contains(strtoupper($rol), 'VOIP') || str_contains(strtoupper($disp->nombre), 'PHONE')) ? \App\Services\PhonePcLinkResolver::resolveAttachedPc($disp, $enlacesMap[$disp->id] ?? null) : null
+                    'notas' => (int) ($notasPorDispositivo[$disp->id] ?? 0),
+                    'pc_conectada' => $deviceType['tipo'] === 'telefono' ?\App\Services\PhonePcLinkResolver::resolveAttachedPc($disp, $enlacesMap[$disp->id] ?? null) : null
                 ]
             ];
         }
@@ -334,30 +398,13 @@ class TopologiaController extends Controller
             $origenAbrev = $abrev($origenNombre);
             $destinoAbrev = $abrev($destinoNombre);
 
-            // Colores y grosor según estado y velocidad
-            $color = '#10b981'; // up (esmeralda)
-            $dashes = false;
-            $width = 3;
-
-            if ($enlace->estado === 'down') {
-                $color = '#ef4444'; // down (rojo)
-                $dashes = [6, 4];
-                $width = 2.5;
-            } elseif ($enlace->estado === 'degraded' || $enlace->porcentaje_saturacion > 80) {
-                $color = '#f26419'; // warning / saturado (naranja)
-                $width = 4;
-            }
-
-            // Enlaces de 10G más gruesos que 1G
-            if ($enlace->velocidad_mbps >= 10000 && $enlace->estado !== 'down') {
-                $width = 4.5;
-            }
+            [$color, $width, $dashes, $opacity] = $this->estiloEnlace($enlace->estado, $enlace->velocidad_mbps, $enlace->utilizacion_pct);
 
             $etiquetaVelocidad = ($enlace->velocidad_mbps >= 1000)
                 ? ($enlace->velocidad_mbps / 1000) . 'G'
                 : $enlace->velocidad_mbps . 'M';
 
-            $traficoTotal = round($enlace->trafico_in_mbps + $enlace->trafico_out_mbps, 1);
+            $utilStr = $enlace->utilizacion_pct !== null ? $enlace->utilizacion_pct . ' % (medida en los puertos)' : 'Sin dato';
             
             // Etiqueta concisa de velocidad para evitar saturación visual en la topología
             $label = $etiquetaVelocidad . ($enlace->estado === 'down' ? ' (CAÍDO)' : '');
@@ -371,17 +418,19 @@ class TopologiaController extends Controller
                      "       ↕\n" .
                      "• " . $destinoDisp . " [" . $destinoNombre . "]\n\n" .
                      "Velocidad: " . ($enlace->velocidad_mbps >= 1000 ? ($enlace->velocidad_mbps / 1000) . ' Gbps' : $enlace->velocidad_mbps . ' Mbps') . "\n" .
-                     "Tráfico: " . $traficoTotal . " Mbps (In: {$enlace->trafico_in_mbps}M / Out: {$enlace->trafico_out_mbps}M)\n" .
+                     "Utilización: " . $utilStr . "\n" .
                      "Medio: " . strtoupper(str_replace('_', ' ', $enlace->tipo_medio)) . "\n" .
-                     "VLANs: " . ($enlace->vlans_permitidas ?? 'VLAN 1') . "\n" .
+                     "VLANs: " . ($enlace->vlans_permitidas ?? 'Sin dato') . "\n" .
                      "Estado: " . strtoupper($enlace->estado);
 
-            // Separación de curvatura si hay múltiples enlaces entre el mismo par
-            $parKey = min($enlace->origen_dispositivo_id, $enlace->destino_dispositivo_id) . '_' . 
+            // Cable recto; solo se curvan los enlaces paralelos adicionales entre el mismo par
+            $parKey = min($enlace->origen_dispositivo_id, $enlace->destino_dispositivo_id) . '_' .
                       max($enlace->origen_dispositivo_id, $enlace->destino_dispositivo_id);
             $conteoEnlacesPar[$parKey] = ($conteoEnlacesPar[$parKey] ?? 0) + 1;
-            $roundness = 0.2 + (($conteoEnlacesPar[$parKey] - 1) * 0.2);
-            $smoothType = ($conteoEnlacesPar[$parKey] % 2 === 0) ? 'curvedCCW' : 'curvedCW';
+            $n = $conteoEnlacesPar[$parKey];
+            $smooth = $n === 1
+                ? ['enabled' => false]
+                : ['enabled' => true, 'type' => ($n % 2 === 0) ? 'curvedCCW' : 'curvedCW', 'roundness' => 0.12 * intdiv($n, 2) + 0.06];
 
             $edges[] = [
                 'id' => $enlace->id,
@@ -398,17 +447,13 @@ class TopologiaController extends Controller
                 ],
                 'color' => [
                     'color' => $color,
-                    'highlight' => '#f26419',
+                    'highlight' => '#2563eb',
                     'hover' => '#3b5998',
-                    'opacity' => 0.9
+                    'opacity' => $opacity
                 ],
                 'width' => $width,
                 'dashes' => $dashes,
-                'smooth' => [
-                    'enabled' => true,
-                    'type' => $smoothType,
-                    'roundness' => $roundness
-                ],
+                'smooth' => $smooth,
                 'customData' => [
                     'id' => $enlace->id,
                     'origen_id' => $enlace->origen_dispositivo_id,
@@ -423,10 +468,10 @@ class TopologiaController extends Controller
                     'velocidad_mbps' => $enlace->velocidad_mbps,
                     'estado' => strtoupper($enlace->estado),
                     'color' => $color,
-                    'trafico_in' => $enlace->trafico_in_mbps,
-                    'trafico_out' => $enlace->trafico_out_mbps,
-                    'saturacion_pct' => $enlace->porcentaje_saturacion,
-                    'vlans' => $enlace->vlans_permitidas ?? 'VLAN 1, 10, 20'
+                    'trafico_in' => null,
+                    'trafico_out' => null,
+                    'saturacion_pct' => $enlace->utilizacion_pct,
+                    'vlans' => $enlace->vlans_permitidas
                 ]
             ];
         }
@@ -435,201 +480,51 @@ class TopologiaController extends Controller
             'nodes' => $nodes,
             'edges' => $edges,
             'hasSavedPositions' => !empty($userPosiciones),
-            'userPosiciones' => $userPosiciones
+            'userPosiciones' => $userPosiciones,
+            'zonas' => ZonaTopologia::orderBy('id')->get(['id', 'nombre', 'color', 'rangos_ip', 'x', 'y', 'ancho', 'alto']),
+            'resumen' => $this->resumenEstado($dispositivos, $enlaces),
         ];
     }
 
     /**
-     * Mapeo dinámico de hardware fotorrealista según el modelo exacto del equipo.
+     * Estilo del cable: el color solo depende del estado real y el grosor de la velocidad.
+     * Devuelve [color, ancho, dashes, opacidad].
      */
-    protected function resolveDeviceImageAndRole(string $nombre, string $modelo, string $sysDescr = '', int $numConexiones = 0, string $vendor = ''): array
+    private function estiloEnlace(?string $estado, $velocidadMbps, $utilPct): array
     {
-        $nombreUpper = strtoupper(trim($nombre));
-        $haystack = strtolower($nombre . ' ' . $modelo . ' ' . $sysDescr);
+        $vel = (int) ($velocidadMbps ?? 0);
+        $width = match (true) {
+            $vel >= 40000 => 6,
+            $vel >= 10000 => 4,
+            $vel >= 1000 => 2.5,
+            default => 1.5,
+        };
 
-        // 0. Firewalls Perimetrales Fortinet / FortiGate (FortiGate / FortiOS / Fortinet / NGFW / FW)
-        if (
-            str_contains($haystack, 'forti') || 
-            str_contains($haystack, 'fortigate') || 
-            str_contains($haystack, 'fortinet') || 
-            str_contains($haystack, 'fortios') ||
-            str_starts_with($nombreUpper, 'FG-') || 
-            str_starts_with($nombreUpper, 'FW-') || 
-            str_starts_with($nombreUpper, 'FG_') || 
-            str_starts_with($nombreUpper, 'FW_') || 
-            str_contains($haystack, 'firewall')
-        ) {
-            return [
-                'image' => 'images/topology/firewall-fortinet.svg',
-                'rol' => 'FIREWALL / FORTINET',
-                'tipo_equipo' => 'Fortinet FortiGate Next-Gen Firewall (NGFW)',
-                'factor_forma' => 'FortiGate Security Appliance',
-                'vendor' => 'Fortinet Inc.',
-                'size' => 155
-            ];
-        }
+        return match (true) {
+            $estado === 'down' => ['#ef4444', $width, [8, 5], 0.95],
+            $estado === 'unknown' => ['#94a3b8', 1.5, [3, 5], 0.55],
+            $estado === 'degraded' || ($utilPct !== null && $utilPct >= 80) => ['#f59e0b', $width, false, 0.95],
+            default => ['#10b981', $width, false, 0.8],
+        };
+    }
 
-        // 1. Teléfonos IP Cisco (VoIP)
-        if (
-            str_starts_with($nombreUpper, 'SEP') || 
-            str_contains($haystack, 'ip phone') || 
-            str_contains($haystack, 'cp-') || 
-            str_contains($haystack, 'voip')
-        ) {
-            return [
-                'image' => 'images/topology/ip-phone.svg',
-                'rol' => 'TELÉFONO IP (VOIP)',
-                'tipo_equipo' => 'Teléfono IP Cisco',
-                'factor_forma' => 'VoIP Endpoint',
-                'size' => 110
-            ];
-        }
-
-        // 2. Wireless LAN Controllers (WLC) y Access Points dedicados (Wi-Fi)
-        if (
-            str_contains($haystack, 'wlc') || 
-            str_contains($haystack, 'c9800') || 
-            str_contains($haystack, 'air-ct') ||
-            str_contains($haystack, '-ap0') ||
-            str_contains($haystack, '-ap1') ||
-            str_contains($haystack, '-ap2') ||
-            str_contains($haystack, '-ap3') ||
-            str_contains($haystack, '-ap4') ||
-            str_contains($haystack, '-ap') ||
-            (
-                (str_contains($haystack, 'c9115') || str_contains($haystack, 'air-ap') || str_contains($haystack, 'air-cap') || str_contains($haystack, 'ap software') || str_starts_with($nombreUpper, 'AP-') || str_starts_with($nombreUpper, 'WAP-')) &&
-                !str_contains($haystack, 'switch') && !str_starts_with($nombreUpper, 'SW')
-            )
-        ) {
-            return [
-                'image' => 'images/topology/access-point.svg',
-                'rol' => 'ACCESS POINT / WLC',
-                'tipo_equipo' => 'Controlador / AP Inalámbrico Cisco',
-                'factor_forma' => 'Ceiling / Wall Mount AP',
-                'size' => 125
-            ];
-        }
-
-        // 3. Routers de borde WAN y Voice Gateways (ISR / Router / 1841 / 4400 / 4451 / 4331 / CUBE / GW)
-        if (
-            (
-                str_contains($haystack, 'isr') || str_contains($haystack, 'router') || 
-                str_contains($haystack, '1841') || str_contains($haystack, '4400') || 
-                str_contains($haystack, '4451') || str_contains($haystack, '4331') || 
-                str_contains($haystack, 'cube') || str_contains($haystack, 'gw-') || 
-                str_contains($haystack, '-gw') || str_contains($haystack, 'gw_') || 
-                str_contains($haystack, 'rtr') || str_contains($haystack, 'edge') || 
-                str_contains($haystack, 'sat.') || str_contains($haystack, '-sat')
-            ) &&
-            !str_contains($haystack, 'catalyst') && !str_contains($haystack, 'cat9k') && 
-            !str_contains($haystack, 'ws-c') && !str_starts_with($nombreUpper, 'SW') && 
-            !str_contains($haystack, 'swc') && !str_contains($haystack, 'swe') && 
-            !str_contains($haystack, 'switch') && !str_starts_with($nombreUpper, 'NX') && 
-            !str_contains($haystack, 'nexus')
-        ) {
-            return [
-                'image' => 'images/topology/router.svg',
-                'rol' => 'ROUTER / EDGE',
-                'tipo_equipo' => 'Router de Borde WAN / Gateway',
-                'factor_forma' => 'Router Cisco ISR',
-                'size' => 140
-            ];
-        }
-
-        // 4. Chasis modular Nexus / Datacenter / ACI (Nexus 7000 / 9000 / 3000 / Leaf / Spine)
-        if (
-            str_contains($haystack, 'nexus') || str_contains($haystack, 'nx-os') || 
-            str_contains($haystack, 'nxos') || str_contains($haystack, 'n7000') || 
-            str_contains($haystack, 'n7k') || str_contains($haystack, 'nx7k') || 
-            str_contains($haystack, 'n9k') || str_contains($haystack, 'nx9k') || 
-            str_contains($haystack, 'n3k') || str_contains($haystack, 'nx3k') || 
-            str_contains($haystack, 'leaf') || str_contains($haystack, 'spine') || 
-            str_contains($haystack, 'aci-') || str_contains($haystack, 'aci_') ||
-            str_contains($haystack, '93180') || str_contains($haystack, '93240') || 
-            str_contains($haystack, '9372')
-        ) {
-            return [
-                'image' => 'images/topology/switch-nexus.svg',
-                'rol' => 'NEXUS / DATACENTER',
-                'tipo_equipo' => 'Switch Cisco Nexus Datacenter / ACI',
-                'factor_forma' => 'Modular Multi-Slot Chassis',
-                'size' => 170
-            ];
-        }
-
-        // 5. Switches Core / Distribución / Multicapa (Catalyst 9300 / 9600 / 6500 / Core / MDF)
-        if (
-            str_contains($haystack, '9300') || str_contains($haystack, 'catalyst 93') || 
-            str_contains($haystack, 'cat9k') || str_contains($haystack, 'c93') || 
-            str_contains($haystack, 'c9606') || str_contains($haystack, '6500') || 
-            str_contains($haystack, 'core01') || str_contains($haystack, 'core-') || 
-            str_contains($haystack, 'core_') || str_contains($haystack, 'mdf')
-        ) {
-            return [
-                'image' => 'images/topology/switch-core.svg',
-                'rol' => 'DISTRIBUTION / CORE',
-                'tipo_equipo' => 'Switch Multicapa L3 Enterprise Core',
-                'factor_forma' => '1U/Modular Enterprise Chassis',
-                'size' => 155
-            ];
-        }
-
-        // 6. Servidores Enterprise Físicos Dedicados (IBM / Dell / HPE / Cisco UCS / ESXi)
-        if (
-            (
-                str_contains($haystack, 'ibm') || str_contains($haystack, 'system x') || 
-                str_contains($haystack, 'bladecenter') || str_contains($haystack, 'imm') || 
-                str_contains($haystack, 'thinksystem') || str_contains($haystack, 'poweredge') || 
-                str_contains($haystack, 'proliant') || str_contains($haystack, 'ucs-b') || 
-                str_contains($haystack, 'esxi') || str_contains($haystack, 'hyper-v') || 
-                str_contains($haystack, 'windows server')
-            ) &&
-            !str_starts_with($nombreUpper, 'SW') && !str_starts_with($nombreUpper, 'NX') && 
-            !str_contains($haystack, 'switch') && !str_contains($haystack, 'catalyst')
-        ) {
-            $tipoStr = 'Servidor Enterprise';
-            if (str_contains($haystack, 'ibm') || str_contains($haystack, 'system x') || str_contains($haystack, 'bladecenter')) {
-                $tipoStr = 'Servidor IBM System x / BladeCenter';
-            }
-            return [
-                'image' => 'images/topology/server.png',
-                'rol' => 'SERVIDOR',
-                'tipo_equipo' => $tipoStr,
-                'factor_forma' => 'Rackmount / Blade Enterprise',
-                'size' => 200
-            ];
-        }
-
-        // 7. PC / Workstation / Desktop (Solo estaciones de trabajo explícitas)
-        if (
-            (
-                str_starts_with($nombreUpper, 'PC-') || 
-                str_starts_with($nombreUpper, 'DESKTOP-') || 
-                str_starts_with($nombreUpper, 'LAPTOP-') || 
-                str_starts_with($nombreUpper, 'HOST-') || 
-                str_contains($haystack, 'workstation')
-            ) &&
-            !str_contains($haystack, 'cisco') && !str_contains($haystack, 'switch') && 
-            !str_starts_with($nombreUpper, 'SW') && !str_contains($haystack, 'sw-') && 
-            !str_contains($haystack, 'sw_') && !str_contains($haystack, 'swc') && 
-            !str_contains($haystack, 'ws-c') && !str_contains($haystack, 'ios')
-        ) {
-            return [
-                'image' => 'images/topology/pc.svg',
-                'rol' => 'PC / WORKSTATION',
-                'tipo_equipo' => 'Estación de Trabajo / PC',
-                'factor_forma' => 'Desktop / Host',
-                'size' => 120
-            ];
-        }
-
-        // 8. Por defecto en infraestructura -> Switch de Acceso L2/L3 Gestionado
+    /**
+     * Conteos reales para el encabezado (equipos por estado y enlaces por estado).
+     */
+    private function resumenEstado($dispositivos, $enlaces): array
+    {
         return [
-            'image' => 'images/topology/switch-access.svg',
-            'rol' => 'ACCESS / SWITCH',
-            'tipo_equipo' => 'Switch de Acceso Gigabit Managed',
-            'factor_forma' => '1U Rackmount Fixed',
-            'size' => 145
+            'disp_total' => $dispositivos->count(),
+            'disp_online' => $dispositivos->where('estado', 'online')->count(),
+            'disp_warning' => $dispositivos->where('estado', 'warning')->count(),
+            'disp_offline' => $dispositivos->where('estado', 'offline')->count(),
+            'enl_total' => $enlaces->count(),
+            'enl_up' => $enlaces->where('estado', 'up')->count(),
+            'enl_degraded' => $enlaces->where('estado', 'degraded')->count(),
+            'enl_down' => $enlaces->where('estado', 'down')->count(),
+            'enl_unknown' => $enlaces->where('estado', 'unknown')->count(),
+            'ultimo_sondeo' => ($u = $dispositivos->max('ultima_vez_visto')) ? \Carbon\Carbon::parse($u)->toIso8601String() : null,
+            'generado_en' => now()->toIso8601String(),
         ];
     }
 }

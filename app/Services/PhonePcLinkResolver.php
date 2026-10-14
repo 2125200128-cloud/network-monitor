@@ -67,7 +67,7 @@ class PhonePcLinkResolver
 
         // 4. Identificar la MAC de la PC (cualquier MAC que no sea la del teléfono ni multicast/HSRP)
         $pcMac = null;
-        $pcVlan = 'VLAN Datos (1)';
+        $pcVlan = 'VLAN sin dato';
         foreach ($portMacs as $mEntry) {
             $m = strtolower($mEntry['mac'] ?? '');
             if (!empty($m) && $m !== $phoneMacRaw && !str_starts_with($m, '00:00:0c') && !str_starts_with($m, '01:00:5e')) {
@@ -75,11 +75,11 @@ class PhonePcLinkResolver
                 // Si el vendor no es Cisco, es con total certeza una PC
                 if (!str_contains(strtolower($vendor), 'cisco')) {
                     $pcMac = $m;
-                    $pcVlan = isset($mEntry['vlan']) ? "VLAN {$mEntry['vlan']} (Datos)" : 'VLAN Datos';
+                    $pcVlan = isset($mEntry['vlan']) ? "VLAN {$mEntry['vlan']}" : 'VLAN sin dato';
                     break;
                 } else if (!$pcMac) {
                     $pcMac = $m;
-                    $pcVlan = isset($mEntry['vlan']) ? "VLAN {$mEntry['vlan']}" : 'VLAN Datos';
+                    $pcVlan = isset($mEntry['vlan']) ? "VLAN {$mEntry['vlan']}" : 'VLAN sin dato';
                 }
             }
         }
@@ -88,28 +88,20 @@ class PhonePcLinkResolver
         if ($pcMac) {
             $pcVendor = MacVendorResolver::resolveVendor($pcMac);
             if ($pcVendor === 'Desconocido' || empty($pcVendor)) {
-                $pcVendor = 'Estación de Trabajo / PC';
+                $pcVendor = 'Fabricante no identificado';
             }
 
-            // Buscar IP en tablas ARP globales
+            // IP solo si aparece en alguna tabla ARP recolectada
             $pcIp = self::findIpByMac($pcMac);
-            if (!$pcIp && !empty($phone->ip)) {
-                $parts = explode('.', $phone->ip);
-                if (count($parts) === 4) {
-                    $pcIp = "{$parts[0]}.{$parts[1]}.{$parts[2]}." . (intval($parts[3]) + 10);
-                }
-            }
-
-            $pcHostname = self::deriveHostname($pcIp, $pcMac, $pcVendor, $phone->nombre);
 
             return [
                 'has_attached_pc' => true,
                 'status' => 'connected',
-                'hostname' => $pcHostname,
-                'ip' => $pcIp ?: 'DHCP Asignado',
+                'hostname' => 'No resuelto (sin DNS/NetBIOS)',
+                'ip' => $pcIp ?: 'No encontrada en tablas ARP',
                 'mac' => strtoupper($pcMac),
                 'vendor' => $pcVendor,
-                'speed' => '1.0 Gbps (Full-Duplex)',
+                'speed' => 'Sin dato',
                 'vlan' => $pcVlan,
                 'switch_name' => $switch->nombre,
                 'switch_ip' => $switch->ip,
@@ -165,24 +157,4 @@ class PhonePcLinkResolver
         return null;
     }
 
-    private static function deriveHostname(?string $ip, string $mac, string $vendor, string $phoneName): string
-    {
-        $cleanMac = str_replace(':', '', strtoupper($mac));
-        $suffix = substr($cleanMac, -4);
-        
-        $vLower = strtolower($vendor);
-        if (str_contains($vLower, 'dell')) {
-            return "PC-DELL-{$suffix}";
-        } elseif (str_contains($vLower, 'hp') || str_contains($vLower, 'hewlett')) {
-            return "PC-HP-{$suffix}";
-        } elseif (str_contains($vLower, 'lenovo')) {
-            return "PC-LENOVO-{$suffix}";
-        } elseif (str_contains($vLower, 'apple')) {
-            return "MACBOOK-{$suffix}";
-        } elseif (str_contains($vLower, 'intel')) {
-            return "HOST-INTEL-{$suffix}";
-        }
-
-        return "ESTACION-PC-{$suffix}";
-    }
 }

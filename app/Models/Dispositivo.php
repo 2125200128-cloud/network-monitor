@@ -21,8 +21,15 @@ class Dispositivo extends Model
         'ultima_vez_visto',
         'ssh_user',
         'ssh_password_encrypted',
-        'ssh_port'
+        'ssh_port',
+        'tipo_manual'
     ];
+
+    protected $casts = [
+        'tipo_evidencia' => 'array',
+    ];
+
+    private ?array $tipoInfoCache = null;
 
     public function metricas()
     {
@@ -59,6 +66,11 @@ class Dispositivo extends Model
         return $this->hasOne(TablasDispositivo::class, 'dispositivo_id')->latestOfMany();
     }
 
+    public function notas()
+    {
+        return $this->hasMany(NotaDispositivo::class, 'dispositivo_id');
+    }
+
     public function enlacesOrigen()
     {
         return $this->hasMany(EnlaceRed::class, 'origen_dispositivo_id');
@@ -70,9 +82,18 @@ class Dispositivo extends Model
     }
 
     /**
-     * Resuelve dinámicamente la clasificación, etiqueta, modelo limpio y estilos del dispositivo
+     * Tipo del equipo (fuente única): corrección manual > evidencia SNMP/CDP/LLDP > nombre.
      */
     public function resolveTypeInfo(): array
+    {
+        return $this->tipoInfoCache ??= \App\Services\TipoDispositivoResolver::resolver($this);
+    }
+
+    /**
+     * Heurística antigua por nombre/sysDescr. Solo se usa como respaldo mientras el equipo
+     * no ha sido clasificado por evidencia (worker/device_classifier.py).
+     */
+    public function resolveTypeInfoPorNombre(): array
     {
         $nombre = strtoupper($this->nombre ?? '');
         $rawModel = $this->telemetriaChasis->model_name ?? '';
@@ -191,7 +212,7 @@ class Dispositivo extends Model
         }
 
         // 6. Switches L2/L3 / Nexus / Catalyst / SG / Core / Distribución / Acceso
-        $clean = 'Cisco Switch L2/L3';
+        $clean = 'Switch (modelo no identificado)';
         if (str_contains($full, 'N7000') || str_contains($full, 'NEXUS 7') || str_contains($full, 'N7K') || str_contains($full, 'NEXUS7K')) $clean = 'Cisco Nexus 7000 Core';
         elseif (str_contains($full, 'N3000') || str_contains($full, 'NEXUS 3') || str_contains($full, 'NX3K') || str_contains($full, 'N3K')) $clean = 'Cisco Nexus 3000';
         elseif (str_contains($full, 'N9K') || str_contains($full, 'NX9K') || str_contains($full, 'NEXUS 9') || str_contains($full, 'NEXUS9K') || str_contains($full, 'NX-OS') || str_contains($full, 'NXOS') || str_contains($full, 'LEAF') || str_contains($full, 'SPINE') || str_contains($full, 'ACI-') || str_contains($full, '93180') || str_contains($full, '93240') || str_contains($full, '9372')) $clean = 'Cisco Nexus 9000 Datacenter';

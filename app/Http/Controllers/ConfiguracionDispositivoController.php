@@ -44,22 +44,19 @@ class ConfiguracionDispositivoController extends Controller
         $tipo = $request->tipo ?? 'running';
         $comandoSsh = ($tipo === 'startup') ? 'show startup-config' : 'show running-config';
         
-        $password = '';
-        if ($dispositivo->ssh_password_encrypted) {
-            $password = Crypt::decryptString($dispositivo->ssh_password_encrypted);
-        } else {
-            $password = $dispositivo->comunidad_snmp ?: 'admin';
+        if (!$dispositivo->ssh_password_encrypted) {
+            return back()->with('error', 'El dispositivo no tiene credenciales SSH configuradas.');
         }
+        $password = Crypt::decryptString($dispositivo->ssh_password_encrypted);
 
         $process = new Process([
-            'py', 
+            env('PYTHON_PATH', 'python'),
             base_path('worker/ssh_executor.py'),
             $dispositivo->ip,
-            $dispositivo->ssh_port,
-            $dispositivo->ssh_user,
-            $password,
+            (string) ($dispositivo->ssh_port ?: 22),
+            $dispositivo->ssh_user ?: 'admin',
             $comandoSsh
-        ]);
+        ], base_path(), ['NOC_SSH_PASSWORD' => $password]);
 
         $process->setTimeout(60);
 

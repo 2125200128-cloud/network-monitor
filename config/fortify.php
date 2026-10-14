@@ -162,7 +162,8 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Registro público deshabilitado: las cuentas las crea un Admin en Ajustes > Cuentas.
+        // Features::registration(),
         Features::resetPasswords(),
         // Features::emailVerification(),
         Features::updateProfileInformation(),

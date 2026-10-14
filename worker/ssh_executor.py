@@ -86,14 +86,16 @@ def execute_ssh_command(host, port, username, password, command):
             pass
 
 if __name__ == "__main__":
-    if len(sys.argv) < 6:
-        print("Uso: python ssh_executor.py <host> <port> <username> <password> <command>", file=sys.stderr)
+    # La contraseña se recibe por la variable de entorno NOC_SSH_PASSWORD para que no
+    # aparezca en la línea de comandos del proceso.
+    password = os.environ.get('NOC_SSH_PASSWORD')
+    if len(sys.argv) < 5 or not password:
+        print("Uso: NOC_SSH_PASSWORD=... python ssh_executor.py <host> <port> <username> <command>", file=sys.stderr)
         sys.exit(1)
-        
+
     host = sys.argv[1]
     port = sys.argv[2]
     username = sys.argv[3]
-    password = sys.argv[4]
-    command = " ".join(sys.argv[5:])
+    command = " ".join(sys.argv[4:])
 
     execute_ssh_command(host, port, username, password, command)

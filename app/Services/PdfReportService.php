@@ -223,7 +223,7 @@ class PdfReportService
         $pdf->reportTitle = 'FICHA TÉCNICA Y ESTADO DE TELEMETRÍA';
         $pdf->AddPage();
 
-        $dispositivo->load(['interfaces.telemetria', 'telemetriaChasis', 'metricas' => function($q) {
+        $dispositivo->load(['interfaces.ultimaTelemetria', 'telemetriaChasis', 'metricas' => function($q) {
             $q->latest('fecha_registro')->take(5);
         }]);
 
@@ -270,14 +270,14 @@ class PdfReportService
         $pdf->Cell(35, 5, $pdf->encodeText('Modelo / Chasis:'), 0, 0);
         $pdf->SetFont('Helvetica', '', 8.5);
         $pdf->SetTextColor(15, 23, 42);
-        $pdf->Cell(60, 5, $pdf->encodeText($chasis->model_name ?? 'Cisco Catalyst 9300 Series'), 0, 0);
+        $pdf->Cell(60, 5, $pdf->encodeText($chasis?->model_name ?? 'Sin dato'), 0, 0);
 
         $pdf->SetFont('Helvetica', 'B', 8.5);
         $pdf->SetTextColor(59, 89, 152);
         $pdf->Cell(35, 5, $pdf->encodeText('Número de Serie:'), 0, 0);
         $pdf->SetFont('Courier', '', 8);
         $pdf->SetTextColor(15, 23, 42);
-        $pdf->Cell(45, 5, $chasis->serial_number ?? 'FOC2438L8PQ', 0, 1);
+        $pdf->Cell(45, 5, $chasis?->serial_number ?? 'Sin dato', 0, 1);
 
         $pdf->Ln(6);
 
@@ -294,44 +294,14 @@ class PdfReportService
         $pdf->Cell(25, 6, $pdf->encodeText('Velocidad'), 1, 0, 'C', true);
         $pdf->Cell(25, 6, $pdf->encodeText('Dúplex'), 1, 0, 'C', true);
         $pdf->Cell(35, 6, $pdf->encodeText('Consumo PoE'), 1, 0, 'C', true);
-        $pdf->Cell(35, 6, $pdf->encodeText('Errores CRC/FCS'), 1, 1, 'C', true);
+        $pdf->Cell(35, 6, $pdf->encodeText('Errores In/Out'), 1, 1, 'C', true);
 
         $pdf->SetFont('Helvetica', '', 7.5);
         $pdf->SetTextColor(30, 41, 59);
 
         $interfaces = $dispositivo->interfaces->sortBy('nombre');
         if ($interfaces->isEmpty()) {
-            if ($dispositivo->tipo_dispositivo === 'telefono') {
-                $pdf->Cell(45, 5, $pdf->encodeText('SW (Network PoE)'), 1, 0, 'L');
-                $pdf->Cell(25, 5, $dispositivo->estado === 'online' ? 'UP' : 'DOWN', 1, 0, 'C');
-                $pdf->Cell(25, 5, '100/1000 Mbps', 1, 0, 'C');
-                $pdf->Cell(25, 5, 'FULL', 1, 0, 'C');
-                $pdf->Cell(35, 5, '6.5 W (PoE)', 1, 0, 'C');
-                $pdf->Cell(35, 5, '0', 1, 1, 'C');
-
-                $pdf->Cell(45, 5, $pdf->encodeText('PC (Computer)'), 1, 0, 'L');
-                $pdf->Cell(25, 5, $dispositivo->estado === 'online' ? 'UP' : 'DOWN', 1, 0, 'C');
-                $pdf->Cell(25, 5, '100/1000 Mbps', 1, 0, 'C');
-                $pdf->Cell(25, 5, 'FULL', 1, 0, 'C');
-                $pdf->Cell(35, 5, '-', 1, 0, 'C');
-                $pdf->Cell(35, 5, '0', 1, 1, 'C');
-            } elseif ($dispositivo->tipo_dispositivo === 'access_point') {
-                $pdf->Cell(45, 5, $pdf->encodeText('mGig 2.5G (PoE+ Uplink)'), 1, 0, 'L');
-                $pdf->Cell(25, 5, $dispositivo->estado === 'online' ? 'UP' : 'DOWN', 1, 0, 'C');
-                $pdf->Cell(25, 5, '2500 Mbps', 1, 0, 'C');
-                $pdf->Cell(25, 5, 'FULL', 1, 0, 'C');
-                $pdf->Cell(35, 5, '22.4 W (PoE+)', 1, 0, 'C');
-                $pdf->Cell(35, 5, '0', 1, 1, 'C');
-
-                $pdf->Cell(45, 5, $pdf->encodeText('Console RJ-45'), 1, 0, 'L');
-                $pdf->Cell(25, 5, 'DOWN', 1, 0, 'C');
-                $pdf->Cell(25, 5, 'Serial 9600', 1, 0, 'C');
-                $pdf->Cell(25, 5, 'FULL', 1, 0, 'C');
-                $pdf->Cell(35, 5, '-', 1, 0, 'C');
-                $pdf->Cell(35, 5, '0', 1, 1, 'C');
-            } else {
-                $pdf->Cell(190, 6, $pdf->encodeText('Interfaces físicas gestionadas automáticamente según morfología del dispositivo (' . $dispositivo->tipo_label . ')'), 1, 1, 'C');
-            }
+            $pdf->Cell(190, 6, $pdf->encodeText('El equipo no tiene inventario de interfaces (sin respuesta SNMP o aún no sondeado).'), 1, 1, 'C');
         } else {
             foreach ($interfaces as $intf) {
                 if ($pdf->GetY() > 270) {
@@ -344,21 +314,21 @@ class PdfReportService
                     $pdf->Cell(25, 6, $pdf->encodeText('Velocidad'), 1, 0, 'C', true);
                     $pdf->Cell(25, 6, $pdf->encodeText('Dúplex'), 1, 0, 'C', true);
                     $pdf->Cell(35, 6, $pdf->encodeText('Consumo PoE'), 1, 0, 'C', true);
-                    $pdf->Cell(35, 6, $pdf->encodeText('Errores CRC/FCS'), 1, 1, 'C', true);
+                    $pdf->Cell(35, 6, $pdf->encodeText('Errores In/Out'), 1, 1, 'C', true);
                     $pdf->SetFont('Helvetica', '', 7.5);
                     $pdf->SetTextColor(30, 41, 59);
                 }
 
-                $telem = $intf->telemetria instanceof \Illuminate\Support\Collection ? $intf->telemetria->first() : $intf->telemetria;
-                $status = $telem && $telem->is_errdisabled ? 'ERR-DISABLE' : ($telem && $telem->oper_status === 'up' ? 'UP' : 'DOWN');
-                $crc = $telem ? ($telem->crc_errors + $telem->fcs_errors) : 0;
+                $telem = $intf->ultimaTelemetria;
+                $status = $telem && $telem->is_errdisabled ? 'ERR-DISABLE' : match ($telem?->oper_status) { 'up' => 'UP', 'down' => 'DOWN', default => 'SIN DATO' };
+                $crc = ($telem && $telem->in_errors !== null) ? ($telem->in_errors + ($telem->out_errors ?? 0)) : 'Sin dato';
                 $poe = $telem && $telem->poe_watts_consumo > 0 ? $telem->poe_watts_consumo . ' W' : '-';
-                $speed = $intf->velocidad_mbps ? $intf->velocidad_mbps . ' Mbps' : '1000 Mbps';
+                $speed = $intf->velocidad_mbps ? $intf->velocidad_mbps . ' Mbps' : 'Sin dato';
 
                 $pdf->Cell(45, 5, $pdf->encodeText($intf->nombre), 1, 0, 'L');
                 $pdf->Cell(25, 5, $status, 1, 0, 'C');
                 $pdf->Cell(25, 5, $speed, 1, 0, 'C');
-                $pdf->Cell(25, 5, strtoupper($intf->duplex ?? 'Full'), 1, 0, 'C');
+                $pdf->Cell(25, 5, strtoupper($intf->duplex ?? 'Sin dato'), 1, 0, 'C');
                 $pdf->Cell(35, 5, $poe, 1, 0, 'C');
                 $pdf->Cell(35, 5, $crc, 1, 1, 'C');
             }
@@ -417,7 +387,7 @@ class PdfReportService
         $pdf->Cell(15, 7, $pdf->encodeText('ID'), 1, 0, 'C', true);
         $pdf->Cell(75, 7, $pdf->encodeText('Nombre del Dispositivo'), 1, 0, 'L', true);
         $pdf->Cell(35, 7, $pdf->encodeText('Dirección IP'), 1, 0, 'C', true);
-        $pdf->Cell(40, 7, $pdf->encodeText('Comunidad SNMP'), 1, 0, 'C', true);
+        $pdf->Cell(40, 7, $pdf->encodeText('Última respuesta'), 1, 0, 'C', true);
         $pdf->Cell(75, 7, $pdf->encodeText('Ubicación Física'), 1, 0, 'L', true);
         $pdf->Cell(37, 7, $pdf->encodeText('Estado de Salud'), 1, 1, 'C', true);
 
@@ -428,7 +398,7 @@ class PdfReportService
             $pdf->Cell(15, 6, $d->id, 1, 0, 'C');
             $pdf->Cell(75, 6, $pdf->encodeText($d->nombre), 1, 0, 'L');
             $pdf->Cell(35, 6, $d->ip, 1, 0, 'C');
-            $pdf->Cell(40, 6, $d->comunidad_snmp ?? 'public', 1, 0, 'C');
+            $pdf->Cell(40, 6, $d->ultima_vez_visto ? \Carbon\Carbon::parse($d->ultima_vez_visto)->format('d/m/Y H:i') : 'Nunca', 1, 0, 'C');
             $pdf->Cell(75, 6, $pdf->encodeText($d->ubicacion), 1, 0, 'L');
             $pdf->Cell(37, 6, strtoupper($d->estado), 1, 1, 'C');
         }

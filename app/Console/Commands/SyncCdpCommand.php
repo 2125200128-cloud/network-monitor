@@ -72,14 +72,6 @@ class SyncCdpCommand extends Command
 
             $this->info("✓ [ÉXITO] {$origen->ip} reportó {$json['total_vecinos']} vecinos CDP.");
 
-            // Si es el Core, forzar el renombrado estético
-            $config = \App\Models\ConfiguracionGeneral::first();
-            $coreIp = $config ? $config->ip_switch_core : env('IP_SWITCH_CORE', '10.4.254.3');
-            
-            if ($origen->ip === $coreIp) {
-                $origen->update(['nombre' => 'Nexus 7000 Core']);
-            }
-
             foreach ($json['adyacencias'] as $index => $vecinoData) {
                 $hostname = $vecinoData['hostname'];
                 $ip = $vecinoData['ip'];
@@ -98,13 +90,16 @@ class SyncCdpCommand extends Command
                 }
 
                 if (!$destino) {
-                    $dummyMac = 'CD:P0:' . substr(implode(':', str_split(substr(md5($hostnameLimpio), 0, 8), 2)), 0, 11);
+                    if (empty($ip)) {
+                        $this->warn("   ! Vecino '{$hostnameLimpio}' sin IP de gestión anunciada; se omite.");
+                        continue;
+                    }
+                    // El estado real lo determina snmp_poller.py
                     $destino = Dispositivo::create([
                         'nombre' => $hostnameLimpio,
-                        'ip' => !empty($ip) ? $ip : '0.0.0.0',
-                        'estado' => 'online',
+                        'ip' => $ip,
+                        'estado' => 'offline',
                         'comunidad_snmp' => 'public',
-                        'mac_address' => $dummyMac,
                         'ubicacion' => 'Descubierto vía CDP'
                     ]);
                     $this->warn("   ! [DUMMY] Se creó dummy para IP: '{$ip}' ({$hostnameLimpio})");

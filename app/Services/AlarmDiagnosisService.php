@@ -14,7 +14,39 @@ class AlarmDiagnosisService
     /**
      * Genera el diagnóstico inteligente de causa raíz para todas las fallas activas en la red.
      */
-    public function diagnosticarAlarmasRed(): array
+    public function diagnosticarAlarmasRed(bool $aplicarEstadoUsuario = true): array
+    {
+        $alarmas = $this->compilarAlarmas();
+        return $aplicarEstadoUsuario ? $this->aplicarEstadoUsuario($alarmas) : $alarmas;
+    }
+
+    /**
+     * Marca como leídas u oculta las descartadas según la cuenta autenticada.
+     */
+    public function aplicarEstadoUsuario(array $alarmas): array
+    {
+        if (!auth()->check()) {
+            return $alarmas;
+        }
+        $userReadMap = \App\Models\NotificacionLeida::where('user_id', auth()->id())
+            ->get()
+            ->keyBy('notificacion_id');
+
+        $resultado = [];
+        foreach ($alarmas as $alarma) {
+            $record = $userReadMap[$alarma['id']] ?? null;
+            if ($record?->estado === 'descartada') {
+                continue;
+            }
+            if ($record?->estado === 'leida') {
+                $alarma['leida'] = true;
+            }
+            $resultado[] = $alarma;
+        }
+        return $resultado;
+    }
+
+    private function compilarAlarmas(): array
     {
         $dispositivos = Dispositivo::with(['telemetriaChasis', 'ultimaMetrica'])->get();
         $config = ConfiguracionGeneral::first();
@@ -25,8 +57,8 @@ class AlarmDiagnosisService
         $enlaces = EnlaceRed::with([
             'dispositivoOrigen',
             'dispositivoDestino',
-            'interfazOrigen',
-            'interfazDestino'
+            'interfazOrigen.ultimaTelemetria',
+            'interfazDestino.ultimaTelemetria'
         ])->get();
 
         $alarmas = [];
@@ -38,7 +70,8 @@ class AlarmDiagnosisService
 
         foreach ($dispositivosOffline as $disp) {
             $diagnostico = $this->analizarCausaDesconexion($disp, $enlaces);
-            $dt = $disp->updated_at ? \Carbon\Carbon::parse($disp->updated_at) : ($disp->ultima_vez_visto ? \Carbon\Carbon::parse($disp->ultima_vez_visto) : now());
+            // ultima_vez_visto = última vez que respondió ICMP/SNMP (el poller no la toca si está caído)
+            $dt = $disp->ultima_vez_visto ? \Carbon\Carbon::parse($disp->ultima_vez_visto) : ($disp->updated_at ? \Carbon\Carbon::parse($disp->updated_at) : now());
             $fechaFalla = $dt->format('d/m/Y H:i:s');
             $horaFalla = $dt->format('h:i:s A');
 
@@ -360,9 +393,15 @@ class AlarmDiagnosisService
         // 6. ANÁLISIS DE DEGRADACIÓN DE ENLACE Y PÉRDIDA DE PAQUETES
         // -------------------------------------------------------------
         foreach ($dispositivos->where('estado', 'warning') as $devWarn) {
-            $loss = $devWarn->latest_loss ?: 6.2;
-            $ping = $devWarn->latest_ping ?: 25.0;
-            $dt = ($devWarn->ultimaMetrica && $devWarn->ultimaMetrica->fecha_registro) ? \Carbon\Carbon::parse($devWarn->ultimaMetrica->fecha_registro) : ($devWarn->updated_at ? \Carbon\Carbon::parse($devWarn->updated_at) : now());
+            $loss = $devWarn->ultimaMetrica?->packet_loss;
+            $ping = $devWarn->ultimaMetrica?->ping_ms;
+            // El estado warning también lo produce la CPU; esa alarma ya se generó en la sección 5.
+            if ($loss === null || (float) $loss < $umbralLoss) {
+                continue;
+            }
+            $loss = round((float) $loss, 1);
+            $ping = $ping !== null ? round((float) $ping, 1) : 'N/D';
+            $dt = ($devWarn->ultimaMetrica && $devWarn->ultimaMetrica->fecha_registro) ? \Carbon\Carbon::parse($devWarn->ultimaMetrica->fecha_registro) : now();
             $fechaFalla = $dt->format('d/m/Y H:i:s');
             $horaFalla = $dt->format('h:i:s A');
 
@@ -378,7 +417,7 @@ class AlarmDiagnosisService
                 'ip' => $devWarn->ip,
                 'ubicacion' => $devWarn->ubicacion ?? '',
                 'mensaje' => "Pérdida de paquetes detectada ({$loss}%) con latencia de {$ping} ms en {$devWarn->ip}.",
-                'causa_raiz' => "Colisiones en el medio, errores de CRC por cable UTP defectuoso, duplex mismatch (Half vs Full) o saturación de ancho de banda.",
+                'causa_raiz' => "Pérdida ICMP medida por el poller ({$loss}% de los pings sin respuesta). Causas probables a verificar: errores CRC por cableado, duplex mismatch o saturación del enlace.",
                 'impacto' => "Lentitud para los usuarios conectados, cortes en llamadas de voz IP (jitter) y retransmisiones TCP.",
                 'accion_sugerida' => "1. Verificar si hay errores CRC con 'show interfaces counters errors'. 2. Comprobar que la velocidad y dúplex coincidan en ambos extremos (ej. Auto/1000Mbps Full).",
                 'fecha_falla' => $fechaFalla,
@@ -477,105 +516,79 @@ class AlarmDiagnosisService
             return $pA <=> $pB;
         });
 
-        // Aplicar estado de leídas y descartadas persistente por cuenta de usuario
-        if (auth()->check()) {
-            $userReadMap = \App\Models\NotificacionLeida::where('user_id', auth()->id())
-                ->get()
-                ->keyBy('notificacion_id');
-
-            $filteredAlarmas = [];
-            foreach ($alarmas as $alarma) {
-                $id = $alarma['id'];
-                if (isset($userReadMap[$id])) {
-                    $record = $userReadMap[$id];
-                    if ($record->estado === 'descartada') {
-                        // Si la notificación fue descartada explícitamente por la cuenta, omitir de la lista activa
-                        continue;
-                    } elseif ($record->estado === 'leida') {
-                        $alarma['leida'] = true;
-                    }
-                }
-                $filteredAlarmas[] = $alarma;
-            }
-            $alarmas = $filteredAlarmas;
-        }
-
         return $alarmas;
     }
 
     /**
-     * Deduce con precisión la causa de desconexión de un equipo analizando enlaces y switches vecinos.
+     * Diagnóstico de desconexión basado en lo que realmente se sabe: estado de los vecinos
+     * (enlaces CDP/LLDP registrados) y el estado operativo que reporta el puerto remoto por SNMP.
+     * Lo que no está medido se presenta como hipótesis a verificar, no como hecho.
      */
     private function analizarCausaDesconexion(Dispositivo $disp, $enlaces): array
     {
         $nombre = $disp->nombre;
         $ip = $disp->ip;
 
-        // 1. Buscar si este dispositivo tiene un enlace con un switch padre
-        $enlaceVecino = $enlaces->first(function ($e) use ($disp) {
-            return $e->origen_dispositivo_id === $disp->id || $e->destino_dispositivo_id === $disp->id;
-        });
-
-        if ($enlaceVecino) {
-            $esOrigen = ($enlaceVecino->origen_dispositivo_id === $disp->id);
-            $vecino = $esOrigen ? $enlaceVecino->dispositivoDestino : $enlaceVecino->dispositivoOrigen;
-            $puertoLocal = $esOrigen ? ($enlaceVecino->interfazOrigen->nombre ?? 'P1') : ($enlaceVecino->interfazDestino->nombre ?? 'P2');
-            $puertoRemoto = $esOrigen ? ($enlaceVecino->interfazDestino->nombre ?? 'P2') : ($enlaceVecino->interfazOrigen->nombre ?? 'P1');
-            $vecinoNombre = $vecino ? $vecino->nombre : 'Switch Padre';
-
-            // Caso A: El switch vecino también está offline (Falla en Cascada)
-            if ($vecino && $vecino->estado === 'offline') {
+        $vecinos = $enlaces->filter(fn ($e) => $e->origen_dispositivo_id === $disp->id || $e->destino_dispositivo_id === $disp->id)
+            ->map(function ($e) use ($disp) {
+                $esOrigen = $e->origen_dispositivo_id === $disp->id;
                 return [
-                    'codigo' => 'CASCADE_FAILURE',
-                    'titulo' => "Aislamiento por Caída de Switch Padre",
-                    'resumen' => "Sin respuesta en {$ip} debido a que el switch principal {$vecinoNombre} está caído.",
-                    'causa_raiz' => "Falla en cascada: El switch de distribución/núcleo {$vecinoNombre} dejó de responder, aislando a {$nombre} y a todos los dispositivos de este segmento.",
-                    'impacto' => "Aislamiento completo de {$nombre} y todos los usuarios conectados a él.",
-                    'accion_sugerida' => "Restablecer primero el switch principal {$vecinoNombre} ({$vecino->ip}). Una vez arriba, {$nombre} se recuperará automáticamente."
+                    'vecino' => $esOrigen ? $e->dispositivoDestino : $e->dispositivoOrigen,
+                    'puerto_remoto' => $esOrigen ? $e->interfazDestino : $e->interfazOrigen,
+                ];
+            })
+            ->filter(fn ($v) => $v['vecino'] !== null)
+            ->values();
+
+        $base = [
+            'resumen' => "Sin respuesta a ICMP ni SNMP en {$ip}.",
+            'impacto' => "Servicios y administración de {$nombre} inalcanzables.",
+        ];
+
+        if ($vecinos->isNotEmpty() && $vecinos->every(fn ($v) => $v['vecino']->estado === 'offline')) {
+            $lista = $vecinos->map(fn ($v) => "{$v['vecino']->nombre} ({$v['vecino']->ip})")->implode(', ');
+            return $base + [
+                'codigo' => 'CASCADE_FAILURE',
+                'titulo' => 'Aislado: sus vecinos también están caídos',
+                'causa_raiz' => "Todos los equipos vecinos registrados de {$nombre} tampoco responden: {$lista}. Probable falla aguas arriba.",
+                'accion_sugerida' => "Atender primero a: {$lista}.",
+            ];
+        }
+
+        // Vecino en línea cuyo puerto hacia este equipo tiene estado medido por SNMP
+        foreach ($vecinos as $v) {
+            $vecino = $v['vecino'];
+            $puerto = $v['puerto_remoto'];
+            if ($vecino->estado === 'offline' || !$puerto) {
+                continue;
+            }
+            $oper = $puerto->ultimaTelemetria?->oper_status;
+            $medido = $puerto->ultimaTelemetria?->updated_at?->diffForHumans();
+            if ($oper === 'down') {
+                return $base + [
+                    'codigo' => 'PHYSICAL_DISCONNECT',
+                    'titulo' => "Puerto {$puerto->nombre} de {$vecino->nombre} en DOWN",
+                    'causa_raiz' => "{$vecino->nombre} reporta por SNMP el puerto {$puerto->nombre} (hacia {$nombre}) en estado DOWN (medido {$medido}): no hay enlace físico.",
+                    'accion_sugerida' => "Revisar cable/transceptor en {$puerto->nombre} de {$vecino->nombre} y la energía de {$nombre}.",
                 ];
             }
-
-            // Caso B: El switch vecino está online, pero el enlace está caído (Desconexión de cable / PoE)
-            return [
-                'codigo' => 'PHYSICAL_DISCONNECT',
-                'titulo' => "Desconexión de Enlace en {$vecinoNombre}",
-                'resumen' => "El equipo {$nombre} ({$ip}) se desconectó en el puerto {$puertoRemoto} de {$vecinoNombre}.",
-                'causa_raiz' => "Desconexión física de cable RJ-45/fibra o equipo apagado. El switch remoto {$vecinoNombre} reporta el puerto {$puertoRemoto} en estado DOWN (Sin señal de portadora eléctrica / 0 Watts PoE).",
-                'impacto' => "Pérdida de conectividad del dispositivo {$nombre}.",
-                'accion_sugerida' => "1. Verificar conexión de cable en el puerto {$puertoRemoto} de {$vecinoNombre}. 2. Comprobar que el equipo {$nombre} tenga energía eléctrica."
-            ];
+            if ($oper === 'up') {
+                return $base + [
+                    'codigo' => 'HOST_UNREACHABLE_LINK_UP',
+                    'titulo' => "Sin respuesta con enlace físico activo",
+                    'causa_raiz' => "{$vecino->nombre} reporta el puerto {$puerto->nombre} (hacia {$nombre}) en estado UP (medido {$medido}), pero {$nombre} no responde a ICMP/SNMP. Posibles causas: equipo colgado, IP/ACL de gestión o VLAN de gestión.",
+                    'accion_sugerida' => "Revisar consola de {$nombre}, su configuración de gestión y la VLAN del puerto {$puerto->nombre}.",
+                ];
+            }
         }
 
-        // 2. Dispositivos sin enlace previo registrado (Dispositivos descubiertos / Endpoints)
-        if (str_starts_with(strtoupper($nombre), 'SEP')) {
-            return [
-                'codigo' => 'VOIP_PHONE_OFFLINE',
-                'titulo' => "Teléfono IP Desconectado / Sin Señal",
-                'resumen' => "Teléfono Cisco {$nombre} no responde en {$ip}.",
-                'causa_raiz' => "Teléfono desconectado de la roseta de red, patch cord desconectado en el cubículo o switch PoE reiniciado.",
-                'impacto' => "Extensión telefónica fuera de servicio. Usuario no puede realizar ni recibir llamadas.",
-                'accion_sugerida' => "Comprobar si el teléfono enciende su pantalla. Verificar patch cord desde el teléfono a la placa de pared."
-            ];
-        }
-
-        if (str_contains(strtoupper($nombre), 'AP') || str_contains(strtoupper($nombre), 'WAP')) {
-            return [
-                'codigo' => 'AP_DISCONNECTED',
-                'titulo' => "Access Point Wi-Fi Apagado / Desconectado",
-                'resumen' => "El punto de acceso {$nombre} ({$ip}) no responde a sondeos.",
-                'causa_raiz' => "Pérdida de energía PoE desde el switch de acceso o desconexión del cable de red en plafón/muro.",
-                'impacto' => "Zona de cobertura Wi-Fi degradada para los usuarios de ese sector.",
-                'accion_sugerida' => "Revisar alimentación PoE en el switch correspondiente y verificar estado físico del AP."
-            ];
-        }
-
-        return [
+        return $base + [
             'codigo' => 'HOST_UNREACHABLE',
-            'titulo' => "Equipo Inaccesible en Red ({$ip})",
-            'resumen' => "Sin respuesta a sondeos ICMP (Ping) ni SNMP UDP 161.",
-            'causa_raiz' => "El dispositivo {$nombre} no responde a sondeos en la IP {$ip}. Causa probable: Equipo apagado, cable de red desconectado o IP liberada por DHCP.",
-            'impacto' => "Servicios o administración del equipo inalcanzables.",
-            'accion_sugerida' => "1. Comprobar si el equipo está encendido. 2. Realizar ping manual hacia {$ip}. 3. Verificar cableado de red."
+            'titulo' => "Equipo inaccesible ({$ip})",
+            'causa_raiz' => $vecinos->isEmpty()
+                ? "No hay enlaces registrados para {$nombre} y no se puede determinar la causa con los datos disponibles."
+                : "No hay estado SNMP del puerto vecino hacia {$nombre}; la causa no se puede determinar con los datos disponibles.",
+            'accion_sugerida' => "1. Verificar energía del equipo. 2. Ping manual a {$ip}. 3. Revisar el puerto del switch donde está conectado.",
         ];
     }
 }

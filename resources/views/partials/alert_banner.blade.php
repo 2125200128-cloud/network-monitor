@@ -8,6 +8,17 @@
             $unreadNotificaciones = 0;
         }
     }
+
+    // Agrupar alertas iguales (mismo tipo y título) para evitar 30 líneas idénticas en la cinta
+    $gruposBanner = [];
+    foreach (($notificaciones ?? []) as $n) {
+        if (!empty($n['leida'])) continue;
+        $k = ($n['tipo'] ?? '') . '|' . ($n['titulo'] ?? '');
+        $gruposBanner[$k] ??= ['tipo' => $n['tipo'] ?? '', 'titulo' => $n['titulo'] ?? '', 'items' => []];
+        $gruposBanner[$k]['items'][] = $n;
+    }
+    $ordenTipo = ['critica' => 0, 'advertencia' => 1];
+    uasort($gruposBanner, fn ($a, $b) => [($ordenTipo[$a['tipo']] ?? 2), -count($a['items'])] <=> [($ordenTipo[$b['tipo']] ?? 2), -count($b['items'])]);
 @endphp
 
 {{-- Banner de Notificaciones Carrusel NOC NEWS LIVE (Full-Width Stream) --}}
@@ -20,7 +31,7 @@
         <div class="absolute inset-0 bg-gradient-to-r from-red-600/15 via-transparent to-red-600/15 pointer-events-none"></div>
 
         {{-- Badge Fijo Izquierdo --}}
-        <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-[11px] uppercase tracking-wider shrink-0 shadow-lg shadow-red-600/40 animate-pulse z-10 border border-red-400/40">
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-[11px] uppercase tracking-wider shrink-0 shadow-lg shadow-red-600/40 z-10 border border-red-400/40">
             <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
             <span class="hidden sm:inline">NOC NEWS LIVE</span>
             <span class="sm:hidden">INCIDENCIAS</span>
@@ -36,44 +47,61 @@
             <div class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#0f172a] to-transparent z-10 pointer-events-none"></div>
             <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#0f172a] to-transparent z-10 pointer-events-none"></div>
 
-            <div class="animate-noc-marquee flex items-center gap-10 sm:gap-12 text-xs font-semibold text-slate-200 whitespace-nowrap">
+            {{-- Sin gap entre pistas: cada una lleva su espaciado final (pr) para que -50% empalme exacto --}}
+            <div id="nocMarqueeTrack" class="animate-noc-marquee flex items-center text-xs font-semibold text-slate-200 whitespace-nowrap">
                 {{-- Pista 1 --}}
-                <div class="flex items-center gap-10 sm:gap-12">
-                    @foreach($notificaciones as $n)
-                        @if(!$n['leida'])
-                            <div class="inline-flex items-center gap-2.5 cursor-pointer hover:text-amber-300 transition group" onclick="handleBannerNotifClick(event)">
-                                @if($n['tipo'] === 'critica')
-                                    <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-red-500/30 text-red-300 border border-red-500/60 group-hover:bg-red-500/50 shadow-sm">🔴 CRÍTICA</span>
-                                @elseif($n['tipo'] === 'advertencia')
-                                    <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/60 group-hover:bg-amber-500/50 shadow-sm">🟡 ADVERTENCIA</span>
-                                @else
-                                    <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/60 group-hover:bg-blue-500/50 shadow-sm">⚡ SISTEMA</span>
-                                @endif
-                                <span class="font-bold text-white text-xs sm:text-sm tracking-tight group-hover:underline decoration-amber-400 underline-offset-4">{{ $n['titulo'] }}</span>
-                                <span class="text-slate-300 font-mono text-[11px] sm:text-xs">({{ $n['dispositivo'] }} · {{ $n['hora_falla'] ?? $n['tiempo'] }})</span>
-                                <span class="text-rose-500 font-black mx-2 select-none">///</span>
-                            </div>
-                        @endif
+                <div class="noc-marquee-lane flex items-center gap-10 sm:gap-12 pr-10 sm:pr-12">
+                    @foreach($gruposBanner as $g)
+                        @php
+                            $cnt = count($g['items']);
+                            $primero = $g['items'][0];
+                            $equipos = array_slice(array_map(fn ($i) => $i['dispositivo'] ?? '', $g['items']), 0, 3);
+                        @endphp
+                        <div class="inline-flex items-center gap-2.5 cursor-pointer hover:text-amber-300 group" onclick="handleBannerNotifClick(event)">
+                            @if($g['tipo'] === 'critica')
+                                <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-red-500/30 text-red-300 border border-red-500/60">CRÍTICA</span>
+                            @elseif($g['tipo'] === 'advertencia')
+                                <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/60">ADVERTENCIA</span>
+                            @else
+                                <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/60">SISTEMA</span>
+                            @endif
+                            <span class="font-bold text-white text-xs sm:text-sm tracking-tight group-hover:underline decoration-amber-400 underline-offset-4">{{ $g['titulo'] }}</span>
+                            @if($cnt > 1)
+                                <span class="px-1.5 py-0.5 rounded-md text-[11px] font-black font-mono bg-white/15 text-white">×{{ $cnt }}</span>
+                                <span class="text-slate-300 font-mono text-[11px] sm:text-xs">({{ implode(', ', $equipos) }}{{ $cnt > 3 ? ' +' . ($cnt - 3) : '' }})</span>
+                            @else
+                                <span class="text-slate-300 font-mono text-[11px] sm:text-xs">({{ $primero['dispositivo'] }} · {{ $primero['hora_falla'] ?? $primero['tiempo'] }})</span>
+                            @endif
+                            <span class="text-rose-500/70 font-black mx-2 select-none">•</span>
+                        </div>
                     @endforeach
                 </div>
 
                 {{-- Pista 2 Duplicada para Loop Infinito Continuo --}}
-                <div class="flex items-center gap-10 sm:gap-12">
-                    @foreach($notificaciones as $n)
-                        @if(!$n['leida'])
-                            <div class="inline-flex items-center gap-2.5 cursor-pointer hover:text-amber-300 transition group" onclick="handleBannerNotifClick(event)">
-                                @if($n['tipo'] === 'critica')
-                                    <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-red-500/30 text-red-300 border border-red-500/60 group-hover:bg-red-500/50 shadow-sm">🔴 CRÍTICA</span>
-                                @elseif($n['tipo'] === 'advertencia')
-                                    <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/60 group-hover:bg-amber-500/50 shadow-sm">🟡 ADVERTENCIA</span>
-                                @else
-                                    <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/60 group-hover:bg-blue-500/50 shadow-sm">⚡ SISTEMA</span>
-                                @endif
-                                <span class="font-bold text-white text-xs sm:text-sm tracking-tight group-hover:underline decoration-amber-400 underline-offset-4">{{ $n['titulo'] }}</span>
-                                <span class="text-slate-300 font-mono text-[11px] sm:text-xs">({{ $n['dispositivo'] }} · {{ $n['hora_falla'] ?? $n['tiempo'] }})</span>
-                                <span class="text-rose-500 font-black mx-2 select-none">///</span>
-                            </div>
-                        @endif
+                <div class="flex items-center gap-10 sm:gap-12 pr-10 sm:pr-12" aria-hidden="true">
+                    @foreach($gruposBanner as $g)
+                        @php
+                            $cnt = count($g['items']);
+                            $primero = $g['items'][0];
+                            $equipos = array_slice(array_map(fn ($i) => $i['dispositivo'] ?? '', $g['items']), 0, 3);
+                        @endphp
+                        <div class="inline-flex items-center gap-2.5 cursor-pointer hover:text-amber-300 group" onclick="handleBannerNotifClick(event)">
+                            @if($g['tipo'] === 'critica')
+                                <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-red-500/30 text-red-300 border border-red-500/60">CRÍTICA</span>
+                            @elseif($g['tipo'] === 'advertencia')
+                                <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/60">ADVERTENCIA</span>
+                            @else
+                                <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/60">SISTEMA</span>
+                            @endif
+                            <span class="font-bold text-white text-xs sm:text-sm tracking-tight group-hover:underline decoration-amber-400 underline-offset-4">{{ $g['titulo'] }}</span>
+                            @if($cnt > 1)
+                                <span class="px-1.5 py-0.5 rounded-md text-[11px] font-black font-mono bg-white/15 text-white">×{{ $cnt }}</span>
+                                <span class="text-slate-300 font-mono text-[11px] sm:text-xs">({{ implode(', ', $equipos) }}{{ $cnt > 3 ? ' +' . ($cnt - 3) : '' }})</span>
+                            @else
+                                <span class="text-slate-300 font-mono text-[11px] sm:text-xs">({{ $primero['dispositivo'] }} · {{ $primero['hora_falla'] ?? $primero['tiempo'] }})</span>
+                            @endif
+                            <span class="text-rose-500/70 font-black mx-2 select-none">•</span>
+                        </div>
                     @endforeach
                 </div>
             </div>
@@ -92,6 +120,23 @@
     </div>
 
     <script>
+        // Velocidad constante y legible sin importar cuántas alertas haya
+        (function () {
+            const PX_POR_SEGUNDO = 40;
+            const track = document.getElementById('nocMarqueeTrack');
+            if (!track) return;
+            const ajustar = () => {
+                const lane = track.querySelector('.noc-marquee-lane');
+                if (!lane) return;
+                const segundos = Math.max(20, lane.offsetWidth / PX_POR_SEGUNDO);
+                track.style.setProperty('--noc-marquee-duration', segundos.toFixed(1) + 's');
+            };
+            ajustar();
+            if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustar);
+            let t;
+            window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(ajustar, 200); });
+        })();
+
         if (typeof window.handleBannerNotifClick !== 'function') {
             window.handleBannerNotifClick = function(e) {
                 if (typeof window.toggleNotifDropdown === 'function') {

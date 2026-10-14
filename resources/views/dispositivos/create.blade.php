@@ -56,11 +56,6 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Modelo de Hardware</label>
-                        <input type="text" name="modelo" value="{{ old('modelo', 'Cisco SG200-26 Smart Switch') }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#5c8096] focus:ring focus:ring-[#5c8096] focus:ring-opacity-50" placeholder="ej. Cisco SG200-26">
-                    </div>
-
-                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
                         <input type="text" name="ubicacion" value="{{ old('ubicacion', 'Mesa de Pruebas / Lab') }}" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#5c8096] focus:ring focus:ring-[#5c8096] focus:ring-opacity-50">
                     </div>
@@ -70,13 +65,8 @@
                         <input type="text" name="comunidad_snmp" value="{{ old('comunidad_snmp', 'public') }}" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#5c8096] focus:ring focus:ring-[#5c8096] focus:ring-opacity-50">
                     </div>
                     
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                        <select name="estado" class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#5c8096] focus:ring focus:ring-[#5c8096] focus:ring-opacity-50">
-                            <option value="online" {{ old('estado') == 'online' ? 'selected' : '' }}>Online</option>
-                            <option value="offline" {{ old('estado') == 'offline' ? 'selected' : '' }}>Offline</option>
-                            <option value="warning" {{ old('estado') == 'warning' ? 'selected' : '' }}>Warning</option>
-                        </select>
+                    <div class="text-xs text-gray-500 self-end">
+                        El estado, el modelo y las interfaces se obtienen del propio equipo por ICMP/SNMP tras el registro.
                     </div>
 
                     <!-- SSH Settings (Opcional) -->

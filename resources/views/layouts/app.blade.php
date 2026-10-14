@@ -96,14 +96,17 @@
         .dark .custom-scrollbar { scrollbar-color: #334155 #07090e; }
         
         /* NOC Live Marquee Banner Animation */
+        /* La duración la calcula JS (partials/alert_banner) según el ancho, para una velocidad constante en px/s */
         @keyframes nocMarquee {
-            0% { transform: translateX(0%); }
-            100% { transform: translateX(-50%); }
+            from { transform: translate3d(0, 0, 0); }
+            to { transform: translate3d(-50%, 0, 0); }
         }
         .animate-noc-marquee {
             display: flex;
             width: max-content;
-            animation: nocMarquee 35s linear infinite;
+            animation: nocMarquee var(--noc-marquee-duration, 180s) linear infinite;
+            will-change: transform;
+            backface-visibility: hidden;
         }
         .animate-noc-marquee:hover {
             animation-play-state: paused;

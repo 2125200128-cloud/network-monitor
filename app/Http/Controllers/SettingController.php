@@ -55,7 +55,7 @@ class SettingController extends Controller
         if ($newRole == 'Operator') $newRole = 'Operador';
 
         // Evitar que el admin activo se quite su propio rol por accidente si es el unico
-        if ($user->id === auth()->id() && $newRole === 'Operador') {
+        if ($user->id === auth()->id() && $newRole !== 'Admin') {
             return redirect()->route('settings.index', ['section' => 'cuentas'])->with('error', 'No puedes quitarte el rol de Administrador a ti mismo.');
         }
 

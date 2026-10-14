@@ -56,7 +56,7 @@ class CheckDeviceHealth implements ShouldQueue
                     'dispositivo_id' => $this->dispositivo->id,
                     'cpu_usage' => $data['cpu'] ?? 0,
                     'memory_usage' => $data['memory'] ?? 0,
-                    'ping_ms' => ($status === 'online') ? 1.2 : 0, // Fallback ping since python doesn't measure it yet
+                    'ping_ms' => null, // check_health.py no mide latencia
                     'fecha_registro' => now()
                 ]);
             }

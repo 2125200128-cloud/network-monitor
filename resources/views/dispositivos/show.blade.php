@@ -395,7 +395,7 @@
                 <div class="absolute inset-0 bg-radial from-blue-500/10 to-transparent pointer-events-none"></div>
                 <div class="w-full flex items-center justify-between px-1.5 pt-0.5">
                     <span class="text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">{{ $deviceHardware['rol'] }}</span>
-                    <span class="text-[8px] font-mono font-bold text-emerald-400 uppercase">ONLINE</span>
+                    <span class="text-[8px] font-mono font-bold uppercase {{ $dispositivo->estado === 'online' ? 'text-emerald-400' : 'text-red-400' }}">{{ $dispositivo->estado === 'online' ? 'EN LÍNEA' : ($dispositivo->estado === 'warning' ? 'ADVERTENCIA' : 'SIN RESPUESTA') }}</span>
                 </div>
                 <div class="w-full flex-1 flex items-center justify-center px-1">
                     <img src="{{ asset($deviceHardware['image']) }}" alt="{{ $chasis->model_name ?? $dispositivo->nombre }}" class="max-h-22 w-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300">
@@ -407,10 +407,10 @@
 
             <div class="space-y-1.5">
                 <div class="flex flex-wrap items-center gap-2.5">
-                    <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span class="w-3.5 h-3.5 rounded-full {{ $dispositivo->estado === 'online' ? 'bg-emerald-500' : ($dispositivo->estado === 'warning' ? 'bg-amber-500' : 'bg-red-500 animate-pulse') }}" title="{{ $dispositivo->estado }}"></span>
                     <h1 class="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">{{ $dispositivo->nombre }}</h1>
                     <span class="text-xs font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#3b5998] dark:text-blue-400 border border-blue-200 dark:border-blue-800/40">
-                        {{ $chasis->model_name ?? 'Cisco Catalyst 9300' }}
+                        {{ $deviceHardware['clean_model'] }}
                     </span>
                     <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono">
                         {{ $deviceHardware['factor_forma'] }}
@@ -421,11 +421,11 @@
                     <span>•</span>
                     <span><strong>Ubicación:</strong> {{ $dispositivo->ubicacion }}</span>
                     <span>•</span>
-                    <span><strong>Uptime:</strong> <span class="text-gray-700 dark:text-slate-300 font-semibold">{{ $chasis->uptime_str ?? '68d 14h 32m' }}</span></span>
+                    <span><strong>Uptime:</strong> <span class="text-gray-700 dark:text-slate-300 font-semibold">{{ $chasis?->uptime_str ?? 'Sin dato' }}</span></span>
                     <span>•</span>
-                    <span><strong>OS:</strong> <span class="text-gray-700 dark:text-slate-300 font-semibold">{{ $chasis->os_version ?? 'Cisco IOS-XE 17.9.3a' }}</span></span>
+                    <span><strong>OS:</strong> <span class="text-gray-700 dark:text-slate-300 font-semibold">{{ $chasis->os_version ?? 'Sin dato' }}</span></span>
                     <span>•</span>
-                    <span><strong>Serial:</strong> <code class="text-gray-700 dark:text-slate-300 font-mono">{{ $chasis->serial_number ?? 'FOC2619L04X' }}</code></span>
+                    <span><strong>Serial:</strong> <code class="text-gray-700 dark:text-slate-300 font-mono">{{ $chasis?->serial_number ?? 'Sin dato' }}</code></span>
                 </div>
             </div>
         </div>
@@ -474,14 +474,13 @@
     @php
         $rol = $deviceHardware['rol'] ?? '';
         $tipo = $deviceHardware['tipo'] ?? 'switch';
-        $haystack = strtolower($dispositivo->nombre . ' ' . ($chasis->model_name ?? '') . ' ' . ($dispositivo->modelo ?? ''));
-        $isFirewall = ($tipo === 'firewall') || str_contains($haystack, 'forti') || str_contains($haystack, 'fg-') || str_contains($haystack, 'fw-') || str_contains($haystack, 'firewall');
-        $isRouter = (($tipo === 'router') || ($rol === 'ROUTER / EDGE') || str_contains($haystack, '1841') || str_contains($haystack, 'router') || str_contains($haystack, 'isr')) && !$isFirewall;
-        $isPhone = ($tipo === 'telefono');
-        $isAP = ($tipo === 'access_point');
-        $isServer = ($tipo === 'servidor');
-        $isPC = ($tipo === 'pc');
-        $isNexus = ($rol === 'CORE / MODULAR') && !$isRouter && !$isPhone && !$isAP && !$isServer && !$isPC && !$isFirewall;
+        $isFirewall = $tipo === 'firewall';
+        $isRouter = $tipo === 'router';
+        $isPhone = $tipo === 'telefono';
+        $isAP = in_array($tipo, ['access_point', 'wlc'], true);
+        $isServer = $tipo === 'servidor';
+        $isPC = in_array($tipo, ['pc', 'impresora'], true);
+        $isNexus = $rol === 'NEXUS / DATACENTER';
         $isCatalyst = ($rol === 'DISTRIBUTION / CORE') && !$isRouter && !$isPhone && !$isAP && !$isServer && !$isPC && !$isFirewall;
 
         $chassisClass = match(true) {
@@ -581,159 +580,25 @@
                 <div class="rack-screw"></div>
             </div>
 
-            {{-- Brand Logo & Status Panel Customized to Device --}}
-            @if($isFirewall)
-                <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-rose-900/40 pr-4 flex-shrink-0">
-                    <div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-sm bg-rose-500 shadow-[0_0_8px_#f43f5e]"></span>
-                            <span class="text-xs font-black text-rose-300 tracking-wider">FORTINET</span>
-                        </div>
-                        <p class="text-[9px] font-mono text-rose-200 uppercase tracking-tight mt-0.5 truncate max-w-[130px]">{{ $deviceHardware['clean_model'] ?? 'FORTIGATE NGFW' }}</p>
+            {{-- Panel de identificación: solo datos reportados por el equipo o sus vecinos --}}
+            @php
+                $enLinea = $dispositivo->estado === 'online';
+                $colorConf = ['alta' => 'text-emerald-300', 'media' => 'text-amber-300', 'manual' => 'text-sky-300'][$deviceHardware['confianza']] ?? 'text-red-300';
+            @endphp
+            <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-slate-700/60 pr-4 flex-shrink-0 max-w-[170px]">
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-sm {{ $enLinea ? 'bg-emerald-400' : ($dispositivo->estado === 'warning' ? 'bg-amber-400' : 'bg-red-500') }}"></span>
+                        <span class="text-xs font-black text-slate-200 tracking-wider uppercase truncate">{{ $deviceHardware['fabricante'] ?? 'Fabricante no reportado' }}</span>
                     </div>
-                    <div class="grid grid-cols-2 gap-x-2 gap-y-1">
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full {{ $dispositivo->estado === 'online' ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500' }} shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">PWR</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full {{ $dispositivo->estado === 'online' ? 'bg-emerald-400' : 'bg-gray-500' }} shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">STA</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">HA</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-rose-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">IPS</span></div>
-                    </div>
-                    <div class="text-[8px] text-rose-400 font-mono">FortiOS 7.x • NGFW</div>
+                    <p class="text-[9px] font-mono text-slate-300 uppercase tracking-tight mt-0.5 truncate" title="{{ $deviceHardware['clean_model'] }}">{{ $deviceHardware['clean_model'] }}</p>
                 </div>
-            @elseif($isPhone)
-                <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-blue-900/40 pr-4 flex-shrink-0">
-                    <div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-sm bg-blue-400 shadow-[0_0_8px_#3b82f6]"></span>
-                            <span class="text-xs font-black text-blue-200 tracking-wider">CISCO VOIP</span>
-                        </div>
-                        <p class="text-[9px] font-mono text-blue-300 uppercase tracking-tight mt-0.5 truncate max-w-[125px]">{{ $deviceHardware['clean_model'] ?? 'IP PHONE' }}</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-x-2 gap-y-1">
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full {{ $dispositivo->estado === 'online' ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500' }} shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">SIP</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full {{ $dispositivo->estado === 'online' ? 'bg-amber-400' : 'bg-gray-500' }} shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">PoE</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">DSP</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">QoS</span></div>
-                    </div>
-                    <div class="text-[8px] text-blue-400 font-mono">VLAN 100 • 802.3af</div>
+                <div class="text-[8px] font-mono text-slate-400 leading-tight">
+                    <p>{{ strtoupper($deviceHardware['tipo_equipo']) }}</p>
+                    <p class="{{ $colorConf }}" title="{{ implode(' · ', $deviceHardware['evidencia'] ?? []) }}">Tipo: confianza {{ $deviceHardware['confianza'] }} ({{ $deviceHardware['fuente'] }})</p>
                 </div>
-            @elseif($isAP)
-                <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-emerald-900/40 pr-4 flex-shrink-0">
-                    <div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-sm bg-emerald-400 shadow-[0_0_8px_#10b981]"></span>
-                            <span class="text-xs font-black text-emerald-200 tracking-wider">CISCO WI-FI 6</span>
-                        </div>
-                        <p class="text-[9px] font-mono text-emerald-300 uppercase tracking-tight mt-0.5 truncate max-w-[125px]">{{ $deviceHardware['clean_model'] ?? 'CATALYST AP' }}</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-x-2 gap-y-1">
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm animate-pulse"></span><span class="text-[8px] font-mono text-slate-400">2.4G</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm animate-pulse"></span><span class="text-[8px] font-mono text-slate-400">5.0G</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">PoE+</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">WLC</span></div>
-                    </div>
-                    <div class="text-[8px] text-emerald-400 font-mono">mGig 2.5G • 802.11ax</div>
-                </div>
-            @elseif($isServer)
-                <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-purple-900/40 pr-4 flex-shrink-0">
-                    <div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-sm bg-purple-400 shadow-[0_0_8px_#8b5cf6]"></span>
-                            <span class="text-xs font-black text-purple-200 tracking-wider">SERVER RACK</span>
-                        </div>
-                        <p class="text-[9px] font-mono text-purple-300 uppercase tracking-tight mt-0.5 truncate max-w-[125px]">{{ $chasis->model_name ?? 'ENTERPRISE 2U' }}</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-x-2 gap-y-1">
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm animate-pulse"></span><span class="text-[8px] font-mono text-slate-400">PWR</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm animate-pulse"></span><span class="text-[8px] font-mono text-slate-400">DISK</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">UID</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">BMC</span></div>
-                    </div>
-                    <div class="text-[8px] text-purple-400 font-mono">iDRAC/iLO • 2U RACK</div>
-                </div>
-            @elseif($isPC)
-                <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-cyan-900/40 pr-4 flex-shrink-0">
-                    <div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-sm bg-cyan-400 shadow-[0_0_8px_#06b6d4]"></span>
-                            <span class="text-xs font-black text-cyan-200 tracking-wider">WORKSTATION</span>
-                        </div>
-                        <p class="text-[9px] font-mono text-cyan-300 uppercase tracking-tight mt-0.5 truncate max-w-[125px]">{{ $dispositivo->nombre }}</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-x-2 gap-y-1">
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm animate-pulse"></span><span class="text-[8px] font-mono text-slate-400">PWR</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">NIC</span></div>
-                    </div>
-                    <div class="text-[8px] text-cyan-400 font-mono">1000Base-T • PC I/O</div>
-                </div>
-            @elseif($isNexus)
-                <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-cyan-900/40 pr-4 flex-shrink-0">
-                    <div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-sm bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span>
-                            <span class="text-xs font-black text-cyan-300 tracking-wider">CISCO NEXUS</span>
-                        </div>
-                        <p class="text-[9px] font-mono text-cyan-400/90 uppercase tracking-tight mt-0.5 truncate max-w-[125px]">{{ $chasis->model_name ?? 'NEXUS SWITCH' }}</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-x-2 gap-y-1">
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-sm animate-pulse"></span><span class="text-[8px] font-mono text-slate-400">SUP</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">FAB</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">FAN</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span><span class="text-[8px] font-mono text-slate-400">PWR</span></div>
-                    </div>
-                    <div class="text-[8px] text-cyan-500 font-mono">NX-OS • MGMT</div>
-                </div>
-            @elseif($isRouter)
-                <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-orange-900/40 pr-4 flex-shrink-0">
-                    <div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-sm bg-[#f26419] shadow-[0_0_6px_#f26419]"></span>
-                            <span class="text-xs font-black text-orange-200 tracking-wider">CISCO ROUTER</span>
-                        </div>
-                        <p class="text-[9px] font-mono text-orange-300 uppercase tracking-tight mt-0.5 truncate max-w-[125px]">{{ $chasis->model_name ?? 'ISR ROUTER' }}</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-x-2 gap-y-1">
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm animate-pulse"></span><span class="text-[8px] font-mono text-gray-400">SYS</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span><span class="text-[8px] font-mono text-gray-400">ACT</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm"></span><span class="text-[8px] font-mono text-gray-400">CF</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-sm"></span><span class="text-[8px] font-mono text-gray-400">PWR</span></div>
-                    </div>
-                    <div class="text-[8px] text-orange-400 font-mono">WAN • CONSOLE</div>
-                </div>
-            @elseif($isCatalyst)
-                <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-blue-900/40 pr-4 flex-shrink-0">
-                    <div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-sm bg-blue-500 shadow-[0_0_6px_#3b82f6]"></span>
-                            <span class="text-xs font-black text-blue-200 tracking-wider">CATALYST 9300</span>
-                        </div>
-                        <p class="text-[9px] font-mono text-blue-300 uppercase tracking-tight mt-0.5 truncate max-w-[125px]">{{ $chasis->model_name ?? 'C9300 ENTERPRISE' }}</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-x-2 gap-y-1">
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm animate-pulse"></span><span class="text-[8px] font-mono text-gray-400">SYST</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span><span class="text-[8px] font-mono text-gray-400">STAT</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span><span class="text-[8px] font-mono text-gray-400">MAST</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm"></span><span class="text-[8px] font-mono text-gray-400">POE</span></div>
-                    </div>
-                    <div class="text-[8px] text-blue-400 font-mono">STACK • USB CON</div>
-                </div>
-            @else
-                <div class="flex flex-col justify-between h-[100px] py-1 px-2 border-r border-gray-800 pr-4 flex-shrink-0">
-                    <div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-sm bg-[#f26419]"></span>
-                            <span class="text-xs font-black text-gray-200 tracking-wider">CISCO</span>
-                        </div>
-                        <p class="text-[9px] font-mono text-gray-400 uppercase tracking-tight mt-0.5 truncate max-w-[125px]">{{ $chasis->model_name ?? 'SWITCH GESTIONADO' }}</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-x-2 gap-y-1">
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm animate-pulse"></span><span class="text-[8px] font-mono text-gray-400">SYST</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span><span class="text-[8px] font-mono text-gray-400">RPS</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span><span class="text-[8px] font-mono text-gray-400">STAT</span></div>
-                        <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm"></span><span class="text-[8px] font-mono text-gray-400">POE</span></div>
-                    </div>
-                    <div class="text-[8px] text-gray-500 font-mono">CON / MGMT</div>
-                </div>
-            @endif
+                <div class="text-[8px] font-mono {{ $enLinea ? 'text-emerald-400' : 'text-red-400' }}">{{ $enLinea ? 'EN LÍNEA' : ($dispositivo->estado === 'warning' ? 'ADVERTENCIA' : 'SIN RESPUESTA') }}</div>
+            </div>
 
             {{-- ==================== CENTER: DYNAMIC HARDWARE LAYOUT ==================== --}}
 
@@ -754,11 +619,11 @@
                                          :id="'port-btn-' + interfaz.id"
                                          :class="{ 'active-selected': selectedPortId === interfaz.id }"
                                          @click="select(interfaz.id)" 
-                                         :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'down').toUpperCase()">
+                                         :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'sin dato').toUpperCase()">
                                         <div class="led-indicator led-top-left" :class="{
                                             'led-link-err': interfaz.is_errdisabled,
                                             'led-link-up': !interfaz.is_errdisabled && interfaz.oper_status === 'up',
-                                            'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status !== 'up'
+                                            'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status === 'down'
                                         }"></div>
                                         <template x-if="interfaz.is_poe">
                                             <div class="led-indicator led-top-right led-poe-active"></div>
@@ -769,7 +634,7 @@
                                             <div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div>
                                         </div>
                                     </div>
-                                    <span class="text-[8px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status === 'up' ? (interfaz.is_poe ? 'PoE In' : 'PC Link') : 'Down'"></span>
+                                    <span class="text-[8px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status === 'up' ? 'Up' : (interfaz.oper_status || 'Sin dato')"></span>
                                 </div>
                             </template>
                         </div>
@@ -834,11 +699,11 @@
                                          :id="'port-btn-' + interfaz.id"
                                          :class="{ 'active-selected': selectedPortId === interfaz.id }"
                                          @click="select(interfaz.id)" 
-                                         :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'down').toUpperCase()">
+                                         :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'sin dato').toUpperCase()">
                                         <div class="led-indicator led-top-left" :class="{
                                             'led-link-err': interfaz.is_errdisabled,
                                             'led-link-up': !interfaz.is_errdisabled && interfaz.oper_status === 'up',
-                                            'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status !== 'up'
+                                            'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status === 'down'
                                         }"></div>
                                         <template x-if="interfaz.is_poe">
                                             <div class="led-indicator led-top-right led-poe-active"></div>
@@ -849,30 +714,9 @@
                                             <div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div>
                                         </div>
                                     </div>
-                                    <span class="text-[8px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.is_poe ? 'PoE+ 30W' : 'CLI 9600'"></span>
+                                    <span class="text-[8px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status || 'Sin dato'"></span>
                                 </div>
                             </template>
-                        </div>
-                    </div>
-
-                    {{-- Radios Wi-Fi 6 (2.4 GHz & 5.0 GHz MU-MIMO) --}}
-                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-slate-800 shadow-inner flex items-center gap-3">
-                        <div class="flex flex-col items-center bg-slate-900/80 px-3 py-2 rounded-lg border border-slate-700/50">
-                            <span class="text-[8px] font-mono font-bold text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                RADIO 0 (2.4 GHz)
-                            </span>
-                            <span class="text-[11px] font-mono font-black text-white">802.11ax 4x4</span>
-                            <span class="text-[8px] font-mono text-slate-400 mt-0.5">CH 6 (20 MHz) · 18 dBm</span>
-                        </div>
-
-                        <div class="flex flex-col items-center bg-slate-900/80 px-3 py-2 rounded-lg border border-slate-700/50">
-                            <span class="text-[8px] font-mono font-bold text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                RADIO 1 (5.0 GHz)
-                            </span>
-                            <span class="text-[11px] font-mono font-black text-white">802.11ax 4x4</span>
-                            <span class="text-[8px] font-mono text-slate-400 mt-0.5">CH 36 (80 MHz) · 21 dBm</span>
                         </div>
                     </div>
                 </div>
@@ -895,11 +739,11 @@
                                          :id="'port-btn-' + interfaz.id"
                                          :class="{ 'active-selected': selectedPortId === interfaz.id }"
                                          @click="select(interfaz.id)" 
-                                         :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'down').toUpperCase()">
+                                         :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'sin dato').toUpperCase()">
                                         <div class="led-indicator led-top-left" :class="{
                                             'led-link-err': interfaz.is_errdisabled,
                                             'led-link-up': !interfaz.is_errdisabled && interfaz.oper_status === 'up',
-                                            'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status !== 'up'
+                                            'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status === 'down'
                                         }"></div>
                                         <div class="rj45-clip-notch"></div>
                                         <div class="rj45-pins">
@@ -910,27 +754,6 @@
                                     <span class="text-[8px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status"></span>
                                 </div>
                             </template>
-                        </div>
-                    </div>
-
-                    {{-- Bahías de Almacenamiento SAS/NVMe Hot-Plug --}}
-                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-slate-800 shadow-inner hidden md:flex items-center gap-2">
-                        <div class="w-16 h-16 bg-gradient-to-b from-slate-800 to-slate-900 rounded border border-slate-700 flex flex-col justify-between p-1">
-                            <div class="flex items-center justify-between">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                                <span class="text-[7px] font-mono text-slate-400">BAY 0</span>
-                            </div>
-                            <span class="text-[7px] font-mono text-slate-300 text-center font-bold">SAS 1.9TB</span>
-                            <div class="w-full h-1 bg-slate-700 rounded-xs"></div>
-                        </div>
-
-                        <div class="w-16 h-16 bg-gradient-to-b from-slate-800 to-slate-900 rounded border border-slate-700 flex flex-col justify-between p-1">
-                            <div class="flex items-center justify-between">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                                <span class="text-[7px] font-mono text-slate-400">BAY 1</span>
-                            </div>
-                            <span class="text-[7px] font-mono text-slate-300 text-center font-bold">SAS 1.9TB</span>
-                            <div class="w-full h-1 bg-slate-700 rounded-xs"></div>
                         </div>
                     </div>
                 </div>
@@ -949,11 +772,11 @@
                                          :id="'port-btn-' + interfaz.id"
                                          :class="{ 'active-selected': selectedPortId === interfaz.id }"
                                          @click="select(interfaz.id)" 
-                                         :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'down').toUpperCase()">
+                                         :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'sin dato').toUpperCase()">
                                         <div class="led-indicator led-top-left" :class="{
                                             'led-link-err': interfaz.is_errdisabled,
                                             'led-link-up': !interfaz.is_errdisabled && interfaz.oper_status === 'up',
-                                            'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status !== 'up'
+                                            'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status === 'down'
                                         }"></div>
                                         <div class="rj45-clip-notch"></div>
                                         <div class="rj45-pins">
@@ -986,11 +809,11 @@
                                              :id="'port-btn-' + interfaz.id"
                                              :class="{ 'active-selected': selectedPortId === interfaz.id }"
                                              @click="select(interfaz.id)" 
-                                             :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'down').toUpperCase()">
+                                             :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'sin dato').toUpperCase()">
                                             <div class="led-indicator led-top-left" :class="{
                                                 'led-link-err': interfaz.is_errdisabled,
                                                 'led-link-up': !interfaz.is_errdisabled && interfaz.oper_status === 'up',
-                                                'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status !== 'up'
+                                                'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status === 'down'
                                             }"></div>
                                             <template x-if="interfaz.is_poe">
                                                 <div class="led-indicator led-top-right led-poe-active"></div>
@@ -1009,11 +832,11 @@
                                              :id="'port-btn-' + interfaz.id"
                                              :class="{ 'active-selected': selectedPortId === interfaz.id }"
                                              @click="select(interfaz.id)" 
-                                             :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'down').toUpperCase()">
+                                             :title="interfaz.name + ' • ' + (interfaz.alias || interfaz.name) + ' • ' + (interfaz.oper_status || 'sin dato').toUpperCase()">
                                             <div class="led-indicator led-top-left" :class="{
                                                 'led-link-err': interfaz.is_errdisabled,
                                                 'led-link-up': !interfaz.is_errdisabled && interfaz.oper_status === 'up',
-                                                'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status !== 'up'
+                                                'led-link-down': !interfaz.is_errdisabled && interfaz.oper_status === 'down'
                                             }"></div>
                                             <div class="sfp-latch"></div>
                                         </div>
@@ -1117,11 +940,11 @@
                                                  :id="'port-btn-' + col.top.id"
                                                  :class="{ 'active-selected': selectedPortId === col.top.id }"
                                                  @click="select(col.top.id)" 
-                                                 :title="col.top.name + ' • ' + (col.top.alias || ('Puerto ' + col.top.port_num)) + ' • ' + (col.top.oper_status || 'down').toUpperCase()">
+                                                 :title="col.top.name + ' • ' + (col.top.alias || ('Puerto ' + col.top.port_num)) + ' • ' + (col.top.oper_status || 'sin dato').toUpperCase()">
                                                 <div class="led-indicator led-top-left" :class="{
                                                     'led-link-err': col.top.is_errdisabled,
                                                     'led-link-up': !col.top.is_errdisabled && col.top.oper_status === 'up',
-                                                    'led-link-down': !col.top.is_errdisabled && col.top.oper_status !== 'up'
+                                                    'led-link-down': !col.top.is_errdisabled && col.top.oper_status === 'down'
                                                 }"></div>
                                                 <template x-if="col.top.is_poe">
                                                     <div class="led-indicator led-top-right led-poe-active"></div>
@@ -1140,11 +963,11 @@
                                                  :id="'port-btn-' + col.bottom.id"
                                                  :class="{ 'active-selected': selectedPortId === col.bottom.id }"
                                                  @click="select(col.bottom.id)" 
-                                                 :title="col.bottom.name + ' • ' + (col.bottom.alias || ('Puerto ' + col.bottom.port_num)) + ' • ' + (col.bottom.oper_status || 'down').toUpperCase()">
+                                                 :title="col.bottom.name + ' • ' + (col.bottom.alias || ('Puerto ' + col.bottom.port_num)) + ' • ' + (col.bottom.oper_status || 'sin dato').toUpperCase()">
                                                 <div class="led-indicator led-top-left" :class="{
                                                     'led-link-err': col.bottom.is_errdisabled,
                                                     'led-link-up': !col.bottom.is_errdisabled && col.bottom.oper_status === 'up',
-                                                    'led-link-down': !col.bottom.is_errdisabled && col.bottom.oper_status !== 'up'
+                                                    'led-link-down': !col.bottom.is_errdisabled && col.bottom.oper_status === 'down'
                                                 }"></div>
                                                 <template x-if="col.bottom.is_poe">
                                                     <div class="led-indicator led-top-right led-poe-active"></div>
@@ -1195,11 +1018,11 @@
                                              :id="'port-btn-' + scol.top.id"
                                              :class="{ 'active-selected': selectedPortId === scol.top.id }"
                                              @click="select(scol.top.id)" 
-                                             :title="scol.top.name + ' • ' + (scol.top.alias || ('Uplink ' + scol.top.port_num)) + ' • ' + (scol.top.oper_status || 'down').toUpperCase()">
+                                             :title="scol.top.name + ' • ' + (scol.top.alias || ('Uplink ' + scol.top.port_num)) + ' • ' + (scol.top.oper_status || 'sin dato').toUpperCase()">
                                             <div class="led-indicator led-top-left" :class="{
                                                 'led-link-err': scol.top.is_errdisabled,
                                                 'led-link-up': !scol.top.is_errdisabled && scol.top.oper_status === 'up',
-                                                'led-link-down': !scol.top.is_errdisabled && scol.top.oper_status !== 'up'
+                                                'led-link-down': !scol.top.is_errdisabled && scol.top.oper_status === 'down'
                                             }"></div>
                                             <div class="sfp-latch"></div>
                                         </div>
@@ -1210,11 +1033,11 @@
                                              :id="'port-btn-' + scol.bottom.id"
                                              :class="{ 'active-selected': selectedPortId === scol.bottom.id }"
                                              @click="select(scol.bottom.id)" 
-                                             :title="scol.bottom.name + ' • ' + (scol.bottom.alias || ('Uplink ' + scol.bottom.port_num)) + ' • ' + (scol.bottom.oper_status || 'down').toUpperCase()">
+                                             :title="scol.bottom.name + ' • ' + (scol.bottom.alias || ('Uplink ' + scol.bottom.port_num)) + ' • ' + (scol.bottom.oper_status || 'sin dato').toUpperCase()">
                                             <div class="led-indicator led-top-left" :class="{
                                                 'led-link-err': scol.bottom.is_errdisabled,
                                                 'led-link-up': !scol.bottom.is_errdisabled && scol.bottom.oper_status === 'up',
-                                                'led-link-down': !scol.bottom.is_errdisabled && scol.bottom.oper_status !== 'up'
+                                                'led-link-down': !scol.bottom.is_errdisabled && scol.bottom.oper_status === 'down'
                                             }"></div>
                                             <div class="sfp-latch"></div>
                                         </div>
@@ -1278,7 +1101,7 @@
             <div class="bg-white dark:bg-slate-900/80 p-4 rounded-xl border border-indigo-50 dark:border-slate-800 shadow-xs">
                 <span class="text-[10px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider block">Dirección IP de Datos</span>
                 <div class="flex items-center gap-1.5 mt-1">
-                    <span class="text-sm font-mono font-black text-blue-600 dark:text-blue-400">{{ $attachedPc['ip'] ?? '10.204.x.x' }}</span>
+                    <span class="text-sm font-mono font-black text-blue-600 dark:text-blue-400">{{ $attachedPc['ip'] ?? 'Sin dato' }}</span>
                 </div>
                 <span class="text-[10px] text-gray-400 block mt-0.5">{{ $attachedPc['vlan'] ?? 'VLAN Datos (Untagged)' }}</span>
             </div>
@@ -1294,7 +1117,7 @@
             <div class="bg-white dark:bg-slate-900/80 p-4 rounded-xl border border-indigo-50 dark:border-slate-800 shadow-xs">
                 <span class="text-[10px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider block">Velocidad / Negociación</span>
                 <div class="flex items-center gap-1.5 mt-1">
-                    <span class="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">{{ $attachedPc['speed'] ?? '1.0 Gbps (Full)' }}</span>
+                    <span class="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">{{ $attachedPc['speed'] ?? 'Sin dato' }}</span>
                 </div>
                 <span class="text-[10px] text-gray-400 block mt-0.5">Puerto PC 10/100/1000BASE-T</span>
             </div>
@@ -1390,8 +1213,10 @@
                             <div class="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/40 flex flex-col justify-between hover:border-slate-600 transition-colors">
                                 <span class="text-[10px] text-amber-400 uppercase font-bold tracking-wider block font-mono">Comunidad SNMP (Sondeo)</span>
                                 <div class="flex items-center justify-between mt-1">
-                                    <code class="font-mono font-bold text-amber-300 text-xs bg-slate-900/80 px-2 py-0.5 rounded border border-amber-500/20">{{ $dispositivo->comunidad_snmp ?? 'public' }} (v2c)</code>
-                                    <span class="text-[10px] text-emerald-400 font-mono">Poller Activo</span>
+                                    <code class="font-mono font-bold text-amber-300 text-xs bg-slate-900/80 px-2 py-0.5 rounded border border-amber-500/20">{{ $dispositivo->comunidad_snmp ? str_repeat('•', 6) . ' (v2c)' : 'No configurada' }}</code>
+                                    <span class="text-[10px] font-mono {{ $ultimaMetrica && $ultimaMetrica->fecha_registro && \Carbon\Carbon::parse($ultimaMetrica->fecha_registro)->gt(now()->subMinutes(2)) ? 'text-emerald-400' : 'text-red-400' }}">
+                                        {{ $ultimaMetrica?->fecha_registro ? 'Último sondeo ' . \Carbon\Carbon::parse($ultimaMetrica->fecha_registro)->diffForHumans() : 'Sin sondeos' }}
+                                    </span>
                                 </div>
                             </div>
 
@@ -1410,29 +1235,31 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {{-- CPU Global & Cores --}}
                 @php
-                    $cpuVal = $chasis->cpu_utilization ?? $ultimaMetrica->cpu_usage ?? 0;
-                    $ramVal = $chasis->ram_utilization ?? $ultimaMetrica->memory_usage ?? 0;
-                    $tempVal = $chasis->temperatura_c ?? $ultimaMetrica->temperatura_celsius ?? 34;
+                    // null = el equipo no reporta el dato (o no respondió en el último sondeo)
+                    $cpuVal = $chasis?->cpu_utilization ?? $ultimaMetrica?->cpu_usage;
+                    $ramVal = $chasis?->ram_utilization ?? $ultimaMetrica?->memory_usage;
+                    $tempVal = $chasis?->temperatura_c ?? $ultimaMetrica?->temperatura_celsius;
+                    $fmtPct = fn($v) => $v === null ? 'Sin dato' : round($v, 1) . '%';
                 @endphp
                 <div class="telemetry-card">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">CPU Global</span>
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-[#3b5998]">{{ round($cpuVal, 1) }}%</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-[#3b5998]">{{ $fmtPct($cpuVal) }}</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3 overflow-hidden">
-                        <div class="bg-[#3b5998] h-2.5 rounded-full" style="width: {{ min(100, max(2, $cpuVal)) }}%"></div>
+                        <div class="bg-[#3b5998] h-2.5 rounded-full" style="width: {{ $cpuVal === null ? 0 : min(100, max(2, $cpuVal)) }}%"></div>
                     </div>
                     <div class="border-t border-gray-200 pt-2 text-[11px] text-gray-600 font-mono">
                         @if(!empty($chasis->cpu_cores) && is_array($chasis->cpu_cores))
                             <div class="grid grid-cols-2 gap-2">
                                 @foreach($chasis->cpu_cores as $core)
-                                    <div>{{ $core['core'] ?? 'Core' }}: <span class="font-bold text-gray-800">{{ $core['usage'] ?? round($cpuVal) }}%</span></div>
+                                    <div>{{ $core['core'] ?? 'Core' }}: <span class="font-bold text-gray-800">{{ isset($core['usage']) ? $core['usage'] . '%' : 'Sin dato' }}</span></div>
                                 @endforeach
                             </div>
                         @else
                             <div class="flex items-center justify-between text-xs font-sans text-gray-500">
                                 <span>Procesador Control Plane:</span>
-                                <span class="font-bold font-mono text-gray-800">{{ round($cpuVal, 1) }}%</span>
+                                <span class="font-bold font-mono text-gray-800">{{ $fmtPct($cpuVal) }}</span>
                             </div>
                         @endif
                     </div>
@@ -1442,14 +1269,14 @@
                 <div class="telemetry-card">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">Memoria RAM</span>
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">{{ round($ramVal, 1) }}%</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">{{ $fmtPct($ramVal) }}</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3 overflow-hidden">
-                        <div class="bg-emerald-600 h-2.5 rounded-full" style="width: {{ min(100, max(2, $ramVal)) }}%"></div>
+                        <div class="bg-emerald-600 h-2.5 rounded-full" style="width: {{ $ramVal === null ? 0 : min(100, max(2, $ramVal)) }}%"></div>
                     </div>
                     <div class="space-y-1 text-xs text-gray-600 border-t border-gray-200 pt-2">
-                        <div class="flex justify-between"><span>Total:</span> <span class="font-bold font-mono">{{ $chasis->ram_total_mb ?? ($ramVal > 0 ? 512 : '--') }} MB</span></div>
-                        <div class="flex justify-between"><span>Usada:</span> <span class="font-bold font-mono">{{ $chasis->ram_used_mb ?? ($ramVal > 0 ? round(($ramVal/100) * ($chasis->ram_total_mb ?? 512)) : '--') }} MB</span></div>
+                        <div class="flex justify-between"><span>Total:</span> <span class="font-bold font-mono">{{ $chasis?->ram_total_mb !== null ? $chasis->ram_total_mb . ' MB' : 'Sin dato' }}</span></div>
+                        <div class="flex justify-between"><span>Usada:</span> <span class="font-bold font-mono">{{ $chasis?->ram_used_mb !== null ? $chasis->ram_used_mb . ' MB' : 'Sin dato' }}</span></div>
                     </div>
                 </div>
 
@@ -1462,7 +1289,7 @@
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">Presupuesto PoE</span>
                         <span class="text-xs font-bold px-2 py-0.5 rounded-full {{ $poeBudget > 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600' }}">
-                            {{ $poeBudget > 0 ? number_format($totalPoeWatts, 1) . ' / ' . $poeBudget . 'W' : 'No PoE (N/A)' }}
+                            {{ $poeBudget > 0 ? number_format($totalPoeWatts, 1) . ' / ' . $poeBudget . 'W' : 'Sin dato' }}
                         </span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3 overflow-hidden">
@@ -1470,7 +1297,7 @@
                     </div>
                     <div class="space-y-1 text-xs text-gray-600 border-t border-gray-200 pt-2">
                         <div class="flex justify-between"><span>Consumo:</span> <span class="font-bold text-amber-600">{{ $poeBudget > 0 ? $poePct . '%' : 'N/A' }}</span></div>
-                        <div class="flex justify-between"><span>Disponible:</span> <span class="font-bold font-mono text-gray-800">{{ $poeBudget > 0 ? number_format(max(0, $poeBudget - $totalPoeWatts), 1) . ' W' : '0.0 W' }}</span></div>
+                        <div class="flex justify-between"><span>Disponible:</span> <span class="font-bold font-mono text-gray-800">{{ $poeBudget > 0 ? number_format(max(0, $poeBudget - $totalPoeWatts), 1) . ' W' : 'N/A' }}</span></div>
                     </div>
                 </div>
 
@@ -1479,22 +1306,30 @@
                     <div>
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">Salud y Fuentes (PSU)</span>
-                            <span class="text-xs font-bold px-2 py-0.5 rounded-full {{ $tempVal < 55 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">{{ $tempVal < 55 ? 'Normal' : 'Alerta Térmica' }}</span>
+                            @if($tempVal === null)
+                                <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">Sin dato</span>
+                            @else
+                                <span class="text-xs font-bold px-2 py-0.5 rounded-full {{ $tempVal < 55 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">{{ $tempVal < 55 ? 'Normal' : 'Alerta Térmica' }}</span>
+                            @endif
                         </div>
                         <div class="space-y-1 text-xs text-gray-600 mt-2">
                             <div class="flex justify-between">
-                                <span>Temp. Térmica:</span> 
-                                <span class="font-bold font-mono {{ $tempVal < 55 ? 'text-emerald-600' : 'text-amber-600' }}">{{ round($tempVal, 1) }} °C ({{ $tempVal < 55 ? 'Óptima' : 'Elevada' }})</span>
+                                <span>Temp. Térmica:</span>
+                                @if($tempVal === null)
+                                    <span class="font-bold font-mono text-gray-500">Sin sensor reportado</span>
+                                @else
+                                    <span class="font-bold font-mono {{ $tempVal < 55 ? 'text-emerald-600' : 'text-amber-600' }}">{{ round($tempVal, 1) }} °C</span>
+                                @endif
                             </div>
                             <div class="flex justify-between">
-                                <span>Ventilación / Fans:</span> 
-                                <span class="font-bold text-gray-700">{{ $chasis->estado_ventiladores[0]['fan'] ?? 'Ventilación Interna' }}: {{ $chasis->estado_ventiladores[0]['status'] ?? 'OK' }}</span>
+                                <span>Ventilación / Fans:</span>
+                                <span class="font-bold text-gray-700">{{ isset($chasis->estado_ventiladores[0]) ? ($chasis->estado_ventiladores[0]['fan'] ?? 'Fan') . ': ' . ($chasis->estado_ventiladores[0]['status'] ?? 'Sin dato') : 'Sin dato' }}</span>
                             </div>
                         </div>
                     </div>
                     <div class="border-t border-gray-200 pt-2 mt-2 flex items-center justify-between text-xs font-mono">
                         <span class="text-gray-500">Fuente de Poder:</span>
-                        <span class="font-bold text-emerald-600">{{ $chasis->estado_fuentes[0]['psu'] ?? 'Fuente AC' }} Activa</span>
+                        <span class="font-bold {{ isset($chasis->estado_fuentes[0]) ? 'text-emerald-600' : 'text-gray-500' }}">{{ isset($chasis->estado_fuentes[0]) ? ($chasis->estado_fuentes[0]['psu'] ?? 'PSU') . ': ' . ($chasis->estado_fuentes[0]['status'] ?? 'Sin dato') : 'Sin dato' }}</span>
                     </div>
                 </div>
             </div>
@@ -1512,22 +1347,17 @@
                         <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between">
                             <div>
                                 <div class="flex items-center gap-2">
-                                    <span class="w-2.5 h-2.5 rounded-full {{ str_contains(strtolower($psu['status'] ?? ''), 'active') || str_contains(strtolower($psu['status'] ?? ''), 'ok') ? 'bg-emerald-500 shadow-sm' : 'bg-amber-400' }}"></span>
-                                    <span class="font-bold text-sm text-gray-800">{{ $psu['psu'] ?? 'PSU-1' }}</span>
-                                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-100 text-gray-600">{{ $psu['model'] ?? 'PWR-AC' }}</span>
+                                    <span class="w-2.5 h-2.5 rounded-full {{ strtoupper($psu['status'] ?? '') === 'OK' ? 'bg-emerald-500 shadow-sm' : 'bg-amber-400' }}"></span>
+                                    <span class="font-bold text-sm text-gray-800">{{ $psu['psu'] ?? 'PSU' }}</span>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1 font-mono">Entrada: {{ $psu['input_voltage'] ?? 120 }}V AC · Temp: {{ $psu['temp_c'] ?? round($tempVal) }}°C</p>
                             </div>
                             <div class="text-right">
-                                <span class="text-xs font-extrabold text-emerald-600">
-                                    {{ ($psu['output_watts'] ?? 0) > 0 ? number_format($psu['output_watts'], 1) . ' W' : 'Operativa' }}
-                                </span>
-                                <p class="text-[10px] text-gray-400 font-semibold">{{ $psu['status'] ?? 'Active' }}</p>
+                                <p class="text-xs font-extrabold {{ strtoupper($psu['status'] ?? '') === 'OK' ? 'text-emerald-600' : 'text-amber-600' }}">{{ $psu['status'] ?? 'Sin dato' }}</p>
                             </div>
                         </div>
                         @empty
                         <div class="bg-white p-3 rounded-lg border border-gray-200 text-xs text-gray-500">
-                            Fuente de alimentación interna integrada. Suministro eléctrico nominal (AC).
+                            El equipo no reporta estado de fuentes por SNMP (CISCO-ENVMON-MIB).
                         </div>
                         @endforelse
                     </div>
@@ -1543,17 +1373,15 @@
                         @forelse($chasis->estado_ventiladores ?? [] as $fan)
                         <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between">
                             <div>
-                                <p class="font-bold text-sm text-gray-800">{{ $fan['fan'] ?? 'Fan Tray 1' }}</p>
-                                <p class="text-[11px] text-gray-400 font-medium">{{ $fan['direction'] ?? 'Front-to-Back' }}</p>
+                                <p class="font-bold text-sm text-gray-800">{{ $fan['fan'] ?? 'Fan' }}</p>
                             </div>
                             <div class="text-right font-mono">
-                                <span class="text-sm font-extrabold text-[#3b5998]">{{ isset($fan['rpm']) ? number_format($fan['rpm']) . ' RPM' : 'Nominal' }}</span>
-                                <span class="block text-[10px] font-bold text-emerald-600">Estado: {{ $fan['status'] ?? 'OK' }}</span>
+                                <span class="block text-[11px] font-bold {{ strtoupper($fan['status'] ?? '') === 'OK' ? 'text-emerald-600' : 'text-amber-600' }}">Estado: {{ $fan['status'] ?? 'Sin dato' }}</span>
                             </div>
                         </div>
                         @empty
                         <div class="bg-white p-3 rounded-lg border border-gray-200 text-xs text-gray-500">
-                            Sistema de ventilación interno activo. Flujo térmico y disipación operando en rango normal.
+                            El equipo no reporta estado de ventiladores por SNMP (CISCO-ENVMON-MIB).
                         </div>
                         @endforelse
                     </div>
@@ -1722,11 +1550,11 @@
                                 <tr class="hover:bg-blue-50/50 mac-row" data-mac="{{ $entry['mac'] ?? '' }}" data-vlan="{{ $entry['vlan'] ?? 1 }}" data-port="{{ $entry['port'] ?? '' }}">
                                     <td class="p-2.5 text-gray-800">
                                         <div class="flex flex-col">
-                                            <span class="font-bold">{{ $entry['mac'] ?? '00:00:00:00:00:00' }}</span>
+                                            <span class="font-bold">{{ $entry['mac'] ?? 'Sin dato' }}</span>
                                             <span class="text-[10px] text-gray-400 font-sans mt-0.5">{{ \App\Services\MacVendorResolver::resolveVendor($entry['mac'] ?? '') }}</span>
                                         </div>
                                     </td>
-                                    <td class="p-2.5"><span class="px-2 py-0.5 rounded bg-blue-50 text-[#3b5998] font-bold">VLAN {{ $entry['vlan'] ?? 1 }}</span></td>
+                                    <td class="p-2.5"><span class="px-2 py-0.5 rounded bg-blue-50 text-[#3b5998] font-bold">{{ isset($entry['vlan']) ? 'VLAN ' . $entry['vlan'] : 'VLAN ?' }}</span></td>
                                     <td class="p-2.5 font-bold text-[#f26419]">{{ $entry['port'] ?? '-' }}</td>
                                     <td class="p-2.5 text-gray-500 font-sans">{{ $entry['type'] ?? 'Dynamic' }}</td>
                                     <td class="p-2.5 text-right text-gray-500">{{ $entry['age_sec'] ?? '-' }}</td>
@@ -1880,12 +1708,12 @@
                             <div>
                                 <h3 class="text-sm font-extrabold text-gray-800 flex items-center gap-2">
                                     <span>Spanning Tree Protocol (STP)</span>
-                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-[#3b5998]">{{ $stp['protocol'] ?? 'Rapid-PVST+' }}</span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-[#3b5998]">{{ $stp['protocol'] ?? 'Sin dato' }}</span>
                                 </h3>
                                 <p class="text-xs text-gray-400">Prevención de bucles y topología de conmutación L2</p>
                             </div>
                             <div class="flex items-center gap-3 text-xs font-mono">
-                                <span class="text-gray-500">TCNs: <strong class="text-[#f26419]">{{ $stp['topology_changes'] ?? 0 }}</strong></span>
+                                <span class="text-gray-500">TCNs: <strong class="text-[#f26419]">{{ $stp['topology_changes'] ?? 'Sin dato' }}</strong></span>
                                 <span class="text-gray-500">Root Port: <strong class="text-emerald-600">{{ $stp['root_port'] ?? 'Root / Local' }}</strong></span>
                             </div>
                         </div>
@@ -1897,7 +1725,7 @@
                             </div>
                             <div class="bg-white p-2.5 rounded-lg border border-gray-200">
                                 <span class="text-gray-400 text-[10px] block font-sans uppercase">Root Path Cost</span>
-                                <span class="font-bold text-gray-800 text-sm">{{ $stp['root_cost'] ?? 0 }}</span>
+                                <span class="font-bold text-gray-800 text-sm">{{ $stp['root_cost'] ?? 'Sin dato' }}</span>
                             </div>
                             <div class="bg-white p-2.5 rounded-lg border border-gray-200 col-span-2 md:col-span-1">
                                 <span class="text-gray-400 text-[10px] block font-sans uppercase">Último Cambio de Topología</span>
@@ -1922,18 +1750,18 @@
                                     @foreach($stp['ports'] as $stpPort)
                                     <tr class="hover:bg-gray-50">
                                         <td class="p-2 font-bold text-gray-800">{{ $stpPort['port'] ?? 'Port' }}</td>
-                                        <td class="p-2 text-[#3b5998] font-bold">{{ $stpPort['role'] ?? 'Desg' }}</td>
+                                        <td class="p-2 text-[#3b5998] font-bold">{{ $stpPort['role'] ?? '—' }}</td>
                                         <td class="p-2">
                                             @if(($stpPort['state'] ?? '') === 'Forwarding')
                                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Forwarding</span>
                                             @elseif(($stpPort['state'] ?? '') === 'Blocking')
                                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">Blocking</span>
                                             @else
-                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700">{{ $stpPort['state'] ?? 'Active' }}</span>
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700">{{ $stpPort['state'] ?? 'Sin dato' }}</span>
                                             @endif
                                         </td>
-                                        <td class="p-2 text-gray-500">{{ $stpPort['cost'] ?? 4 }}</td>
-                                        <td class="p-2 font-sans text-gray-600">{{ $stpPort['bpdu_guard'] ?? 'Enabled' }}</td>
+                                        <td class="p-2 text-gray-500">{{ $stpPort['cost'] ?? 'Sin dato' }}</td>
+                                        <td class="p-2 font-sans text-gray-600">{{ $stpPort['bpdu_guard'] ?? 'Sin dato' }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -1957,7 +1785,7 @@
                                         <span class="font-extrabold text-base text-gray-900">{{ $pc['channel'] ?? 'Po1' }}</span>
                                         <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">{{ $pc['status'] ?? 'In-Use' }}</span>
                                     </div>
-                                    <p class="text-xs text-gray-500 mt-1 font-mono">Protocolo: {{ $pc['protocol'] ?? 'LACP' }} · Balanceo: {{ $pc['load_balance'] ?? 'src-dst-ip' }}</p>
+                                    <p class="text-xs text-gray-500 mt-1 font-mono">Protocolo: {{ $pc['protocol'] ?? 'Sin dato' }} · Balanceo: {{ $pc['load_balance'] ?? 'Sin dato' }}</p>
                                 </div>
                                 <div class="text-left sm:text-right">
                                     <span class="text-xs font-bold text-gray-400 block uppercase">Miembros Activos</span>
@@ -2323,8 +2151,17 @@
     };
 
     // Human-readable bytes formatter (B, KB, MB, GB)
+    const SIN_DATO = 'Sin dato';
+    function nd(v, suffix = '') {
+        return (v === null || v === undefined || v === '') ? SIN_DATO : `${v}${suffix}`;
+    }
+    function ndNum(v, suffix = '') {
+        return (v === null || v === undefined) ? SIN_DATO : Number(v).toLocaleString() + suffix;
+    }
+
     function formatBytes(bytes) {
-        if (bytes === 0 || !bytes) return '0 B';
+        if (bytes === null || bytes === undefined) return SIN_DATO;
+        if (bytes === 0) return '0 B';
         const k = 1024;
         const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -2359,14 +2196,17 @@
         } else if (data.oper_status === 'up') {
             badge.textContent = 'Link Up';
             badge.className = 'text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase';
-        } else {
+        } else if (data.oper_status === 'down') {
             badge.textContent = 'Link Down';
             badge.className = 'text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 uppercase';
+        } else {
+            badge.textContent = 'Estado desconocido';
+            badge.className = 'text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 uppercase';
         }
 
-        // Bandwidth utilization
-        const util = data.bandwidth_util_pct || 0;
-        document.getElementById('drawerUtilPct').textContent = util.toFixed(1) + '%';
+        // Bandwidth utilization (null = aún sin dos muestras para calcular la tasa)
+        const util = data.bandwidth_util_pct ?? 0;
+        document.getElementById('drawerUtilPct').textContent = data.bandwidth_util_pct === null ? SIN_DATO : util.toFixed(1) + '%';
         const utilBar = document.getElementById('drawerUtilBar');
         utilBar.style.width = Math.min(util, 100) + '%';
         if (util >= 90) {
@@ -2380,31 +2220,34 @@
         // Bytes In / Out
         document.getElementById('drawerInOctets').textContent = formatBytes(data.in_octets);
         document.getElementById('drawerOutOctets').textContent = formatBytes(data.out_octets);
-        document.getElementById('drawerInPkts').textContent = Number(data.in_unicast).toLocaleString() + ' ucast';
-        document.getElementById('drawerOutPkts').textContent = Number(data.out_unicast).toLocaleString() + ' ucast';
-        document.getElementById('drawerMcast').textContent = `${Number(data.in_multicast).toLocaleString()} / ${Number(data.out_multicast).toLocaleString()}`;
-        document.getElementById('drawerBcast').textContent = `${Number(data.in_broadcast).toLocaleString()} / ${Number(data.out_broadcast).toLocaleString()}`;
-        document.getElementById('drawerDiscards').textContent = `${Number(data.in_discards + data.out_discards).toLocaleString()} pkts`;
+        document.getElementById('drawerInPkts').textContent = ndNum(data.in_unicast, ' ucast');
+        document.getElementById('drawerOutPkts').textContent = ndNum(data.out_unicast, ' ucast');
+        document.getElementById('drawerMcast').textContent = `${ndNum(data.in_multicast)} / ${ndNum(data.out_multicast)}`;
+        document.getElementById('drawerBcast').textContent = `${ndNum(data.in_broadcast)} / ${ndNum(data.out_broadcast)}`;
+        document.getElementById('drawerDiscards').textContent = (data.in_discards === null && data.out_discards === null)
+            ? SIN_DATO : `${Number((data.in_discards || 0) + (data.out_discards || 0)).toLocaleString()} pkts`;
 
         // Physical Layer
-        document.getElementById('drawerSpeed').textContent = data.speed ? `${data.speed} Mbps` : 'Auto';
-        document.getElementById('drawerDuplex').textContent = `${data.duplex} / ${data.autoneg ? 'Auto-Neg OK' : 'Fija'}`;
-        document.getElementById('drawerModeVlan').textContent = `${data.mode.toUpperCase()} (VLAN ${data.vlan_id || '1'})`;
+        document.getElementById('drawerSpeed').textContent = data.speed ? `${data.speed} Mbps` : SIN_DATO;
+        document.getElementById('drawerDuplex').textContent = data.duplex
+            ? `${data.duplex}${data.autoneg === null ? '' : (data.autoneg ? ' / Auto-Neg' : ' / Fija')}` : SIN_DATO;
+        document.getElementById('drawerModeVlan').textContent = data.mode
+            ? `${data.mode.toUpperCase()}${data.vlan_id ? ` (VLAN ${data.vlan_id})` : ''}` : SIN_DATO;
         document.getElementById('drawerPortChannel').textContent = data.port_channel || '—';
-        document.getElementById('drawerMac').textContent = data.mac || 'N/A';
-        document.getElementById('drawerLastChange').textContent = data.last_change || 'N/A';
+        document.getElementById('drawerMac').textContent = nd(data.mac);
+        document.getElementById('drawerLastChange').textContent = data.medido_en ? `Medido ${data.medido_en}` : nd(data.last_change);
 
         // Error counters
-        document.getElementById('drawerCrc').textContent = data.crc_errors;
-        document.getElementById('drawerCollisions').textContent = data.collisions;
-        document.getElementById('drawerRunts').textContent = data.runts;
-        document.getElementById('drawerGiants').textContent = data.giants;
-        document.getElementById('drawerJabbers').textContent = data.jabbers;
-        document.getElementById('drawerFcs').textContent = data.fcs_errors;
+        document.getElementById('drawerCrc').textContent = nd(data.crc_errors);
+        document.getElementById('drawerCollisions').textContent = nd(data.collisions);
+        document.getElementById('drawerRunts').textContent = nd(data.runts);
+        document.getElementById('drawerGiants').textContent = nd(data.giants);
+        document.getElementById('drawerJabbers').textContent = nd(data.jabbers);
+        document.getElementById('drawerFcs').textContent = nd(data.fcs_errors);
 
         // SFP Optical DOM Diagnostics
         const optContainer = document.getElementById('drawerOpticsContainer');
-        if (data.port_type.includes('sfp') || data.optica_rx !== null) {
+        if ((data.port_type || '').includes('sfp') || data.optica_rx !== null) {
             optContainer.innerHTML = `
                 <div class="grid grid-cols-2 gap-3 text-xs font-mono">
                     <div class="bg-white p-2.5 rounded-lg border border-gray-200">
@@ -2426,13 +2269,13 @@
             `;
         } else {
             optContainer.innerHTML = `
-                <p class="text-xs text-gray-400 italic">Transceptor óptico no aplicable (Puerto de Cobre 1000Base-T)</p>
+                <p class="text-xs text-gray-400 italic">Sin diagnóstico óptico (DOM) para este puerto</p>
             `;
         }
 
         // PoE Telemetry
         const poeContainer = document.getElementById('drawerPoeContainer');
-        if (data.is_poe) {
+        if (data.poe_watts !== null) {
             poeContainer.innerHTML = `
                 <div class="flex items-center justify-between text-xs">
                     <span class="font-bold text-gray-700">Consumo de Energía:</span>
@@ -2449,7 +2292,7 @@
             `;
         } else {
             poeContainer.innerHTML = `
-                <p class="text-xs text-gray-400 italic">PoE inactivo o no requerido por el dispositivo conectado</p>
+                <p class="text-xs text-gray-400 italic">Sin datos PoE para este puerto (no se recolectan por SNMP)</p>
             `;
         }
 
@@ -2457,7 +2300,7 @@
         const errBox = document.getElementById('drawerErrSection');
         if (data.is_errdisabled) {
             errBox.classList.remove('hidden');
-            document.getElementById('drawerErrReason').textContent = data.errdisabled_reason || 'bpduguard';
+            document.getElementById('drawerErrReason').textContent = data.errdisabled_reason || 'Motivo no reportado';
         } else {
             errBox.classList.add('hidden');
         }

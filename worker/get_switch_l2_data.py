@@ -15,7 +15,7 @@ from pysnmp.hlapi.v3arch.asyncio import (
 )
 
 IP_SWITCH = sys.argv[1] if len(sys.argv) > 1 else '127.0.0.1'
-COMUNIDAD = sys.argv[2] if len(sys.argv) > 2 else 'redjalisco'
+COMUNIDAD = sys.argv[2] if len(sys.argv) > 2 else 'public'
 
 async def walk_oid(engine, target, oid_str, max_rows=150):
     results = {}
@@ -152,7 +152,7 @@ async def _main():
                 mac_table.append({
                     "mac": mac_str,
                     "port": port_label,
-                    "vlan": 1,
+                    "vlan": None,  # BRIDGE-MIB sin contexto por VLAN no indica la VLAN
                     "type": type_str,
                     "age_sec": "-"
                 })
@@ -199,7 +199,10 @@ async def _main():
             root_bridge_id = ':'.join(f'{b:02x}' for b in raw_root) if raw_root else stp_vbs[0][1].prettyPrint()
             root_cost = int(stp_vbs[1][1]) if stp_vbs[1][1] else 0
             root_port_num = int(stp_vbs[2][1]) if stp_vbs[2][1] else 0
-            root_port_label = if_names.get(str(root_port_num), f"Port {root_port_num}") if root_port_num > 0 else "Root / Local"
+            # dot1dStpRootPort es un número de puerto de bridge: se traduce a ifIndex con dot1dBasePortIfIndex
+            base_to_if = await walk_oid(engine, target, '1.3.6.1.2.1.17.1.4.1.2', 200)
+            bridge_name = lambda bp: if_names.get(str(base_to_if.get(str(bp), bp)), f"Bridge port {bp}")
+            root_port_label = bridge_name(root_port_num) if root_port_num > 0 else "Este equipo es el root bridge"
             
             tcn_ticks = int(stp_vbs[3][1]) if stp_vbs[3][1] else 0
             tcn_sec = tcn_ticks // 100
@@ -217,22 +220,22 @@ async def _main():
             state_map = {1: 'Disabled', 2: 'Blocking', 3: 'Listening', 4: 'Learning', 5: 'Forwarding', 6: 'Broken'}
 
             for p_idx, p_st in stp_states.items():
-                p_st_int = int(p_st) if str(p_st).isdigit() else 1
-                p_cost_int = int(stp_costs.get(p_idx, 4))
-                p_name = if_names.get(str(p_idx), f"Port {p_idx}")
+                p_st_int = int(p_st) if str(p_st).isdigit() else None
+                p_cost_int = int(stp_costs[p_idx]) if p_idx in stp_costs else None
+                p_name = bridge_name(p_idx)
                 # Exclude virtual / vlan interfaces from stp port table
                 if 'vlan' in p_name.lower() or 'null' in p_name.lower():
                     continue
                 stp_ports_list.append({
                     "port": p_name,
-                    "role": "Root" if str(p_idx) == str(root_port_num) else "Desg",
-                    "state": state_map.get(p_st_int, 'Forwarding'),
+                    "role": "Root" if str(p_idx) == str(root_port_num) else None,
+                    "state": state_map.get(p_st_int, 'Desconocido'),
                     "cost": p_cost_int,
-                    "bpdu_guard": "Enabled" if p_st_int == 5 else "Disabled"
+                    "bpdu_guard": None  # no se obtiene por BRIDGE-MIB
                 })
 
             spanning_tree = {
-                "protocol": "Rapid-PVST+",
+                "protocol": "STP (BRIDGE-MIB, instancia por defecto)",
                 "root_bridge_id": root_bridge_id,
                 "root_cost": root_cost,
                 "root_port": root_port_label,

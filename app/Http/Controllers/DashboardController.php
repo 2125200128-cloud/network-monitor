@@ -27,42 +27,37 @@ class DashboardController extends Controller
         $dispositivosWarning = $dispositivos->where('estado', 'warning')->count();
 
         // -----------------------------------------------------------------------
-        // Global Averages — FUENTE PRIMARIA: global_metrics (collector)
-        // Fallback: promedios de ultimaMetrica por dispositivo
+        // Indicadores globales: solo valores medidos. null = sin dato disponible.
         // -----------------------------------------------------------------------
-        $latestMetricsForAvg = $dispositivos->map(fn($d) => $d->ultimaMetrica)->filter()->values();
+        $onlineMetrics = $dispositivos->where('estado', '!=', 'offline')
+            ->map(fn($d) => $d->ultimaMetrica)->filter()->values();
 
-        // Promedios de per-device (CPU, RAM, Temp, Errores)
-        $avgCpu  = round($latestMetricsForAvg->avg('cpu_usage') ?? 0, 1);
-        $avgMem  = round($latestMetricsForAvg->avg('memory_usage') ?? 0, 1);
-        $avgTemp = round($latestMetricsForAvg->avg('temperatura_celsius') ?? 0, 1);
-        $avgErrores = round($latestMetricsForAvg->avg('errores_interfaz') ?? 0, 1);
+        $avgOrNull = fn($collection, $key, $precision = 1) =>
+            ($v = $collection->whereNotNull($key)->avg($key)) === null ? null : round($v, $precision);
 
-        // Uptime mínimo entre dispositivos online (eslabón más débil)
-        $globalUptime = $latestMetricsForAvg->where('uptime', '>', 0)->min('uptime') ?? 0;
-        $uptimeDays   = floor($globalUptime / 86400);
-        $uptimeHours  = floor(($globalUptime % 86400) / 3600);
-        $formattedUptime = "{$uptimeDays}d {$uptimeHours}h";
+        $avgCpu  = $avgOrNull($onlineMetrics, 'cpu_usage');
+        $avgMem  = $avgOrNull($onlineMetrics, 'memory_usage');
+        $avgTemp = $avgOrNull($onlineMetrics, 'temperatura_celsius');
+        $erroresUltimoCiclo = $onlineMetrics->whereNotNull('errores_interfaz')->isEmpty()
+            ? null : (int) $onlineMetrics->sum('errores_interfaz');
 
-        // KPIs de red desde global_metrics
+        // Uptime mínimo entre dispositivos en línea (eslabón más débil)
+        $globalUptime = $onlineMetrics->where('uptime', '>', 0)->min('uptime');
+        $formattedUptime = $globalUptime === null
+            ? 'Sin datos de'
+            : floor($globalUptime / 86400) . 'd ' . floor(($globalUptime % 86400) / 3600) . 'h';
+
         $globalRow = DB::table('global_metrics')->latest('recorded_at')->first();
-        if ($globalRow) {
-            $avgPing        = round($globalRow->latency_ms, 1);
-            $avgPacketLoss  = round($globalRow->packet_loss_pct, 2);
-            $avgConexiones  = round($globalRow->traffic_mbps, 2);   // Tráfico total Mbps
-            $avgPortSat     = round($globalRow->port_saturation_pct, 1);
-            // Si global_metrics tiene CPU/RAM válidos, usa los globales
-            if ($globalRow->cpu_avg_pct > 0) $avgCpu = round($globalRow->cpu_avg_pct, 1);
-            if ($globalRow->ram_avg_pct > 0) $avgMem = round($globalRow->ram_avg_pct, 1);
-        } else {
-            // Fallback a metricas_red
-            $avgPing       = round($latestMetricsForAvg->where('ping_ms', '>', 0)->avg('ping_ms') ?? 0, 1);
-            $avgPacketLoss = round($latestMetricsForAvg->avg('packet_loss') ?? 0, 2);
-            $avgConexiones = round($latestMetricsForAvg->avg('conexiones_activas') ?? 0, 2);
-            $avgPortSat    = 0;
-        }
+        $avgPing       = $globalRow?->latency_ms !== null ? round($globalRow->latency_ms, 1) : $avgOrNull($onlineMetrics, 'ping_ms');
+        $avgPacketLoss = $globalRow?->packet_loss_pct !== null ? round($globalRow->packet_loss_pct, 2) : null;
+        $trafficTotal  = $globalRow?->traffic_mbps !== null ? round($globalRow->traffic_mbps, 2) : null;
+        $trafficInNow  = $globalRow?->traffic_in_mbps ?? null;
+        $trafficOutNow = $globalRow?->traffic_out_mbps ?? null;
+        $avgPortSat    = $globalRow?->port_saturation_pct !== null ? round($globalRow->port_saturation_pct, 1) : null;
+        if ($globalRow?->cpu_avg_pct !== null) $avgCpu = round($globalRow->cpu_avg_pct, 1);
+        if ($globalRow?->ram_avg_pct !== null) $avgMem = round($globalRow->ram_avg_pct, 1);
 
-        // Datos para chartz sparklines (últimas 24 muestras de global_metrics)
+        // Series para las gráficas (últimas 24 muestras reales de global_metrics)
         $globalSeries = DB::table('global_metrics')
             ->orderByDesc('recorded_at')
             ->limit(24)
@@ -70,32 +65,17 @@ class DashboardController extends Controller
             ->reverse()
             ->values();
 
-        $labels     = $globalSeries->map(fn($r) => Carbon::parse($r->recorded_at)->format('H:i'))->toArray();
-        $pingData   = $globalSeries->map(fn($r) => round($r->latency_ms, 1))->toArray();
-        $trafficIn  = $globalSeries->map(fn($r) => round($r->traffic_mbps, 2))->toArray();
-        $trafficOut = $globalSeries->map(fn($r) => round($r->packet_loss_pct, 2))->toArray();
-
-        // Si global_metrics está vacía, fallback a metricas_red históricas
-        if (empty($labels)) {
-            $latestMetrics  = MetricaRed::orderBy('fecha_registro', 'desc')
-                ->take(24 * max(1, $totalDispositivos))->get()->reverse();
-            $groupedMetrics = $latestMetrics->groupBy('fecha_registro');
-            foreach ($groupedMetrics as $time => $metricsAtTime) {
-                $labels[]     = Carbon::parse($time)->format('H:i');
-                $pingData[]   = round($metricsAtTime->avg('ping_ms') ?? 0, 2);
-                $mbpsIn       = ($metricsAtTime->sum('bytes_in') * 8) / 1000000 / 300;
-                $trafficIn[]  = round($mbpsIn, 2);
-                $mbpsOut      = ($metricsAtTime->sum('bytes_out') * 8) / 1000000 / 300;
-                $trafficOut[] = round($mbpsOut, 2);
-            }
-        }
+        $labels      = $globalSeries->map(fn($r) => Carbon::parse($r->recorded_at)->format('H:i:s'))->toArray();
+        $pingData    = $globalSeries->map(fn($r) => $r->latency_ms !== null ? round($r->latency_ms, 1) : null)->toArray();
+        $trafficData = $globalSeries->map(fn($r) => $r->traffic_mbps !== null ? round($r->traffic_mbps, 2) : null)->toArray();
+        $lossData    = $globalSeries->map(fn($r) => $r->packet_loss_pct !== null ? round($r->packet_loss_pct, 2) : null)->toArray();
 
         // Attach latest metrics, type info and platform info to each device for the inventory table
         foreach ($dispositivos as $device) {
             $latest = $device->ultimaMetrica;
-            $device->latest_cpu = $latest ? $latest->cpu_usage : 0;
-            $device->latest_loss = $latest ? $latest->packet_loss : 0;
-            $device->latest_ping = $latest ? $latest->ping_ms : 0;
+            $device->latest_cpu = $latest?->cpu_usage;
+            $device->latest_loss = $latest?->packet_loss;
+            $device->latest_ping = $latest?->ping_ms;
 
             // Resolve Type, Icon & Clean Model Info
             $typeInfo = $device->resolveTypeInfo();
@@ -146,14 +126,16 @@ class DashboardController extends Controller
             'avgCpu',
             'avgMem',
             'avgTemp',
-            'avgConexiones',
-            'avgErrores',
+            'trafficTotal',
+            'trafficInNow',
+            'trafficOutNow',
+            'erroresUltimoCiclo',
             'avgPortSat',
             'formattedUptime',
             'labels',
             'pingData',
-            'trafficIn',
-            'trafficOut',
+            'trafficData',
+            'lossData',
             'notificaciones',
             'unreadNotificaciones'
         ));
@@ -161,14 +143,15 @@ class DashboardController extends Controller
 
     /**
      * Compila todas las alertas en tiempo real con análisis de CAUSA RAÍZ (desconexiones, cascada, puertos, térmicas, cpu).
-     * Cacheado por 15 segundos para evitar bloqueos de E/S.
+     * El diagnóstico (costoso) se cachea 15 s para todos; el estado leída/descartada se aplica por usuario.
      */
     public function compilarNotificaciones($dispositivos = null): array
     {
-        return \Illuminate\Support\Facades\Cache::remember('diagnostico_alarmas_red_fast', 15, function () {
-            $diagnosisService = new \App\Services\AlarmDiagnosisService();
-            return $diagnosisService->diagnosticarAlarmasRed();
-        });
+        $diagnosisService = new \App\Services\AlarmDiagnosisService();
+        $alarmas = \Illuminate\Support\Facades\Cache::remember('diagnostico_alarmas_red_fast', 15,
+            fn () => $diagnosisService->diagnosticarAlarmasRed(false));
+
+        return $diagnosisService->aplicarEstadoUsuario($alarmas);
     }
 
     /**
@@ -193,49 +176,27 @@ class DashboardController extends Controller
             $warning = (int) ($counts->warning ?? 0);
             $total   = (int) ($counts->total ?? 0);
 
-            $cpu = $g ? (float) $g->cpu_avg_pct : 0;
-            $ram = $g ? (float) $g->ram_avg_pct : 0;
-            $ping = $g ? (float) $g->latency_ms : 0;
-            $uptimeMin = 86400 * 30;
-
-            if (!$g || ($cpu <= 0 && $ram <= 0)) {
-                $perDevice = DB::table('metricas_red as m')
-                    ->joinSub(
-                        DB::table('metricas_red')
-                            ->select('dispositivo_id', DB::raw('MAX(fecha_registro) as last_ts'))
-                            ->groupBy('dispositivo_id'),
-                        'latest', fn($j) => $j->on('m.dispositivo_id', '=', 'latest.dispositivo_id')
-                                               ->on('m.fecha_registro', '=', 'latest.last_ts')
-                    )
-                    ->selectRaw('AVG(m.cpu_usage) as cpu, AVG(m.memory_usage) as ram, AVG(m.ping_ms) as ping, MIN(m.uptime) as uptime')
-                    ->first();
-                if ($perDevice) {
-                    if ($cpu <= 0) $cpu = round($perDevice->cpu ?? 0, 1);
-                    if ($ram <= 0) $ram = round($perDevice->ram ?? 0, 1);
-                    if ($ping <= 0) $ping = round($perDevice->ping ?? 0, 1);
-                    $uptimeMin = $perDevice->uptime ?? 0;
-                }
-            }
-
-            $notificaciones = $this->compilarNotificaciones();
-            $unreadCount = count(array_filter($notificaciones, fn($n) => !$n['leida']));
+            $r = fn($v, $p = 1) => $v === null ? null : round((float) $v, $p);
 
             return [
-                'traffic_mbps'       => $g ? round($g->traffic_mbps, 2)       : 0,
-                'latency_ms'         => round($ping, 1),
-                'packet_loss_pct'    => $g ? round($g->packet_loss_pct, 2)     : 0,
-                'cpu_avg_pct'        => round($cpu, 1),
-                'ram_avg_pct'        => round($ram, 1),
-                'port_saturation_pct'=> $g ? round($g->port_saturation_pct, 1) : 0,
+                'traffic_mbps'       => $r($g?->traffic_mbps, 2),
+                'traffic_in_mbps'    => $r($g?->traffic_in_mbps ?? null, 2),
+                'traffic_out_mbps'   => $r($g?->traffic_out_mbps ?? null, 2),
+                'latency_ms'         => $r($g?->latency_ms),
+                'packet_loss_pct'    => $r($g?->packet_loss_pct, 2),
+                'cpu_avg_pct'        => $r($g?->cpu_avg_pct),
+                'ram_avg_pct'        => $r($g?->ram_avg_pct),
+                'port_saturation_pct'=> $r($g?->port_saturation_pct),
                 'active_nodes'       => $g ? $g->active_nodes : $online,
                 'snmp_online'        => $online,
                 'dispositivos'       => compact('online', 'offline', 'warning', 'total'),
-                'uptime_min'         => $uptimeMin,
-                'recorded_at'        => $g ? $g->recorded_at : now()->toIso8601String(),
-                'notificaciones'     => $notificaciones,
-                'unread_notif_count' => $unreadCount,
+                'recorded_at'        => $g?->recorded_at,
             ];
         });
+
+        $notificaciones = $this->compilarNotificaciones();
+        $data['notificaciones'] = $notificaciones;
+        $data['unread_notif_count'] = count(array_filter($notificaciones, fn($n) => !$n['leida']));
 
         return response()->json($data);
     }
@@ -254,8 +215,7 @@ class DashboardController extends Controller
         $id = $request->input('id');
 
         if ($all) {
-            $diagnosisService = new \App\Services\AlarmDiagnosisService();
-            $alarmas = $diagnosisService->diagnosticarAlarmasRed();
+            $alarmas = $this->compilarNotificaciones();
             foreach ($alarmas as $alarma) {
                 NotificacionLeida::updateOrCreate(
                     ['user_id' => $user->id, 'notificacion_id' => $alarma['id']],
@@ -293,8 +253,7 @@ class DashboardController extends Controller
         $id = $request->input('id');
 
         if ($all) {
-            $diagnosisService = new \App\Services\AlarmDiagnosisService();
-            $alarmas = $diagnosisService->diagnosticarAlarmasRed();
+            $alarmas = $this->compilarNotificaciones();
             foreach ($alarmas as $alarma) {
                 NotificacionLeida::updateOrCreate(
                     ['user_id' => $user->id, 'notificacion_id' => $alarma['id']],
@@ -325,38 +284,59 @@ class DashboardController extends Controller
     }
 
     /**
-     * Retorna la telemetría de tráfico en tiempo real desde DB/Cache de forma ultra-rápida (no bloqueante).
-     * Llamado por el frontend vía fetch() cada 3 segundos.
+     * Tráfico en vivo medido por snmp_poller.py (delta de contadores ifHC*Octets de puertos físicos).
+     * Fuente: el switch core configurado en Ajustes; si no hay core o aún no tiene muestra, la suma
+     * de todos los equipos. Si no hay mediciones recientes responde status=no_data.
      */
-    public function snmpLiveTraffic(): \Illuminate\Http\JsonResponse
+    public function snmpLiveTraffic(): JsonResponse
     {
-        $cachedData = \Illuminate\Support\Facades\Cache::remember('snmp_live_traffic_fast', 2, function () {
-            $globalRow = \Illuminate\Support\Facades\DB::table('global_metrics')->latest('recorded_at')->first();
-            if ($globalRow && isset($globalRow->traffic_mbps)) {
-                $mbps = (float) $globalRow->traffic_mbps;
-                if ($mbps > 10000 || $mbps <= 0) $mbps = 1683.5;
+        $data = \Illuminate\Support\Facades\Cache::remember('snmp_live_traffic_fast', 2, function () {
+            $limite = now()->subMinutes(2);
+            $coreIp = \App\Models\ConfiguracionGeneral::query()->value('ip_switch_core');
+
+            if ($coreIp && ($core = Dispositivo::where('ip', $coreIp)->first())) {
+                $m = MetricaRed::where('dispositivo_id', $core->id)
+                    ->where('fecha_registro', '>=', $limite)
+                    ->whereNotNull('traffic_in_mbps')
+                    ->orderByDesc('fecha_registro')
+                    ->first();
+                if ($m) {
+                    return [
+                        'status'      => 'success',
+                        'fuente'      => 'core',
+                        'in_mbps'     => (float) $m->traffic_in_mbps,
+                        'out_mbps'    => (float) $m->traffic_out_mbps,
+                        'dispositivo' => $core->nombre,
+                        'ip'          => $core->ip,
+                        'medido_en'   => (string) $m->fecha_registro,
+                    ];
+                }
+            }
+
+            $g = DB::table('global_metrics')
+                ->where('recorded_at', '>=', $limite)
+                ->whereNotNull('traffic_in_mbps')
+                ->latest('recorded_at')
+                ->first();
+            if ($g) {
                 return [
                     'status'      => 'success',
-                    'in_mbps'     => max(0.1, round($mbps * 0.58, 2)),
-                    'out_mbps'    => max(0.1, round($mbps * 0.42, 2)),
-                    'puerto'      => 'Te1/1/1',
-                    'dispositivo' => 'Nx3K-fibras',
-                    'ip'          => '10.4.254.40',
-                    'timestamp'   => time()
+                    'fuente'      => 'global',
+                    'in_mbps'     => (float) $g->traffic_in_mbps,
+                    'out_mbps'    => (float) $g->traffic_out_mbps,
+                    'dispositivo' => 'Suma de puertos físicos de todos los equipos',
+                    'ip'          => null,
+                    'medido_en'   => (string) $g->recorded_at,
                 ];
             }
+
             return [
-                'status'      => 'success',
-                'in_mbps'     => 976.43,
-                'out_mbps'    => 707.07,
-                'puerto'      => 'Te1/1/1',
-                'dispositivo' => 'Nx3K-fibras',
-                'ip'          => '10.4.254.40',
-                'timestamp'   => time()
+                'status'  => 'no_data',
+                'message' => 'Sin mediciones de tráfico en los últimos 2 minutos (¿está corriendo snmp_poller.py?)',
             ];
         });
 
-        return response()->json($cachedData);
+        return response()->json($data);
     }
 
     /**

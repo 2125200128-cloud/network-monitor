@@ -31,12 +31,10 @@ if hasattr(sys.stdout, 'reconfigure'):
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
-DB_CONFIG = {
-    'host': '127.0.0.1',
-    'user': 'root',
-    'password': 'root',
-    'database': 'network_monitor'
-}
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from nm_common import db_config
+
+DB_CONFIG = db_config()
 
 def get_db():
     return mysql.connector.connect(**DB_CONFIG)
@@ -394,16 +392,15 @@ def get_or_create_device(conn, ip, name, model, community):
     dev_id = cur.lastrowid
     
     cur.execute("""
-        INSERT INTO telemetria_chasis 
-        (dispositivo_id, model_name, uptime_str, ram_total_mb, ram_used_mb, poe_total_budget_w, poe_used_w, poe_available_w, created_at, updated_at)
-        VALUES (%s, %s, '0d 0h 0m', 512, 128, 0, 0, 0, NOW(), NOW())
-    """, (dev_id, model or "Switch Cisco Detectado"))
+        INSERT INTO telemetria_chasis (dispositivo_id, model_name, created_at, updated_at)
+        VALUES (%s, %s, NOW(), NOW())
+    """, (dev_id, model or None))
     conn.commit()
     return dev_id, True
 
 def get_or_create_interface(conn, dev_id, port_name, if_index=None):
     cur = conn.cursor(dictionary=True)
-    clean_port = port_name or "GigabitEthernet1"
+    clean_port = port_name or "Desconocido"
     cur.execute("SELECT id FROM interfaces_red WHERE dispositivo_id = %s AND (nombre = %s OR alias = %s) LIMIT 1", (dev_id, clean_port, clean_port))
     row = cur.fetchone()
     if row:
@@ -422,22 +419,18 @@ def get_or_create_interface(conn, dev_id, port_name, if_index=None):
         else:
             idx = if_index
     
-    is_fiber = any(x in clean_port.lower() for x in ['te', 'sfp', 'fiber'])
+    low = clean_port.lower()
+    # Antes se buscaba 'te' en todo el nombre y "GigabitEthernet" coincidía ("...biTEthernet")
+    is_fiber = low.startswith(('tengig', 'te1', 'te0', 'twentyfive', 'fortygig', 'hundredgig')) or 'sfp' in low
     port_type = 'sfp_fiber' if is_fiber else 'copper_rj45'
-    speed = 10000 if is_fiber else 1000
-    
+    speed = 10000 if low.startswith(('tengig', 'te1', 'te0')) else None
+
     cur.execute("""
-        INSERT INTO interfaces_red 
-        (dispositivo_id, if_index, nombre, velocidad_mbps, duplex, autoneg, port_type, admin_status, mode, is_poe, created_at, updated_at)
-        VALUES (%s, %s, %s, %s, 'full', 1, %s, 'up', 'trunk', 0, NOW(), NOW())
+        INSERT INTO interfaces_red
+        (dispositivo_id, if_index, nombre, velocidad_mbps, port_type, is_poe, created_at, updated_at)
+        VALUES (%s, %s, %s, %s, %s, 0, NOW(), NOW())
     """, (dev_id, idx, clean_port, speed, port_type))
     iface_id = cur.lastrowid
-    
-    cur.execute("""
-        INSERT INTO telemetria_interfaces
-        (interfaz_id, oper_status, in_octets, out_octets, bandwidth_util_pct, created_at, updated_at)
-        VALUES (%s, 'up', 0, 0, 0.0, NOW(), NOW())
-    """, (iface_id,))
     conn.commit()
     return iface_id
 
@@ -459,7 +452,7 @@ def get_or_create_link(conn, dev1_id, iface1_id, dev2_id, iface2_id, speed_mbps=
     cur.execute("""
         INSERT INTO enlaces_red
         (origen_dispositivo_id, origen_interfaz_id, destino_dispositivo_id, destino_interfaz_id, tipo_medio, estado, velocidad_mbps, trafico_in_mbps, trafico_out_mbps, vlans_permitidas, created_at, updated_at)
-        VALUES (%s, %s, %s, %s, %s, 'up', %s, 0.0, 0.0, 'VLAN 1', NOW(), NOW())
+        VALUES (%s, %s, %s, %s, %s, 'up', %s, 0.0, 0.0, NULL, NOW(), NOW())
     """, (dev1_id, iface1_id, dev2_id, iface2_id, tipo_medio, speed_mbps))
     link_id = cur.lastrowid
     conn.commit()
@@ -601,9 +594,9 @@ def scan_local_physical_network(community="public", max_workers=50, target_subne
             for n in all_n:
                 rem_ip = n.get('ip')
                 rem_name = n.get('device_id') or "Switch-Vecino"
-                rem_port = n.get('remote_port') or "GigabitEthernet1"
+                rem_port = n.get('remote_port') or "Desconocido"
                 rem_model = n.get('platform') or "Cisco Switch"
-                loc_port = f"GigabitEthernet{n.get('local_if_index', 1)}"
+                loc_port = f"ifIndex{n.get('local_if_index')}"  # el colector de inventario lo renombra con ifName real
                 
                 # Filtrar teléfonos IP (SEP...), Access Points y estaciones finales
                 if not is_network_infrastructure_device(rem_name, rem_model):
@@ -620,7 +613,7 @@ def scan_local_physical_network(community="public", max_workers=50, target_subne
                 
                 if rem_ip:
                     rem_dev_id, rem_created = get_or_create_device(conn, rem_ip, rem_name, rem_model, community)
-                    loc_iface_id = get_or_create_interface(conn, dev_id, loc_port)
+                    loc_iface_id = get_or_create_interface(conn, dev_id, loc_port, n.get('local_if_index'))
                     rem_iface_id = get_or_create_interface(conn, rem_dev_id, rem_port)
                     link_id, link_created = get_or_create_link(conn, dev_id, loc_iface_id, rem_dev_id, rem_iface_id)
                     

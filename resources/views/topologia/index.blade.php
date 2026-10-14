@@ -140,6 +140,22 @@
             cursor: pointer;
         }
 
+        /* KPIs del encabezado */
+        .noc-kpi { display: flex; flex-direction: column; gap: 2px; padding: 6px 12px; border-radius: 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; min-width: 96px; }
+        .dark .noc-kpi { background: rgba(30, 41, 59, 0.6); border-color: rgba(51, 65, 85, 0.7); }
+        .noc-kpi-title { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; }
+        .noc-kpi-row { display: flex; align-items: center; gap: 10px; }
+        .noc-kpi-item { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: #0f172a; }
+        .dark .noc-kpi-item { color: #f1f5f9; }
+        .noc-kpi-item b { font-family: ui-monospace, Consolas, monospace; font-weight: 800; }
+        .noc-dot { display: inline-block; width: 8px; height: 8px; border-radius: 9999px; }
+        .noc-stale { color: #dc2626 !important; }
+
+        /* Barra de edición de zonas */
+        #zonaEditBar { display: none; }
+        body.zonas-editando #zonaEditBar { display: flex; }
+        body.zonas-editando #networkTopologyCanvas { cursor: crosshair; }
+
         /* Slide drawer */
         #inspectorDrawer {
             transform: translateX(calc(100% + 3rem));
@@ -165,7 +181,7 @@
     {{-- ==================== 1. TOP HEADER & METRICS ==================== --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#12161f] rounded-[2rem] p-5 lg:p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex-shrink-0">
         <div class="flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#3b5998] to-[#5c8096] flex items-center justify-center text-white shadow-md shadow-blue-900/10 flex-shrink-0">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-md flex-shrink-0" style="background: linear-gradient(135deg, #3b5998, #5c8096);">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
                     <circle cx="6" cy="6" r="2.5"></circle>
                     <circle cx="18" cy="6" r="2.5"></circle>
@@ -184,44 +200,32 @@
             </div>
         </div>
 
-        {{-- Metrics Badges Only (Header limpio y sin duplicidad de botones) --}}
-        <div class="flex flex-wrap items-center gap-2.5">
-            <div class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-xs">
-                <span class="w-2 h-2 rounded-full bg-[#3b5998]"></span>
-                <span class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Nodos:</span>
-                <span id="badgeNodos" class="text-xs font-black text-slate-800 dark:text-slate-100 font-mono">{{ $totalNodos }}</span>
-            </div>
-
-            <div class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-xs">
-                <span class="w-2 h-2 rounded-full bg-[#5c8096]"></span>
-                <span class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Enlaces:</span>
-                <span id="badgeEnlaces" class="text-xs font-black text-slate-800 dark:text-slate-100 font-mono">{{ $totalEnlaces }}</span>
-            </div>
-
-            <div class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/40 shadow-xs">
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span class="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">Activos (UP):</span>
-                <span id="badgeEnlacesUp" class="text-xs font-black text-emerald-800 dark:text-emerald-300 font-mono">{{ $enlacesActivos }}</span>
-            </div>
-
-            <div id="badgeAlertaContainer" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200/80 dark:border-red-800/40 shadow-xs {{ $enlacesAlerta > 0 ? '' : 'hidden' }}">
-                <div class="w-6 h-6 flex items-center justify-center shrink-0">
-                    <dotlottie-player 
-                        src="{{ asset('animations/alert-down.lottie') }}?v={{ filemtime(public_path('animations/alert-down.lottie')) }}" 
-                        background="transparent" 
-                        speed="1" 
-                        style="width: 24px; height: 24px;" 
-                        loop 
-                        autoplay>
-                    </dotlottie-player>
+        {{-- Resumen real: equipos y enlaces por estado + frescura del dato --}}
+        <div class="flex flex-wrap items-stretch gap-2.5">
+            <div class="noc-kpi">
+                <span class="noc-kpi-title">Equipos</span>
+                <div class="noc-kpi-row">
+                    <span class="noc-kpi-item" title="En línea"><i class="noc-dot" style="background:#10b981"></i><b id="kpiDispOnline">{{ $resumen['disp_online'] }}</b></span>
+                    <span class="noc-kpi-item" title="Advertencia (umbrales de CPU / pérdida)"><i class="noc-dot" style="background:#f59e0b"></i><b id="kpiDispWarning">{{ $resumen['disp_warning'] }}</b></span>
+                    <span class="noc-kpi-item" title="Sin respuesta (ICMP y SNMP)"><i class="noc-dot" style="background:#ef4444"></i><b id="kpiDispOffline">{{ $resumen['disp_offline'] }}</b></span>
                 </div>
-                <span class="text-xs text-red-700 dark:text-red-400 font-bold tracking-tight">Alerta / Down:</span>
-                <span id="badgeEnlacesDown" class="text-xs font-black text-red-800 dark:text-red-300 font-mono">{{ $enlacesAlerta }}</span>
             </div>
 
-            <div class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/40 shadow-xs">
-                <span class="text-xs text-[#3b5998] dark:text-blue-400 font-semibold">Capacidad:</span>
-                <span id="badgeCapacidad" class="text-xs font-black text-[#3b5998] dark:text-blue-300 font-mono">{{ $anchoBandaTotalGbps }} Gbps</span>
+            <div class="noc-kpi">
+                <span class="noc-kpi-title">Enlaces</span>
+                <div class="noc-kpi-row">
+                    <span class="noc-kpi-item" title="UP (puerto operativo)"><i class="noc-dot" style="background:#10b981"></i><b id="kpiEnlUp">{{ $resumen['enl_up'] }}</b></span>
+                    <span class="noc-kpi-item" title="Degradado / utilización ≥ 80 %"><i class="noc-dot" style="background:#f59e0b"></i><b id="kpiEnlDegraded">{{ $resumen['enl_degraded'] }}</b></span>
+                    <span class="noc-kpi-item" title="DOWN"><i class="noc-dot" style="background:#ef4444"></i><b id="kpiEnlDown">{{ $resumen['enl_down'] }}</b></span>
+                    <span class="noc-kpi-item" title="Sin dato de los puertos"><i class="noc-dot" style="background:#94a3b8"></i><b id="kpiEnlUnknown">{{ $resumen['enl_unknown'] }}</b></span>
+                </div>
+            </div>
+
+            <div class="noc-kpi">
+                <span class="noc-kpi-title">Último sondeo</span>
+                <div class="noc-kpi-row">
+                    <span id="kpiFrescura" class="noc-kpi-item font-mono" data-ts="{{ $resumen['ultimo_sondeo'] }}">—</span>
+                </div>
             </div>
         </div>
     </div>
@@ -233,7 +237,7 @@
         <div class="absolute z-10 flex flex-wrap items-center justify-between gap-3 pointer-events-none" style="top: 1rem; left: 1rem; right: 1rem;">
             
             {{-- Left Bar: Toolbar Groups (Uiverse Buttons) --}}
-            <div class="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white/95 dark:bg-[#0d1017]/95 backdrop-blur-md border border-slate-200/90 dark:border-slate-800/70 shadow-lg dark:shadow-none interactive-bar-island" style="pointer-events: auto;">
+            <div class="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white/95 dark:bg-[#0d1017]/95 border border-slate-200/90 dark:border-slate-800/70 shadow-lg dark:shadow-none interactive-bar-island" style="pointer-events: auto;">
                 
                 {{-- Grupo 1: Vista / Disposición --}}
                 <div class="flex items-center gap-1.5">
@@ -300,6 +304,21 @@
                             <path d="M13 10V3L4 14h7v7l9-11h-7z" fill="currentColor"></path>
                         </svg>
                     </button>
+
+                    {{-- Equipos finales agrupados en su switch --}}
+                    <button type="button" id="btnToggleEndpoints" onclick="toggleEndpoints()" class="uiverse-btn-sm group active" title="Agrupar teléfonos y PCs dentro de su switch de acceso">
+                        <span id="endpointsStatusLabel" class="relative z-[1]">Finales: agrupados</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[180px] group-hover:h-[180px] group-hover:opacity-100 pointer-events-none"></span>
+                    </button>
+
+                    @if($puedeEditar)
+                    {{-- Zonas tipo Packet Tracer --}}
+                    <button type="button" id="btnZonas" onclick="toggleZonaEdicion()" class="uiverse-btn-sm group" title="Crear, mover y redimensionar zonas (edificios, datacenters, sitios)">
+                        <svg class="w-3.5 h-3.5 relative z-[1]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2" stroke-dasharray="4 3"></rect></svg>
+                        <span class="relative z-[1]">Zonas</span>
+                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[140px] group-hover:h-[140px] group-hover:opacity-100 pointer-events-none"></span>
+                    </button>
+                    @endif
                 </div>
 
                 {{-- Separador principal entre grupos --}}
@@ -355,7 +374,7 @@
                 </div>
 
                 {{-- Expanded State: Barra Completa con Botones Uiverse Compactos --}}
-                <div id="rightFilterBarExpanded" class="flex flex-wrap items-center gap-1.5 bg-white/95 dark:bg-[#0d1017]/95 p-1.5 rounded-2xl border border-slate-200/90 dark:border-slate-800/70 backdrop-blur-md shadow-lg dark:shadow-none interactive-bar-island">
+                <div id="rightFilterBarExpanded" class="flex flex-wrap items-center gap-1.5 bg-white/95 dark:bg-[#0d1017]/95 p-1.5 rounded-2xl border border-slate-200/90 dark:border-slate-800/70 shadow-lg dark:shadow-none interactive-bar-island">
                     
                     {{-- Quick Device Search Input --}}
                     <div class="relative flex items-center">
@@ -436,8 +455,64 @@
         {{-- Main Vis.js Graph Canvas --}}
         <div id="networkTopologyCanvas" class="w-full h-full flex-1 cursor-grab active:cursor-grabbing"></div>
 
+        {{-- Barra del modo edición de zonas --}}
+        <div id="zonaEditBar" class="absolute z-10 left-4 right-4 bottom-4 flex-col gap-2 px-4 py-3 rounded-2xl bg-slate-900/95 text-white text-xs shadow-xl border border-blue-500/60">
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="font-bold text-blue-300 mr-1">Modo zonas</span>
+                <button type="button" onclick="acomodarPorIps()" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 font-bold" title="Coloca dentro de cada zona, en cuadrícula, los equipos cuya IP coincide con sus rangos">Acomodar por IPs</button>
+                <button type="button" onclick="crearZonasPorSubred()" class="px-3 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 font-bold" title="Crea una zona por cada subred /24 con equipos y los acomoda">Zonas por subred /24</button>
+                <span class="text-slate-400 hidden lg:inline ml-2">Arrastra en vacío para dibujar · arrastra el título para mover · esquina para redimensionar · ✎ editar · 🗑 borrar</span>
+                <button type="button" onclick="toggleZonaEdicion(false)" class="ml-auto px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 font-bold">Listo</button>
+            </div>
+            <div id="zonaLista" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto"></div>
+        </div>
+
+        {{-- Qué hacer con las zonas al cambiar el acomodo automático --}}
+        <div id="layoutZonasDialog" class="hidden absolute inset-0 z-40 flex items-center justify-center bg-slate-900/40">
+            <div class="w-[26rem] max-w-[calc(100%-2rem)] p-5 rounded-2xl bg-white dark:bg-[#12161f] shadow-2xl border border-slate-200 dark:border-slate-700 text-xs">
+                <p class="text-sm font-black text-slate-800 dark:text-slate-100 mb-1">Hay <span id="layoutZonasCount"></span> zonas en el mapa</p>
+                <p class="text-slate-500 dark:text-slate-400 mb-4">El acomodo <b id="layoutZonasNombre"></b> mueve todos los equipos. ¿Qué hacemos con las zonas?</p>
+                <div class="space-y-2">
+                    <button type="button" data-op="dentro" class="w-full text-left px-3 py-2.5 rounded-xl border-2 border-blue-500 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/40">
+                        <b class="text-slate-800 dark:text-slate-100">Respetar las zonas (recomendado)</b>
+                        <span class="block text-slate-500 dark:text-slate-400">Los equipos de cada zona se reacomodan dentro de ella; el resto se acomoda debajo.</span>
+                    </button>
+                    <button type="button" data-op="seguir" class="w-full text-left px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        <b class="text-slate-800 dark:text-slate-100">Mover las zonas con sus equipos</b>
+                        <span class="block text-slate-500 dark:text-slate-400">Se aplica el acomodo y cada zona se ajusta para rodear a sus equipos (pueden quedar grandes o encimadas).</span>
+                    </button>
+                    <button type="button" data-op="quitar" class="w-full text-left px-3 py-2.5 rounded-xl border border-red-300 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/40">
+                        <b class="text-red-600">Quitar todas las zonas</b>
+                        <span class="block text-slate-500 dark:text-slate-400">Se borran las zonas y se aplica el acomodo. Los equipos no se borran.</span>
+                    </button>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button type="button" data-op="" class="px-3 py-1.5 rounded-lg font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        {{-- Editor de zona (nombre / color / eliminar) --}}
+        <div id="zonaEditor" class="hidden absolute z-30 w-72 p-4 rounded-2xl bg-white dark:bg-[#12161f] shadow-2xl border border-slate-200 dark:border-slate-700 text-xs" style="left: 50%; top: 30%; transform: translateX(-50%);">
+            <p class="font-black text-slate-800 dark:text-slate-100 mb-2" id="zonaEditorTitulo">Zona</p>
+            <label class="block text-slate-500 mb-1">Nombre</label>
+            <input id="zonaEditorNombre" maxlength="80" class="w-full mb-3 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" placeholder="EDIFICIO 1">
+            <label class="block text-slate-500 mb-1">Rangos de IP <span class="text-slate-400">(opcional, separados por coma)</span></label>
+            <input id="zonaEditorRangos" maxlength="500" class="w-full mb-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono" placeholder="10.4.155.0/24, 10.4.20.*, 10.4.1.10-10.4.1.50">
+            <p id="zonaEditorRangosInfo" class="text-[10px] text-slate-400 mb-3"></p>
+            <label class="block text-slate-500 mb-1">Color</label>
+            <div id="zonaEditorColores" class="flex flex-wrap gap-1.5 mb-4"></div>
+            <div class="flex items-center justify-between">
+                <button type="button" id="zonaEditorEliminar" class="px-3 py-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 font-bold">Eliminar</button>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cerrarZonaEditor()" class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold">Cancelar</button>
+                    <button type="button" id="zonaEditorGuardar" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold">Guardar</button>
+                </div>
+            </div>
+        </div>
+
         {{-- ==================== 3. INSPECTOR DRAWER (SIDE PANEL) ==================== --}}
-        <div id="inspectorDrawer" class="absolute w-96 max-w-[calc(100%-2rem)] bg-white/95 dark:bg-[#12161f]/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800 p-5 z-20 pointer-events-none" style="top: 4.5rem; right: 1rem; max-height: calc(100% - 5.5rem); overflow-y: auto;">
+        <div id="inspectorDrawer" class="absolute w-96 max-w-[calc(100%-2rem)] bg-white/95 dark:bg-[#12161f]/95 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800 p-5 z-20 pointer-events-none" style="top: 4.5rem; right: 1rem; max-height: calc(100% - 5.5rem); overflow-y: auto;">
             
             {{-- Drawer Header with Close Button --}}
             <div class="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-slate-800 mb-4">
@@ -573,6 +648,55 @@
                             <span id="drawerPhonePcSwitchPort" class="text-slate-600 dark:text-slate-400 font-bold truncate max-w-[160px]">HMAG_IDF2A_B (Gi1/0/23)</span>
                         </div>
                     </div>
+                </div>
+
+                {{-- Tipo de equipo: de dónde sale y qué tan seguro es --}}
+                <div class="border-t border-gray-100 dark:border-slate-800 pt-3">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <p class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Tipo de equipo</p>
+                        <span id="drawerTipoConfianza" class="text-[9px] font-black px-1.5 py-0.5 rounded"></span>
+                    </div>
+                    <ul id="drawerTipoEvidencia" class="text-[10px] text-slate-600 dark:text-slate-300 space-y-0.5 list-disc pl-4"></ul>
+                    @if($puedeEditar)
+                    <div class="flex items-center gap-2 mt-2">
+                        <label for="drawerTipoManual" class="text-[10px] text-slate-500">Corregir:</label>
+                        <select id="drawerTipoManual" onchange="corregirTipo(this.value)" class="flex-1 text-[11px] px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+                            <option value="">Automático (por evidencia)</option>
+                            @foreach(\App\Services\TipoDispositivoResolver::CATALOGO as $clave => $info)
+                                <option value="{{ $clave }}">{{ $info['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
+                </div>
+
+                {{-- Equipos finales agrupados en este switch --}}
+                <div id="drawerEndpointsSection" class="hidden border-t border-gray-100 dark:border-slate-800 pt-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Equipos finales conectados</p>
+                        <span id="drawerEndpointsCount" class="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded"></span>
+                    </div>
+                    <div id="drawerEndpointsList" class="space-y-1 max-h-40 overflow-y-auto pr-1"></div>
+                </div>
+
+                {{-- Notas del equipo --}}
+                <div class="border-t border-gray-100 dark:border-slate-800 pt-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Notas del equipo</p>
+                        <button type="button" id="btnNuevaNota" onclick="abrirFormNota()" class="hidden text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline">+ Agregar</button>
+                    </div>
+                    <div id="notaForm" class="hidden mb-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 space-y-2">
+                        <input id="notaTitulo" maxlength="120" placeholder="Título (ej. Acceso local, Ubicación del rack)" class="w-full px-2 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+                        <textarea id="notaContenido" rows="3" maxlength="5000" placeholder="Contenido" class="w-full px-2 py-1.5 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100"></textarea>
+                        <label class="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
+                            <input type="checkbox" id="notaSecreto"> Es secreto (contraseña): se oculta y solo Admin/Operador puede revelarla
+                        </label>
+                        <div class="flex justify-end gap-2">
+                            <button type="button" onclick="cerrarFormNota()" class="px-2.5 py-1 text-[11px] font-bold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800">Cancelar</button>
+                            <button type="button" onclick="guardarNota()" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-blue-600 hover:bg-blue-500 text-white">Guardar</button>
+                        </div>
+                    </div>
+                    <div id="notasLista" class="space-y-1.5"></div>
                 </div>
 
                 {{-- Action Links --}}
@@ -1081,6 +1205,8 @@
     <script src="{{ asset('vendor/vis-network/vis-network.min.js') }}"></script>
     <script>
         let initialGrafoData = @json($grafoData);
+        const PUEDE_EDITAR = @json($puedeEditar);
+        const CSRF = '{{ csrf_token() }}';
 
         let network = null;
         let nodesDataSet = null;
@@ -1111,7 +1237,7 @@
         });
 
         function saveNodePositionsToDatabase(positions = null) {
-            if (!network) return;
+            if (!network || !PUEDE_EDITAR) return; // el plano es compartido: solo Admin/Operador lo modifica
             const currentPositions = positions || network.getPositions();
             if (!currentPositions || Object.keys(currentPositions).length === 0) return;
 
@@ -1422,13 +1548,8 @@
                         strokeColor: isDark ? '#090d16' : '#ffffff',
                         align: 'center'
                     },
-                    shadow: {
-                        enabled: true,
-                        color: 'rgba(15, 23, 42, 0.25)',
-                        size: 16,
-                        x: 0,
-                        y: 6
-                    }
+                    // Sombras desactivadas: se recalculan por nodo en cada cuadro y frenan el lienzo
+                    shadow: { enabled: false }
                 },
                 edges: {
                     font: {
@@ -1460,7 +1581,7 @@
                 },
                 interaction: {
                     hover: true,
-                    dragNodes: true,
+                    dragNodes: PUEDE_EDITAR,
                     dragView: true,
                     zoomView: true,
                     navigationButtons: false,
@@ -1470,7 +1591,14 @@
 
             network = new vis.Network(container, data, options);
 
-            // Iniciar ciclo de animación a 60 FPS para Haces de Red (MagicUI Animated Beams)
+            // Equipos finales dentro de su switch, zonas y selección (para los haces)
+            aplicarAgrupacionEndpoints();
+            network.on('beforeDrawing', dibujarZonas);
+            initZonasInteraccion(container);
+            network.on('selectNode', p => { nodoSeleccionado = p.nodes[0] ?? null; });
+            network.on('deselectNode', () => { nodoSeleccionado = null; });
+
+            // Ciclo de animación de los haces (limitado y solo si hay haces que dibujar)
             startTrafficAnimationLoop();
 
             // Vista general completa sin auto-zoom a nodos específicos
@@ -1551,18 +1679,31 @@
             });
 
             // ==================== AFTERDRAWING: HACES DE RED CURVADOS (MAGICUI BEAMS) ====================
+            // Caché de datasets: DataSet.get() copia todos los objetos, no se debe llamar en cada cuadro
+            let cachedEdges = null;
+            let cachedNodes = null;
+            edgesDataSet.on('*', () => { cachedEdges = null; });
+            nodesDataSet.on('*', () => { cachedNodes = null; });
+
             network.on('afterDrawing', function(ctx) {
                 if (!nodesDataSet) return;
-                const nodeIds = nodesDataSet.getIds();
-                const nodePositions = network.getPositions(nodeIds);
+                if (!cachedNodes) {
+                    cachedNodes = nodesDataSet.get();
+                    estadoNodo = {};
+                    cachedNodes.forEach(n => { estadoNodo[n.id] = n.customData?.estado; });
+                }
+                const nodePositions = network.getPositions();
+                let hacesDibujados = 0;
 
                 // ----------------------------------------------------
                 // CAPA 1: HACES DE LUZ ANIMADOS PEGADOS AL CABLE
                 // ----------------------------------------------------
                 if (edgesDataSet) {
-                    const edges = edgesDataSet.get();
+                    if (!cachedEdges) cachedEdges = edgesDataSet.get();
+                    const edges = cachedEdges;
 
                     edges.forEach(edge => {
+                        if (edge.hidden) return;
                         const fromPos = nodePositions[edge.from];
                         const toPos = nodePositions[edge.to];
                         if (!fromPos || !toPos) return;
@@ -1570,11 +1711,17 @@
                         // Obtener el objeto interno de Vis.js para calcular la curva exacta del cable
                         const visEdge = network.body && network.body.edges ? network.body.edges[edge.id] : null;
 
-                        const isDown = edge.customData?.estado === 'DOWN';
+                        const estadoEnlace = edge.customData?.estado;
+                        const isDown = estadoEnlace === 'DOWN';
                         const isSaturated = (parseFloat(edge.customData?.saturacion_pct) || 0) > 75;
 
-                        // Si la simulación está activa y el enlace está UP, renderizar los pulsos que siguen la curva
-                        if (trafficSimulationEnabled && !isDown) {
+                        // Pantalla quieta: solo se animan enlaces UP/DEGRADED con carga alta o del equipo seleccionado
+                        const util = parseFloat(edge.customData?.saturacion_pct) || 0;
+                        const animar = trafficSimulationEnabled
+                            && (estadoEnlace === 'UP' || estadoEnlace === 'DEGRADED')
+                            && (util >= BEAMS_MIN_UTIL || (nodoSeleccionado !== null && (edge.from === nodoSeleccionado || edge.to === nodoSeleccionado)));
+                        if (animar) {
+                            hacesDibujados++;
                             const seed = ((edge.from * 23 + edge.to * 47) % 100) / 100;
                             const speed = 0.35;
                             const beamSpan = 0.14; // Porcentaje del cable ocupado por la estela del haz
@@ -1591,24 +1738,24 @@
 
                                 ctx.save();
                                 const grad = ctx.createLinearGradient(tailPt.x, tailPt.y, headPt.x, headPt.y);
+                                let glowColor;
                                 if (isSaturated) {
                                     grad.addColorStop(0, 'rgba(239, 68, 68, 0)');
                                     grad.addColorStop(0.4, 'rgba(245, 158, 11, 0.7)');
                                     grad.addColorStop(0.9, 'rgba(251, 191, 36, 1)');
                                     grad.addColorStop(1, '#ffffff');
-                                    ctx.shadowColor = '#f59e0b';
+                                    glowColor = 'rgba(245, 158, 11, 0.35)';
                                 } else {
                                     // Cyber Neon: Cyan -> Esmeralda -> Núcleo Blanco
                                     grad.addColorStop(0, 'rgba(6, 182, 212, 0)');
                                     grad.addColorStop(0.35, 'rgba(16, 185, 129, 0.75)');
                                     grad.addColorStop(0.85, 'rgba(52, 211, 153, 1)');
                                     grad.addColorStop(1, '#ffffff');
-                                    ctx.shadowColor = '#10b981';
+                                    glowColor = 'rgba(16, 185, 129, 0.35)';
                                 }
                                 ctx.strokeStyle = grad;
                                 ctx.lineWidth = 3.5;
                                 ctx.lineCap = 'round';
-                                ctx.shadowBlur = 8;
 
                                 // Dibujar el segmento curvo muestreando puntos exactos sobre la spline del cable
                                 ctx.beginPath();
@@ -1621,11 +1768,14 @@
                                 }
                                 ctx.stroke();
 
-                                // Fotón/Paquete Líder brillante que viaja sobre el cable
+                                // Fotón/Paquete Líder: halo translúcido en lugar de shadowBlur (mucho más barato)
+                                ctx.beginPath();
+                                ctx.arc(headPt.x, headPt.y, 7, 0, Math.PI * 2);
+                                ctx.fillStyle = glowColor;
+                                ctx.fill();
                                 ctx.beginPath();
                                 ctx.arc(headPt.x, headPt.y, 3.2, 0, Math.PI * 2);
                                 ctx.fillStyle = '#ffffff';
-                                ctx.shadowBlur = 10;
                                 ctx.fill();
                                 ctx.restore();
                             }
@@ -1646,8 +1796,6 @@
                             ctx.strokeStyle = revGrad;
                             ctx.lineWidth = 2.4;
                             ctx.lineCap = 'round';
-                            ctx.shadowColor = '#6366f1';
-                            ctx.shadowBlur = 6;
 
                             ctx.beginPath();
                             const revSamples = 6;
@@ -1660,9 +1808,12 @@
                             ctx.stroke();
 
                             ctx.beginPath();
+                            ctx.arc(revHeadPt.x, revHeadPt.y, 5.5, 0, Math.PI * 2);
+                            ctx.fillStyle = 'rgba(99, 102, 241, 0.3)';
+                            ctx.fill();
+                            ctx.beginPath();
                             ctx.arc(revHeadPt.x, revHeadPt.y, 2.4, 0, Math.PI * 2);
                             ctx.fillStyle = '#ffffff';
-                            ctx.shadowBlur = 8;
                             ctx.fill();
                             ctx.restore();
                         }
@@ -1681,12 +1832,13 @@
                 // ----------------------------------------------------
                 // CAPA 2: MICRO-LEDS DE ESTADO EN HARDWARE
                 // ----------------------------------------------------
-                nodeIds.forEach(id => {
-                    const pos = nodePositions[id];
-                    if (!pos) return;
+                hacesActivos = hacesDibujados;
 
-                    const node = nodesDataSet.get(id);
-                    if (!node || !node.customData) return;
+                cachedNodes.forEach(node => {
+                    const pos = nodePositions[node.id];
+                    if (!pos || !node.customData || node.hidden) return;
+
+                    dibujarInsigniasNodo(ctx, node, pos);
 
                     const estado = node.customData.estado || 'online';
                     const nodeSize = node.size || 120;
@@ -1694,30 +1846,22 @@
                     const ledX = pos.x + (nodeSize * 0.92);
                     const ledY = pos.y - (nodeSize * 0.55);
                     const ledRadius = 6;
+                    const online = estado === 'online';
 
                     ctx.save();
+                    // Halo translúcido en lugar de shadowBlur
+                    ctx.beginPath();
+                    ctx.arc(ledX, ledY, ledRadius + 4, 0, 2 * Math.PI, false);
+                    ctx.fillStyle = online ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.35)';
+                    ctx.fill();
+
                     ctx.beginPath();
                     ctx.arc(ledX, ledY, ledRadius, 0, 2 * Math.PI, false);
-
-                    if (estado === 'online') {
-                        ctx.fillStyle = '#10b981';
-                        ctx.shadowColor = 'rgba(16, 185, 129, 0.8)';
-                        ctx.shadowBlur = 8;
-                        ctx.fill();
-
-                        ctx.strokeStyle = '#ffffff';
-                        ctx.lineWidth = 1.5;
-                        ctx.stroke();
-                    } else {
-                        ctx.fillStyle = '#ef4444';
-                        ctx.shadowColor = 'rgba(239, 68, 68, 0.9)';
-                        ctx.shadowBlur = 8;
-                        ctx.fill();
-
-                        ctx.strokeStyle = '#ffffff';
-                        ctx.lineWidth = 1.5;
-                        ctx.stroke();
-                    }
+                    ctx.fillStyle = online ? '#10b981' : '#ef4444';
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
                     ctx.restore();
                 });
             });
@@ -1820,12 +1964,13 @@
             document.getElementById('drawerDeviceNombre').textContent = d.nombre;
             document.getElementById('drawerDeviceIp').textContent = d.ip;
             document.getElementById('drawerDeviceRol').textContent = d.rol;
-            document.getElementById('drawerDeviceCpu').textContent = d.cpu + '%';
-            document.getElementById('drawerDeviceMem').textContent = d.memoria + '%';
-            document.getElementById('drawerDevicePing').textContent = d.ping + ' ms';
-            document.getElementById('drawerDeviceModelo').textContent = d.modelo;
-            document.getElementById('drawerDeviceSerial').textContent = d.serial;
-            document.getElementById('drawerDeviceUptime').textContent = d.uptime;
+            const sinDato = (v, suffix = '') => (v === null || v === undefined || v === '') ? 'Sin dato' : v + suffix;
+            document.getElementById('drawerDeviceCpu').textContent = sinDato(d.cpu, '%');
+            document.getElementById('drawerDeviceMem').textContent = sinDato(d.memoria, '%');
+            document.getElementById('drawerDevicePing').textContent = sinDato(d.ping, ' ms');
+            document.getElementById('drawerDeviceModelo').textContent = sinDato(d.modelo);
+            document.getElementById('drawerDeviceSerial').textContent = sinDato(d.serial);
+            document.getElementById('drawerDeviceUptime').textContent = sinDato(d.uptime);
             document.getElementById('drawerDeviceUbicacion').textContent = d.ubicacion;
             document.getElementById('drawerDeviceLink').href = d.url;
 
@@ -1840,7 +1985,11 @@
             }
 
             if (d.image) {
-                document.getElementById('drawerDeviceIcon').innerHTML = `<img src="${d.image}" class="w-9 h-9 object-contain drop-shadow" alt="${d.nombre}">`;
+                const icon = document.createElement('img');
+                icon.src = d.image;
+                icon.className = 'w-9 h-9 object-contain drop-shadow';
+                icon.alt = d.nombre;
+                document.getElementById('drawerDeviceIcon').replaceChildren(icon);
                 const chassisImg = document.getElementById('drawerDeviceChassisImage');
                 if (chassisImg) {
                     chassisImg.src = d.image;
@@ -1852,10 +2001,10 @@
                 document.getElementById('drawerDeviceTipoEquipo').textContent = d.tipo_equipo || d.rol;
             }
             if (document.getElementById('drawerDeviceFactorForma')) {
-                document.getElementById('drawerDeviceFactorForma').textContent = d.factor_forma || '1U Rackmount';
+                document.getElementById('drawerDeviceFactorForma').textContent = d.factor_forma || 'Modelo no reportado';
             }
             if (document.getElementById('drawerDeviceVendor')) {
-                document.getElementById('drawerDeviceVendor').textContent = d.vendor || (d.rol && d.rol.includes('FORTI') ? 'Fortinet Inc.' : 'Cisco Systems');
+                document.getElementById('drawerDeviceVendor').textContent = d.vendor || 'Sin dato';
             }
 
             // Renderizar lista de conexiones activas / cables del equipo
@@ -1880,19 +2029,21 @@
                             }
                         };
 
+                        // Los nombres de puertos/vecinos llegan por CDP/LLDP desde la red: se escapan siempre.
+                        const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
                         item.innerHTML = `
                             <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${c.color};"></span>
-                                <span class="font-mono font-bold text-slate-800 bg-white px-1.5 py-0.5 rounded border border-gray-200 text-[10px] shadow-2xs">${c.puerto_local}</span>
+                                <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${esc(c.color)};"></span>
+                                <span class="font-mono font-bold text-slate-800 bg-white px-1.5 py-0.5 rounded border border-gray-200 text-[10px] shadow-2xs">${esc(c.puerto_local)}</span>
                                 <span class="text-gray-400 text-[10px]">➔</span>
                                 <div class="truncate max-w-[130px]">
-                                    <p class="font-semibold text-slate-800 leading-tight truncate">${c.remoto_nombre}</p>
-                                    <p class="text-[10px] text-gray-500 font-mono">${c.remoto_ip} • ${c.puerto_remoto}</p>
+                                    <p class="font-semibold text-slate-800 leading-tight truncate">${esc(c.remoto_nombre)}</p>
+                                    <p class="text-[10px] text-gray-500 font-mono">${esc(c.remoto_ip)} • ${esc(c.puerto_remoto)}</p>
                                 </div>
                             </div>
                             <div class="text-right flex-shrink-0">
-                                <span class="text-[9px] font-black px-1.5 py-0.5 rounded ${c.estado === 'UP' ? 'bg-emerald-100 text-emerald-700' : (c.estado === 'DOWN' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700')}">${c.estado}</span>
-                                <p class="text-[9px] text-gray-400 font-mono mt-0.5">${c.velocidad}</p>
+                                <span class="text-[9px] font-black px-1.5 py-0.5 rounded ${c.estado === 'UP' ? 'bg-emerald-100 text-emerald-700' : (c.estado === 'DOWN' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700')}">${esc(c.estado === 'UNKNOWN' ? 'SIN DATO' : c.estado)}</span>
+                                <p class="text-[9px] text-gray-400 font-mono mt-0.5">${esc(c.velocidad)}</p>
                             </div>
                         `;
                         connList.appendChild(item);
@@ -1924,9 +2075,9 @@
                     document.getElementById('drawerPhonePcHostname').textContent = 'Puerto PC Disponible';
                     document.getElementById('drawerPhonePcVendor').textContent = 'Sin computadora transmitiendo';
                     document.getElementById('drawerPhonePcIp').textContent = 'Standby';
-                    document.getElementById('drawerPhonePcMac').textContent = 'Puerto 10/100/1000';
-                    document.getElementById('drawerPhonePcSpeed').textContent = '1.0 Gbps Capacidad';
-                    document.getElementById('drawerPhonePcVlan').textContent = 'VLAN Datos';
+                    document.getElementById('drawerPhonePcMac').textContent = 'Sin dato';
+                    document.getElementById('drawerPhonePcSpeed').textContent = 'Sin dato';
+                    document.getElementById('drawerPhonePcVlan').textContent = 'Sin dato';
                     document.getElementById('drawerPhonePcSwitchPort').textContent = `${pc.switch_name} (${pc.switch_port})`;
                     
                     const pcBadge = document.getElementById('drawerPhonePcStatusBadge');
@@ -1939,7 +2090,46 @@
                 }
             }
 
+            renderTipoDrawer(d);
+            renderEndpointsDrawer(nodeId);
+            cargarNotas(nodeId);
             openDrawer();
+        }
+
+        const CONF_ESTILO = {
+            alta: 'bg-emerald-100 text-emerald-700', media: 'bg-amber-100 text-amber-700',
+            baja: 'bg-red-100 text-red-700', ninguna: 'bg-red-100 text-red-700', manual: 'bg-sky-100 text-sky-700'
+        };
+        const FUENTE_TXT = { snmp: 'SNMP del equipo', vecinos: 'CDP/LLDP de vecinos', nombre: 'solo por nombre', manual: 'corrección manual', ninguna: 'sin evidencia' };
+
+        function renderTipoDrawer(d) {
+            const conf = d.tipo_confianza || 'baja';
+            const badge = document.getElementById('drawerTipoConfianza');
+            badge.className = 'text-[9px] font-black px-1.5 py-0.5 rounded ' + (CONF_ESTILO[conf] || CONF_ESTILO.baja);
+            badge.textContent = `${(d.tipo_equipo || '').toUpperCase()} · ${conf.toUpperCase()} · ${FUENTE_TXT[d.tipo_fuente] || d.tipo_fuente || ''}`;
+            const ul = document.getElementById('drawerTipoEvidencia');
+            ul.innerHTML = (d.tipo_evidencia || []).map(e => `<li>${escHtml(e)}</li>`).join('') || '<li>Sin evidencia registrada</li>';
+            const sel = document.getElementById('drawerTipoManual');
+            if (sel) sel.value = d.tipo_manual || '';
+        }
+
+        async function corregirTipo(tipo) {
+            const id = notasDispositivoId;
+            if (!id) return;
+            try {
+                const r = await apiJson(`{{ url('api/dispositivos') }}/${id}/tipo`, 'POST', { tipo: tipo || null });
+                const t = r.tipo;
+                const node = nodesDataSet.get(id);
+                if (node) {
+                    const cd = { ...node.customData, tipo: t.tipo, rol: t.rol, tipo_equipo: t.label, tipo_confianza: t.confianza,
+                                 tipo_fuente: t.fuente, tipo_evidencia: t.evidencia, tipo_manual: tipo || null };
+                    nodesDataSet.update({ id, customData: cd, image: '{{ url('/') }}/' + t.image, size: t.size });
+                    renderTipoDrawer(cd);
+                    aplicarAgrupacionEndpoints();
+                }
+            } catch (e) {
+                alert('No se pudo corregir el tipo: ' + e.message);
+            }
         }
 
         function showLinkDetails(edgeId) {
@@ -1956,16 +2146,18 @@
             document.getElementById('drawerLinkOrigenPuerto').textContent = l.origen_puerto;
             document.getElementById('drawerLinkDestinoDisp').textContent = l.destino_disp;
             document.getElementById('drawerLinkDestinoPuerto').textContent = l.destino_puerto;
-            document.getElementById('drawerLinkTraficoIn').textContent = l.trafico_in + ' Mbps';
-            document.getElementById('drawerLinkTraficoOut').textContent = l.trafico_out + ' Mbps';
-            document.getElementById('drawerLinkSaturacion').textContent = l.saturacion_pct + '%';
+            document.getElementById('drawerLinkTraficoIn').textContent = l.trafico_in === null ? 'Sin dato' : l.trafico_in + ' Mbps';
+            document.getElementById('drawerLinkTraficoOut').textContent = l.trafico_out === null ? 'Sin dato' : l.trafico_out + ' Mbps';
+            document.getElementById('drawerLinkSaturacion').textContent = l.saturacion_pct === null ? 'Sin dato' : l.saturacion_pct + '%';
 
             const badge = document.getElementById('drawerLinkStatusBadge');
-            badge.textContent = l.estado;
+            badge.textContent = l.estado === 'UNKNOWN' ? 'SIN DATO' : l.estado;
             if (l.estado === 'UP') {
                 badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700';
             } else if (l.estado === 'DEGRADED') {
                 badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-100 text-[#f26419]';
+            } else if (l.estado === 'UNKNOWN') {
+                badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-gray-100 text-gray-600';
             } else {
                 badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-red-100 text-red-700';
             }
@@ -1973,11 +2165,14 @@
             // Vlans tags
             const vlansContainer = document.getElementById('drawerLinkVlans');
             vlansContainer.innerHTML = '';
-            const vlans = l.vlans.split(',');
+            const vlans = l.vlans ? l.vlans.split(',') : [];
+            if (vlans.length === 0) {
+                vlansContainer.textContent = 'Sin dato';
+            }
             vlans.forEach(v => {
                 const span = document.createElement('span');
                 span.className = 'px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded';
-                span.textContent = 'VLAN ' + v.trim();
+                span.textContent = v.trim().toUpperCase().startsWith('VLAN') ? v.trim() : 'VLAN ' + v.trim();
                 vlansContainer.appendChild(span);
             });
 
@@ -2009,20 +2204,33 @@
             }
         }
 
+        // Redibujar el lienzo completo es caro: se limita a ~30 FPS, se pausa con la pestaña oculta
+        // y cuando el zoom es tan lejano que los haces no se distinguen.
+        const BEAMS_FRAME_MS = 1000 / 30;
+        const BEAMS_MIN_SCALE = 0.2;
+        const BEAMS_MIN_UTIL = 60; // % de utilización a partir del cual el enlace se anima siempre
+        let hacesActivos = 0;
+        let nodoSeleccionado = null;
+
         function startTrafficAnimationLoop() {
             if (animLoopRunning) return;
             animLoopRunning = true;
             let lastTimestamp = performance.now();
+            let lastDraw = 0;
 
             function frame(now) {
-                const delta = (now - lastTimestamp) / 1000;
+                requestAnimationFrame(frame);
+                const delta = Math.min(0.1, (now - lastTimestamp) / 1000);
                 lastTimestamp = now;
 
-                if (trafficSimulationEnabled && network) {
-                    trafficAnimTime += delta * trafficSpeedMultiplier;
-                    network.redraw();
-                }
-                requestAnimationFrame(frame);
+                if (!trafficSimulationEnabled || !network || document.hidden) return;
+                trafficAnimTime += delta * trafficSpeedMultiplier;
+
+                if (now - lastDraw < BEAMS_FRAME_MS) return;
+                if (hacesActivos === 0) return; // nada que animar: vis redibuja solo al cambiar algo
+                if (network.getScale() < BEAMS_MIN_SCALE) return;
+                lastDraw = now;
+                network.redraw();
             }
             requestAnimationFrame(frame);
         }
@@ -2057,7 +2265,123 @@
             }
         }
 
-        function setLayout(type) {
+        // ==================== ACOMODO AUTOMÁTICO + ZONAS ====================
+        function preguntarZonas(nombreLayout) {
+            return new Promise(resolve => {
+                const dlg = document.getElementById('layoutZonasDialog');
+                document.getElementById('layoutZonasCount').textContent = zonas.length;
+                document.getElementById('layoutZonasNombre').textContent = nombreLayout;
+                dlg.classList.remove('hidden');
+                dlg.querySelectorAll('button[data-op]').forEach(b => b.onclick = () => {
+                    dlg.classList.add('hidden');
+                    resolve(b.dataset.op || null);
+                });
+            });
+        }
+
+        // Equipos de cada zona: por sus rangos de IP o, si no tiene, por los que están dentro del recuadro
+        function miembrosDeZonas() {
+            const pos = network.getPositions();
+            const asignados = new Set();
+            return zonas.map(z => {
+                let ids;
+                if (parseRangos(z.rangos_ip).rangos.length) {
+                    ids = equiposEnRangos(z.rangos_ip).map(n => n.id);
+                } else {
+                    ids = Object.entries(pos)
+                        .filter(([, q]) => q.x >= z.x && q.x <= z.x + z.ancho && q.y >= z.y && q.y <= z.y + z.alto)
+                        .map(([id]) => isNaN(id) ? id : Number(id));
+                }
+                ids = ids.filter(id => !asignados.has(id));
+                ids.forEach(id => asignados.add(id));
+                return { zona: z, ids };
+            });
+        }
+
+        async function guardarZonasSilencioso(lista) {
+            if (!PUEDE_EDITAR) return;
+            for (const z of lista) {
+                try { await guardarZonaServidor(z); } catch (e) { console.warn('Zona no guardada', z.nombre, e); }
+            }
+        }
+
+        // Cada zona se ajusta al recuadro que rodea a sus equipos visibles
+        async function zonasSiguenEquipos(miembros) {
+            const pos = network.getPositions();
+            const cambiadas = [];
+            miembros.forEach(({ zona, ids }) => {
+                const pts = ids.filter(id => !(endpointsAgrupados && padreDeHijo[id] !== undefined)).map(id => pos[id]).filter(Boolean);
+                if (!pts.length) return;
+                const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+                zona.x = Math.min(...xs) - MARGEN;
+                zona.y = Math.min(...ys) - TITULO - 60;
+                zona.ancho = Math.max(400, Math.max(...xs) - Math.min(...xs) + 2 * MARGEN);
+                zona.alto = Math.max(300, Math.max(...ys) - Math.min(...ys) + TITULO + 60 + MARGEN);
+                cambiadas.push(zona);
+            });
+            await guardarZonasSilencioso(cambiadas);
+        }
+
+        // Los equipos de cada zona se reacomodan dentro de ella; los demás (ya acomodados
+        // por el layout) se desplazan debajo de todas las zonas para no encimarse.
+        async function respetarZonas(miembros) {
+            const posiciones = {};
+            const enZona = new Set();
+            miembros.forEach(({ zona, ids }) => {
+                ids.forEach(id => enZona.add(id));
+                cuadriculaEnZona(zona, nodesDataSet.get(ids), posiciones);
+            });
+            const conZona = miembros.map(m => m.zona);
+            if (conZona.length) {
+                const fondo = Math.max(...conZona.map(z => z.y + z.alto));
+                const izquierda = Math.min(...conZona.map(z => z.x));
+                const actuales = network.getPositions();
+                const fuera = Object.keys(actuales).map(id => isNaN(id) ? id : Number(id)).filter(id => !enZona.has(id));
+                const esAgrupado = id => endpointsAgrupados && padreDeHijo[id] !== undefined;
+                const resto = fuera.filter(id => !esAgrupado(id));
+                if (resto.length) {
+                    const minY = Math.min(...resto.map(id => actuales[id].y));
+                    const minX = Math.min(...resto.map(id => actuales[id].x));
+                    resto.forEach(id => {
+                        posiciones[id] = { x: actuales[id].x - minX + izquierda, y: actuales[id].y - minY + fondo + 500 };
+                    });
+                }
+                // Equipos finales agrupados: alrededor de su switch, esté dentro o fuera de una zona
+                rodearPadres(nodesDataSet.get(fuera.filter(esAgrupado)), posiciones);
+            }
+            Object.entries(posiciones).forEach(([id, p]) => network.moveNode(isNaN(id) ? id : Number(id), p.x, p.y));
+            await guardarZonasSilencioso(conZona);
+            saveNodePositionsToDatabase(network.getPositions());
+        }
+
+        async function setLayout(type) {
+            if (!network) return;
+            if (!zonas.length) return aplicarLayout(type);
+
+            const op = await preguntarZonas(type === 'tree' ? 'Jerárquico' : 'Libre');
+            if (!op) return;
+            if (op === 'quitar') {
+                if (!confirm(`¿Borrar las ${zonas.length} zonas?`)) return;
+                try {
+                    await apiJson("{{ route('topologia.zonas.destroy_all') }}", 'DELETE'); // una sola petición: borra también zonas que el mapa no tenga cargadas
+                    zonas = [];
+                    renderZonaLista();
+                } catch (e) {
+                    alert('No se pudieron borrar todas las zonas: ' + e.message);
+                }
+                return aplicarLayout(type);
+            }
+            const miembros = miembrosDeZonas();
+            aplicarLayout(type, async () => {
+                if (op === 'dentro') await respetarZonas(miembros);
+                else await zonasSiguenEquipos(miembros);
+                renderZonaLista();
+                network.redraw();
+                network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' }, padding: 80 });
+            });
+        }
+
+        function aplicarLayout(type, alTerminar = null) {
             if (!network) return;
 
             const btnTree = document.getElementById('btnLayoutTree');
@@ -2093,7 +2417,8 @@
                 if (btnPhys) btnPhys.classList.remove('active');
                 if (labelPhys) labelPhys.textContent = 'Física Inactiva';
 
-                setTimeout(() => network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' }, padding: 80 }), 250);
+                if (alTerminar) alTerminar();
+                else setTimeout(() => network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' }, padding: 80 }), 250);
             } else {
                 if (btnFree) btnFree.classList.add('active');
                 if (btnTree) btnTree.classList.remove('active');
@@ -2129,14 +2454,17 @@
                     
                     const currentPositions = network.getPositions();
                     saveNodePositionsToDatabase(currentPositions);
-                    
-                    network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' }, padding: 80 });
+
+                    if (alTerminar) alTerminar();
+                    else network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' }, padding: 80 });
                 });
-                
+
                 const btnPhys = document.getElementById('btnTogglePhysics');
                 const labelPhys = document.getElementById('physicsStatusLabel');
                 if (btnPhys) btnPhys.classList.add('active');
                 if (labelPhys) labelPhys.textContent = 'Física Activa';
+                // Sin stabilize() explícito el evento 'stabilizationIterationsDone' no se emite
+                network.stabilize(150);
             }
         }
 
@@ -2187,7 +2515,11 @@
 
                 let match = false;
                 const nomLower = nombre.toLowerCase();
-                if (category === 'router') {
+                const tipoReal = node.customData?.tipo;
+                const porTipo = { router: ['router', 'firewall'], switch: ['switch'], access_point: ['access_point', 'wlc'], phone: ['telefono'], servidor: ['servidor'] };
+                if (tipoReal && porTipo[category]) {
+                    match = porTipo[category].includes(tipoReal);
+                } else if (category === 'router') {
                     match = (hay.includes('router') || hay.includes('isr') || hay.includes('1841') || hay.includes('4400') || hay.includes('4451') || hay.includes('4331') || hay.includes('cube') || hay.includes('gw-') || hay.includes('-gw') || hay.includes('gw_') || hay.includes('sat.') || hay.includes('-sat')) && !hay.includes('catalyst') && !nomLower.startsWith('sw') && !nomLower.includes('swc') && !nomLower.includes('swe') && !nomLower.startsWith('nx') && !hay.includes('nexus');
                 } else if (category === 'switch') {
                     match = (hay.includes('switch') || hay.includes('nexus') || hay.includes('catalyst') || hay.includes('core') || hay.includes('access') || hay.includes('ws-c') || nomLower.startsWith('sw') || nomLower.startsWith('nx') || nomLower.includes('idf') || nomLower.includes('mdf')) && !nomLower.startsWith('sep');
@@ -2243,16 +2575,19 @@
                 }
             });
 
+            // Un equipo final agrupado no está en el lienzo: se enfoca su switch
+            const visible = id => (endpointsAgrupados && padreDeHijo[id] !== undefined) ? padreDeHijo[id] : id;
             if (matchedNodeIds.length === 1) {
-                network.focus(matchedNodeIds[0], {
+                const destino = visible(matchedNodeIds[0]);
+                network.focus(destino, {
                     scale: 1.15,
                     animation: { duration: 600, easingFunction: 'easeInOutQuad' }
                 });
-                network.selectNodes([matchedNodeIds[0]]);
+                network.selectNodes([destino]);
                 showDeviceDetails(matchedNodeIds[0]);
             } else if (matchedNodeIds.length > 1) {
                 network.fit({
-                    nodes: matchedNodeIds,
+                    nodes: [...new Set(matchedNodeIds.map(visible))],
                     animation: { duration: 600, easingFunction: 'easeInOutQuad' },
                     padding: 100
                 });
@@ -2279,8 +2614,9 @@
                 edgesDataSet.add(allEdges.filter(e => e.customData.estado === 'UP'));
             } else if (filter === 'down') {
                 edgesDataSet.clear();
-                edgesDataSet.add(allEdges.filter(e => e.customData.estado !== 'UP'));
+                edgesDataSet.add(allEdges.filter(e => e.customData.estado === 'DOWN' || e.customData.estado === 'DEGRADED'));
             }
+            aplicarAgrupacionEndpoints();
         }
 
         function exportTopologyImage() {
@@ -2292,6 +2628,781 @@
             link.href = canvas.toDataURL('image/png');
             link.click();
         }
+
+        const escHtml = s => String(s ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
+        async function apiJson(url, method = 'GET', body = null) {
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF, 'X-Requested-With': 'XMLHttpRequest' },
+                body: body ? JSON.stringify(body) : null
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || ('Error ' + res.status));
+            return data;
+        }
+
+        // ==================== EQUIPOS FINALES AGRUPADOS EN SU SWITCH ====================
+        // Teléfonos y PCs con un solo vecino de infraestructura se ocultan y se muestran
+        // como insignia sobre ese vecino. Se ven en el inspector del switch.
+        let endpointsAgrupados = localStorage.getItem('topo_endpoints_visibles') !== '1';
+        let estadoNodo = {};      // id -> estado (cacheado por cuadro de dibujo)
+        let hijosPorPadre = {};   // padreId -> [hijoId]
+        let padreDeHijo = {};     // hijoId  -> padreId
+
+        function esEquipoFinal(node) {
+            const tipo = node.customData?.tipo;
+            if (tipo) return ['telefono', 'pc', 'impresora'].includes(tipo);
+            const rol = (node.customData?.rol || '').toUpperCase();
+            return /VOIP|ENDPOINT|PC \/|\/ PC/.test(rol);
+        }
+
+        function calcularJerarquiaEndpoints() {
+            hijosPorPadre = {};
+            padreDeHijo = {};
+            const nodos = {};
+            nodesDataSet.get().forEach(n => { nodos[n.id] = n; });
+            const vecinos = {};
+            (initialGrafoData.edges || []).forEach(e => {
+                (vecinos[e.from] = vecinos[e.from] || new Set()).add(e.to);
+                (vecinos[e.to] = vecinos[e.to] || new Set()).add(e.from);
+            });
+            Object.values(nodos).forEach(n => {
+                if (!esEquipoFinal(n)) return;
+                const v = [...(vecinos[n.id] || [])].filter(id => nodos[id] && !esEquipoFinal(nodos[id]));
+                if (v.length !== 1) return;
+                padreDeHijo[n.id] = v[0];
+                (hijosPorPadre[v[0]] = hijosPorPadre[v[0]] || []).push(n.id);
+            });
+        }
+
+        function aplicarAgrupacionEndpoints() {
+            if (!nodesDataSet || !edgesDataSet) return;
+            calcularJerarquiaEndpoints();
+            const ocultar = endpointsAgrupados;
+            nodesDataSet.update(nodesDataSet.getIds().map(id => ({ id, hidden: ocultar && padreDeHijo[id] !== undefined })));
+            edgesDataSet.update(edgesDataSet.get().map(e => ({
+                id: e.id,
+                hidden: ocultar && (padreDeHijo[e.from] === e.to || padreDeHijo[e.to] === e.from)
+            })));
+            const btn = document.getElementById('btnToggleEndpoints');
+            const lbl = document.getElementById('endpointsStatusLabel');
+            if (btn) btn.classList.toggle('active', ocultar);
+            if (lbl) lbl.textContent = ocultar ? 'Finales: agrupados' : 'Finales: visibles';
+        }
+
+        function toggleEndpoints() {
+            endpointsAgrupados = !endpointsAgrupados;
+            try { localStorage.setItem('topo_endpoints_visibles', endpointsAgrupados ? '0' : '1'); } catch (e) {}
+            aplicarAgrupacionEndpoints();
+        }
+
+        // Insignias dibujadas sobre el nodo: equipos finales agrupados y notas
+        function dibujarInsigniasNodo(ctx, node, pos) {
+            const size = node.size || 120;
+            const hijos = endpointsAgrupados ? (hijosPorPadre[node.id] || []) : [];
+            if (hijos.length) {
+                let caidos = 0;
+                hijos.forEach(id => { if (estadoNodo[id] === 'offline') caidos++; });
+                const texto = `☎ ${hijos.length}` + (caidos ? `  ▼${caidos}` : '');
+                ctx.save();
+                ctx.font = 'bold 22px Inter, system-ui, sans-serif';
+                const w = ctx.measureText(texto).width + 20;
+                const x = pos.x - w / 2, y = pos.y + size * 0.55 + 46;
+                ctx.fillStyle = caidos ? '#fee2e2' : '#e0f2fe';
+                ctx.strokeStyle = caidos ? '#ef4444' : '#0284c7';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect ? ctx.roundRect(x, y, w, 32, 16) : ctx.rect(x, y, w, 32);
+                ctx.fill(); ctx.stroke();
+                ctx.fillStyle = caidos ? '#b91c1c' : '#075985';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(texto, pos.x, y + 17);
+                ctx.restore();
+            }
+            if ((node.customData?.notas || 0) > 0) {
+                const x = pos.x - size * 0.92, y = pos.y - size * 0.55;
+                ctx.save();
+                ctx.fillStyle = '#facc15';
+                ctx.strokeStyle = '#a16207';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.rect(x - 9, y - 11, 18, 22);
+                ctx.fill(); ctx.stroke();
+                ctx.fillStyle = '#713f12';
+                for (let i = 0; i < 3; i++) ctx.fillRect(x - 5, y - 6 + i * 5, 10, 1.5);
+                ctx.restore();
+            }
+        }
+
+        function renderEndpointsDrawer(nodeId) {
+            const sec = document.getElementById('drawerEndpointsSection');
+            const list = document.getElementById('drawerEndpointsList');
+            const hijos = hijosPorPadre[nodeId] || [];
+            if (!sec || !list) return;
+            if (!hijos.length) { sec.classList.add('hidden'); return; }
+            sec.classList.remove('hidden');
+            const nodos = nodesDataSet.get(hijos).sort((a, b) =>
+                (a.customData?.estado === 'offline' ? 0 : 1) - (b.customData?.estado === 'offline' ? 0 : 1));
+            const caidos = nodos.filter(n => n.customData?.estado === 'offline').length;
+            document.getElementById('drawerEndpointsCount').textContent = `${nodos.length} · ${caidos} sin respuesta`;
+            list.innerHTML = nodos.map(n => {
+                const d = n.customData || {};
+                const color = d.estado === 'online' ? '#10b981' : (d.estado === 'warning' ? '#f59e0b' : '#ef4444');
+                return `<div class="flex items-center justify-between gap-2 px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-900/70 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs" onclick="showDeviceDetails(${Number(n.id)})">
+                    <span class="flex items-center gap-1.5 truncate"><i class="noc-dot" style="background:${color}"></i><span class="truncate font-semibold text-slate-700 dark:text-slate-200">${escHtml(d.nombre)}</span></span>
+                    <span class="font-mono text-[10px] text-slate-500">${escHtml(d.ip)}</span>
+                </div>`;
+            }).join('');
+        }
+
+        // ==================== ZONAS (recuadros tipo Packet Tracer) ====================
+        const ZONA_COLORES = ['#facc15', '#22d3ee', '#22c55e', '#e879f9', '#fb923c', '#3b82f6', '#ef4444', '#64748b'];
+        let zonas = (initialGrafoData.zonas || []).map(z => ({ ...z }));
+        let zonaEditando = false;
+        let zonaArrastre = null;
+
+        function hexToRgba(hex, a) {
+            const n = parseInt(hex.slice(1), 16);
+            return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+        }
+
+        // Medidas en pantalla constantes, convertidas a unidades del lienzo
+        function px(n) { return n / (network ? network.getScale() : 1); }
+
+        function dibujarZonas(ctx) {
+            const isDark = document.documentElement.classList.contains('dark');
+            const todas = [...zonas];
+            if (zonaArrastre && zonaArrastre.tipo === 'nueva') todas.push(zonaArrastre.zona);
+            if (zonaEnEditor && zonaEnEditor.esNueva) todas.push(zonaEnEditor.zona);
+            todas.forEach(z => {
+                ctx.save();
+                ctx.fillStyle = hexToRgba(z.color, isDark ? 0.12 : 0.2);
+                ctx.strokeStyle = hexToRgba(z.color, 0.85);
+                ctx.lineWidth = px(2);
+                if (zonaEditando) ctx.setLineDash([px(8), px(5)]);
+                ctx.beginPath();
+                ctx.rect(z.x, z.y, z.ancho, z.alto);
+                ctx.fill(); ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Título (tamaño de pantalla constante, recortado al ancho de la zona)
+                const barra = px(30);
+                ctx.fillStyle = hexToRgba(z.color, isDark ? 0.45 : 0.55);
+                ctx.fillRect(z.x, z.y, z.ancho, Math.min(barra, z.alto));
+                ctx.beginPath();
+                ctx.rect(z.x, z.y, z.ancho, z.alto);
+                ctx.clip();
+                ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+                ctx.font = `800 ${px(15)}px Inter, system-ui, sans-serif`;
+                ctx.textBaseline = 'middle';
+                ctx.fillText((z.nombre || '').toUpperCase(), z.x + px(10), z.y + barra / 2);
+
+                if (zonaEditando) {
+                    const h = px(14);
+                    ctx.fillStyle = z.color;
+                    ctx.fillRect(z.x + z.ancho - h, z.y + z.alto - h, h, h);
+
+                    // Botones ✎ y 🗑 en el extremo derecho del título (solo si caben y la zona ya existe)
+                    if (z.id && z.ancho > px(110)) {
+                        const b = botonesZona(z);
+                        [[b.editar, '✎', '#1d4ed8'], [b.borrar, '🗑', '#dc2626']].forEach(([r, txt, col]) => {
+                            ctx.fillStyle = '#ffffff';
+                            ctx.strokeStyle = col;
+                            ctx.lineWidth = px(1.5);
+                            ctx.beginPath();
+                            ctx.rect(r.x, r.y, r.s, r.s);
+                            ctx.fill(); ctx.stroke();
+                            ctx.fillStyle = col;
+                            ctx.font = `700 ${px(13)}px Inter, system-ui, sans-serif`;
+                            ctx.textAlign = 'center';
+                            ctx.fillText(txt, r.x + r.s / 2, r.y + r.s / 2 + px(1));
+                            ctx.textAlign = 'start';
+                        });
+                    }
+                }
+                ctx.restore();
+            });
+        }
+
+        // Posición (lienzo) de los botones del título de una zona
+        function botonesZona(z) {
+            const s = px(22), m = px(4);
+            return {
+                borrar: { x: z.x + z.ancho - s - m, y: z.y + m, s },
+                editar: { x: z.x + z.ancho - 2 * s - 2 * m, y: z.y + m, s },
+            };
+        }
+
+        function zonaEnPunto(p) {
+            for (let i = zonas.length - 1; i >= 0; i--) {
+                const z = zonas[i];
+                if (p.x < z.x || p.y < z.y || p.x > z.x + z.ancho || p.y > z.y + z.alto) continue;
+                if (z.id && z.ancho > px(110)) {
+                    const b = botonesZona(z);
+                    const dentro = r => p.x >= r.x && p.x <= r.x + r.s && p.y >= r.y && p.y <= r.y + r.s;
+                    if (dentro(b.borrar)) return { zona: z, parte: 'borrar' };
+                    if (dentro(b.editar)) return { zona: z, parte: 'editar' };
+                }
+                const h = px(18);
+                if (p.x >= z.x + z.ancho - h && p.y >= z.y + z.alto - h) return { zona: z, parte: 'resize' };
+                if (p.y <= z.y + px(30)) return { zona: z, parte: 'titulo' };
+                return { zona: z, parte: 'cuerpo' };
+            }
+            return null;
+        }
+
+        function toggleZonaEdicion(forzar) {
+            zonaEditando = typeof forzar === 'boolean' ? forzar : !zonaEditando;
+            document.body.classList.toggle('zonas-editando', zonaEditando);
+            document.getElementById('btnZonas')?.classList.toggle('active', zonaEditando);
+            if (zonaEditando) renderZonaLista();
+            else cerrarZonaEditor();
+            network?.redraw();
+        }
+
+        function initZonasInteraccion(container) {
+            const domPos = ev => {
+                const r = container.getBoundingClientRect();
+                return { x: ev.clientX - r.left, y: ev.clientY - r.top };
+            };
+
+            // Captura antes que vis-network para que el arrastre de zonas no mueva la vista
+            container.addEventListener('pointerdown', ev => {
+                if (!zonaEditando || ev.button !== 0) return;
+                const dom = domPos(ev);
+                if (network.getNodeAt(dom) !== undefined) return; // sobre un equipo: lo maneja vis
+                const p = network.DOMtoCanvas(dom);
+                const hit = zonaEnPunto(p);
+                ev.stopPropagation();
+                ev.preventDefault();
+
+                if (hit && hit.parte === 'borrar') { eliminarZona(hit.zona); return; }
+                if (hit && hit.parte === 'editar') { abrirZonaEditor(hit.zona, false); return; }
+
+                if (hit && hit.parte === 'resize') {
+                    zonaArrastre = { tipo: 'resize', zona: hit.zona, inicio: p, orig: { ...hit.zona } };
+                } else if (hit && hit.parte === 'titulo') {
+                    // Mover la zona junto con los equipos que contiene
+                    const z = hit.zona;
+                    const posiciones = network.getPositions();
+                    const dentro = Object.entries(posiciones)
+                        .filter(([, q]) => q.x >= z.x && q.x <= z.x + z.ancho && q.y >= z.y && q.y <= z.y + z.alto)
+                        .map(([id, q]) => ({ id: isNaN(id) ? id : Number(id), x: q.x, y: q.y }));
+                    zonaArrastre = { tipo: 'mover', zona: z, inicio: p, orig: { ...z }, nodos: dentro };
+                } else {
+                    zonaArrastre = { tipo: 'nueva', inicio: p, zona: { id: null, nombre: '', color: ZONA_COLORES[zonas.length % ZONA_COLORES.length], x: p.x, y: p.y, ancho: 0, alto: 0 } };
+                }
+                container.setPointerCapture?.(ev.pointerId);
+            }, true);
+
+            container.addEventListener('pointermove', ev => {
+                if (!zonaArrastre) return;
+                ev.stopPropagation();
+                const p = network.DOMtoCanvas(domPos(ev));
+                const dx = p.x - zonaArrastre.inicio.x, dy = p.y - zonaArrastre.inicio.y;
+                const z = zonaArrastre.zona, o = zonaArrastre.orig;
+                if (zonaArrastre.tipo === 'resize') {
+                    z.ancho = Math.max(80, o.ancho + dx);
+                    z.alto = Math.max(80, o.alto + dy);
+                } else if (zonaArrastre.tipo === 'mover') {
+                    z.x = o.x + dx; z.y = o.y + dy;
+                    zonaArrastre.nodos.forEach(n => network.moveNode(n.id, n.x + dx, n.y + dy));
+                } else {
+                    z.x = Math.min(p.x, zonaArrastre.inicio.x);
+                    z.y = Math.min(p.y, zonaArrastre.inicio.y);
+                    z.ancho = Math.abs(dx); z.alto = Math.abs(dy);
+                }
+                network.redraw();
+            }, true);
+
+            const terminar = async ev => {
+                if (!zonaArrastre) return;
+                ev.stopPropagation();
+                const a = zonaArrastre;
+                zonaArrastre = null;
+                try {
+                    if (a.tipo === 'nueva') {
+                        if (a.zona.ancho >= 80 && a.zona.alto >= 80) abrirZonaEditor(a.zona, true);
+                    } else {
+                        await guardarZonaServidor(a.zona);
+                        if (a.tipo === 'mover' && a.nodos.length) {
+                            const pos = network.getPositions(a.nodos.map(n => n.id));
+                            await apiJson("{{ route('topologia.guardar_posiciones') }}", 'POST', { posiciones: pos });
+                        }
+                    }
+                } catch (e) {
+                    alert('No se pudo guardar la zona: ' + e.message);
+                }
+                network.redraw();
+            };
+            container.addEventListener('pointerup', terminar, true);
+            container.addEventListener('pointercancel', terminar, true);
+
+            container.addEventListener('dblclick', ev => {
+                if (!zonaEditando) return;
+                const dom = domPos(ev);
+                if (network.getNodeAt(dom) !== undefined) return;
+                const hit = zonaEnPunto(network.DOMtoCanvas(dom));
+                if (hit) { ev.stopPropagation(); abrirZonaEditor(hit.zona, false); }
+            }, true);
+        }
+
+        async function guardarZonaServidor(z) {
+            const body = { nombre: z.nombre, color: z.color, rangos_ip: z.rangos_ip || null, x: z.x, y: z.y, ancho: z.ancho, alto: z.alto };
+            if (z.id) {
+                const r = await apiJson(`{{ url('api/topologia/zonas') }}/${z.id}`, 'PUT', body);
+                z.id = r.zona.id; // cambia si el servidor tuvo que recrearla
+            } else {
+                const r = await apiJson("{{ route('topologia.zonas.store') }}", 'POST', body);
+                z.id = r.zona.id;
+            }
+        }
+
+        let zonaEnEditor = null;
+        function abrirZonaEditor(z, esNueva) {
+            zonaEnEditor = { zona: z, esNueva, color: z.color };
+            document.getElementById('zonaEditorTitulo').textContent = esNueva ? 'Nueva zona' : 'Editar zona';
+            const inp = document.getElementById('zonaEditorNombre');
+            inp.value = z.nombre || '';
+            const rng = document.getElementById('zonaEditorRangos');
+            rng.value = z.rangos_ip || '';
+            rng.oninput = () => infoRangos(rng.value);
+            infoRangos(rng.value);
+            const cont = document.getElementById('zonaEditorColores');
+            cont.innerHTML = ZONA_COLORES.map(c =>
+                `<button type="button" data-c="${c}" class="w-6 h-6 rounded-md border-2" style="background:${c}; border-color:${c === z.color ? '#0f172a' : 'transparent'}"></button>`).join('');
+            cont.querySelectorAll('button').forEach(b => b.onclick = () => {
+                zonaEnEditor.color = b.dataset.c;
+                cont.querySelectorAll('button').forEach(x => x.style.borderColor = x.dataset.c === b.dataset.c ? '#0f172a' : 'transparent');
+            });
+            document.getElementById('zonaEditorEliminar').classList.toggle('hidden', esNueva);
+            document.getElementById('zonaEditor').classList.remove('hidden');
+            inp.focus();
+        }
+
+        function cerrarZonaEditor() {
+            document.getElementById('zonaEditor')?.classList.add('hidden');
+            zonaEnEditor = null;
+            network?.redraw();
+        }
+
+        document.getElementById('zonaEditorGuardar')?.addEventListener('click', async () => {
+            if (!zonaEnEditor) return;
+            const nombre = document.getElementById('zonaEditorNombre').value.trim();
+            if (!nombre) { document.getElementById('zonaEditorNombre').focus(); return; }
+            const rangos = document.getElementById('zonaEditorRangos').value.trim();
+            const invalidos = parseRangos(rangos).invalidos;
+            if (invalidos.length) { alert('Rangos no válidos: ' + invalidos.join(', ')); return; }
+            const z = zonaEnEditor.zona;
+            const previo = { nombre: z.nombre, color: z.color, rangos_ip: z.rangos_ip };
+            z.nombre = nombre;
+            z.color = zonaEnEditor.color;
+            z.rangos_ip = rangos || null;
+            try {
+                await guardarZonaServidor(z);
+                if (zonaEnEditor.esNueva) zonas.push(z);
+                cerrarZonaEditor();
+                renderZonaLista();
+            } catch (e) {
+                Object.assign(z, previo);
+                alert('No se pudo guardar la zona: ' + e.message);
+            }
+        });
+
+        document.getElementById('zonaEditorEliminar')?.addEventListener('click', () => {
+            if (zonaEnEditor && zonaEnEditor.zona.id) eliminarZona(zonaEnEditor.zona);
+        });
+
+        async function eliminarZona(z) {
+            if (!confirm(`¿Eliminar la zona "${z.nombre}"? Los equipos no se borran.`)) return;
+            try {
+                await apiJson(`{{ url('api/topologia/zonas') }}/${z.id}`, 'DELETE');
+                zonas = zonas.filter(x => x !== z);
+                if (zonaEnEditor && zonaEnEditor.zona === z) cerrarZonaEditor();
+                renderZonaLista();
+                network.redraw();
+            } catch (e) {
+                alert('No se pudo eliminar: ' + e.message);
+            }
+        }
+
+        // Lista de zonas en la barra del modo edición: clic = encuadrar, ✎ = editar, 🗑 = borrar
+        function renderZonaLista() {
+            const cont = document.getElementById('zonaLista');
+            if (!cont) return;
+            if (!zonas.length) {
+                cont.innerHTML = '<span class="text-slate-400">Sin zonas. Dibuja una arrastrando en un espacio vacío o usa "Zonas por subred".</span>';
+                return;
+            }
+            cont.innerHTML = zonas.map((z, i) => `
+                <span class="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-lg bg-slate-800 border border-slate-700">
+                    <i class="noc-dot" style="background:${escHtml(z.color)}"></i>
+                    <button type="button" class="font-bold hover:underline" onclick="encuadrarZona(${i})" title="${escHtml(z.rangos_ip || 'Sin rangos de IP')}">${escHtml(z.nombre)}</button>
+                    <span class="text-slate-400 font-mono">${equiposEnRangos(z.rangos_ip).length || ''}</span>
+                    <button type="button" class="px-1 hover:text-blue-300" onclick="abrirZonaEditor(zonas[${i}], false)" title="Editar">✎</button>
+                    <button type="button" class="px-1 hover:text-red-400" onclick="eliminarZona(zonas[${i}])" title="Borrar">🗑</button>
+                </span>`).join('');
+        }
+
+        function encuadrarZona(i) {
+            const z = zonas[i];
+            if (!z || !network) return;
+            const cont = document.getElementById('networkTopologyCanvas');
+            const escala = Math.min(cont.clientWidth / (z.ancho * 1.15), cont.clientHeight / (z.alto * 1.25));
+            network.moveTo({ position: { x: z.x + z.ancho / 2, y: z.y + z.alto / 2 }, scale: escala, animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+        }
+
+        // ==================== RANGOS DE IP Y ACOMODO AUTOMÁTICO ====================
+        function ipAEntero(ip) {
+            const p = String(ip || '').trim().split('.');
+            if (p.length !== 4 || p.some(x => !/^\d{1,3}$/.test(x) || +x > 255)) return null;
+            return ((+p[0] << 24) >>> 0) + (+p[1] << 16) + (+p[2] << 8) + (+p[3]);
+        }
+
+        // "10.4.155.0/24, 10.4.20.*, 10.4.1.10-10.4.1.50, 10.4.9.7" -> lista de [desde, hasta]
+        function parseRangos(texto) {
+            const rangos = [], invalidos = [];
+            String(texto || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
+                let m;
+                if ((m = t.match(/^([\d.]+)\/(\d{1,2})$/))) {
+                    const base = ipAEntero(m[1]), bits = +m[2];
+                    if (base === null || bits > 32) return invalidos.push(t);
+                    const mask = bits === 0 ? 0 : (0xFFFFFFFF << (32 - bits)) >>> 0;
+                    const ini = (base & mask) >>> 0;
+                    rangos.push([ini, (ini | (~mask >>> 0)) >>> 0]);
+                } else if (t.includes('*')) {
+                    const partes = t.split('.');
+                    if (partes.length !== 4) return invalidos.push(t);
+                    const ini = ipAEntero(partes.map(x => x === '*' ? '0' : x).join('.'));
+                    const fin = ipAEntero(partes.map(x => x === '*' ? '255' : x).join('.'));
+                    if (ini === null || fin === null) return invalidos.push(t);
+                    rangos.push([ini, fin]);
+                } else if ((m = t.match(/^([\d.]+)\s*-\s*([\d.]+)$/))) {
+                    const a = ipAEntero(m[1]), b = ipAEntero(m[2]);
+                    if (a === null || b === null) return invalidos.push(t);
+                    rangos.push([Math.min(a, b), Math.max(a, b)]);
+                } else {
+                    const a = ipAEntero(t);
+                    if (a === null) return invalidos.push(t);
+                    rangos.push([a, a]);
+                }
+            });
+            return { rangos, invalidos };
+        }
+
+        function equiposEnRangos(texto) {
+            const { rangos } = parseRangos(texto);
+            if (!rangos.length || !nodesDataSet) return [];
+            return nodesDataSet.get().filter(n => {
+                const v = ipAEntero(n.customData?.ip);
+                return v !== null && rangos.some(([a, b]) => v >= a && v <= b);
+            });
+        }
+
+        function infoRangos(texto) {
+            const el = document.getElementById('zonaEditorRangosInfo');
+            if (!el) return;
+            const { invalidos } = parseRangos(texto);
+            if (invalidos.length) { el.textContent = 'No válido: ' + invalidos.join(', '); el.className = 'text-[10px] text-red-500 mb-3'; return; }
+            const n = texto.trim() ? equiposEnRangos(texto).length : 0;
+            el.textContent = texto.trim() ? `${n} equipos coinciden` : 'Sin rangos: la zona no se acomoda automáticamente';
+            el.className = 'text-[10px] text-slate-400 mb-3';
+        }
+
+        // Coloca los equipos en cuadrícula dentro de la zona (la agranda si no caben).
+        // Los equipos finales agrupados se ponen alrededor de su switch.
+        const CELDA_X = 360, CELDA_Y = 300, MARGEN = 140, TITULO = 120;
+        function cuadriculaEnZona(z, nodos, posiciones) {
+            const visibles = nodos.filter(n => !(endpointsAgrupados && padreDeHijo[n.id] !== undefined));
+            const ocultos = nodos.filter(n => endpointsAgrupados && padreDeHijo[n.id] !== undefined);
+            visibles.sort((a, b) => (ipAEntero(a.customData?.ip) || 0) - (ipAEntero(b.customData?.ip) || 0));
+            if (visibles.length) {
+                const colsCaben = Math.max(1, Math.floor((z.ancho - 2 * MARGEN) / CELDA_X) + 1);
+                const cols = Math.max(colsCaben, Math.ceil(Math.sqrt(visibles.length * 1.5)));
+                const filas = Math.ceil(visibles.length / cols);
+                z.ancho = Math.max(z.ancho, (cols - 1) * CELDA_X + 2 * MARGEN);
+                z.alto = Math.max(z.alto, (filas - 1) * CELDA_Y + MARGEN + TITULO + 60);
+                visibles.forEach((n, i) => {
+                    posiciones[n.id] = { x: z.x + MARGEN + (i % cols) * CELDA_X, y: z.y + TITULO + 60 + Math.floor(i / cols) * CELDA_Y };
+                });
+            }
+            rodearPadres(ocultos, posiciones);
+        }
+
+        // Equipos finales agrupados: en círculo alrededor de su switch (para cuando se muestren)
+        function rodearPadres(hijos, posiciones) {
+            const porPadre = {};
+            hijos.forEach(n => (porPadre[padreDeHijo[n.id]] = porPadre[padreDeHijo[n.id]] || []).push(n));
+            Object.entries(porPadre).forEach(([pid, lista]) => {
+                const padreId = isNaN(pid) ? pid : Number(pid);
+                const padre = posiciones[padreId] || network.getPositions([padreId])[padreId];
+                if (!padre) return;
+                lista.forEach((n, i) => {
+                    const ang = (i / lista.length) * Math.PI * 2;
+                    posiciones[n.id] = { x: padre.x + Math.cos(ang) * 220, y: padre.y + Math.sin(ang) * 220 };
+                });
+            });
+        }
+
+        async function aplicarPosiciones(posiciones) {
+            Object.entries(posiciones).forEach(([id, p]) => network.moveNode(isNaN(id) ? id : Number(id), p.x, p.y));
+            await apiJson("{{ route('topologia.guardar_posiciones') }}", 'POST', { posiciones });
+        }
+
+        async function acomodarPorIps() {
+            const conRangos = zonas.filter(z => z.id && parseRangos(z.rangos_ip).rangos.length);
+            if (!conRangos.length) {
+                alert('Ninguna zona tiene rangos de IP. Edita una zona (✎) y escribe por ejemplo: 10.4.155.0/24');
+                return;
+            }
+            const asignados = new Set();
+            const posiciones = {};
+            const resumen = [];
+            for (const z of conRangos) {
+                // Un equipo va a la primera zona cuyo rango lo incluya
+                const nodos = equiposEnRangos(z.rangos_ip).filter(n => !asignados.has(n.id));
+                nodos.forEach(n => asignados.add(n.id));
+                cuadriculaEnZona(z, nodos, posiciones);
+                resumen.push(`${z.nombre}: ${nodos.length}`);
+            }
+            try {
+                await aplicarPosiciones(posiciones);
+                for (const z of conRangos) await guardarZonaServidor(z);
+                renderZonaLista();
+                network.redraw();
+                alert('Equipos acomodados:\n' + resumen.join('\n'));
+            } catch (e) {
+                alert('No se pudo guardar el acomodo: ' + e.message);
+            }
+        }
+
+        async function crearZonasPorSubred() {
+            if (!nodesDataSet) return;
+            // Agrupar por /24 (los equipos finales agrupados viajan con su switch)
+            const porSubred = {};
+            const agrupados = [];
+            nodesDataSet.get().forEach(n => {
+                if (endpointsAgrupados && padreDeHijo[n.id] !== undefined) { agrupados.push(n); return; }
+                const v = ipAEntero(n.customData?.ip);
+                if (v === null) return;
+                const red = `${(v >>> 24) & 255}.${(v >>> 16) & 255}.${(v >>> 8) & 255}.0/24`;
+                (porSubred[red] = porSubred[red] || []).push(n);
+            });
+            const redes = Object.keys(porSubred).sort((a, b) => ipAEntero(a.split('/')[0]) - ipAEntero(b.split('/')[0]));
+            if (!redes.length) return;
+            const msg = zonas.length
+                ? `Se crearán ${redes.length} zonas (una por subred /24) y se BORRARÁN las ${zonas.length} zonas actuales. ¿Continuar?`
+                : `Se crearán ${redes.length} zonas (una por subred /24) y se acomodarán sus equipos. ¿Continuar?`;
+            if (!confirm(msg)) return;
+
+            try {
+                await apiJson("{{ route('topologia.zonas.destroy_all') }}", 'DELETE'); // una sola petición: borra también zonas que el mapa no tenga cargadas
+                zonas = [];
+
+                // Zonas en filas, ordenadas por subred
+                const posiciones = {};
+                const anchoFila = 6000;
+                let x = 0, y = 0, altoFila = 0;
+                for (const [i, red] of redes.entries()) {
+                    const z = { id: null, nombre: red, color: ZONA_COLORES[i % ZONA_COLORES.length], rangos_ip: red, x, y, ancho: 400, alto: 400 };
+                    cuadriculaEnZona(z, porSubred[red], posiciones);
+                    if (x > 0 && x + z.ancho > anchoFila) {
+                        // No cabe en la fila: bajar y volver a calcular en la nueva posición
+                        x = 0; y += altoFila + 200; altoFila = 0;
+                        z.x = x; z.y = y; z.ancho = 400; z.alto = 400;
+                        cuadriculaEnZona(z, porSubred[red], posiciones);
+                    }
+                    await guardarZonaServidor(z);
+                    zonas.push(z);
+                    x += z.ancho + 200;
+                    altoFila = Math.max(altoFila, z.alto);
+                }
+                rodearPadres(agrupados, posiciones);
+                await aplicarPosiciones(posiciones);
+                renderZonaLista();
+                network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' }, padding: 60 });
+            } catch (e) {
+                alert('No se pudieron crear las zonas: ' + e.message);
+                renderZonaLista();
+            }
+        }
+
+        // ==================== NOTAS DEL EQUIPO ====================
+        let notasDispositivoId = null;
+        let notaEditandoId = null;
+        let notaEditandoSecreta = false;
+
+        async function cargarNotas(dispId) {
+            notasDispositivoId = dispId;
+            cerrarFormNota();
+            const lista = document.getElementById('notasLista');
+            lista.innerHTML = '<p class="text-[11px] text-slate-400">Cargando…</p>';
+            try {
+                const data = await apiJson(`{{ url('api/dispositivos') }}/${dispId}/notas`);
+                if (notasDispositivoId !== dispId) return;
+                document.getElementById('btnNuevaNota').classList.toggle('hidden', !data.puede_editar);
+                renderNotas(data.notas, data.puede_editar);
+                // Mantener al día el icono de nota del nodo
+                const node = nodesDataSet.get(dispId);
+                if (node && (node.customData?.notas || 0) !== data.notas.length) {
+                    nodesDataSet.update({ id: dispId, customData: { ...node.customData, notas: data.notas.length } });
+                }
+            } catch (e) {
+                lista.innerHTML = `<p class="text-[11px] text-red-500">No se pudieron cargar las notas: ${escHtml(e.message)}</p>`;
+            }
+        }
+
+        let notasCache = [];
+        function renderNotas(notas, puedeEditar) {
+            notasCache = notas;
+            const lista = document.getElementById('notasLista');
+            if (!notas.length) {
+                lista.innerHTML = '<p class="text-[11px] text-slate-400 italic">Sin notas.</p>';
+                return;
+            }
+            lista.innerHTML = notas.map(n => `
+                <div class="p-2 rounded-lg bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40 text-xs">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-slate-800 dark:text-slate-100 truncate">${n.es_secreto ? '🔒 ' : ''}${escHtml(n.titulo)}</span>
+                        ${puedeEditar ? `<span class="flex gap-2 shrink-0 text-[10px] font-bold">
+                            <button type="button" class="text-blue-600 dark:text-blue-400 hover:underline" onclick="abrirFormNota(${n.id})">Editar</button>
+                            <button type="button" class="text-red-600 hover:underline" onclick="eliminarNota(${n.id})">Borrar</button>
+                        </span>` : ''}
+                    </div>
+                    <div class="mt-1 font-mono text-[11px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words" id="notaContenido_${n.id}">${
+                        n.es_secreto ? '••••••••' : escHtml(n.contenido)
+                    }</div>
+                    ${n.es_secreto && puedeEditar ? `<div class="mt-1 flex gap-2 text-[10px] font-bold">
+                        <button type="button" class="text-indigo-600 dark:text-indigo-400 hover:underline" onclick="revelarNota(${n.id}, false)">Mostrar</button>
+                        <button type="button" class="text-indigo-600 dark:text-indigo-400 hover:underline" onclick="revelarNota(${n.id}, true)">Copiar</button>
+                    </div>` : ''}
+                    <p class="mt-1 text-[9px] text-slate-400">${escHtml(n.autor || '')} · ${escHtml(n.actualizado || '')}</p>
+                </div>`).join('');
+        }
+
+        async function revelarNota(id, copiar) {
+            try {
+                const r = await apiJson(`{{ url('api/dispositivos') }}/${notasDispositivoId}/notas/${id}/revelar`, 'POST');
+                if (copiar) {
+                    await navigator.clipboard.writeText(r.contenido);
+                    return;
+                }
+                const el = document.getElementById('notaContenido_' + id);
+                if (!el) return;
+                el.textContent = r.contenido;
+                setTimeout(() => { if (el.isConnected) el.textContent = '••••••••'; }, 30000); // se vuelve a ocultar
+            } catch (e) {
+                alert('No se pudo revelar: ' + e.message);
+            }
+        }
+
+        function abrirFormNota(id = null) {
+            const n = id ? notasCache.find(x => x.id === id) : null;
+            notaEditandoId = id;
+            notaEditandoSecreta = !!(n && n.es_secreto);
+            document.getElementById('notaTitulo').value = n ? n.titulo : '';
+            document.getElementById('notaContenido').value = n && !n.es_secreto ? (n.contenido || '') : '';
+            document.getElementById('notaContenido').placeholder = notaEditandoSecreta ? 'Dejar vacío para no cambiar el secreto' : 'Contenido';
+            document.getElementById('notaSecreto').checked = n ? n.es_secreto : false;
+            document.getElementById('notaForm').classList.remove('hidden');
+            document.getElementById('notaTitulo').focus();
+        }
+
+        function cerrarFormNota() {
+            document.getElementById('notaForm')?.classList.add('hidden');
+            notaEditandoId = null;
+        }
+
+        async function guardarNota() {
+            const body = {
+                titulo: document.getElementById('notaTitulo').value.trim(),
+                contenido: document.getElementById('notaContenido').value,
+                es_secreto: document.getElementById('notaSecreto').checked
+            };
+            if (!body.titulo) { document.getElementById('notaTitulo').focus(); return; }
+            try {
+                const base = `{{ url('api/dispositivos') }}/${notasDispositivoId}/notas`;
+                if (notaEditandoId) await apiJson(`${base}/${notaEditandoId}`, 'PUT', body);
+                else await apiJson(base, 'POST', body);
+                cargarNotas(notasDispositivoId);
+            } catch (e) {
+                alert('No se pudo guardar la nota: ' + e.message);
+            }
+        }
+
+        async function eliminarNota(id) {
+            if (!confirm('¿Borrar esta nota?')) return;
+            try {
+                await apiJson(`{{ url('api/dispositivos') }}/${notasDispositivoId}/notas/${id}`, 'DELETE');
+                cargarNotas(notasDispositivoId);
+            } catch (e) {
+                alert('No se pudo borrar: ' + e.message);
+            }
+        }
+
+        // ==================== ESTADO EN VIVO (cada 30 s, sin mover el lienzo) ====================
+        function actualizarResumen(r) {
+            if (!r) return;
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+            set('kpiDispOnline', r.disp_online);
+            set('kpiDispWarning', r.disp_warning);
+            set('kpiDispOffline', r.disp_offline);
+            set('kpiEnlUp', r.enl_up);
+            set('kpiEnlDegraded', r.enl_degraded);
+            set('kpiEnlDown', r.enl_down);
+            set('kpiEnlUnknown', r.enl_unknown);
+            const f = document.getElementById('kpiFrescura');
+            if (f) f.dataset.ts = r.ultimo_sondeo || '';
+            pintarFrescura();
+        }
+
+        function pintarFrescura() {
+            const f = document.getElementById('kpiFrescura');
+            if (!f) return;
+            if (!f.dataset.ts) { f.textContent = 'Sin dato'; return; }
+            const s = Math.max(0, Math.round((Date.now() - new Date(f.dataset.ts).getTime()) / 1000));
+            f.textContent = s < 60 ? `hace ${s} s` : (s < 3600 ? `hace ${Math.floor(s / 60)} min` : `hace ${Math.floor(s / 3600)} h`);
+            f.classList.toggle('noc-stale', s > 180); // el poller dejó de reportar
+            f.title = new Date(f.dataset.ts).toLocaleString();
+        }
+
+        async function refrescarEstadoVivo() {
+            if (document.hidden || !nodesDataSet || !edgesDataSet || zonaArrastre) return;
+            try {
+                const res = await fetch("{{ route('topologia.datos') }}", { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) return;
+                const data = await res.json();
+                actualizarResumen(data.resumen);
+
+                const campos = ['estado', 'statusColor', 'cpu', 'memoria', 'ping', 'uptime', 'conexiones', 'notas'];
+                const nodosUpd = [];
+                (data.nodes || []).forEach(n => {
+                    const cur = nodesDataSet.get(n.id);
+                    if (!cur) return;
+                    const cd = { ...cur.customData };
+                    campos.forEach(k => { cd[k] = n.customData?.[k]; });
+                    nodosUpd.push({ id: n.id, customData: cd });
+                });
+                nodesDataSet.update(nodosUpd);
+
+                const enlUpd = [];
+                (data.edges || []).forEach(e => {
+                    if (!edgesDataSet.get(e.id)) return;
+                    enlUpd.push({ id: e.id, color: e.color, width: e.width, dashes: e.dashes, customData: e.customData, label: e.label });
+                });
+                edgesDataSet.update(enlUpd);
+                initialGrafoData.edges = data.edges;
+            } catch (e) {
+                console.warn('Refresco de topología falló:', e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            pintarFrescura();
+            setInterval(pintarFrescura, 1000);
+            setInterval(refrescarEstadoVivo, 30000);
+        });
 
         // ==================== AUTO-DISCOVERY CRAWLER LOGIC ====================
         let discoveryMethod = 'cdp_lldp';
@@ -2479,32 +3590,9 @@
                     }
                 }
 
-                // Actualizar badges del encabezado
-                const totalNodos = data.nodes.length;
-                const totalEnlaces = data.edges.length;
-                const enlacesUp = data.edges.filter(e => (e.customData?.estado || '').toUpperCase() === 'UP').length;
-                const enlacesDown = totalEnlaces - enlacesUp;
-                let capGbps = 0;
-                data.edges.forEach(e => {
-                    capGbps += (e.customData?.velocidad_mbps || 1000) / 1000;
-                });
-
-                const badgeN = document.getElementById('badgeNodos');
-                const badgeE = document.getElementById('badgeEnlaces');
-                const badgeUp = document.getElementById('badgeEnlacesUp');
-                const badgeDown = document.getElementById('badgeEnlacesDown');
-                const badgeCap = document.getElementById('badgeCapacidad');
-                const alertContainer = document.getElementById('badgeAlertaContainer');
-
-                if (badgeN) badgeN.textContent = totalNodos;
-                if (badgeE) badgeE.textContent = totalEnlaces;
-                if (badgeUp) badgeUp.textContent = enlacesUp;
-                if (badgeDown) badgeDown.textContent = enlacesDown;
-                if (badgeCap) badgeCap.textContent = `${capGbps.toFixed(1)} Gbps`;
-                if (alertContainer) {
-                    if (enlacesDown > 0) alertContainer.classList.remove('hidden');
-                    else alertContainer.classList.add('hidden');
-                }
+                zonas = (data.zonas || []).map(z => ({ ...z }));
+                aplicarAgrupacionEndpoints();
+                actualizarResumen(data.resumen);
 
             } catch (err) {
                 console.error('Error al actualizar el lienzo de topología:', err);
