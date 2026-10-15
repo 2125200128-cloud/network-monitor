@@ -14,7 +14,7 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(\App\Services\DashboardMetricsService $metricas)
     {
         $dispositivos = Dispositivo::with(['telemetriaChasis', 'ultimaMetrica'])
             ->orderByRaw("FIELD(estado, 'online', 'warning', 'offline')")
@@ -44,7 +44,7 @@ class DashboardController extends Controller
         // Uptime mínimo entre dispositivos en línea (eslabón más débil)
         $globalUptime = $onlineMetrics->where('uptime', '>', 0)->min('uptime');
         $formattedUptime = $globalUptime === null
-            ? 'Sin datos de'
+            ? 'Sin dato'
             : floor($globalUptime / 86400) . 'd ' . floor(($globalUptime % 86400) / 3600) . 'h';
 
         $globalRow = DB::table('global_metrics')->latest('recorded_at')->first();
@@ -72,8 +72,12 @@ class DashboardController extends Controller
 
         // Attach latest metrics, type info and platform info to each device for the inventory table
         foreach ($dispositivos as $device) {
+            // CPU/RAM de la última muestra del poller (dispositivos.cpu_usage no lo actualiza ningún worker).
+            // Un equipo caído no tiene lectura vigente.
             $latest = $device->ultimaMetrica;
-            $device->latest_cpu = $latest?->cpu_usage;
+            $vigente = $device->estado !== 'offline' ? $latest : null;
+            $device->latest_cpu = $vigente?->cpu_usage;
+            $device->latest_mem = $vigente?->memory_usage;
             $device->latest_loss = $latest?->packet_loss;
             $device->latest_ping = $latest?->ping_ms;
 
@@ -109,7 +113,10 @@ class DashboardController extends Controller
         $notificaciones = $this->compilarNotificaciones($dispositivos);
         $unreadNotificaciones = count(array_filter($notificaciones, fn($n) => !$n['leida']));
 
+        $paneles = $metricas->paneles();
+
         return view('dashboard', compact(
+            'paneles',
             'dispositivos', 
             'totalDispositivos', 
             'dispositivosOnline', 
@@ -199,6 +206,19 @@ class DashboardController extends Controller
         $data['unread_notif_count'] = count(array_filter($notificaciones, fn($n) => !$n['leida']));
 
         return response()->json($data);
+    }
+
+    /**
+     * Series de global_metrics para la gráfica de tendencias (1h crudo, 24h en bloques de 5 min, 7d por hora).
+     */
+    public function series(Request $request, \App\Services\DashboardMetricsService $metricas): JsonResponse
+    {
+        $rango = in_array($request->query('rango'), ['1h', '24h', '7d'], true) ? $request->query('rango') : '1h';
+
+        return response()->json(
+            \Illuminate\Support\Facades\Cache::remember("dashboard_series_{$rango}", $rango === '1h' ? 15 : 120,
+                fn () => $metricas->series($rango))
+        );
     }
 
     /**

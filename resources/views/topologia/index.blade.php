@@ -4,12 +4,15 @@
 
 @section('styles')
     <style>
+        /* Fondo de tono medio: contrasta con los chasis negros (Catalyst, Nexus, FortiGate) y con los
+           grises claros (Huawei, ISR) a la vez; con el blanco o el negro casi puro uno de los dos se perdía. */
         .blueprint-canvas {
-            background-color: #f8fafc;
-            background-image: 
-                linear-gradient(rgba(148, 163, 184, 0.14) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(148, 163, 184, 0.14) 1px, transparent 1px);
-            background-size: 28px 28px;
+            background-color: #e6ebf2;
+            background-image:
+                radial-gradient(ellipse at 50% 35%, rgba(255, 255, 255, 0.55), transparent 70%),
+                linear-gradient(rgba(100, 116, 139, 0.13) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(100, 116, 139, 0.13) 1px, transparent 1px);
+            background-size: 100% 100%, 28px 28px, 28px 28px;
         }
 
         .ease-custom {
@@ -51,10 +54,12 @@
         }
 
         .dark .blueprint-canvas {
-            background-color: #07090e;
-            background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-color: #1a2333;
+            background-image:
+                radial-gradient(ellipse at 50% 35%, rgba(59, 89, 152, 0.22), transparent 70%),
+                linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+            background-size: 100% 100%, 28px 28px, 28px 28px;
         }
 
         .dark .uiverse-btn {
@@ -182,7 +187,7 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#12161f] rounded-[2rem] p-5 lg:p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex-shrink-0">
         <div class="flex items-center gap-3.5">
             <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-md flex-shrink-0" style="background: linear-gradient(135deg, #3b5998, #5c8096);">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
                     <circle cx="6" cy="6" r="2.5"></circle>
                     <circle cx="18" cy="6" r="2.5"></circle>
                     <circle cx="12" cy="18" r="2.5"></circle>
@@ -720,61 +725,61 @@
                     </div>
                     <div>
                         <div class="flex items-center gap-1.5">
-                            <span id="drawerLinkTipo" class="px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider bg-blue-100 text-[#3b5998]">FIBRA 10G SFP+</span>
-                            <span id="drawerLinkStatusBadge" class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700">UP</span>
+                            <span id="drawerLinkTipo" class="px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider bg-blue-100 dark:bg-blue-950/60 text-[#3b5998] dark:text-blue-400">FIBRA 10G SFP+</span>
+                            <span id="drawerLinkStatusBadge" class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">UP</span>
                         </div>
-                        <h3 class="text-sm font-extrabold text-gray-900 mt-1 leading-tight">Enlace de Interconexión</h3>
-                        <p id="drawerLinkVelocidad" class="text-xs text-gray-500 font-mono mt-0.5">10000 Mbps Negociados</p>
+                        <h3 class="text-sm font-extrabold text-gray-900 dark:text-white mt-1 leading-tight">Enlace de Interconexión</h3>
+                        <p id="drawerLinkVelocidad" class="text-xs text-gray-500 dark:text-slate-400 font-mono mt-0.5">10000 Mbps Negociados</p>
                     </div>
                 </div>
 
                 {{-- Endpoints Visual Box --}}
-                <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-2.5">
+                <div class="bg-gray-50 dark:bg-[#090b10] p-3 rounded-xl border border-gray-100 dark:border-slate-800 space-y-2.5">
                     <div class="flex items-center justify-between text-xs">
                         <div class="flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                            <span class="font-bold text-gray-700 truncate max-w-[140px]" id="drawerLinkOrigenDisp">Switch Core</span>
+                            <span class="font-bold text-gray-700 dark:text-slate-200 truncate max-w-[140px]" id="drawerLinkOrigenDisp">Switch Core</span>
                         </div>
-                        <span class="font-mono text-[11px] font-bold bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800" id="drawerLinkOrigenPuerto">Te1/0/24</span>
+                        <span class="font-mono text-[11px] font-bold bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-gray-200 dark:border-slate-700 text-gray-800 dark:text-slate-200" id="drawerLinkOrigenPuerto">Te1/0/24</span>
                     </div>
 
-                    <div class="flex items-center justify-center text-gray-300">
+                    <div class="flex items-center justify-center text-gray-300 dark:text-slate-600">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
                     </div>
 
                     <div class="flex items-center justify-between text-xs">
                         <div class="flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-purple-500"></span>
-                            <span class="font-bold text-gray-700 truncate max-w-[140px]" id="drawerLinkDestinoDisp">Router Edge</span>
+                            <span class="font-bold text-gray-700 dark:text-slate-200 truncate max-w-[140px]" id="drawerLinkDestinoDisp">Router Edge</span>
                         </div>
-                        <span class="font-mono text-[11px] font-bold bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800" id="drawerLinkDestinoPuerto">Gi0/0/0</span>
+                        <span class="font-mono text-[11px] font-bold bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-gray-200 dark:border-slate-700 text-gray-800 dark:text-slate-200" id="drawerLinkDestinoPuerto">Gi0/0/0</span>
                     </div>
                 </div>
 
                 {{-- Traffic Telemetry Meters --}}
-                <div class="space-y-2 border-t border-gray-100 pt-3 text-xs">
+                <div class="space-y-2 border-t border-gray-100 dark:border-slate-800 pt-3 text-xs">
                     <div class="flex justify-between items-center">
-                        <span class="text-gray-500">Tráfico Entrada (In):</span>
-                        <span id="drawerLinkTraficoIn" class="font-mono font-bold text-emerald-600">420.5 Mbps</span>
+                        <span class="text-gray-500 dark:text-slate-400">Tráfico Entrada (In):</span>
+                        <span id="drawerLinkTraficoIn" class="font-mono font-bold text-emerald-600 dark:text-emerald-400">420.5 Mbps</span>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-gray-500">Tráfico Salida (Out):</span>
-                        <span id="drawerLinkTraficoOut" class="font-mono font-bold text-blue-600">185.2 Mbps</span>
+                        <span class="text-gray-500 dark:text-slate-400">Tráfico Salida (Out):</span>
+                        <span id="drawerLinkTraficoOut" class="font-mono font-bold text-blue-600 dark:text-blue-400">185.2 Mbps</span>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-gray-500">Saturación de Enlace:</span>
-                        <span id="drawerLinkSaturacion" class="font-mono font-black text-gray-800">4.2%</span>
+                        <span class="text-gray-500 dark:text-slate-400">Saturación de Enlace:</span>
+                        <span id="drawerLinkSaturacion" class="font-mono font-black text-gray-800 dark:text-slate-100">4.2%</span>
                     </div>
                 </div>
 
                 {{-- Allowed VLANs --}}
-                <div class="border-t border-gray-100 pt-3">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">VLANs Transportadas (Trunk)</p>
+                <div class="border-t border-gray-100 dark:border-slate-800 pt-3">
+                    <p class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">VLANs Transportadas (Trunk)</p>
                     <div id="drawerLinkVlans" class="flex flex-wrap gap-1">
-                        <span class="px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded">VLAN 1</span>
-                        <span class="px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded">VLAN 10</span>
-                        <span class="px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded">VLAN 20</span>
-                        <span class="px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded">VLAN 99</span>
+                        <span class="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 text-[10px] font-bold rounded">VLAN 1</span>
+                        <span class="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 text-[10px] font-bold rounded">VLAN 10</span>
+                        <span class="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 text-[10px] font-bold rounded">VLAN 20</span>
+                        <span class="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 text-[10px] font-bold rounded">VLAN 99</span>
                     </div>
                 </div>
             </div>
@@ -850,10 +855,10 @@
 
     {{-- ==================== 3. MODAL: AUTO-DESCUBRIMIENTO DE RED ==================== --}}
     <div id="discoveryModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300 opacity-0 pointer-events-none">
-        <div id="discoveryModalCard" class="bg-white rounded-[2rem] max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-slate-100 transition-all duration-300 transform scale-95 flex flex-col space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div id="discoveryModalCard" class="bg-white dark:bg-[#0d1017] rounded-[2rem] max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-slate-100 dark:border-slate-800 transition-all duration-300 transform scale-95 flex flex-col space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar">
             
             {{-- Modal Header --}}
-            <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
                 <div class="flex items-center gap-3">
                     <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -861,11 +866,11 @@
                         </svg>
                     </div>
                     <div>
-                        <h3 class="text-lg font-black text-slate-900 leading-tight">Auto-Descubrimiento de Red</h3>
-                        <p class="text-xs text-slate-500 font-medium">Crawler SNMPv2c · Mapeo autónomo CDP / LLDP y Barrido CIDR</p>
+                        <h3 class="text-lg font-black text-slate-900 dark:text-white leading-tight">Auto-Descubrimiento de Red</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Crawler SNMPv2c · Mapeo autónomo CDP / LLDP y Barrido CIDR</p>
                     </div>
                 </div>
-                <button type="button" onclick="closeDiscoveryModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition">
+                <button type="button" onclick="closeDiscoveryModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white flex items-center justify-center transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -874,14 +879,14 @@
             <div id="discoveryFormState" class="space-y-4">
                 {{-- Method selector tabs --}}
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Método de Descubrimiento</label>
-                    <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-2xl border border-slate-200">
-                        <button type="button" id="btnMethodCdp" onclick="setDiscoveryMethod('cdp_lldp')" class="py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-white text-indigo-900 shadow-sm border border-slate-200">
-                            <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Método de Descubrimiento</label>
+                    <div class="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-[#090b10] p-1 rounded-2xl border border-slate-200 dark:border-slate-800">
+                        <button type="button" id="btnMethodCdp" onclick="setDiscoveryMethod('cdp_lldp')" class="py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-white dark:bg-slate-800 text-indigo-900 dark:text-indigo-300 shadow-sm border border-slate-200 dark:border-slate-700">
+                            <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
                             <span>Vecinos CDP / LLDP</span>
                         </button>
-                        <button type="button" id="btnMethodCidr" onclick="setDiscoveryMethod('cidr_sweep')" class="py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900">
-                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <button type="button" id="btnMethodCidr" onclick="setDiscoveryMethod('cidr_sweep')" class="py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                            <svg class="w-4 h-4 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             <span>Barrido Subred CIDR</span>
                         </button>
                     </div>
@@ -889,30 +894,30 @@
 
                 {{-- CDP/LLDP Seed IP Input --}}
                 <div id="fieldSeedIpGroup">
-                    <label for="discSeedIp" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">IP Semilla / Equipo Raíz (Seed IP)</label>
+                    <label for="discSeedIp" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">IP Semilla / Equipo Raíz (Seed IP)</label>
                     <div class="relative">
-                        <input type="text" id="discSeedIp" value="{{ $config->ip_switch_core ?? '192.168.1.254' }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition outline-none" placeholder="10.4.254.3">
+                        <input type="text" id="discSeedIp" value="{{ $config->ip_switch_core ?? '192.168.1.254' }}" class="w-full bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#0d1017] focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/50 transition outline-none" placeholder="10.4.254.3">
                         <span class="absolute right-3 top-2.5 text-[10px] font-bold text-slate-400 uppercase">Core Switch</span>
                     </div>
-                    <p class="text-[11px] text-slate-500 mt-1">El crawler conectará a este switch y consultará recursivamente sus tablas de vecinos.</p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">El crawler conectará a este switch y consultará recursivamente sus tablas de vecinos.</p>
                 </div>
 
                 {{-- CIDR Input (Hidden by default) --}}
                 <div id="fieldCidrGroup" class="hidden">
-                    <label for="discCidr" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Segmento de Red (CIDR)</label>
-                    <input type="text" id="discCidr" value="10.4.254.0/24" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition outline-none" placeholder="10.4.254.0/24">
-                    <p class="text-[11px] text-slate-500 mt-1">Se realizará un ping sweep paralelo en todo el segmento buscando switches gestionables.</p>
+                    <label for="discCidr" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Segmento de Red (CIDR)</label>
+                    <input type="text" id="discCidr" value="10.4.254.0/24" class="w-full bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#0d1017] focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/50 transition outline-none" placeholder="10.4.254.0/24">
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Se realizará un ping sweep paralelo en todo el segmento buscando switches gestionables.</p>
                 </div>
 
                 {{-- Common Parameters: Community & Max Depth --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label for="discCommunity" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Comunidad SNMP</label>
-                        <input type="text" id="discCommunity" value="{{ $config->comunidad_snmp_default ?? 'public' }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition outline-none" placeholder="public">
+                        <label for="discCommunity" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Comunidad SNMP</label>
+                        <input type="text" id="discCommunity" value="{{ $config->comunidad_snmp_default ?? 'public' }}" class="w-full bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#0d1017] focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/50 transition outline-none" placeholder="public">
                     </div>
                     <div>
-                        <label for="discMaxDepth" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Profundidad Máxima (Saltos)</label>
-                        <select id="discMaxDepth" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition outline-none">
+                        <label for="discMaxDepth" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Profundidad Máxima (Saltos)</label>
+                        <select id="discMaxDepth" class="w-full bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#0d1017] focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/50 transition outline-none">
                             <option value="1">1 salto (Solo vecinos directos)</option>
                             <option value="2">2 saltos (Distribución)</option>
                             <option value="3" selected>3 saltos (Recomendado)</option>
@@ -923,8 +928,8 @@
                 </div>
 
                 {{-- Actions --}}
-                <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
-                    <button type="button" onclick="closeDiscoveryModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition">
+                <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="closeDiscoveryModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
                         Cancelar
                     </button>
                     <button type="button" id="btnSubmitDiscovery" onclick="startAutoDiscovery()" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
@@ -948,10 +953,10 @@
                         </dotlottie-player>
                     </div>
                     <div>
-                        <h4 class="text-sm font-black text-slate-800">Rastreando Topología en Tiempo Real...</h4>
-                        <p id="discoveryStatusText" class="text-xs text-slate-500 font-medium mt-0.5">Consultando tablas de adyacencia CDP y LLDP...</p>
+                        <h4 class="text-sm font-black text-slate-800 dark:text-white">Rastreando Topología en Tiempo Real...</h4>
+                        <p id="discoveryStatusText" class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Consultando tablas de adyacencia CDP y LLDP...</p>
                     </div>
-                    <div class="px-3 py-1 rounded-full bg-slate-100 text-[11px] font-mono font-bold text-slate-600" id="discoveryTimer">
+                    <div class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[11px] font-mono font-bold text-slate-600 dark:text-slate-300 border border-transparent dark:border-slate-700" id="discoveryTimer">
                         Tiempo: 00:00s
                     </div>
                 </div>
@@ -964,31 +969,31 @@
 
             {{-- SUCCESS / RESULT STATE --}}
             <div id="discoveryResultState" class="hidden space-y-4 py-2">
-                <div class="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
+                <div class="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60">
                     <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/20">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
                     </div>
                     <div>
-                        <h4 class="text-sm font-black text-emerald-900" id="discoveryResultTitle">¡Mapeo de Topología Finalizado!</h4>
-                        <p class="text-xs text-emerald-700 font-medium" id="discoveryResultMessage">Se ha sincronizado la red con éxito.</p>
+                        <h4 class="text-sm font-black text-emerald-900 dark:text-emerald-300" id="discoveryResultTitle">¡Mapeo de Topología Finalizado!</h4>
+                        <p class="text-xs text-emerald-700 dark:text-emerald-400 font-medium" id="discoveryResultMessage">Se ha sincronizado la red con éxito.</p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 text-center">
-                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                    <div class="bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-800 rounded-2xl p-3">
                         <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Dispositivos Detectados</span>
-                        <span class="text-xl font-black text-slate-800 font-mono" id="resTotalDevices">0</span>
-                        <span class="text-[10px] font-semibold text-indigo-600 block mt-0.5" id="resNewDevices">(0 nuevos)</span>
+                        <span class="text-xl font-black text-slate-800 dark:text-white font-mono" id="resTotalDevices">0</span>
+                        <span class="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 block mt-0.5" id="resNewDevices">(0 nuevos)</span>
                     </div>
-                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                    <div class="bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-800 rounded-2xl p-3">
                         <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Enlaces Físicos</span>
-                        <span class="text-xl font-black text-slate-800 font-mono" id="resTotalLinks">0</span>
-                        <span class="text-[10px] font-semibold text-emerald-600 block mt-0.5" id="resNewLinks">(0 nuevos)</span>
+                        <span class="text-xl font-black text-slate-800 dark:text-white font-mono" id="resTotalLinks">0</span>
+                        <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 block mt-0.5" id="resNewLinks">(0 nuevos)</span>
                     </div>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-2">
-                    <button type="button" onclick="closeDiscoveryModal()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 transition shadow-md">
+                    <button type="button" onclick="closeDiscoveryModal()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700 transition shadow-md">
                         Cerrar y Ver Lienzo
                     </button>
                 </div>
@@ -1000,7 +1005,7 @@
 
 {{-- ==================== 5. MODAL: ESCANEO POR CABLE RJ-45 ==================== --}}
 <div id="localRj45Modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden transition-all duration-300">
-    <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-lg w-full overflow-hidden transform transition-all scale-100">
+    <div class="bg-white dark:bg-[#0d1017] rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 max-w-lg w-full overflow-hidden transform transition-all scale-100">
         {{-- Modal Header --}}
         <div class="p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white relative">
             <button type="button" onclick="closeLocalRj45Modal()" class="absolute top-5 right-5 text-slate-400 hover:text-white transition p-1.5 rounded-full hover:bg-white/10">
@@ -1025,11 +1030,11 @@
             {{-- CONFIGURATION / FORM STATE --}}
             <div id="rj45FormState" class="space-y-4 py-1">
                 <div>
-                    <label for="rj45SubnetInput" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    <label for="rj45SubnetInput" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                         Subred o IP a Escanear
                     </label>
                     <div class="relative">
-                        <input type="text" id="rj45SubnetInput" value="10.4.155.0/24" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition outline-none" placeholder="ej. 10.4.155.0/24, 192.168.1.0/24, 10.4.155.2 o cualquier IP">
+                        <input type="text" id="rj45SubnetInput" value="10.4.155.0/24" class="w-full bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#0d1017] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-900/50 transition outline-none" placeholder="ej. 10.4.155.0/24, 192.168.1.0/24, 10.4.155.2 o cualquier IP">
                     </div>
                     <p class="text-[11px] text-slate-400 mt-1">Escribe <strong>cualquier IP o segmento /24</strong> de tu red.</p>
                 </div>
@@ -1038,13 +1043,13 @@
                 <div class="space-y-1.5">
                     <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Accesos Rápidos a Redes Locales:</span>
                     <div class="flex flex-wrap gap-2">
-                        <button type="button" onclick="setRj45Target('10.4.155.0/24')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition">
+                        <button type="button" onclick="setRj45Target('10.4.155.0/24')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 transition">
                             📶 Red Wi-Fi (10.4.155.0/24)
                         </button>
-                        <button type="button" onclick="setRj45Target('192.168.1.0/24')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition">
+                        <button type="button" onclick="setRj45Target('192.168.1.0/24')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition">
                             🔌 Cable RJ-45 (192.168.1.0/24)
                         </button>
-                        <button type="button" onclick="setRj45Target('')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition">
+                        <button type="button" onclick="setRj45Target('')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 transition">
                             ⚡ Autodetectar Interfaz
                         </button>
                     </div>
@@ -1052,12 +1057,12 @@
 
                 <div class="grid grid-cols-2 gap-3 pt-1">
                     <div>
-                        <label for="rj45CommunityInput" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Comunidad SNMP</label>
-                        <input type="text" id="rj45CommunityInput" value="public" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition outline-none" placeholder="public">
+                        <label for="rj45CommunityInput" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Comunidad SNMP</label>
+                        <input type="text" id="rj45CommunityInput" value="public" class="w-full bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#0d1017] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-900/50 transition outline-none" placeholder="public">
                     </div>
                     <div>
-                        <label for="rj45ThreadsInput" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Hilos Paralelos</label>
-                        <select id="rj45ThreadsInput" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition outline-none">
+                        <label for="rj45ThreadsInput" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Hilos Paralelos</label>
+                        <select id="rj45ThreadsInput" class="w-full bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#0d1017] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-900/50 transition outline-none">
                             <option value="50" selected>50 hilos (Ultra Rápido)</option>
                             <option value="25">25 hilos (Moderado)</option>
                             <option value="10">10 hilos (Bajo tráfico)</option>
@@ -1066,8 +1071,8 @@
                 </div>
 
                 {{-- Action buttons --}}
-                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                    <button type="button" onclick="closeLocalRj45Modal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition">
+                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="closeLocalRj45Modal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
                         Cancelar
                     </button>
                     <button type="button" onclick="executeLocalScan()" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
@@ -1090,32 +1095,32 @@
                         </div>
                     </div>
                     <div>
-                        <h4 class="text-sm font-black text-slate-800" id="rj45StatusTitle">Identificando Tarjeta de Red Física...</h4>
-                        <p id="rj45StatusSubtitle" class="text-xs text-slate-500 font-medium mt-0.5">Analizando adaptadores de red y Gateway predeterminado...</p>
+                        <h4 class="text-sm font-black text-slate-800 dark:text-white" id="rj45StatusTitle">Identificando Tarjeta de Red Física...</h4>
+                        <p id="rj45StatusSubtitle" class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Analizando adaptadores de red y Gateway predeterminado...</p>
                     </div>
-                    <div class="px-3 py-1 rounded-full bg-slate-100 text-[11px] font-mono font-bold text-slate-600" id="rj45Timer">
+                    <div class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[11px] font-mono font-bold text-slate-600 dark:text-slate-300 border border-transparent dark:border-slate-700" id="rj45Timer">
                         Tiempo transcurrido: 00:00s
                     </div>
                 </div>
 
                 {{-- Progress Bar --}}
-                <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
+                <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-200 dark:border-slate-700">
                     <div id="rj45ProgressBar" class="bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600 h-2.5 rounded-full transition-all duration-300" style="width: 15%;"></div>
                 </div>
 
                 {{-- Telemetry details box --}}
-                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs text-slate-600 space-y-1.5 font-mono">
+                <div class="bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 text-xs text-slate-600 dark:text-slate-400 space-y-1.5 font-mono">
                     <div class="flex justify-between items-center">
                         <span class="text-slate-400">NIC Detectada:</span>
-                        <span id="rj45NicName" class="font-bold text-slate-800">Detectando...</span>
+                        <span id="rj45NicName" class="font-bold text-slate-800 dark:text-white">Detectando...</span>
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-slate-400">IP / Subred:</span>
-                        <span id="rj45NicIp" class="font-bold text-slate-800">Calculando...</span>
+                        <span id="rj45NicIp" class="font-bold text-slate-800 dark:text-white">Calculando...</span>
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-slate-400">Gateway:</span>
-                        <span id="rj45NicGw" class="font-bold text-slate-800">Determinando...</span>
+                        <span id="rj45NicGw" class="font-bold text-slate-800 dark:text-white">Determinando...</span>
                     </div>
                 </div>
 
@@ -1127,23 +1132,23 @@
 
             {{-- SUCCESS / RESULT STATE --}}
             <div id="rj45ResultState" class="hidden space-y-4 py-2">
-                <div id="rj45BannerBox" class="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 transition-colors duration-200">
+                <div id="rj45BannerBox" class="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 transition-colors duration-200">
                     <div id="rj45BannerIcon" class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/20">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
                     </div>
                     <div>
-                        <h4 class="text-sm font-black text-emerald-900" id="rj45ResultTitle">¡Subred RJ-45 Mapeada con Éxito!</h4>
-                        <p class="text-xs text-emerald-700 font-medium" id="rj45ResultMessage">La topología física se ha sincronizado.</p>
+                        <h4 class="text-sm font-black text-emerald-900 dark:text-emerald-300" id="rj45ResultTitle">¡Subred RJ-45 Mapeada con Éxito!</h4>
+                        <p class="text-xs text-emerald-700 dark:text-emerald-400 font-medium" id="rj45ResultMessage">La topología física se ha sincronizado.</p>
                     </div>
                 </div>
 
                 {{-- Aviso de diagnóstico si no se detectaron equipos --}}
-                <div id="rj45ZeroDevicesNotice" class="hidden bg-amber-50/80 border border-amber-200/80 rounded-2xl p-3.5 text-xs text-amber-800 space-y-1.5">
-                    <div class="flex items-center gap-1.5 font-bold text-amber-900">
-                        <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div id="rj45ZeroDevicesNotice" class="hidden bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 rounded-2xl p-3.5 text-xs text-amber-800 dark:text-amber-300 space-y-1.5">
+                    <div class="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-200">
+                        <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         <span>Diagnóstico del enlace físico:</span>
                     </div>
-                    <ul class="list-disc list-inside space-y-1 text-[11px] text-amber-700 pl-1">
+                    <ul class="list-disc list-inside space-y-1 text-[11px] text-amber-700 dark:text-amber-400 pl-1">
                         <li>El barrido ICMP/SNMP en los 254 hosts concluyó sin respuestas de red.</li>
                         <li>Verifica que el switch esté encendido y que el puerto RJ-45 muestre el LED en color verde.</li>
                         <li>Si el switch recién encendió, el protocolo Spanning Tree (STP) tarda entre 30 y 50 segundos en negociar el enlace.</li>
@@ -1153,25 +1158,25 @@
 
                 {{-- Info Grid --}}
                 <div class="grid grid-cols-2 gap-3 text-center">
-                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                    <div class="bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-800 rounded-2xl p-3">
                         <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hosts con Respuesta</span>
-                        <span class="text-xl font-black text-slate-800 font-mono" id="rj45ResHosts">0</span>
-                        <span class="text-[10px] font-semibold text-teal-600 block mt-0.5">ICMP Ping /24</span>
+                        <span class="text-xl font-black text-slate-800 dark:text-white font-mono" id="rj45ResHosts">0</span>
+                        <span class="text-[10px] font-semibold text-teal-600 dark:text-teal-400 block mt-0.5">ICMP Ping /24</span>
                     </div>
-                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                    <div class="bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-800 rounded-2xl p-3">
                         <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Equipos SNMP</span>
-                        <span class="text-xl font-black text-slate-800 font-mono" id="rj45ResDevices">0</span>
-                        <span class="text-[10px] font-semibold text-indigo-600 block mt-0.5" id="rj45ResNewDevices">(0 nuevos)</span>
+                        <span class="text-xl font-black text-slate-800 dark:text-white font-mono" id="rj45ResDevices">0</span>
+                        <span class="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 block mt-0.5" id="rj45ResNewDevices">(0 nuevos)</span>
                     </div>
-                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 col-span-2">
+                    <div class="bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-800 rounded-2xl p-3 col-span-2">
                         <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Enlaces Físicos CDP / LLDP</span>
-                        <span class="text-xl font-black text-emerald-700 font-mono" id="rj45ResLinks">0</span>
-                        <span class="text-[10px] font-semibold text-emerald-600 block mt-0.5">Conexiones puerto a puerto registradas</span>
+                        <span class="text-xl font-black text-emerald-700 dark:text-emerald-400 font-mono" id="rj45ResLinks">0</span>
+                        <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 block mt-0.5">Conexiones puerto a puerto registradas</span>
                     </div>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-2">
-                    <button type="button" onclick="closeLocalRj45Modal()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 transition shadow-md hover:scale-[1.02] active:scale-[0.98]">
+                    <button type="button" onclick="closeLocalRj45Modal()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700 transition shadow-md hover:scale-[1.02] active:scale-[0.98]">
                         Ver Lienzo de Topología
                     </button>
                 </div>
@@ -1179,17 +1184,17 @@
 
             {{-- ERROR STATE --}}
             <div id="rj45ErrorState" class="hidden space-y-4 py-2">
-                <div class="flex items-center gap-3 p-4 rounded-2xl bg-rose-50 border border-rose-200">
+                <div class="flex items-center gap-3 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60">
                     <div class="w-10 h-10 rounded-xl bg-rose-500 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-rose-500/20">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </div>
                     <div>
-                        <h4 class="text-sm font-black text-rose-900">Error durante el Escaneo</h4>
-                        <p class="text-xs text-rose-700 font-medium" id="rj45ErrorMessage">Ocurrió un error inesperado al rastrear la subred.</p>
+                        <h4 class="text-sm font-black text-rose-900 dark:text-rose-300">Error durante el Escaneo</h4>
+                        <p class="text-xs text-rose-700 dark:text-rose-400 font-medium" id="rj45ErrorMessage">Ocurrió un error inesperado al rastrear la subred.</p>
                     </div>
                 </div>
                 <div class="flex items-center justify-end gap-3 pt-2">
-                    <button type="button" onclick="closeLocalRj45Modal()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition">
+                    <button type="button" onclick="closeLocalRj45Modal()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700 transition">
                         Cerrar
                     </button>
                 </div>
@@ -1207,6 +1212,8 @@
         let initialGrafoData = @json($grafoData);
         const PUEDE_EDITAR = @json($puedeEditar);
         const CSRF = '{{ csrf_token() }}';
+        // Acomodo en zonas (unidades del lienzo): márgenes, espacio para el título y separación entre equipos
+        const MARGEN = 160, TITULO = 380, SEP_X = 180, SEP_Y = 160;
 
         let network = null;
         let nodesDataSet = null;
@@ -1590,6 +1597,9 @@
             };
 
             network = new vis.Network(container, data, options);
+            ['zoom', 'stabilized', 'animationFinished', 'resize'].forEach(ev => network.on(ev, ajustarGrosorCables));
+            window.addEventListener('theme-changed', ajustarGrosorCables);
+            ajustarGrosorCables();
 
             // Equipos finales dentro de su switch, zonas y selección (para los haces)
             aplicarAgrupacionEndpoints();
@@ -2034,16 +2044,16 @@
                         item.innerHTML = `
                             <div class="flex items-center gap-2">
                                 <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${esc(c.color)};"></span>
-                                <span class="font-mono font-bold text-slate-800 bg-white px-1.5 py-0.5 rounded border border-gray-200 text-[10px] shadow-2xs">${esc(c.puerto_local)}</span>
-                                <span class="text-gray-400 text-[10px]">➔</span>
+                                <span class="font-mono font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 text-[10px] shadow-2xs">${esc(c.puerto_local)}</span>
+                                <span class="text-gray-400 dark:text-slate-500 text-[10px]">➔</span>
                                 <div class="truncate max-w-[130px]">
-                                    <p class="font-semibold text-slate-800 leading-tight truncate">${esc(c.remoto_nombre)}</p>
-                                    <p class="text-[10px] text-gray-500 font-mono">${esc(c.remoto_ip)} • ${esc(c.puerto_remoto)}</p>
+                                    <p class="font-semibold text-slate-800 dark:text-slate-100 leading-tight truncate">${esc(c.remoto_nombre)}</p>
+                                    <p class="text-[10px] text-gray-500 dark:text-slate-400 font-mono">${esc(c.remoto_ip)} • ${esc(c.puerto_remoto)}</p>
                                 </div>
                             </div>
                             <div class="text-right flex-shrink-0">
-                                <span class="text-[9px] font-black px-1.5 py-0.5 rounded ${c.estado === 'UP' ? 'bg-emerald-100 text-emerald-700' : (c.estado === 'DOWN' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700')}">${esc(c.estado === 'UNKNOWN' ? 'SIN DATO' : c.estado)}</span>
-                                <p class="text-[9px] text-gray-400 font-mono mt-0.5">${esc(c.velocidad)}</p>
+                                <span class="text-[9px] font-black px-1.5 py-0.5 rounded ${c.estado === 'UP' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : (c.estado === 'DOWN' ? 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300' : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300')}">${esc(c.estado === 'UNKNOWN' ? 'SIN DATO' : c.estado)}</span>
+                                <p class="text-[9px] text-gray-400 dark:text-slate-500 font-mono mt-0.5">${esc(c.velocidad)}</p>
                             </div>
                         `;
                         connList.appendChild(item);
@@ -2770,6 +2780,33 @@
         // Medidas en pantalla constantes, convertidas a unidades del lienzo
         function px(n) { return n / (network ? network.getScale() : 1); }
 
+        /**
+         * Grosor de cable constante en pantalla: los equipos miden ~1450 unidades del lienzo, así que un ancho
+         * fijo de 2-5 unidades desaparecía en la vista general. El backend manda ancho y guiones en píxeles
+         * (customData.ancho_px / dashes_px) y aquí se dividen entre el zoom actual.
+         */
+        let ajusteCablesPendiente = false;
+        function ajustarGrosorCables() {
+            if (!network || !edgesDataSet || ajusteCablesPendiente) return;
+            ajusteCablesPendiente = true;
+            requestAnimationFrame(() => {
+                ajusteCablesPendiente = false;
+                const escala = Math.max(network.getScale(), 0.01);
+                const oscuro = document.documentElement.classList.contains('dark');
+                edgesDataSet.update(edgesDataSet.get().map(e => {
+                    const cd = e.customData || {};
+                    const anchoPx = cd.ancho_px ?? 1.4;
+                    const guiones = Array.isArray(cd.dashes_px) ? cd.dashes_px.map(v => v / escala) : (cd.dashes_px ?? e.dashes ?? false);
+                    const cambio = { id: e.id, width: anchoPx / escala, dashes: guiones, hoverWidth: w => w * 2, selectionWidth: w => w * 2.5 };
+                    // "Sin dato": gris más claro sobre el fondo oscuro para que no se pierda
+                    if (cd.estado === 'UNKNOWN') {
+                        cambio.color = { ...(e.color || {}), color: oscuro ? '#94a3b8' : '#64748b' };
+                    }
+                    return cambio;
+                }));
+            });
+        }
+
         function dibujarZonas(ctx) {
             const isDark = document.documentElement.classList.contains('dark');
             const todas = [...zonas];
@@ -2786,17 +2823,49 @@
                 ctx.fill(); ctx.stroke();
                 ctx.setLineDash([]);
 
-                // Título (tamaño de pantalla constante, recortado al ancho de la zona)
-                const barra = px(30);
-                ctx.fillStyle = hexToRgba(z.color, isDark ? 0.45 : 0.55);
-                ctx.fillRect(z.x, z.y, z.ancho, Math.min(barra, z.alto));
+                // Franja superior delgada con el color de la zona
+                ctx.fillStyle = hexToRgba(z.color, isDark ? 0.7 : 0.8);
+                ctx.fillRect(z.x, z.y, z.ancho, Math.min(px(5), z.alto));
+
+                // Etiqueta tipo pastilla: tamaño de PANTALLA constante (legible a cualquier zoom) y solo tan
+                // ancha como el texto, en la esquina superior izquierda; no cubre la fila de equipos.
+                // Nunca más ancha que la zona: así las etiquetas de zonas vecinas no se enciman.
+                const anchoEnPantalla = z.ancho * network.getScale();
+                if (anchoEnPantalla >= 56) {
+                    const padX = px(9), padY = px(5), punto = px(8);
+                    const disponible = z.ancho - px(16) - padX * 2 - punto - px(6);
+                    let fs = px(14);
+                    let texto = (z.nombre || '').toUpperCase();
+                    ctx.font = `800 ${fs}px Inter, system-ui, sans-serif`;
+                    if (ctx.measureText(texto).width > disponible) {
+                        fs = px(11);
+                        ctx.font = `800 ${fs}px Inter, system-ui, sans-serif`;
+                    }
+                    while (texto.length > 1 && ctx.measureText(texto).width > disponible) {
+                        texto = texto.slice(0, -2) + '…';
+                    }
+                    ctx.textBaseline = 'middle';
+                    const w = ctx.measureText(texto).width + padX * 2 + punto + px(6);
+                    const h = fs + padY * 2;
+                    const lx = z.x + px(8), ly = z.y + px(10);
+                    ctx.beginPath();
+                    if (ctx.roundRect) ctx.roundRect(lx, ly, w, h, h / 2); else ctx.rect(lx, ly, w, h);
+                    ctx.fillStyle = isDark ? 'rgba(15, 23, 42, 0.92)' : 'rgba(255, 255, 255, 0.95)';
+                    ctx.fill();
+                    ctx.lineWidth = px(2);
+                    ctx.strokeStyle = z.color;
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(lx + padX + punto / 2, ly + h / 2, punto / 2, 0, Math.PI * 2);
+                    ctx.fillStyle = z.color;
+                    ctx.fill();
+                    ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+                    ctx.fillText(texto, lx + padX + punto + px(6), ly + h / 2 + px(0.5));
+                }
+
                 ctx.beginPath();
                 ctx.rect(z.x, z.y, z.ancho, z.alto);
                 ctx.clip();
-                ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
-                ctx.font = `800 ${px(15)}px Inter, system-ui, sans-serif`;
-                ctx.textBaseline = 'middle';
-                ctx.fillText((z.nombre || '').toUpperCase(), z.x + px(10), z.y + barra / 2);
 
                 if (zonaEditando) {
                     const h = px(14);
@@ -3110,27 +3179,48 @@
             el.className = 'text-[10px] text-slate-400 mb-3';
         }
 
-        // Coloca los equipos en cuadrícula dentro de la zona (la agranda si no caben).
+        // Coloca los equipos dentro de la zona en filas, según el tamaño REAL de cada uno (un switch de rack
+        // mide ~1450 unidades de ancho y un teléfono ~220), y agranda la zona si no caben.
         // Los equipos finales agrupados se ponen alrededor de su switch.
-        const CELDA_X = 360, CELDA_Y = 300, MARGEN = 140, TITULO = 120;
+        // Ancho y alto del equipo en el lienzo: tamaño de su IMAGEN más espacio fijo para la etiqueta.
+        // (getBoundingBox incluye la etiqueta, cuyo tamaño depende del zoom y la inflaba hasta decenas de miles)
+        function medirNodo(id) {
+            const forma = network?.body?.nodes?.[id]?.shape;
+            if (forma && forma.width > 0 && forma.height > 0) {
+                return { w: Math.max(260, forma.width), h: forma.height + 140 };
+            }
+            const size = nodesDataSet?.get(id)?.size || 120;
+            return { w: Math.max(260, size * 2), h: size * 2 + 140 };
+        }
+
         function cuadriculaEnZona(z, nodos, posiciones) {
             const visibles = nodos.filter(n => !(endpointsAgrupados && padreDeHijo[n.id] !== undefined));
             const ocultos = nodos.filter(n => endpointsAgrupados && padreDeHijo[n.id] !== undefined);
             visibles.sort((a, b) => (ipAEntero(a.customData?.ip) || 0) - (ipAEntero(b.customData?.ip) || 0));
             if (visibles.length) {
-                const colsCaben = Math.max(1, Math.floor((z.ancho - 2 * MARGEN) / CELDA_X) + 1);
-                const cols = Math.max(colsCaben, Math.ceil(Math.sqrt(visibles.length * 1.5)));
-                const filas = Math.ceil(visibles.length / cols);
-                z.ancho = Math.max(z.ancho, (cols - 1) * CELDA_X + 2 * MARGEN);
-                z.alto = Math.max(z.alto, (filas - 1) * CELDA_Y + MARGEN + TITULO + 60);
+                const medidas = visibles.map(n => medirNodo(n.id));
+                // Ancho objetivo: zona aproximadamente cuadrada, nunca más angosta que el equipo más ancho
+                const area = medidas.reduce((s, m) => s + (m.w + SEP_X) * (m.h + SEP_Y), 0);
+                const anchoMax = Math.max(...medidas.map(m => m.w));
+                const anchoObjetivo = Math.max(z.ancho - 2 * MARGEN, anchoMax, Math.sqrt(area * 1.4));
+
+                let fx = 0, fy = 0, altoFila = 0, anchoUsado = 0;
                 visibles.forEach((n, i) => {
-                    posiciones[n.id] = { x: z.x + MARGEN + (i % cols) * CELDA_X, y: z.y + TITULO + 60 + Math.floor(i / cols) * CELDA_Y };
+                    const m = medidas[i];
+                    if (fx > 0 && fx + m.w > anchoObjetivo) { fy += altoFila + SEP_Y; fx = 0; altoFila = 0; }
+                    posiciones[n.id] = { x: z.x + MARGEN + fx + m.w / 2, y: z.y + TITULO + fy + m.h / 2 };
+                    fx += m.w + SEP_X;
+                    anchoUsado = Math.max(anchoUsado, fx - SEP_X);
+                    altoFila = Math.max(altoFila, m.h);
                 });
+                z.ancho = Math.max(z.ancho, anchoUsado + 2 * MARGEN);
+                z.alto = Math.max(z.alto, TITULO + fy + altoFila + MARGEN);
             }
             rodearPadres(ocultos, posiciones);
         }
 
-        // Equipos finales agrupados: en círculo alrededor de su switch (para cuando se muestren)
+        // Equipos finales agrupados: en círculo alrededor de su switch (para cuando se muestren),
+        // por fuera del dibujo del switch
         function rodearPadres(hijos, posiciones) {
             const porPadre = {};
             hijos.forEach(n => (porPadre[padreDeHijo[n.id]] = porPadre[padreDeHijo[n.id]] || []).push(n));
@@ -3138,9 +3228,10 @@
                 const padreId = isNaN(pid) ? pid : Number(pid);
                 const padre = posiciones[padreId] || network.getPositions([padreId])[padreId];
                 if (!padre) return;
+                const radio = Math.max(260, medirNodo(padreId).w / 2 + 220);
                 lista.forEach((n, i) => {
                     const ang = (i / lista.length) * Math.PI * 2;
-                    posiciones[n.id] = { x: padre.x + Math.cos(ang) * 220, y: padre.y + Math.sin(ang) * 220 };
+                    posiciones[n.id] = { x: padre.x + Math.cos(ang) * radio, y: padre.y + Math.sin(ang) * radio * 0.6 };
                 });
             });
         }
@@ -3200,22 +3291,27 @@
                 await apiJson("{{ route('topologia.zonas.destroy_all') }}", 'DELETE'); // una sola petición: borra también zonas que el mapa no tenga cargadas
                 zonas = [];
 
-                // Zonas en filas, ordenadas por subred
+                // 1) Tamaño de cada zona según sus equipos (calculado en el origen)
+                const SEP_ZONAS = 320;
+                const calculadas = redes.map((red, i) => {
+                    const z = { id: null, nombre: red, color: ZONA_COLORES[i % ZONA_COLORES.length], rangos_ip: red, x: 0, y: 0, ancho: 600, alto: 500 };
+                    const locales = {};
+                    cuadriculaEnZona(z, porSubred[red], locales);
+                    return { z, locales };
+                });
+
+                // 2) Zonas en filas, ordenadas por subred; el ancho de fila se ajusta al tamaño total del mapa
+                const areaTotal = calculadas.reduce((s, c) => s + (c.z.ancho + SEP_ZONAS) * (c.z.alto + SEP_ZONAS), 0);
+                const anchoFila = Math.max(6000, Math.max(...calculadas.map(c => c.z.ancho)), Math.sqrt(areaTotal * 1.6));
                 const posiciones = {};
-                const anchoFila = 6000;
                 let x = 0, y = 0, altoFila = 0;
-                for (const [i, red] of redes.entries()) {
-                    const z = { id: null, nombre: red, color: ZONA_COLORES[i % ZONA_COLORES.length], rangos_ip: red, x, y, ancho: 400, alto: 400 };
-                    cuadriculaEnZona(z, porSubred[red], posiciones);
-                    if (x > 0 && x + z.ancho > anchoFila) {
-                        // No cabe en la fila: bajar y volver a calcular en la nueva posición
-                        x = 0; y += altoFila + 200; altoFila = 0;
-                        z.x = x; z.y = y; z.ancho = 400; z.alto = 400;
-                        cuadriculaEnZona(z, porSubred[red], posiciones);
-                    }
+                for (const { z, locales } of calculadas) {
+                    if (x > 0 && x + z.ancho > anchoFila) { x = 0; y += altoFila + SEP_ZONAS; altoFila = 0; }
+                    z.x = x; z.y = y;
+                    Object.entries(locales).forEach(([id, p]) => { posiciones[id] = { x: p.x + x, y: p.y + y }; });
                     await guardarZonaServidor(z);
                     zonas.push(z);
-                    x += z.ancho + 200;
+                    x += z.ancho + SEP_ZONAS;
                     altoFila = Math.max(altoFila, z.alto);
                 }
                 rodearPadres(agrupados, posiciones);
@@ -3392,6 +3488,7 @@
                     enlUpd.push({ id: e.id, color: e.color, width: e.width, dashes: e.dashes, customData: e.customData, label: e.label });
                 });
                 edgesDataSet.update(enlUpd);
+                ajustarGrosorCables();
                 initialGrafoData.edges = data.edges;
             } catch (e) {
                 console.warn('Refresco de topología falló:', e);

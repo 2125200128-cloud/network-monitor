@@ -48,6 +48,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/snmp/live-traffic', [DashboardController::class, 'snmpLiveTraffic'])->name('snmp.live_traffic');
     Route::get('/api/cdp/live', [DashboardController::class, 'cdpLive'])->name('cdp.live');
     Route::get('/api/kpi/live', [DashboardController::class, 'kpiLive'])->name('kpi.live');
+    Route::get('/api/dashboard/series', [DashboardController::class, 'series'])->name('dashboard.series');
     Route::post('/api/notificaciones/marcar-leida', [DashboardController::class, 'marcarNotificacionLeida'])->name('notificaciones.marcar_leida');
     Route::post('/api/notificaciones/descartar', [DashboardController::class, 'descartarNotificacion'])->name('notificaciones.descartar');
 
@@ -64,6 +65,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dispositivos/create', [DispositivoController::class, 'create'])->name('dispositivos.create');
         Route::post('/dispositivos', [DispositivoController::class, 'store'])->name('dispositivos.store');
         Route::post('/api/dispositivos/{id}/tipo', [DispositivoController::class, 'corregirTipo'])->whereNumber('id')->name('dispositivos.corregir_tipo');
+        Route::post('/api/dispositivos/{id}/snmp', [DispositivoController::class, 'guardarSnmp'])->whereNumber('id')->name('dispositivos.snmp.guardar');
+        Route::post('/api/dispositivos/{id}/snmp/probar', [DispositivoController::class, 'probarSnmp'])->whereNumber('id')->middleware('throttle:20,1')->name('dispositivos.snmp.probar');
 
         // Plano compartido: acomodo y zonas
         Route::post('/topologia/guardar-posiciones', [TopologiaController::class, 'guardarPosiciones'])->name('topologia.guardar_posiciones');

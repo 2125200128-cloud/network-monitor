@@ -275,6 +275,54 @@
     @yield('styles')
 </head>
 <body class="text-gray-800 dark:text-slate-100 antialiased min-h-screen selection:bg-[#f26419] selection:text-white overflow-hidden bg-[#e8eef3] dark:bg-[#07090e] transition-colors duration-200">
+    @php
+        // Navegación unificada: mismo set de iconos (estilo outline, viewBox 24, stroke 2) y mismo orden
+        // para el sidebar de escritorio y la barra inferior móvil.
+        $navItems = [
+            [
+                'href'   => url('/'),
+                'active' => request()->routeIs('dashboard', 'dispositivos.show'),
+                'title'  => 'Dashboard',
+                'label'  => 'Inicio',
+                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>',
+            ],
+            [
+                'href'   => route('topologia.index'),
+                'active' => request()->is('topologia*'),
+                'title'  => 'Mapa de Topología',
+                'label'  => 'Topología',
+                'svg'    => '<circle cx="6" cy="6" r="2.5"></circle><circle cx="18" cy="6" r="2.5"></circle><circle cx="12" cy="18" r="2.5"></circle><path stroke-linecap="round" stroke-linejoin="round" d="M8.2 7.2l2.6 8.6m2.4 0l2.6-8.6M8.5 6h7"></path>',
+            ],
+            [
+                'href'   => route('servicios_web.index'),
+                'active' => request()->is('servicios-web*'),
+                'title'  => 'Monitoreo de Servicios Web y HTTP',
+                'label'  => 'Webs',
+                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>',
+            ],
+            [
+                'href'   => route('consola.index'),
+                'active' => request()->is('consola*'),
+                'title'  => 'Consola Segura CLI',
+                'label'  => 'CLI',
+                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M7 8.5l3 2.5-3 2.5m5 0h4M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>',
+            ],
+            [
+                'href'   => route('dispositivos.create'),
+                'active' => request()->is('dispositivos/create'),
+                'title'  => 'Agregar Switch',
+                'label'  => 'Agregar',
+                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>',
+            ],
+            [
+                'href'   => route('settings.index'),
+                'active' => request()->is('settings*'),
+                'title'  => 'Configuraciones Generales',
+                'label'  => 'Ajustes',
+                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>',
+            ],
+        ];
+    @endphp
     
     <div class="flex flex-col md:flex-row h-screen bg-[#e8eef3] dark:bg-[#07090e] p-2 sm:p-4 lg:p-6 gap-3 md:gap-6 transition-colors duration-200">
         
@@ -310,41 +358,15 @@
                 </div>
             </div>
 
-            <!-- Nav Icons -->
+            <!-- Nav Icons (generados desde $navItems) -->
             <nav class="flex-1 flex flex-col gap-6 items-center w-full">
-                <!-- Home -->
-                <a href="{{ url('/') }}" class="w-12 h-12 {{ request()->is('/') ? 'bg-white dark:bg-slate-800/90 text-hacienda-blue dark:text-blue-400 shadow-md dark:shadow-none transform scale-110 border border-transparent dark:border-slate-700/50' : 'text-blue-100 dark:text-slate-400 hover:bg-white/20 dark:hover:bg-slate-800/50' }} rounded-xl flex items-center justify-center transition" title="Dashboard">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
+                @foreach($navItems as $item)
+                <a href="{{ $item['href'] }}"
+                   class="w-12 h-12 {{ $item['active'] ? 'bg-white dark:bg-slate-800/90 text-hacienda-blue dark:text-blue-400 shadow-md dark:shadow-none transform scale-110 border border-transparent dark:border-slate-700/50' : 'text-blue-100 dark:text-slate-400 hover:bg-white/20 dark:hover:bg-slate-800/50 hover:text-white dark:hover:text-slate-200' }} rounded-xl flex items-center justify-center transition"
+                   title="{{ $item['title'] }}" aria-label="{{ $item['title'] }}" @if($item['active']) aria-current="page" @endif>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">{!! $item['svg'] !!}</svg>
                 </a>
-                
-                <!-- Consola Segura CLI Directa -->
-                <a href="{{ route('consola.index') }}" 
-                   class="w-12 h-12 {{ request()->is('consola*') ? 'bg-white dark:bg-slate-800/90 text-hacienda-blue dark:text-blue-400 shadow-md dark:shadow-none transform scale-110 border border-transparent dark:border-slate-700/50' : 'text-blue-100 dark:text-slate-400 hover:bg-white/20 dark:hover:bg-slate-800/50' }} rounded-xl flex items-center justify-center transition group relative" 
-                   title="Consola Segura CLI">
-                    <div class="w-8 h-8 rounded-lg bg-gray-950 text-emerald-400 font-mono text-xs flex items-center justify-center font-bold border border-slate-700/80 shadow-inner group-hover:border-emerald-500/50 group-hover:text-emerald-300 transition">
-                        &gt;_
-                    </div>
-                </a>
-
-                <!-- Mapa de Topología -->
-                <a href="{{ route('topologia.index') }}" class="w-12 h-12 {{ request()->is('topologia*') ? 'bg-white dark:bg-slate-800/90 text-hacienda-blue dark:text-blue-400 shadow-md dark:shadow-none transform scale-110 border border-transparent dark:border-slate-700/50' : 'text-blue-100 dark:text-slate-400 hover:bg-white/20 dark:hover:bg-slate-800/50' }} rounded-xl flex items-center justify-center transition" title="Mapa de Topología">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><circle cx="6" cy="6" r="2.5"></circle><circle cx="18" cy="6" r="2.5"></circle><circle cx="12" cy="18" r="2.5"></circle><path stroke-linecap="round" stroke-linejoin="round" d="M8.2 7.2l2.6 8.6m2.4 0l2.6-8.6M8.5 6h7"></path></svg>
-                </a>
-
-                <!-- Servicios Web -->
-                <a href="{{ route('servicios_web.index') }}" class="w-12 h-12 {{ request()->is('servicios-web*') ? 'bg-white dark:bg-slate-800/90 text-hacienda-blue dark:text-blue-400 shadow-md dark:shadow-none transform scale-110 border border-transparent dark:border-slate-700/50' : 'text-blue-100 dark:text-slate-400 hover:bg-white/20 dark:hover:bg-slate-800/50' }} rounded-xl flex items-center justify-center transition" title="Monitoreo de Servicios Web y HTTP">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-                </a>
-
-                <!-- Configuraciones / Ajustes -->
-                <a href="{{ route('settings.index') }}" class="w-12 h-12 {{ request()->is('settings*') ? 'bg-white dark:bg-slate-800/90 text-hacienda-blue dark:text-blue-400 shadow-md dark:shadow-none transform scale-110 border border-transparent dark:border-slate-700/50' : 'text-blue-100 dark:text-slate-400 hover:bg-white/20 dark:hover:bg-slate-800/50' }} rounded-xl flex items-center justify-center transition" title="Configuraciones Generales">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                </a>
-
-                <!-- Agregar Switch -->
-                <a href="{{ route('dispositivos.create') }}" class="w-12 h-12 {{ request()->is('dispositivos/create') ? 'bg-white dark:bg-slate-800/90 text-hacienda-blue dark:text-blue-400 shadow-md dark:shadow-none transform scale-110 border border-transparent dark:border-slate-700/50' : 'text-blue-100 dark:text-slate-400 hover:bg-white/20 dark:hover:bg-slate-800/50' }} rounded-xl flex items-center justify-center transition" title="Agregar Switch">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
-                </a>
+                @endforeach
             </nav>
         </aside>
 
@@ -362,42 +384,14 @@
         @endif
 
         <!-- ==================== MOBILE FLOATING BOTTOM BAR ==================== -->
-        <nav class="fixed bottom-3 left-3 right-3 z-50 flex md:hidden items-center justify-around bg-white/95 dark:bg-[#0d1017]/95 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800/80 p-2 rounded-2xl shadow-2xl transition-all" x-data="{ openL2L3Mobile: false }">
-            <!-- Home -->
-            <a href="{{ url('/') }}" class="flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-bold transition {{ request()->is('/') ? 'text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-slate-800/80' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
-                <span class="text-[10px] leading-none">Inicio</span>
+        <nav class="fixed bottom-3 left-3 right-3 z-50 flex md:hidden items-center justify-around bg-white/95 dark:bg-[#0d1017]/95 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800/80 p-2 rounded-2xl shadow-2xl transition-all">
+            @foreach($navItems as $item)
+            <a href="{{ $item['href'] }}" title="{{ $item['title'] }}" @if($item['active']) aria-current="page" @endif
+               class="flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-bold transition {{ $item['active'] ? 'text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-slate-800/80' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">{!! $item['svg'] !!}</svg>
+                <span class="text-[10px] leading-none">{{ $item['label'] }}</span>
             </a>
-
-            <!-- Topología -->
-            <a href="{{ route('topologia.index') }}" class="flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-bold transition {{ request()->is('topologia*') ? 'text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-slate-800/80' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="6" cy="6" r="2.5"></circle><circle cx="18" cy="6" r="2.5"></circle><circle cx="12" cy="18" r="2.5"></circle><path stroke-linecap="round" stroke-linejoin="round" d="M8.2 7.2l2.6 8.6m2.4 0l2.6-8.6M8.5 6h7"></path></svg>
-                <span class="text-[10px] leading-none">Topología</span>
-            </a>
-
-            <!-- Servicios Web -->
-            <a href="{{ route('servicios_web.index') }}" class="flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-bold transition {{ request()->is('servicios-web*') ? 'text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-slate-800/80' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-                <span class="text-[10px] leading-none">Webs</span>
-            </a>
-
-            <!-- Consola CLI Directa -->
-            <a href="{{ route('consola.index') }}" class="flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-bold transition {{ request()->is('consola*') ? 'text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-slate-800/80' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}">
-                <span class="w-5 h-5 rounded bg-gray-950 text-emerald-400 font-mono text-[10px] flex items-center justify-center font-bold border border-slate-700/60">&gt;_</span>
-                <span class="text-[10px] leading-none">CLI</span>
-            </a>
-
-            <!-- Agregar Switch -->
-            <a href="{{ route('dispositivos.create') }}" class="flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-bold transition {{ request()->is('dispositivos/create') ? 'text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-slate-800/80' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
-                <span class="text-[10px] leading-none">Agregar</span>
-            </a>
-
-            <!-- Ajustes -->
-            <a href="{{ route('settings.index') }}" class="flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-bold transition {{ request()->is('settings*') ? 'text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-slate-800/80' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                <span class="text-[10px] leading-none">Ajustes</span>
-            </a>
+            @endforeach
         </nav>
 
     </div>

@@ -32,6 +32,7 @@ class SettingController extends Controller
         $request->validate([
             'intervalo_sondeo_segundos' => 'required|integer|min:10',
             'comunidad_snmp_default' => 'required|string|max:255',
+            'comunidad_snmp_firewall' => 'nullable|string|max:255',
             'ip_switch_core' => 'required|ip',
             'umbral_cpu_warning' => 'required|integer|min:1|max:100',
             'umbral_loss_warning' => 'required|integer|min:1|max:100',
@@ -39,7 +40,8 @@ class SettingController extends Controller
 
         $settings = ConfiguracionGeneral::first();
         if ($settings) {
-            $settings->update($request->all());
+            // Vacía = los firewalls siguen usando su comunidad individual
+            $settings->update(['comunidad_snmp_firewall' => trim((string) $request->input('comunidad_snmp_firewall')) ?: null] + $request->all());
         }
 
         return redirect()->route('settings.index', ['section' => 'general'])->with('success', 'Configuraciones guardadas exitosamente.');

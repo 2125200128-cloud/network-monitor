@@ -59,5 +59,18 @@ def normalize_iface(name):
     return s
 
 
+# Comunidad SNMP efectiva de cada equipo (columna para un SELECT sobre `dispositivos`), por prioridad:
+#   1. la fijada en la ficha técnica (comunidad_snmp_manual)
+#   2. la de firewalls de Configuraciones (comunidad_snmp_firewall), si el equipo es firewall
+#   3. la registrada en el alta / descubrimiento (comunidad_snmp)
+# Misma regla que Dispositivo::comunidadConOrigen() en Laravel.
+COMUNIDAD_EFECTIVA_SQL = (
+    "COALESCE(NULLIF(TRIM(comunidad_snmp_manual), ''), "
+    "CASE WHEN COALESCE(tipo_manual, tipo_detectado) = 'firewall' THEN "
+    "NULLIF(TRIM((SELECT comunidad_snmp_firewall FROM configuraciones_generales ORDER BY id LIMIT 1)), '') END, "
+    "comunidad_snmp) AS comunidad_snmp"
+)
+
+
 # ifType de IF-MIB que corresponden a puertos físicos Ethernet
 PHYSICAL_IF_TYPES = {6, 62, 69, 117}

@@ -19,6 +19,7 @@ class TelemetriaInterfaz extends Model
         'out_multicast_pkts',
         'in_broadcast_pkts',
         'out_broadcast_pkts',
+        'broadcast_pps',
         'bandwidth_util_pct',
         'last_change_str',
         'in_errors',

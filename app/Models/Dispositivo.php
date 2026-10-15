@@ -22,8 +22,12 @@ class Dispositivo extends Model
         'ssh_user',
         'ssh_password_encrypted',
         'ssh_port',
-        'tipo_manual'
+        'tipo_manual',
+        'comunidad_snmp_manual',
     ];
+
+    /** Credencial: no se serializa al JSON que llega al navegador. */
+    protected $hidden = ['comunidad_snmp_manual'];
 
     protected $casts = [
         'tipo_evidencia' => 'array',
@@ -84,6 +88,38 @@ class Dispositivo extends Model
     /**
      * Tipo del equipo (fuente única): corrección manual > evidencia SNMP/CDP/LLDP > nombre.
      */
+    /**
+     * Comunidad SNMP con la que se consulta el equipo y de dónde sale, por prioridad:
+     *   1. 'ficha'     comunidad fijada en la ficha técnica (comunidad_snmp_manual)
+     *   2. 'firewalls' comunidad de firewalls de Configuraciones, si el equipo es firewall
+     *   3. 'equipo'    la registrada en el alta / descubrimiento (comunidad_snmp)
+     *   4. 'red'       la comunidad por defecto de Configuraciones
+     * Misma regla que nm_common.COMUNIDAD_EFECTIVA_SQL (workers).
+     *
+     * @return array{0: string, 1: string} [comunidad, origen]
+     */
+    public function comunidadConOrigen(): array
+    {
+        if (trim((string) $this->comunidad_snmp_manual) !== '') {
+            return [trim($this->comunidad_snmp_manual), 'ficha'];
+        }
+        if (($this->tipo_manual ?: $this->tipo_detectado) === 'firewall') {
+            $deFirewalls = trim((string) ConfiguracionGeneral::query()->value('comunidad_snmp_firewall'));
+            if ($deFirewalls !== '') {
+                return [$deFirewalls, 'firewalls'];
+            }
+        }
+        if ($this->comunidad_snmp) {
+            return [$this->comunidad_snmp, 'equipo'];
+        }
+        return [ConfiguracionGeneral::query()->value('comunidad_snmp_default') ?: env('SNMP_COMMUNITY', 'public'), 'red'];
+    }
+
+    public function comunidadEfectiva(): string
+    {
+        return $this->comunidadConOrigen()[0];
+    }
+
     public function resolveTypeInfo(): array
     {
         return $this->tipoInfoCache ??= \App\Services\TipoDispositivoResolver::resolver($this);

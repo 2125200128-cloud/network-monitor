@@ -12,6 +12,7 @@ class AlarmaRed extends Model
     protected $table = 'alarmas_red';
 
     protected $fillable = [
+        'clave',
         'dispositivo_id',
         'interfaz_id',
         'enlace_id',

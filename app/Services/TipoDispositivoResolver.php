@@ -87,6 +87,12 @@ class TipoDispositivoResolver
             }
         }
 
+        // Ilustración del modelo exacto (puertos, uplinks, chasis) cuando el número de parte se reconoce
+        if (in_array($tipo, ['switch', 'router', 'firewall', 'wlc', 'access_point', 'desconocido'], true)
+            && ($arte = DeviceArtwork::paraDispositivo($d))) {
+            [$image, $size] = [$arte['image'], $arte['size']];
+        }
+
         $modelo = $d->modelo_detectado ?: null;
         // El nombre "limpio" heurístico solo se usa si coincide con el tipo real
         $porNombre = $d->resolveTypeInfoPorNombre();

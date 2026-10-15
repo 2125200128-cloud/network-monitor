@@ -11,6 +11,11 @@ use App\Models\ConfiguracionDispositivo;
 
 class AlarmDiagnosisService
 {
+    /** Umbrales del NOC para el SLA de los enlaces SD-WAN (el FortiGate no expone sus propios umbrales por SNMP). */
+    public const SDWAN_PERDIDA_PCT = 5;
+    public const SDWAN_LATENCIA_MS = 150;
+    public const SDWAN_JITTER_MS = 30;
+
     /**
      * Genera el diagnóstico inteligente de causa raíz para todas las fallas activas en la red.
      */
@@ -508,6 +513,211 @@ class AlarmDiagnosisService
             // Silencioso si la tabla aún se está migrando
         }
 
+        // -------------------------------------------------------------
+        // 9. HARDWARE, PoE, VPN Y HA (estado reportado por SNMP)
+        // -------------------------------------------------------------
+        foreach ($dispositivos as $disp) {
+            $chasis = $disp->telemetriaChasis;
+            if (!$chasis || $disp->estado === 'offline') {
+                continue;
+            }
+            $dt = $chasis->detalle_medido_en ?? $chasis->updated_at ?? now();
+            $base = fn (string $clave, string $sev, string $cat, string $codigo, string $titulo, string $mensaje, string $causa, string $impacto, string $accion) => [
+                'id' => $clave,
+                'dispositivo_id' => $disp->id,
+                'tipo' => $sev,
+                'severidad' => $sev,
+                'categoria' => $cat,
+                'codigo_evento' => $codigo,
+                'titulo' => $titulo,
+                'dispositivo' => $disp->nombre,
+                'ip' => $disp->ip,
+                'ubicacion' => $disp->ubicacion ?? '',
+                'mensaje' => $mensaje,
+                'causa_raiz' => $causa,
+                'impacto' => $impacto,
+                'accion_sugerida' => $accion,
+                'fecha_falla' => $dt->format('d/m/Y H:i:s'),
+                'hora_falla' => $dt->format('h:i:s A'),
+                'hace_cuanto' => $dt->diffForHumans(),
+                'tiempo' => $dt->format('h:i:s A') . ' (' . $dt->diffForHumans() . ')',
+                'leida' => false,
+                'link' => route('dispositivos.show', $disp->id),
+                'accion' => 'Ver Equipo',
+            ];
+
+            foreach (['estado_fuentes' => ['psu', 'Fuente de poder'], 'estado_ventiladores' => ['fan', 'Ventilador']] as $col => [$key, $etiqueta]) {
+                foreach ((array) ($chasis->$col ?? []) as $i => $comp) {
+                    $status = strtoupper((string) ($comp['status'] ?? ''));
+                    if (!self::componenteEnFalla($status)) {
+                        continue;
+                    }
+                    $nombreComp = $comp[$key] ?? "{$etiqueta} {$i}";
+                    $alarmas[] = $base("hw-{$key}-{$disp->id}-{$i}", 'critica', 'hardware', $key === 'psu' ? 'PSU_FAILURE' : 'FAN_FAILURE',
+                        "{$etiqueta} en falla: {$nombreComp}",
+                        "{$disp->nombre} reporta {$nombreComp} en estado {$status}.",
+                        "Estado reportado por el equipo vía SNMP (CISCO-ENVMON / ENTITY-FRU-CONTROL): {$status}.",
+                        $key === 'psu' ? 'Pérdida de redundancia eléctrica; una segunda falla apaga el equipo.' : 'Riesgo de sobrecalentamiento y apagado térmico.',
+                        "Ejecutar 'show environment all' en {$disp->nombre} y reemplazar el componente si la falla persiste.");
+                }
+            }
+
+            $poeTotal = (float) ($chasis->poe_total_budget_w ?? 0);
+            if ($poeTotal > 0 && $chasis->poe_used_w !== null) {
+                $pct = round($chasis->poe_used_w / $poeTotal * 100, 1);
+                if ($pct >= 90) {
+                    $alarmas[] = $base("poe-{$disp->id}", 'advertencia', 'hardware', 'POE_BUDGET_HIGH',
+                        "Presupuesto PoE al {$pct}%",
+                        "{$disp->nombre} consume {$chasis->poe_used_w} W de {$poeTotal} W disponibles para PoE.",
+                        'Consumo PoE medido por POWER-ETHERNET-MIB cercano al presupuesto del chasis.',
+                        'Nuevos teléfonos IP o APs conectados podrían quedarse sin energía.',
+                        "Revisar 'show power inline' y redistribuir equipos PoE entre switches.");
+                }
+            }
+
+            foreach ((array) ($chasis->vpn_tuneles ?? []) as $i => $tunel) {
+                if (($tunel['estado'] ?? null) !== 'down') {
+                    continue;
+                }
+                $nombreTunel = $tunel['fase1'] ?? "Túnel {$i}";
+                $remoto = $tunel['remoto'] ?? 'sin dato';
+                $alarmas[] = $base("vpn-{$disp->id}-" . md5($nombreTunel . ($tunel['fase2'] ?? '')), 'critica', 'vpn', 'VPN_TUNNEL_DOWN',
+                    "Túnel VPN caído: {$nombreTunel}",
+                    "El túnel IPsec {$nombreTunel} hacia {$remoto} está DOWN en {$disp->nombre}.",
+                    'Estado reportado por FORTINET-FORTIGATE-MIB (fgVpnTunEntStatus = down).',
+                    'Sin comunicación con la sede remota a través de este túnel.',
+                    "Ejecutar 'diagnose vpn tunnel list name {$nombreTunel}' y verificar conectividad al gateway {$remoto}.");
+            }
+
+            // ---- FortiGate: SD-WAN, sensores de hardware, disco, VPN SSL e IPS ----
+            foreach ((array) ($chasis->forti_sdwan ?? []) as $enlace) {
+                $nombreSla = $enlace['nombre'] ?? 'SLA';
+                $clave = "sdwan-{$disp->id}-" . md5($nombreSla . ($enlace['interfaz'] ?? ''));
+                $via = !empty($enlace['interfaz']) ? " ({$enlace['interfaz']})" : '';
+                if (($enlace['estado'] ?? null) === 'dead') {
+                    $alarmas[] = $base($clave, 'critica', 'wan', 'SDWAN_LINK_DEAD',
+                        "Enlace SD-WAN caído: {$nombreSla}{$via}",
+                        "El health-check {$nombreSla}{$via} de {$disp->nombre} reporta el enlace sin respuesta.",
+                        'Estado reportado por el FortiGate (fgVWLHealthCheckLinkState = dead).',
+                        'El tráfico se conmuta a los enlaces restantes; si no hay otro, se pierde la salida.',
+                        "Ejecutar 'diagnose sys sdwan health-check' y verificar el enlace con el proveedor.");
+                    continue;
+                }
+                $motivos = array_filter([
+                    ($enlace['perdida_pct'] ?? null) !== null && $enlace['perdida_pct'] >= self::SDWAN_PERDIDA_PCT ? "pérdida {$enlace['perdida_pct']}%" : null,
+                    ($enlace['latencia_ms'] ?? null) !== null && $enlace['latencia_ms'] >= self::SDWAN_LATENCIA_MS ? "latencia {$enlace['latencia_ms']} ms" : null,
+                    ($enlace['jitter_ms'] ?? null) !== null && $enlace['jitter_ms'] >= self::SDWAN_JITTER_MS ? "jitter {$enlace['jitter_ms']} ms" : null,
+                ]);
+                if ($motivos) {
+                    $alarmas[] = $base($clave, 'advertencia', 'wan', 'SDWAN_SLA_DEGRADED',
+                        "SLA SD-WAN degradado: {$nombreSla}{$via}",
+                        "{$disp->nombre}: " . implode(', ', $motivos) . '.',
+                        'Medición del health-check del FortiGate fuera de los umbrales del NOC (pérdida ≥ ' . self::SDWAN_PERDIDA_PCT
+                            . '%, latencia ≥ ' . self::SDWAN_LATENCIA_MS . ' ms o jitter ≥ ' . self::SDWAN_JITTER_MS . ' ms).',
+                        'Lentitud o cortes en servicios que salen por este proveedor.',
+                        'Revisar el enlace con el proveedor y las reglas SD-WAN que lo prefieren.');
+                }
+            }
+
+            foreach ((array) ($chasis->forti_sensores ?? []) as $sensor) {
+                if (empty($sensor['alarma'])) {
+                    continue;
+                }
+                $nombreSensor = $sensor['nombre'] ?? 'Sensor';
+                $valor = $sensor['valor'] ?? null;
+                $alarmas[] = $base("fgsensor-{$disp->id}-" . md5($nombreSensor), 'critica', 'hardware', 'FORTI_HW_SENSOR_ALARM',
+                    "Sensor de hardware en alarma: {$nombreSensor}" . ($valor !== null ? " ({$valor})" : ''),
+                    "{$disp->nombre} reporta el sensor {$nombreSensor} fuera de rango.",
+                    'Alarma del propio equipo (fgHwSensorEntAlarmStatus = true).',
+                    'Riesgo de apagado por temperatura, falla de ventilador o de alimentación.',
+                    "Ejecutar 'execute sensor list' y revisar ventilación y fuentes del equipo.");
+            }
+
+            $sistema = $chasis->forti_sistema ?? [];
+            if (($sistema['disco_pct'] ?? null) !== null && $sistema['disco_pct'] >= 90) {
+                $alarmas[] = $base("fgdisco-{$disp->id}", 'advertencia', 'hardware', 'FORTI_DISK_HIGH',
+                    "Disco del firewall al {$sistema['disco_pct']}%",
+                    "{$disp->nombre} usa {$sistema['disco_usado_mb']} MB de {$sistema['disco_total_mb']} MB.",
+                    'Uso de disco reportado por el FortiGate (fgSysDiskUsage / fgSysDiskCapacity).',
+                    'Al llenarse, el equipo deja de guardar logs y reportes.',
+                    "Revisar 'diagnose sys logdisk usage' y la retención de logs, o enviarlos a FortiAnalyzer.");
+            }
+
+            $ssl = $chasis->forti_vpn_ssl ?? [];
+            if (!empty($ssl['max_usuarios']) && ($ssl['usuarios'] ?? 0) >= 0.9 * $ssl['max_usuarios']) {
+                $alarmas[] = $base("fgssl-{$disp->id}", 'advertencia', 'vpn', 'FORTI_SSLVPN_CAPACITY',
+                    "VPN SSL cerca de su capacidad ({$ssl['usuarios']} / {$ssl['max_usuarios']})",
+                    "{$disp->nombre} tiene {$ssl['usuarios']} usuarios conectados por VPN SSL.",
+                    'Usuarios conectados contra el máximo histórico reportado por el equipo.',
+                    'Nuevos usuarios remotos podrían no poder conectarse.',
+                    'Revisar licenciamiento/capacidad de VPN SSL y sesiones inactivas.');
+            }
+
+            $seg = $chasis->forti_seguridad ?? [];
+            if (($seg['ips_criticas_ciclo'] ?? 0) > 0) {
+                $ventana = !empty($seg['ventana_seg']) ? round($seg['ventana_seg'] / 60) . ' min' : 'el último ciclo';
+                $alarmas[] = $base("fgips-{$disp->id}", 'advertencia', 'seguridad', 'FORTI_IPS_CRITICAL',
+                    "Detecciones IPS críticas: {$seg['ips_criticas_ciclo']} en {$ventana}",
+                    "{$disp->nombre} detectó {$seg['ips_criticas_ciclo']} intrusiones de severidad crítica en {$ventana}.",
+                    'Contadores del motor IPS del FortiGate (fgIpsCritSevDetections).',
+                    'Posible ataque o equipo comprometido en la red protegida.',
+                    "Revisar los logs de IPS en el FortiGate (Log & Report → Intrusion Prevention).");
+            }
+
+            $ha = $chasis->ha_estado;
+            if (is_array($ha) && !empty($ha['miembros'])) {
+                $desincronizados = collect($ha['miembros'])->where('sincronizado', false)->pluck('nombre');
+                if ($desincronizados->isNotEmpty()) {
+                    $alarmas[] = $base("ha-{$disp->id}", 'advertencia', 'seguridad', 'HA_OUT_OF_SYNC',
+                        'Clúster HA sin sincronizar',
+                        "Miembros sin sincronizar: {$desincronizados->implode(', ')}.",
+                        'fgHaStatsSyncStatus reporta configuración no sincronizada entre miembros del clúster.',
+                        'Un failover podría activar un miembro con configuración desactualizada.',
+                        "Ejecutar 'diagnose sys ha checksum cluster' en el FortiGate.");
+                }
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 10. CERTIFICADOS SSL PRÓXIMOS A VENCER
+        // -------------------------------------------------------------
+        try {
+            $porVencer = \App\Models\ServicioWeb::where('es_activo', true)
+                ->whereNotNull('ssl_dias_expiracion')
+                ->where('ssl_dias_expiracion', '<=', 30)
+                ->get();
+            foreach ($porVencer as $web) {
+                $dias = (int) $web->ssl_dias_expiracion;
+                $sev = $dias <= 7 ? 'critica' : 'advertencia';
+                $dt = $web->ultimo_chequeo ? \Carbon\Carbon::parse($web->ultimo_chequeo) : now();
+                $alarmas[] = [
+                    'id' => 'ssl-' . $web->id,
+                    'servicio_web_id' => $web->id,
+                    'tipo' => $sev,
+                    'severidad' => $sev,
+                    'categoria' => 'servicio_web',
+                    'codigo_evento' => $dias < 0 ? 'SSL_EXPIRED' : 'SSL_EXPIRING',
+                    'titulo' => $dias < 0 ? "Certificado SSL vencido: {$web->nombre}" : "Certificado SSL vence en {$dias} días: {$web->nombre}",
+                    'dispositivo' => $web->nombre,
+                    'ip' => parse_url($web->url, PHP_URL_HOST) ?? $web->url,
+                    'ubicacion' => "Módulo Servicios Web [{$web->categoria}]",
+                    'mensaje' => $dias < 0 ? "El certificado de {$web->url} venció hace " . abs($dias) . ' días.' : "El certificado de {$web->url} vence en {$dias} días.",
+                    'causa_raiz' => 'Fecha de expiración leída del certificado presentado por el servidor.',
+                    'impacto' => 'Los navegadores mostrarán advertencia de seguridad y los clientes API rechazarán la conexión.',
+                    'accion_sugerida' => 'Renovar e instalar el certificado antes de la fecha de expiración.',
+                    'fecha_falla' => $dt->format('d/m/Y H:i:s'),
+                    'hora_falla' => $dt->format('h:i:s A'),
+                    'hace_cuanto' => $dt->diffForHumans(),
+                    'tiempo' => $dt->format('h:i:s A') . " ({$dias} días)",
+                    'leida' => false,
+                    'link' => route('servicios_web.index'),
+                    'accion' => 'Ver Servicios Web',
+                ];
+            }
+        } catch (\Throwable $e) {
+            // Silencioso si la tabla aún se está migrando
+        }
+
         // Ordenar por severidad (crítica -> advertencia -> informativa)
         usort($alarmas, function ($a, $b) {
             $peso = ['critica' => 1, 'advertencia' => 2, 'sistema' => 3, 'informativa' => 3];
@@ -517,6 +727,17 @@ class AlarmDiagnosisService
         });
 
         return $alarmas;
+    }
+
+    /**
+     * Estado de fuente/ventilador que indica falla. "NOT PRESENT" (bahía vacía) y "DESCONOCIDO" no son falla.
+     */
+    public static function componenteEnFalla(string $status): bool
+    {
+        $status = strtoupper($status);
+        // FRU-CONTROL reporta "OK (falla ventilador)" / "OK (falla PoE)": encendida pero degradada
+        return str_contains($status, 'FALLA')
+            || ($status !== '' && !str_starts_with($status, 'OK') && !in_array($status, ['NOT PRESENT', 'DESCONOCIDO'], true));
     }
 
     /**

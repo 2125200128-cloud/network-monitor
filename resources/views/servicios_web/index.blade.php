@@ -40,13 +40,29 @@
 @section('content')
 <div class="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-6 space-y-5">
 
-
+    {{-- Mensajes de resultado (alta / edición / eliminación) y errores de validación --}}
+    @if(session('status'))
+        <div class="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>{{ session('status') }}</span>
+        </div>
+    @endif
+    @if($errors->any())
+        <div class="flex items-start gap-3 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 text-red-700 dark:text-red-300 text-xs font-semibold">
+            <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <ul class="space-y-0.5">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
     {{-- Header Top --}}
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#0d1017] p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
         <div class="flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-xl bg-[#3b5998] text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-900/10">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <div class="w-12 h-12 rounded-2xl text-white flex items-center justify-center shrink-0 shadow-md" style="background: linear-gradient(135deg, #3b5998, #5c8096);">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
                 </svg>
             </div>
@@ -170,7 +186,7 @@
                 Todas ({{ count($servicios) }})
             </button>
             @foreach($categorias as $cat)
-                <button type="button" onclick="filterCategory('{{ $cat }}', this)" class="cat-tab-btn px-3.5 py-1.5 rounded-lg font-semibold text-gray-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                <button type="button" onclick="filterCategory('{{ $cat }}', this)" class="cat-tab-btn px-3.5 py-1.5 rounded-lg font-semibold text-gray-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition">
                     {{ $cat }}
                 </button>
             @endforeach
@@ -218,7 +234,7 @@
                             <td class="p-3.5 pl-5">
                                 <div class="flex items-center gap-3">
                                     <div class="web-icon-box w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border 
-                                        {{ $web->estado === 'online' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/60' : ($web->estado === 'warning' ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/60' : 'bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400 border-red-200/60 dark:border-red-800/60') }}">
+                                        {{ $web->estado === 'online' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/60' : ($web->estado === 'warning' ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/60' : ($web->estado === 'offline' ? 'bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400 border-red-200/60 dark:border-red-800/60' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border-slate-200/60 dark:border-slate-700/60')) }}">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
                                         </svg>
@@ -252,10 +268,15 @@
                                         <span class="w-2 h-2 rounded-full bg-amber-500"></span>
                                         {{ $web->codigo_http ? 'HTTP ' . $web->codigo_http : 'Advertencia' }}
                                     </span>
-                                @else
+                                @elseif($web->estado === 'offline')
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-400 border border-red-200/70 dark:border-red-800/60" title="{{ $web->detalles_error }}">
                                         <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
                                         {{ $web->codigo_http ? 'HTTP ' . $web->codigo_http : 'Caído' }}
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/70 dark:border-slate-700" title="Aún no se ha comprobado">
+                                        <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                                        Pendiente
                                     </span>
                                 @endif
                             </td>
@@ -329,12 +350,12 @@
             @csrf
             <div>
                 <label class="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1">Nombre del Sitio / Servicio</label>
-                <input type="text" name="nombre" required placeholder="Ej. Portal de Trámites Jalisco" class="w-full text-xs bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#3b5998] outline-none">
+                <input type="text" name="nombre" required value="{{ old('nombre') }}" placeholder="Ej. Portal de Trámites Jalisco" class="w-full text-xs bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#3b5998] outline-none">
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1">URL (http:// o https://)</label>
-                <input type="url" name="url" required placeholder="https://gobiernoenlinea1.jalisco.gob.mx/ejemplo" class="w-full text-xs font-mono bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#3b5998] outline-none">
+                <input type="url" name="url" required value="{{ old('url') }}" placeholder="https://gobiernoenlinea1.jalisco.gob.mx/ejemplo" class="w-full text-xs font-mono bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#3b5998] outline-none">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
@@ -360,7 +381,7 @@
             </div>
 
             <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 mt-2">
-                <button type="button" onclick="closeAddModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-gray-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                <button type="button" onclick="closeAddModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-gray-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition">
                     Cancelar
                 </button>
                 <button type="submit" class="fancy fancy-sm">
@@ -378,6 +399,15 @@
 @section('scripts')
 <script>
     let activeCategory = 'todas';
+
+    // Escapa texto antes de insertarlo en HTML (los mensajes de error incluyen URLs y texto del servidor)
+    function escHtml(v) {
+        return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    @if($errors->any())
+        document.addEventListener('DOMContentLoaded', () => openAddModal());
+    @endif
 
     function filterCategory(cat, btn) {
         activeCategory = cat;
@@ -483,35 +513,44 @@
         // 1. Icon Box
         const iconBox = row.querySelector('.web-icon-box');
         if (iconBox) {
+            const iconColors = {
+                online: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/60',
+                warning: 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/60',
+                offline: 'bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400 border-red-200/60 dark:border-red-800/60',
+            };
             iconBox.className = `web-icon-box w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border ${
-                s.estado === 'online' 
-                    ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/60'
-                    : (s.estado === 'warning'
-                        ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/60'
-                        : 'bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400 border-red-200/60 dark:border-red-800/60')
+                iconColors[s.estado] || 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border-slate-200/60 dark:border-slate-700/60'
             }`;
         }
 
         // 2. Status Badge Cell
         const statusCell = row.querySelector('.cell-status');
         if (statusCell) {
+            const err = escHtml(s.detalles_error);
+            const code = s.codigo_http ? 'HTTP ' + escHtml(s.codigo_http) : null;
             if (s.estado === 'online') {
                 statusCell.innerHTML = `
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        ${s.codigo_http ? 'HTTP ' + s.codigo_http : '200 OK'}
+                        ${code || '200 OK'}
                     </span>`;
             } else if (s.estado === 'warning') {
                 statusCell.innerHTML = `
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/70 dark:border-amber-800/60" title="${s.detalles_error || ''}">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/70 dark:border-amber-800/60" title="${err}">
                         <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                        ${s.codigo_http ? 'HTTP ' + s.codigo_http : 'Advertencia'}
+                        ${code || 'Advertencia'}
+                    </span>`;
+            } else if (s.estado === 'offline') {
+                statusCell.innerHTML = `
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-400 border border-red-200/70 dark:border-red-800/60" title="${err}">
+                        <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                        ${code || 'Caído'}
                     </span>`;
             } else {
                 statusCell.innerHTML = `
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-400 border border-red-200/70 dark:border-red-800/60" title="${s.detalles_error || ''}">
-                        <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                        ${s.codigo_http ? 'HTTP ' + s.codigo_http : 'Caído'}
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/70 dark:border-slate-700" title="Aún no se ha comprobado">
+                        <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                        Pendiente
                     </span>`;
             }
         }
@@ -520,10 +559,11 @@
         const latencyCell = row.querySelector('.cell-latency');
         if (latencyCell) {
             if (s.tiempo_respuesta_ms !== null && s.tiempo_respuesta_ms !== undefined) {
-                const isHigh = s.tiempo_respuesta_ms > 3500;
+                const ms = Number(s.tiempo_respuesta_ms);
+                const isHigh = ms > 3500;
                 latencyCell.innerHTML = `
                     <span class="font-bold ${isHigh ? 'text-amber-600 dark:text-amber-400' : 'text-slate-800 dark:text-slate-200'}">
-                        ${s.tiempo_respuesta_ms} ms
+                        ${ms.toFixed(1)} ms
                     </span>`;
             } else {
                 latencyCell.innerHTML = `<span class="text-gray-400">—</span>`;
@@ -558,7 +598,7 @@
                     if (elOnline) elOnline.textContent = data.stats.online;
                     if (elWarning) elWarning.textContent = data.stats.warning;
                     if (elOffline) elOffline.textContent = data.stats.offline;
-                    if (elLatency) elLatency.textContent = data.stats.avg_latency + ' ms';
+                    if (elLatency) elLatency.innerHTML = `${escHtml(data.stats.avg_latency)} <span class="text-sm font-semibold text-gray-500">ms</span>`;
                 }
 
                 // Update Individual Table Rows

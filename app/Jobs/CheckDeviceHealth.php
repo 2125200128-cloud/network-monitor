@@ -25,12 +25,11 @@ class CheckDeviceHealth implements ShouldQueue
     public function handle(): void
     {
         $config = ConfiguracionGeneral::first();
-        $comunidadGlobal = $config ? $config->comunidad_snmp_default : env('SNMP_COMMUNITY', 'public');
         $umbralCpu = $config ? $config->umbral_cpu_warning : 85;
 
         $pythonScript = base_path('worker/check_health.py');
         $pythonExe = env('PYTHON_PATH', 'python');
-        $comunidad = $this->dispositivo->comunidad_snmp ?: $comunidadGlobal;
+        $comunidad = $this->dispositivo->comunidadEfectiva();
 
         $process = new Process([$pythonExe, $pythonScript, $this->dispositivo->ip, $comunidad]);
         $process->setTimeout(30);

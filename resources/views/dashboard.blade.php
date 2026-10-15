@@ -87,6 +87,24 @@
         transform-origin: 160px 160px;
         transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+
+    /* Listas del diagnóstico de red (clases compartidas para no repetirlas en cada celda) */
+    .dash-lista th { padding: 0 0.5rem 0.375rem 0; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; }
+    .dash-lista td { padding: 0.375rem 0.5rem 0.375rem 0; color: #374151; border-top: 1px solid #f3f4f6; }
+    .dash-lista .dash-disp { font-weight: 600; color: #1f2937; display: inline-block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+    .dash-lista .dash-disp:hover { color: #3b5998; text-decoration: underline; }
+    .dark .dash-lista th { color: #64748b; }
+    .dark .dash-lista td { color: #cbd5e1; border-top-color: rgba(30, 41, 59, 0.5); }
+    .dark .dash-lista .dash-disp { color: #e2e8f0; }
+    .dark .dash-lista .dash-disp:hover { color: #60a5fa; }
+
+    /* Selector de rango/métrica de la gráfica de tendencias */
+    .trend-btn { color: #6b7280; }
+    .trend-btn:hover { color: #1f2937; }
+    .trend-btn-active { background: #ffffff; color: #3b5998; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+    .dark .trend-btn { color: #94a3b8; }
+    .dark .trend-btn:hover { color: #e2e8f0; }
+    .dark .trend-btn-active { background: #1e293b; color: #60a5fa; box-shadow: none; }
 </style>
 @endsection
 
@@ -128,17 +146,17 @@
                                     </div>
                                     <div>
                                         <h3 class="text-sm font-bold text-gray-900 dark:text-white leading-tight">Centro de Notificaciones</h3>
-                                        <p class="text-[11px] text-gray-500">Alertas NOC en tiempo real</p>
+                                        <p class="text-[11px] text-gray-500 dark:text-slate-400">Alertas NOC en tiempo real</p>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-1.5">
-                                    <span id="notifBadgeText" class="px-2 py-0.5 rounded-full text-[10px] font-black {{ $unreadNotificaciones > 0 ? 'bg-[#3b5998]/10 text-[#3b5998]' : 'bg-gray-100 text-gray-500' }}">
+                                    <span id="notifBadgeText" class="px-2 py-0.5 rounded-full text-[10px] font-black {{ $unreadNotificaciones > 0 ? 'bg-[#3b5998]/10 text-[#3b5998] dark:bg-blue-950/60 dark:text-blue-400' : 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-slate-400' }}">
                                         {{ $unreadNotificaciones }} no leídas
                                     </span>
-                                    <button type="button" onclick="markAllNotificationsAsRead()" class="text-[11px] text-gray-500 hover:text-[#3b5998] dark:hover:text-blue-400 font-bold transition px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" title="Marcar todas como leídas">
+                                    <button type="button" onclick="markAllNotificationsAsRead()" class="text-[11px] text-gray-500 dark:text-slate-400 hover:text-[#3b5998] dark:hover:text-blue-400 font-bold transition px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" title="Marcar todas como leídas">
                                         Marcar Leídas
                                     </button>
-                                    <button type="button" onclick="clearAllNotifications()" class="text-[11px] text-gray-500 hover:text-red-600 dark:hover:text-red-400 font-bold transition px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40" title="Descartar y limpiar todas las alertas">
+                                    <button type="button" onclick="clearAllNotifications()" class="text-[11px] text-gray-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-bold transition px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40" title="Descartar y limpiar todas las alertas">
                                         Limpiar Todas
                                     </button>
                                 </div>
@@ -149,15 +167,15 @@
                                 <button type="button" onclick="filterNotifs('all', this)" class="notif-tab-btn px-2.5 py-1 rounded-lg font-bold text-xs bg-white dark:bg-slate-800 text-[#3b5998] dark:text-blue-400 shadow-xs dark:shadow-none border border-gray-200 dark:border-slate-700">
                                     Todas ({{ count($notificaciones) }})
                                 </button>
-                                <button type="button" onclick="filterNotifs('critica', this)" class="notif-tab-btn px-2.5 py-1 rounded-lg font-semibold text-xs text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-200 transition flex items-center gap-1">
+                                <button type="button" onclick="filterNotifs('critica', this)" class="notif-tab-btn px-2.5 py-1 rounded-lg font-semibold text-xs text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-100 transition flex items-center gap-1">
                                     <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                                     Críticas
                                 </button>
-                                <button type="button" onclick="filterNotifs('advertencia', this)" class="notif-tab-btn px-2.5 py-1 rounded-lg font-semibold text-xs text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-200 transition flex items-center gap-1">
+                                <button type="button" onclick="filterNotifs('advertencia', this)" class="notif-tab-btn px-2.5 py-1 rounded-lg font-semibold text-xs text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-100 transition flex items-center gap-1">
                                     <span class="w-1.5 h-1.5 rounded-full bg-[#f26419]"></span>
                                     Advertencias
                                 </button>
-                                <button type="button" onclick="filterNotifs('sistema', this)" class="notif-tab-btn px-2.5 py-1 rounded-lg font-semibold text-xs text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-200 transition flex items-center gap-1">
+                                <button type="button" onclick="filterNotifs('sistema', this)" class="notif-tab-btn px-2.5 py-1 rounded-lg font-semibold text-xs text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-100 transition flex items-center gap-1">
                                     <span class="w-1.5 h-1.5 rounded-full bg-[#5c8096]"></span>
                                     Sistema
                                 </button>
@@ -283,7 +301,7 @@
                             <div class="p-3 bg-gray-50 dark:bg-[#090b10] border-t border-gray-100 dark:border-slate-800/60 flex items-center justify-between text-xs">
                                 <div class="flex items-center gap-1.5 text-gray-500 dark:text-slate-400 text-[11px]">
                                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                    <span>Sondeo SNMP Activo (60s)</span>
+                                    <span>Sondeo SNMP/ICMP cada 15 s</span>
                                 </div>
                                 <a href="{{ route('settings.index', ['section' => 'notificaciones']) }}" class="text-[11px] font-bold text-[#3b5998] dark:text-blue-400 hover:text-[#f26419] transition">
                                     Configurar Alertas →
@@ -302,7 +320,7 @@
                 <div class="relative z-10 w-full md:flex-1">
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 mb-3 md:mb-4 border border-transparent dark:border-blue-900/40">
                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
-                        {{ now()->format('M d, Y') }} | {{ $formattedUptime }} Global Uptime
+                        <span title="Menor sysUpTime entre los equipos en línea (el equipo reiniciado más recientemente)">{{ now()->format('d/m/Y') }} | Uptime mínimo: {{ $formattedUptime }}</span>
                     </span>
                     @php
                         $hora = now()->hour;
@@ -334,6 +352,8 @@
                     <img src="{{ asset('images/logo.png') }}" class="h-16 lg:h-24 w-auto object-contain drop-shadow-md dark:drop-shadow-none dark:brightness-0 dark:invert dark:opacity-90 transition" alt="Logo">
                 </div>
             </div>
+
+            @include('dashboard.partials.salud')
 
             <!-- Mini Stat Cards (NOC Time Series) -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -468,7 +488,7 @@
                             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center pt-14">
                                 <span id="stDownMainValue" class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-gray-900 dark:text-white drop-shadow-xs">{{ $trafficInNow !== null ? number_format($trafficInNow, 2) : '—' }}</span>
                                 <div class="flex items-center gap-1 text-xs font-bold text-[#3b5998] dark:text-[#00e5ff] tracking-widest uppercase mt-0.5">
-                                    <span>↓ Mbps</span>
+                                    <span id="stDownUnit">↓ Mbps</span>
                                 </div>
                             </div>
                         </div>
@@ -526,7 +546,7 @@
                             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center pt-14">
                                 <span id="stUpMainValue" class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-gray-900 dark:text-white drop-shadow-xs">{{ $trafficOutNow !== null ? number_format($trafficOutNow, 2) : '—' }}</span>
                                 <div class="flex items-center gap-1 text-xs font-bold text-[#f26419] dark:text-pink-400 tracking-widest uppercase mt-0.5">
-                                    <span>↑ Mbps</span>
+                                    <span id="stUpUnit">↑ Mbps</span>
                                 </div>
                             </div>
                         </div>
@@ -557,7 +577,8 @@
                 </div>
             </div>
 
-            
+            @include('dashboard.partials.tendencias')
+
             <!-- Bottom Section (Doughnut & Progress) -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
                 
@@ -625,23 +646,28 @@
                 <div class="floating-card p-6">
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Detalles de Operación</h3>
-                        <span class="text-xs bg-gray-50 dark:bg-slate-800/60 text-gray-600 dark:text-slate-300 font-semibold px-3 py-1 rounded-full flex items-center cursor-pointer border border-transparent dark:border-slate-700/50">General <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
+                        <span class="text-xs bg-gray-50 dark:bg-slate-800/60 text-gray-600 dark:text-slate-300 font-semibold px-3 py-1 rounded-full border border-transparent dark:border-slate-700/50">Global</span>
                     </div>
 
                     <div class="space-y-6">
-                        <!-- Temp -->
+                        <!-- Temp: el medidor usa la máxima (el promedio oculta un equipo sobrecalentado) -->
+                        @php $tempMax = $paneles['hardware']['temp_max']; @endphp
                         <div>
                             <div class="flex justify-between text-sm mb-2">
-                                <span class="font-medium text-gray-600 dark:text-slate-400">Temperatura Promedio Global</span>
-                                <span class="font-bold text-gray-800 dark:text-slate-200">{{ $avgTemp !== null ? round($avgTemp) . ' °C' : 'Sin sensores reportados' }}</span>
+                                <span class="font-medium text-gray-600 dark:text-slate-400" title="Sensor más caliente entre todos los equipos que reportan temperatura">Temperatura máxima de la red</span>
+                                <span class="font-bold text-gray-800 dark:text-slate-200">
+                                    {{ $tempMax !== null ? round($tempMax) . ' °C' : 'Sin sensores reportados' }}
+                                    @if($avgTemp !== null)<span class="text-xs font-normal text-gray-400">(prom. {{ round($avgTemp) }} °C)</span>@endif
+                                </span>
                             </div>
-                            
+
                             <!-- Speedometer animado para Dashboard -->
                             @php
                                 $dasharray = 125.6;
-                                $percentage = $avgTemp === null ? 0 : min(100, max(0, ($avgTemp / 80) * 100)); // Escala hasta 80°C
+                                $percentage = $tempMax === null ? 0 : min(100, max(0, ($tempMax / 80) * 100)); // Escala hasta 80°C
                                 $dashoffset = 125.6 - (125.6 * $percentage / 100);
-                                $color = $avgTemp === null ? '#94a3b8' : ($avgTemp >= 60 ? '#ef4444' : ($avgTemp >= 45 ? '#f59e0b' : '#10b981'));
+                                // Mismos umbrales que la alarma térmica (55 °C advertencia, 65 °C crítica)
+                                $color = $tempMax === null ? '#94a3b8' : ($tempMax >= 65 ? '#ef4444' : ($tempMax >= 55 ? '#f59e0b' : '#10b981'));
                             @endphp
                             <div class="relative w-full h-20 overflow-hidden flex justify-center mt-3">
                                 <svg viewBox="0 0 100 50" class="w-40 h-20 drop-shadow-md">
@@ -654,8 +680,8 @@
                                           style="--dash-target-offset: {{ $dashoffset }};"/>
                                 </svg>
                                 <div class="absolute bottom-0 left-0 w-full text-center flex flex-col items-center">
-                                    <span class="text-2xl font-extrabold text-gray-800 dark:text-white font-mono leading-none">{{ $avgTemp !== null ? round($avgTemp) : '—' }}<span class="text-sm text-gray-400">°C</span></span>
-                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">{{ $avgTemp === null ? 'SIN DATO' : ($avgTemp < 45 ? 'NORMAL' : 'ELEVADA') }}</span>
+                                    <span class="text-2xl font-extrabold text-gray-800 dark:text-white font-mono leading-none">{{ $tempMax !== null ? round($tempMax) : '—' }}<span class="text-sm text-gray-400">°C</span></span>
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">{{ $tempMax === null ? 'SIN DATO' : ($tempMax < 55 ? 'NORMAL' : ($tempMax < 65 ? 'ELEVADA' : 'CRÍTICA')) }}</span>
                                 </div>
                             </div>
                             
@@ -681,27 +707,28 @@
                             </div>
                         </div>
 
-                        <!-- Errores -->
+                        <!-- Errores: es un conteo, no un porcentaje; no se dibuja como barra -->
                         <div>
-                            <div class="flex justify-between text-sm mb-2">
+                            <div class="flex justify-between text-sm mb-1">
                                 <span class="font-medium text-gray-600 dark:text-slate-400" title="Errores de entrada+salida en puertos físicos durante el último ciclo de sondeo (15 s)">Errores de interfaz (último ciclo)</span>
-                                <span class="font-bold text-gray-800 dark:text-slate-200">{{ $erroresUltimoCiclo !== null ? number_format($erroresUltimoCiclo) : 'Sin dato' }}</span>
+                                <span class="font-bold {{ $erroresUltimoCiclo ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-slate-200' }}">{{ $erroresUltimoCiclo !== null ? number_format($erroresUltimoCiclo) : 'Sin dato' }}</span>
                             </div>
-                            <div class="w-full bg-gray-100 dark:bg-slate-800/80 rounded-full h-2">
-                                @php $errPercent = $erroresUltimoCiclo ? min(100, $erroresUltimoCiclo) : 0; @endphp
-                                <div class="bg-pink-400 h-2 rounded-full" style="width: {{ $errPercent }}%"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="mt-8 pt-4 border-t border-dashed border-gray-200 dark:border-slate-800/40">
-                            <button class="w-full py-2 text-sm font-semibold text-hacienda-blue dark:text-blue-400 hover:text-[#4a6b7d] dark:hover:text-blue-300 transition flex items-center justify-center">
-                                Generar Reporte +
+                            <button type="button" onclick="abrirDiagnostico('puertos')" class="text-[11px] font-semibold text-hacienda-blue dark:text-blue-400 hover:underline">
+                                Ver puertos con errores y CRC →
                             </button>
+                        </div>
+
+                        <div class="mt-8 pt-4 border-t border-dashed border-gray-200 dark:border-slate-800/40">
+                            <a href="{{ route('reportes.inventario_pdf') }}" target="_blank" class="w-full py-2 text-sm font-semibold text-hacienda-blue dark:text-blue-400 hover:text-[#4a6b7d] dark:hover:text-blue-300 transition flex items-center justify-center">
+                                Generar reporte PDF de inventario +
+                            </a>
                         </div>
                     </div>
                 </div>
 
             </div>
+
+            @include('dashboard.partials.diagnostico')
 
             <!-- ==================== TABLA DE INVENTARIO DE DISPOSITIVOS (NOC) ==================== -->
             <div class="floating-card p-6 mb-6" x-data="{
@@ -931,25 +958,20 @@
                                         </span>
                                     </td>
 
-                                    <!-- CPU y Memoria (%) -->
+                                    <!-- CPU y Memoria (%) de la última muestra del poller; sin dato = "—" -->
                                     <td class="py-2.5 px-3.5 whitespace-nowrap border-b border-gray-100 dark:border-slate-800/30">
                                         <div class="flex flex-col gap-1.5">
-                                            <!-- CPU -->
-                                            <div class="flex items-center gap-2">
-                                                <span class="text-[9px] font-bold text-gray-400 w-6">CPU</span>
-                                                <div class="w-12 bg-gray-100 dark:bg-slate-800/80 rounded-full h-1.5 overflow-hidden flex-shrink-0">
-                                                    <div class="h-1.5 rounded-full {{ $disp->cpu_usage > 75 ? 'bg-red-500' : ($disp->cpu_usage > 40 ? 'bg-[#f26419]' : 'bg-[#3b5998]') }}" style="width: {{ min(100, max(4, $disp->cpu_usage ?? 0)) }}%"></div>
+                                            @foreach(['CPU' => $disp->latest_cpu, 'RAM' => $disp->latest_mem] as $etiqueta => $valor)
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-[9px] font-bold text-gray-400 w-6">{{ $etiqueta }}</span>
+                                                    <div class="w-12 bg-gray-100 dark:bg-slate-800/80 rounded-full h-1.5 overflow-hidden flex-shrink-0">
+                                                        @if($valor !== null)
+                                                            <div class="h-1.5 rounded-full {{ $valor > 75 ? 'bg-red-500' : ($valor > 40 ? 'bg-[#f26419]' : 'bg-[#3b5998]') }}" style="width: {{ min(100, max(4, $valor)) }}%"></div>
+                                                        @endif
+                                                    </div>
+                                                    <span class="font-mono font-bold text-gray-800 dark:text-slate-200 text-[10px] w-6 text-right">{{ $valor !== null ? $valor . '%' : '—' }}</span>
                                                 </div>
-                                                <span class="font-mono font-bold text-gray-800 dark:text-slate-200 text-[10px] w-6 text-right">{{ $disp->cpu_usage ?? 0 }}%</span>
-                                            </div>
-                                            <!-- Memoria -->
-                                            <div class="flex items-center gap-2">
-                                                <span class="text-[9px] font-bold text-gray-400 w-6">RAM</span>
-                                                <div class="w-12 bg-gray-100 dark:bg-slate-800/80 rounded-full h-1.5 overflow-hidden flex-shrink-0">
-                                                    <div class="h-1.5 rounded-full {{ $disp->memoria_usage > 75 ? 'bg-red-500' : ($disp->memoria_usage > 40 ? 'bg-[#f26419]' : 'bg-[#3b5998]') }}" style="width: {{ min(100, max(4, $disp->memoria_usage ?? 0)) }}%"></div>
-                                                </div>
-                                                <span class="font-mono font-bold text-gray-800 dark:text-slate-200 text-[10px] w-6 text-right">{{ $disp->memoria_usage ?? 0 }}%</span>
-                                            </div>
+                                            @endforeach
                                         </div>
                                     </td>
 
@@ -1599,7 +1621,13 @@
             const downText = document.getElementById('stDownMainValue');
             const topDownText = document.getElementById('stTopDownVal');
 
-            if (downText) downText.textContent = downVal.toFixed(2);
+            // ≥ 1000 Mbps se muestra en Gbps para que el número no se encime en la aguja
+            const fmtGauge = (v, unitId, arrow) => {
+                const unit = document.getElementById(unitId);
+                if (unit) unit.textContent = `${arrow} ${v >= 1000 ? 'Gbps' : 'Mbps'}`;
+                return v >= 1000 ? (v / 1000).toFixed(2) : v.toFixed(2);
+            };
+            if (downText) downText.textContent = fmtGauge(downVal, 'stDownUnit', '↓');
             if (topDownText) topDownText.textContent = downVal.toFixed(2);
             if (downArc) {
                 downArc.style.strokeDashoffset = (541.92 * (1 - downRatio)).toFixed(2);
@@ -1614,7 +1642,7 @@
             const upText = document.getElementById('stUpMainValue');
             const topUpText = document.getElementById('stTopUpVal');
 
-            if (upText) upText.textContent = upVal.toFixed(2);
+            if (upText) upText.textContent = fmtGauge(upVal, 'stUpUnit', '↑');
             if (topUpText) topUpText.textContent = upVal.toFixed(2);
             if (upArc) {
                 upArc.style.strokeDashoffset = (541.92 * (1 - upRatio)).toFixed(2);
@@ -1752,6 +1780,136 @@
             }
 
             setInterval(fetchKPIs, KPI_INTERVAL);
+        })();
+    </script>
+
+    {{-- ============================================================== --}}
+    {{-- Tendencias (1 h / 24 h / 7 d) y navegación al diagnóstico      --}}
+    {{-- ============================================================== --}}
+    <script>
+        function abrirDiagnostico(tab) {
+            window.dispatchEvent(new CustomEvent('diag-tab', { detail: tab }));
+            const el = document.getElementById('diagnosticoRed');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        (function () {
+            const ENDPOINT = '{{ route("dashboard.series") }}';
+            const canvas = document.getElementById('trendChart');
+            if (!canvas) return;
+            const empty = document.getElementById('trendEmpty');
+            let rango = '24h', metrica = 'trafico', datos = null, chart = null;
+
+            const isDark = () => document.documentElement.classList.contains('dark');
+            const gridColor = () => isDark() ? 'rgba(255, 255, 255, 0.06)' : 'rgba(156, 163, 175, 0.15)';
+            const axisColor = () => isDark() ? '#94a3b8' : '#64748b';
+            const fmtMbps = v => v >= 1000 ? (v / 1000).toFixed(1) + ' Gbps' : Math.round(v) + ' Mbps';
+
+            const GRUPOS = {
+                trafico: { fmtY: fmtMbps, series: [
+                    { key: 'trafico_in', label: 'Entrada', color: '59, 89, 152', axis: 'y', fill: true },
+                    { key: 'trafico_out', label: 'Salida', color: '242, 100, 25', axis: 'y', fill: true },
+                ] },
+                latencia: { fmtY: v => v + ' ms', fmtY1: v => v + ' %', series: [
+                    { key: 'latencia', label: 'Latencia (ms)', color: '92, 128, 150', axis: 'y' },
+                    { key: 'perdida', label: 'Pérdida (%)', color: '239, 68, 68', axis: 'y1' },
+                ] },
+                recursos: { fmtY: v => v + ' %', series: [
+                    { key: 'cpu', label: 'CPU promedio', color: '242, 100, 25', axis: 'y' },
+                    { key: 'ram', label: 'RAM promedio', color: '59, 89, 152', axis: 'y' },
+                ] },
+            };
+
+            function render() {
+                if (!datos) return;
+                const g = GRUPOS[metrica];
+                const hayDatos = g.series.some(s => (datos[s.key] || []).some(v => v !== null));
+                empty.style.display = hayDatos ? 'none' : 'flex';
+
+                const ticks = { color: axisColor(), font: { family: 'monospace', size: 10 } };
+                const scales = {
+                    x: { grid: { color: gridColor() }, border: { display: false }, ticks: { ...ticks, maxTicksLimit: 8, maxRotation: 0, autoSkip: true } },
+                    y: { position: 'left', beginAtZero: true, grid: { color: gridColor() }, border: { display: false }, ticks: { ...ticks, callback: g.fmtY } },
+                };
+                if (g.fmtY1) {
+                    scales.y1 = { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, border: { display: false }, ticks: { ...ticks, callback: g.fmtY1 } };
+                }
+
+                if (chart) chart.destroy();
+                chart = new Chart(canvas.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: datos.labels,
+                        datasets: g.series.map(s => ({
+                            label: s.label,
+                            data: datos[s.key],
+                            yAxisID: s.axis,
+                            borderColor: `rgb(${s.color})`,
+                            backgroundColor: `rgba(${s.color}, 0.10)`,
+                            fill: !!s.fill,
+                            borderWidth: 2,
+                            tension: 0.25,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            spanGaps: false,
+                        })),
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 400 },
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: true, align: 'end', labels: { color: axisColor(), boxWidth: 10, boxHeight: 10, font: { size: 11 } } },
+                            tooltip: {
+                                backgroundColor: isDark() ? 'rgba(18, 22, 31, 0.95)' : 'rgba(30, 41, 59, 0.95)',
+                                titleFont: { family: 'monospace', size: 10 },
+                                bodyFont: { family: 'monospace', size: 11, weight: '700' },
+                                callbacks: {
+                                    label: ctx => {
+                                        const v = ctx.parsed.y;
+                                        if (v === null || v === undefined) return `${ctx.dataset.label}: sin dato`;
+                                        const fmt = ctx.dataset.yAxisID === 'y1' ? g.fmtY1 : g.fmtY;
+                                        return `${ctx.dataset.label}: ${metrica === 'trafico' ? fmtMbps(v) : fmt(v)}`;
+                                    },
+                                },
+                            },
+                        },
+                        scales,
+                    },
+                });
+            }
+
+            async function cargar() {
+                try {
+                    const resp = await fetch(`${ENDPOINT}?rango=${rango}`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                    datos = await resp.json();
+                    render();
+                } catch (err) {
+                    console.error('Error cargando tendencias:', err);
+                }
+            }
+
+            function activar(selector, btn) {
+                document.querySelectorAll(selector).forEach(b => b.classList.toggle('trend-btn-active', b === btn));
+            }
+            document.querySelectorAll('[data-trend-range]').forEach(btn => btn.addEventListener('click', () => {
+                rango = btn.dataset.trendRange;
+                activar('[data-trend-range]', btn);
+                cargar();
+            }));
+            document.querySelectorAll('[data-trend-metric]').forEach(btn => btn.addEventListener('click', () => {
+                metrica = btn.dataset.trendMetric;
+                activar('[data-trend-metric]', btn);
+                render();
+            }));
+
+            window.addEventListener('theme-changed', render);
+            cargar();
+            // El rango de 1 h se mantiene en vivo; 24 h y 7 d cambian poco
+            setInterval(() => { if (rango === '1h') cargar(); }, 30000);
+            setInterval(() => { if (rango !== '1h') cargar(); }, 300000);
         })();
     </script>
 @endsection

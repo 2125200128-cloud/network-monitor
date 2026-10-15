@@ -441,8 +441,8 @@ class TopologiaController extends Controller
                 'font' => [
                     'align' => 'horizontal',
                     'size' => 9,
-                    'color' => '#64748b',
-                    'background' => '#ffffff',
+                    'color' => '#475569',
+                    'background' => 'rgba(255, 255, 255, 0.9)',
                     'strokeWidth' => 0
                 ],
                 'color' => [
@@ -468,6 +468,8 @@ class TopologiaController extends Controller
                     'velocidad_mbps' => $enlace->velocidad_mbps,
                     'estado' => strtoupper($enlace->estado),
                     'color' => $color,
+                    'ancho_px' => $width,
+                    'dashes_px' => $dashes,
                     'trafico_in' => null,
                     'trafico_out' => null,
                     'saturacion_pct' => $enlace->utilizacion_pct,
@@ -488,23 +490,26 @@ class TopologiaController extends Controller
 
     /**
      * Estilo del cable: el color solo depende del estado real y el grosor de la velocidad.
-     * Devuelve [color, ancho, dashes, opacidad].
+     * Ancho y guiones están en píxeles de PANTALLA: la vista los divide entre el zoom actual para que
+     * el cable se vea igual de grueso en la vista general que de cerca (los equipos miden ~1450 unidades).
+     * Colores sólidos con contraste suficiente sobre el fondo claro y el oscuro del lienzo.
+     * Devuelve [color, ancho_px, dashes_px, opacidad].
      */
     private function estiloEnlace(?string $estado, $velocidadMbps, $utilPct): array
     {
         $vel = (int) ($velocidadMbps ?? 0);
         $width = match (true) {
-            $vel >= 40000 => 6,
-            $vel >= 10000 => 4,
-            $vel >= 1000 => 2.5,
-            default => 1.5,
+            $vel >= 40000 => 2.2,
+            $vel >= 10000 => 1.8,
+            $vel >= 1000 => 1.4,
+            default => 1,
         };
 
         return match (true) {
-            $estado === 'down' => ['#ef4444', $width, [8, 5], 0.95],
-            $estado === 'unknown' => ['#94a3b8', 1.5, [3, 5], 0.55],
-            $estado === 'degraded' || ($utilPct !== null && $utilPct >= 80) => ['#f59e0b', $width, false, 0.95],
-            default => ['#10b981', $width, false, 0.8],
+            $estado === 'down' => ['#ef4444', $width, [6, 4], 1],
+            $estado === 'unknown' => ['#64748b', 1, [4, 4], 0.9],
+            $estado === 'degraded' || ($utilPct !== null && $utilPct >= 80) => ['#f59e0b', $width, false, 1],
+            default => ['#16a34a', $width, false, 0.95],
         };
     }
 

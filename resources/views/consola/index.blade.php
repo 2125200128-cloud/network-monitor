@@ -19,7 +19,7 @@
         .noc-icon-box {
             width: 48px;
             height: 48px;
-            border-radius: 14px;
+            border-radius: 1rem;
             background: linear-gradient(135deg, #3b5998 0%, #5c8096 100%);
             color: #ffffff !important;
             display: flex;
@@ -188,7 +188,7 @@
         {{-- Left Title & Icon --}}
         <div class="flex items-center gap-4">
             <div class="noc-icon-box">
-                &gt;_
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 8.5l3 2.5-3 2.5m5 0h4M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             </div>
             <div>
                 <div class="flex items-center gap-2.5">
@@ -525,7 +525,7 @@
 
             {{-- Botones de Acción --}}
             <div class="flex items-center justify-end gap-2.5 mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <button type="button" @click="openLoginModal = false" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                <button type="button" @click="openLoginModal = false" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition">
                     Cancelar
                 </button>
                 <button type="button" @click="testAndConnectSSH()" :disabled="isConnecting" class="btn-primary-hacienda disabled:opacity-50">

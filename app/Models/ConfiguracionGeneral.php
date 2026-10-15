@@ -14,6 +14,7 @@ class ConfiguracionGeneral extends Model
     protected $fillable = [
         'intervalo_sondeo_segundos',
         'comunidad_snmp_default',
+        'comunidad_snmp_firewall',
         'ip_switch_core',
         'umbral_cpu_warning',
         'umbral_loss_warning',

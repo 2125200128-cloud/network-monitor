@@ -32,9 +32,9 @@ from pysnmp.hlapi.v3arch.asyncio import (
 )
 
 try:
-    from nm_common import db_config
+    from nm_common import db_config, COMUNIDAD_EFECTIVA_SQL
 except ImportError:
-    from worker.nm_common import db_config
+    from worker.nm_common import db_config, COMUNIDAD_EFECTIVA_SQL
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
@@ -435,7 +435,7 @@ def _resultado(tipo, fabricante, modelo, confianza, evidencia, fuente):
 async def analizar_inventario(concurrency=20):
     conn = mysql.connector.connect(**db_config())
     cur = conn.cursor(dictionary=True)
-    cur.execute("SELECT id, nombre, ip, estado, comunidad_snmp FROM dispositivos ORDER BY id")
+    cur.execute(f"SELECT id, nombre, ip, estado, {COMUNIDAD_EFECTIVA_SQL} FROM dispositivos ORDER BY id")
     devices = cur.fetchall()
     cur.close()
     conn.close()

@@ -1,12 +1,18 @@
 @extends('layouts.app')
 
 @section('styles')
+    <style>
         .glass-panel {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.08);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .dark .glass-panel {
+            background: #0d1017;
+            border-color: rgba(51, 65, 85, 0.45);
+            box-shadow: none;
         }
     </style>
 @endsection
@@ -14,24 +20,24 @@
 @section('content')
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        <header class="mb-8 flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <header class="mb-8 flex justify-between items-center bg-white dark:bg-[#0d1017] p-6 rounded-2xl shadow-sm dark:shadow-none border border-gray-100 dark:border-slate-800/60">
             <div class="flex items-center">
                 <div>
-                    <h1 class="text-3xl font-bold text-[#5c8096]">
+                    <h1 class="text-3xl font-bold text-[#5c8096] dark:text-blue-400">
                         Configuración de VLANs
                     </h1>
-                    <p class="text-gray-500 mt-1">Aprovisionamiento y asignación de puertos</p>
+                    <p class="text-gray-500 dark:text-slate-400 mt-1">Aprovisionamiento y asignación de puertos</p>
                 </div>
             </div>
             <div class="flex items-center space-x-4">
-                <a href="{{ url('/') }}" class="text-sm font-medium text-gray-500 hover:text-[#5c8096]">Volver al Dashboard</a>
+                <a href="{{ url('/') }}" class="text-sm font-medium text-gray-500 dark:text-slate-400 hover:text-[#5c8096] dark:hover:text-blue-400 transition">Volver al Dashboard</a>
             </div>
         </header>
 
         <!-- Main Selector -->
         <div class="glass-panel rounded-2xl p-6 mb-8">
-            <label for="global_dispositivo_id" class="block text-sm font-medium text-gray-700">Seleccionar Dispositivo Destino</label>
-            <select id="global_dispositivo_id" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm">
+            <label for="global_dispositivo_id" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Seleccionar Dispositivo Destino</label>
+            <select id="global_dispositivo_id" class="mt-1 block w-full py-2.5 px-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-[#090b10] text-gray-900 dark:text-white rounded-xl shadow-sm focus:outline-none focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm">
                 <option value="">Seleccione un dispositivo...</option>
                 @foreach($dispositivos as $dispositivo)
                     <option value="{{ $dispositivo->id }}">{{ $dispositivo->nombre }} ({{ $dispositivo->ip }})</option>
@@ -43,23 +49,23 @@
             
             <!-- Crear VLAN Form -->
             <div class="glass-panel rounded-2xl p-6">
-                <h3 class="text-lg font-semibold text-gray-700 mb-4">Crear Nueva VLAN</h3>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Crear Nueva VLAN</h3>
                 <form id="form-create-vlan">
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">VLAN ID (2-4094)</label>
-                        <input type="number" id="vlan_id" min="2" max="4094" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">VLAN ID (2-4094)</label>
+                        <input type="number" id="vlan_id" min="2" max="4094" required class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-[#090b10] text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm p-2.5">
                     </div>
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Nombre de la VLAN</label>
-                        <input type="text" id="vlan_name" required pattern="^[a-zA-Z0-9_-]+$" title="Sin espacios ni caracteres especiales" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm" placeholder="Ej. FINANZAS">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Nombre de la VLAN</label>
+                        <input type="text" id="vlan_name" required pattern="^[a-zA-Z0-9_-]+$" title="Sin espacios ni caracteres especiales" class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-[#090b10] text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm p-2.5" placeholder="Ej. FINANZAS">
                     </div>
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">IP Address (Opcional - para interfaz SVI)</label>
-                        <input type="text" id="ip_address" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm" placeholder="Ej. 192.168.10.1">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">IP Address (Opcional - para interfaz SVI)</label>
+                        <input type="text" id="ip_address" class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-[#090b10] text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm p-2.5" placeholder="Ej. 192.168.10.1">
                     </div>
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Máscara de Subred (Opcional)</label>
-                        <input type="text" id="subnet_mask" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm" placeholder="Ej. 255.255.255.0">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Máscara de Subred (Opcional)</label>
+                        <input type="text" id="subnet_mask" class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-[#090b10] text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm p-2.5" placeholder="Ej. 255.255.255.0">
                     </div>
                     <button type="button" id="btn-create-vlan" class="fancy w-full justify-center">
                         <span class="top-key"></span>
@@ -72,22 +78,22 @@
 
             <!-- Asignar Puertos Form -->
             <div class="glass-panel rounded-2xl p-6">
-                <h3 class="text-lg font-semibold text-gray-700 mb-4">Asignar Interfaz (Switchport)</h3>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Asignar Interfaz (Switchport)</h3>
                 <form id="form-assign-port">
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Nombre de la Interfaz</label>
-                        <input type="text" id="interface_name" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm" placeholder="Ej. GigabitEthernet0/1 o gi0/1">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Nombre de la Interfaz</label>
+                        <input type="text" id="interface_name" required class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-[#090b10] text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm p-2.5" placeholder="Ej. GigabitEthernet0/1 o gi0/1">
                     </div>
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Modo de Operación</label>
-                        <select id="mode" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Modo de Operación</label>
+                        <select id="mode" class="mt-1 block w-full py-2.5 px-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-[#090b10] text-gray-900 dark:text-white rounded-xl shadow-sm focus:outline-none focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm">
                             <option value="access">Access</option>
                             <option value="trunk">Trunk</option>
                         </select>
                     </div>
                     <div class="mb-4" id="vlan-id-container">
-                        <label class="block text-sm font-medium text-gray-700">VLAN ID (solo modo access)</label>
-                        <input type="number" id="port_vlan_id" min="2" max="4094" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">VLAN ID (solo modo access)</label>
+                        <input type="number" id="port_vlan_id" min="2" max="4094" class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-[#090b10] text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm p-2.5">
                     </div>
                     <button type="button" id="btn-assign-port" class="fancy w-full justify-center mt-4">
                         <span class="top-key"></span>
@@ -101,8 +107,8 @@
         </div>
 
         <div class="glass-panel rounded-2xl p-6">
-            <h3 class="text-lg font-semibold text-gray-700 mb-2">Terminal de Configuración (Live Output)</h3>
-            <div class="bg-[#111827] rounded-lg p-4 overflow-x-auto h-[400px] overflow-y-auto" id="terminal-container">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Terminal de Configuración (Live Output)</h3>
+            <div class="bg-[#111827] rounded-xl p-4 overflow-x-auto h-[400px] overflow-y-auto border border-slate-800" id="terminal-container">
                 <pre id="terminal-output" class="text-green-400 font-mono text-sm whitespace-pre-wrap">Esperando comandos de configuración...</pre>
             </div>
         </div>
@@ -111,6 +117,7 @@
 @endsection
 
 @section('scripts')
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
             const terminalOutput = document.getElementById('terminal-output');
             const terminalContainer = document.getElementById('terminal-container');

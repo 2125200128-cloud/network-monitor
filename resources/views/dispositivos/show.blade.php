@@ -1157,7 +1157,7 @@
         <div class="tab-pane active p-6" id="tab-hardware">
 
             {{-- Ficha Técnica Oficial del Dispositivo / Official Datasheet & Architectural Specs --}}
-            <div class="bg-gradient-to-r from-slate-900 via-[#0e131d] to-slate-900 border border-slate-800 rounded-2xl p-6 mb-6 shadow-md relative overflow-hidden">
+            <div class="border border-slate-800 rounded-2xl p-6 mb-6 shadow-md relative overflow-hidden" style="background: linear-gradient(90deg, #0f172a, #0e131d, #0f172a);">
                 <div class="absolute -right-16 -top-16 w-56 h-56 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
                 <div class="flex flex-col gap-5">
                     {{-- Header Row: Manufacturer, Model & Architecture Badges --}}
@@ -1209,15 +1209,64 @@
                             </div>
                             @endforeach
                             
-                            {{-- Complementary Operational Specs --}}
-                            <div class="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/40 flex flex-col justify-between hover:border-slate-600 transition-colors">
-                                <span class="text-[10px] text-amber-400 uppercase font-bold tracking-wider block font-mono">Comunidad SNMP (Sondeo)</span>
-                                <div class="flex items-center justify-between mt-1">
-                                    <code class="font-mono font-bold text-amber-300 text-xs bg-slate-900/80 px-2 py-0.5 rounded border border-amber-500/20">{{ $dispositivo->comunidad_snmp ? str_repeat('•', 6) . ' (v2c)' : 'No configurada' }}</code>
-                                    <span class="text-[10px] font-mono {{ $ultimaMetrica && $ultimaMetrica->fecha_registro && \Carbon\Carbon::parse($ultimaMetrica->fecha_registro)->gt(now()->subMinutes(2)) ? 'text-emerald-400' : 'text-red-400' }}">
-                                        {{ $ultimaMetrica?->fecha_registro ? 'Último sondeo ' . \Carbon\Carbon::parse($ultimaMetrica->fecha_registro)->diffForHumans() : 'Sin sondeos' }}
+                            {{-- Credencial SNMP del equipo: origen, edición y prueba (el valor nunca se envía al navegador) --}}
+                            @php
+                                $origenSnmp = $dispositivo->comunidadConOrigen()[1];
+                                $etiquetasOrigen = [
+                                    'ficha' => 'Fijada en esta ficha',
+                                    'firewalls' => 'Comunidad de firewalls (Configuración)',
+                                    'equipo' => 'Registrada en el alta / descubrimiento',
+                                    'red' => 'General de la red (Configuración)',
+                                ];
+                                $puedeEditarSnmp = in_array(strtolower((string) auth()->user()?->role), ['admin', 'operador'], true);
+                                $snmpVigente = $ultimaMetrica && $ultimaMetrica->fecha_registro && \Carbon\Carbon::parse($ultimaMetrica->fecha_registro)->gt(now()->subMinutes(2));
+                                $snmpResponde = $chasis && $chasis->uptime_str && !in_array($chasis->uptime_str, ['Sin respuesta SNMP', 'Inaccesible'], true);
+                            @endphp
+                            <div class="sm:col-span-2 bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/40 hover:border-slate-600 transition-colors"
+                                 x-data="credencialSnmp({{ $dispositivo->id }}, @js($origenSnmp), @js($etiquetasOrigen))">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <span class="text-[10px] text-amber-400 uppercase font-bold tracking-wider font-mono">Credencial SNMP v2c (sondeo)</span>
+                                    <span class="text-[10px] font-mono {{ $snmpResponde ? 'text-emerald-400' : 'text-red-400' }}">
+                                        {{ $snmpResponde ? 'Responde SNMP' : 'Sin respuesta SNMP' }} · {{ $ultimaMetrica?->fecha_registro ? 'último sondeo ' . \Carbon\Carbon::parse($ultimaMetrica->fecha_registro)->diffForHumans() : 'sin sondeos' }}
                                     </span>
                                 </div>
+                                <div class="flex flex-wrap items-center justify-between gap-2 mt-2">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <code class="font-mono font-bold text-amber-300 text-xs bg-slate-900/80 px-2 py-0.5 rounded border border-amber-500/20">••••••</code>
+                                        <span class="text-[11px] text-slate-300 truncate" x-text="etiquetas[origen]"></span>
+                                    </div>
+                                    @if($puedeEditarSnmp)
+                                        <div class="flex items-center gap-1.5" x-show="!editando">
+                                            <button type="button" @click="probar(false)" :disabled="probando" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-700 hover:bg-slate-600 text-slate-100 transition disabled:opacity-50" x-text="probando ? 'Probando…' : 'Probar'"></button>
+                                            <button type="button" @click="editando = true; resultado = null" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/90 hover:bg-amber-500 text-slate-900 transition">Editar</button>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                @if($puedeEditarSnmp)
+                                    <div x-show="editando" x-transition style="display: none;" class="mt-3 pt-3 border-t border-slate-700/60">
+                                        <label class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Comunidad para este equipo</label>
+                                        <div class="flex flex-wrap items-center gap-2 mt-1">
+                                            <div class="relative flex-1 min-w-[180px]">
+                                                <input :type="ver ? 'text' : 'password'" x-model="valor" autocomplete="off" maxlength="255"
+                                                       placeholder="Escribe la comunidad de lectura"
+                                                       class="w-full bg-slate-950/80 border border-slate-600 rounded-lg pl-3 pr-9 py-1.5 text-xs font-mono text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/60">
+                                                <button type="button" @click="ver = !ver" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200" :title="ver ? 'Ocultar' : 'Mostrar'">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                                </button>
+                                            </div>
+                                            <button type="button" @click="probar(true)" :disabled="probando || !valor.trim()" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-slate-700 hover:bg-slate-600 text-slate-100 transition disabled:opacity-40" x-text="probando ? 'Probando…' : 'Probar'"></button>
+                                            <button type="button" @click="guardar(valor)" :disabled="guardando || !valor.trim()" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-900 transition disabled:opacity-40">Guardar</button>
+                                            <button type="button" x-show="origen === 'ficha'" @click="if (confirm('¿Quitar la comunidad de esta ficha? El equipo volverá a usar la de firewalls o la registrada.')) guardar('')" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 transition">Quitar de la ficha</button>
+                                            <button type="button" @click="editando = false; valor = ''; resultado = null" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-400 hover:text-slate-200 transition">Cancelar</button>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 mt-1.5">Tiene prioridad sobre la comunidad de firewalls y la general. El sondeo la usa en su siguiente ciclo (≈15 s).</p>
+                                    </div>
+                                @endif
+
+                                <p x-show="resultado" style="display: none;" class="mt-2 text-[11px] leading-snug rounded-lg px-2.5 py-1.5"
+                                   :class="resultado?.ok ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' : 'bg-red-500/10 text-red-300 border border-red-500/30'"
+                                   x-text="resultado?.texto"></p>
                             </div>
 
                             <div class="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/40 flex flex-col justify-between hover:border-slate-600 transition-colors">
@@ -1231,6 +1280,10 @@
                     </div>
                 </div>
             </div>
+
+            @if(($deviceHardware['tipo'] ?? null) === 'firewall' || $chasis?->forti_sistema || $chasis?->forti_sdwan)
+                @include('dispositivos.partials.fortigate')
+            @endif
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {{-- CPU Global & Cores --}}
@@ -2105,6 +2158,54 @@
 @endsection
 
 @section('scripts')
+<script>
+    // Credencial SNMP de la ficha: guardar / quitar / probar. El valor solo viaja del navegador al servidor.
+    function credencialSnmp(id, origenInicial, etiquetas) {
+        const base = `{{ url('api/dispositivos') }}/${id}/snmp`;
+        const post = async (url, comunidad) => {
+            const r = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ comunidad }),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.message || `HTTP ${r.status}`);
+            return data;
+        };
+        return {
+            origen: origenInicial, etiquetas,
+            editando: false, ver: false, valor: '', probando: false, guardando: false, resultado: null,
+            async probar(conValorEscrito) {
+                this.probando = true;
+                this.resultado = null;
+                try {
+                    const d = await post(`${base}/probar`, conValorEscrito ? this.valor : null);
+                    this.resultado = d.ok
+                        ? { ok: true, texto: `Responde: ${d.sysName || 'sin sysName'} — ${d.sysDescr}` }
+                        : { ok: false, texto: d.mensaje };
+                } catch (e) {
+                    this.resultado = { ok: false, texto: 'No se pudo probar: ' + e.message };
+                } finally {
+                    this.probando = false;
+                }
+            },
+            async guardar(comunidad) {
+                this.guardando = true;
+                try {
+                    const d = await post(base, comunidad);
+                    this.origen = d.origen;
+                    this.editando = false;
+                    this.valor = '';
+                    this.resultado = { ok: true, texto: comunidad ? 'Comunidad guardada en la ficha. El sondeo la usará en su siguiente ciclo.' : 'Comunidad quitada de la ficha.' };
+                } catch (e) {
+                    this.resultado = { ok: false, texto: 'No se pudo guardar: ' + e.message };
+                } finally {
+                    this.guardando = false;
+                }
+            },
+        };
+    }
+</script>
 <script>
     // Embedded ports telemetry data
     window.__interfaces = @json($interfacesData);

@@ -86,7 +86,7 @@ class DispositivoShowController extends Controller
             $portNum = $extractPortNumber($iface->nombre, $portIndex);
 
             // Datos del puerto para el panel lateral. Los contadores que ningún worker
-            // recolecta (unicast/multicast/broadcast, CRC, colisiones, PoE, óptica) van en null.
+            // recolecta (unicast, colisiones, runts/giants, PoE por puerto) van en null.
             $data = [
                 'id' => $iface->id,
                 'port_num' => $portNum,
@@ -111,10 +111,10 @@ class DispositivoShowController extends Controller
                 'out_octets' => $t?->out_octets,
                 'in_unicast' => null,
                 'out_unicast' => null,
-                'in_multicast' => null,
-                'out_multicast' => null,
-                'in_broadcast' => null,
-                'out_broadcast' => null,
+                'in_multicast' => $t?->in_multicast_pkts,
+                'out_multicast' => $t?->out_multicast_pkts,
+                'in_broadcast' => $t?->in_broadcast_pkts,
+                'out_broadcast' => $t?->out_broadcast_pkts,
                 'bandwidth_util_pct' => $t?->bandwidth_util_pct !== null ? (float)$t->bandwidth_util_pct : null,
                 'last_change' => $t?->last_change_str,
                 'medido_en' => $t?->updated_at?->format('d/m/Y H:i:s'),
@@ -122,13 +122,13 @@ class DispositivoShowController extends Controller
                 'out_errors' => $t?->out_errors,
                 'in_discards' => $t?->in_discards,
                 'out_discards' => $t?->out_discards,
-                'crc_errors' => null,
+                'crc_errors' => $t?->crc_errors,
                 'collisions' => null,
                 'runts' => null,
                 'giants' => null,
                 'jabbers' => null,
-                'alignment_errors' => null,
-                'fcs_errors' => null,
+                'alignment_errors' => $t?->alignment_errors,
+                'fcs_errors' => $t?->fcs_errors,
                 'optica_rx' => $t?->optica_rx_dbm,
                 'optica_tx' => $t?->optica_tx_dbm,
                 'optica_temp' => $t?->optica_temp_c,

@@ -22,9 +22,9 @@ from pysnmp.hlapi.v3arch.asyncio import (
 )
 
 try:
-    from nm_common import db_config, PHYSICAL_IF_TYPES
+    from nm_common import db_config, PHYSICAL_IF_TYPES, COMUNIDAD_EFECTIVA_SQL
 except ImportError:  # importado como paquete desde la raíz (monitor:poll)
-    from worker.nm_common import db_config, PHYSICAL_IF_TYPES
+    from worker.nm_common import db_config, PHYSICAL_IF_TYPES, COMUNIDAD_EFECTIVA_SQL
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
@@ -33,6 +33,7 @@ DB_CONFIG = db_config()
 POLL_INTERVAL = 15
 PING_COUNT = 3
 SATURATION_PCT = 80.0
+MAX_RATE_FACTOR = 1.1   # tolerancia sobre ifHighSpeed antes de descartar una tasa por imposible
 MAX_WALK_ROWS = 5000
 PING_TIME_RE = re.compile(r'(?:time|tiempo)\s*([=<])\s*([\d.,]+)')
 
@@ -394,9 +395,15 @@ async def poll_device(dev, engine, sem, thresholds):
                         d_in = counter_delta(cur_in, p['in'], is_hc)
                         d_out = counter_delta(cur_out, p['out'], is_hc)
                         physical = snmp['if_type'].get(idx) in PHYSICAL_IF_TYPES
-                        if dt > 0 and d_in is not None and d_out is not None:
+                        rate_ok = dt > 0 and d_in is not None and d_out is not None
+                        if rate_ok:
                             in_mbps = d_in * 8 / dt / 1e6
                             out_mbps = d_out * 8 / dt / 1e6
+                            # Una tasa mayor que la velocidad del puerto no es física: es una discontinuidad
+                            # de contadores (reinicio de interfaz, ifIndex reasignado). Se descarta la muestra.
+                            if speed and speed > 0 and max(in_mbps, out_mbps) > speed * MAX_RATE_FACTOR:
+                                rate_ok = False
+                        if rate_ok:
                             if speed and speed > 0:
                                 util = round(min(100.0, max(in_mbps, out_mbps) / speed * 100), 2)
                             if physical:
@@ -538,7 +545,7 @@ async def run_poll_cycle():
     if not conn:
         return
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id, nombre, ip, comunidad_snmp FROM dispositivos WHERE ip IS NOT NULL AND ip <> '0.0.0.0'")
+    cursor.execute(f"SELECT id, nombre, ip, {COMUNIDAD_EFECTIVA_SQL} FROM dispositivos WHERE ip IS NOT NULL AND ip <> '0.0.0.0'")
     devices = cursor.fetchall()
     conn.close()
 

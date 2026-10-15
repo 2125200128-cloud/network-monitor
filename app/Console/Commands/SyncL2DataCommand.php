@@ -43,7 +43,7 @@ class SyncL2DataCommand extends Command
         foreach ($dispositivos as $dispositivo) {
             $this->info("Consultando L2/ARP para {$dispositivo->nombre} ({$dispositivo->ip})...");
             
-            $comunidad = $dispositivo->comunidad_snmp ?: env('SNMP_COMMUNITY', 'public');
+            $comunidad = $dispositivo->comunidadEfectiva();
             
             $command = escapeshellcmd("$pythonExecutable $scriptPath {$dispositivo->ip} $comunidad");
             $output = shell_exec($command);
