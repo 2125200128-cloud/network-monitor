@@ -4,8 +4,9 @@ import logging
 import ipaddress
 import concurrent.futures
 from dotenv import load_dotenv
-import mysql.connector
-from mysql.connector import Error
+from nm_common import conectar, insertar_con_id, upsert, hace
+
+Error = Exception  # errores de cualquiera de los dos drivers
 from ping3 import ping
 from pysnmp.hlapi.v3arch.asyncio import *
 import asyncio
@@ -44,15 +45,9 @@ DISCOVERY_SUBNETS = [s.strip() for s in os.getenv('DISCOVERY_SUBNETS', '10.4.254
 def connect_db():
     """Establece conexión con la base de datos MySQL de Laravel."""
     try:
-        connection = mysql.connector.connect(
-            host=DB_HOST,
-            database=DB_DATABASE,
-            user=DB_USERNAME,
-            password=DB_PASSWORD
-        )
-        if connection.is_connected():
-            logger.info("Conexión exitosa a la base de datos MySQL.")
-            return connection
+        connection = conectar()
+        logger.info("Conexión exitosa a la base de datos.")
+        return connection
     except Error as e:
         logger.error(f"Error al conectar a MySQL: {e}")
         return None
@@ -233,17 +228,12 @@ def guardar_dispositivo(db_conn, nodo):
 
         # Dado que mac_address ahora es UNIQUE, el motor asimilará el DHCP 
         # actualizando la IP dinámicamente si la MAC ya existe.
-        query = """
-            INSERT INTO dispositivos (nombre, ip, mac_address, ubicacion, estado, ultima_vez_visto, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, NOW(), NOW(), NOW())
-            ON DUPLICATE KEY UPDATE
-                nombre = VALUES(nombre),
-                ip = VALUES(ip),
-                ubicacion = VALUES(ubicacion),
-                estado = VALUES(estado),
-                ultima_vez_visto = NOW(),
-                updated_at = NOW()
-        """
+        query = upsert('dispositivos',
+                       ['nombre', 'ip', 'mac_address', 'ubicacion', 'estado',
+                        {'ultima_vez_visto': 'NOW()'}, {'created_at': 'NOW()'}, {'updated_at': 'NOW()'}],
+                       ['mac_address'],
+                       {'nombre': '{nuevo}', 'ip': '{nuevo}', 'ubicacion': '{nuevo}', 'estado': '{nuevo}',
+                        'ultima_vez_visto': 'NOW()', 'updated_at': 'NOW()'})
         valores = (nombre, ip, mac, ubicacion, estado)
         
         cursor.execute(query, valores)
@@ -349,8 +339,7 @@ def guardar_enlace_l2(db_conn, origen_id, destino_id, nombre_interfaz, ifindex):
         if iface:
             origen_interfaz_id = iface[0]
         else:
-            cursor.execute("INSERT INTO interfaces_red (dispositivo_id, nombre, admin_status, if_index) VALUES (%s, %s, 'up', %s)", (origen_id, nombre_interfaz, ifindex))
-            origen_interfaz_id = cursor.lastrowid
+            origen_interfaz_id = insertar_con_id(cursor, "INSERT INTO interfaces_red (dispositivo_id, nombre, admin_status, if_index) VALUES (%s, %s, 'up', %s)", (origen_id, nombre_interfaz, ifindex))
             
         cursor.execute("SELECT id FROM enlaces_red WHERE origen_dispositivo_id = %s AND destino_dispositivo_id = %s", (origen_id, destino_id))
         if cursor.fetchone():
@@ -500,7 +489,7 @@ def limpiar_nodos_inactivos(db_conn):
             UPDATE dispositivos 
             SET estado = 'offline', updated_at = NOW() 
             WHERE nombre LIKE 'Nodo Genérico%' 
-            AND ultima_vez_visto < DATE_SUB(NOW(), INTERVAL 24 HOUR)
+            AND ultima_vez_visto < """ + hace(24, 'HOUR') + """
             AND estado != 'offline'
         """
         cursor.execute(query)

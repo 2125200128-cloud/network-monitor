@@ -272,6 +272,25 @@
             width: 0.55rem;
         }
     </style>
+    {{-- Modo TV: se decide antes de pintar para no mostrar y luego esconder la barra lateral --}}
+    <script>
+        (function () {
+            try {
+                const p = new URLSearchParams(location.search);
+                if (p.get('tv') === '1') sessionStorage.setItem('nocModoTV', '1');
+                if (p.get('tv') === '0') sessionStorage.removeItem('nocModoTV');
+                if (sessionStorage.getItem('nocModoTV') === '1') document.documentElement.classList.add('modo-tv');
+            } catch (e) {}
+        })();
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .modo-tv #navLateral, .modo-tv #navMovilSuperior, .modo-tv #navMovilInferior { display: none !important; }
+        .modo-tv #contenedorPrincipal { padding: 0.75rem !important; gap: 0.75rem !important; }
+        .modo-tv #contenidoPrincipal { padding-bottom: 0 !important; }
+        #controlesTV { opacity: 0; pointer-events: none; transition: opacity .3s; }
+        #controlesTV.visible { opacity: 1; pointer-events: auto; }
+    </style>
     @yield('styles')
 </head>
 <body class="text-gray-800 dark:text-slate-100 antialiased min-h-screen selection:bg-[#f26419] selection:text-white overflow-hidden bg-[#e8eef3] dark:bg-[#07090e] transition-colors duration-200">
@@ -308,13 +327,6 @@
                 'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M7 8.5l3 2.5-3 2.5m5 0h4M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>',
             ],
             [
-                'href'   => route('dispositivos.create'),
-                'active' => request()->is('dispositivos/create'),
-                'title'  => 'Agregar Switch',
-                'label'  => 'Agregar',
-                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>',
-            ],
-            [
                 'href'   => route('settings.index'),
                 'active' => request()->is('settings*'),
                 'title'  => 'Configuraciones Generales',
@@ -324,10 +336,10 @@
         ];
     @endphp
     
-    <div class="flex flex-col md:flex-row h-screen bg-[#e8eef3] dark:bg-[#07090e] p-2 sm:p-4 lg:p-6 gap-3 md:gap-6 transition-colors duration-200">
-        
+    <div id="contenedorPrincipal" class="flex flex-col md:flex-row h-screen bg-[#e8eef3] dark:bg-[#07090e] p-2 sm:p-4 lg:p-6 gap-3 md:gap-6 transition-colors duration-200">
+
         <!-- ==================== MOBILE TOP HEADER ==================== -->
-        <header class="flex md:hidden items-center justify-between bg-hacienda-blue dark:bg-[#090b10] text-white p-3 px-4 rounded-2xl shadow-lg shrink-0 z-40 border border-blue-900/20 dark:border-slate-800">
+        <header id="navMovilSuperior" class="flex md:hidden items-center justify-between bg-hacienda-blue dark:bg-[#090b10] text-white p-3 px-4 rounded-2xl shadow-lg shrink-0 z-40 border border-blue-900/20 dark:border-slate-800">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 flex items-center justify-center p-1 bg-white/10 rounded-xl overflow-hidden shadow-xs">
                     <img src="{{ asset('images/logo_swoop.png') }}" alt="Logo" class="w-full h-full object-contain dark:brightness-0 dark:invert" onerror="this.src='https://ui-avatars.com/api/?name=NM&background=fff&color=3b5998'">
@@ -350,7 +362,7 @@
         </header>
 
         <!-- ==================== DESKTOP SIDEBAR ==================== -->
-        <aside class="w-24 bg-hacienda-blue dark:bg-[#090b10] dark:border-r dark:border-slate-800/50 dark:shadow-none rounded-[2rem] flex flex-col items-center py-8 shadow-2xl flex-shrink-0 z-30 relative hidden md:flex transition-colors duration-200">
+        <aside id="navLateral" class="w-24 bg-hacienda-blue dark:bg-[#090b10] dark:border-r dark:border-slate-800/50 dark:shadow-none rounded-[2rem] flex flex-col items-center py-8 shadow-2xl flex-shrink-0 z-30 relative hidden md:flex transition-colors duration-200">
             <!-- Logo/Brand -->
             <div class="mb-12">
                 <div class="w-14 h-14 flex items-center justify-center p-2 overflow-hidden">
@@ -368,10 +380,60 @@
                 </a>
                 @endforeach
             </nav>
+
+            <!-- Pantallas NOC: ventanas para otras TV, pantalla completa y modo TV -->
+            <div class="relative mt-6" x-data="pantallasNoc()" @keydown.escape.window="abierto = false">
+                <button type="button" @click="abrirPanel()" title="Pantallas: abrir vistas en otras TV" aria-label="Pantallas"
+                        class="w-12 h-12 rounded-xl flex items-center justify-center transition text-blue-100 dark:text-slate-400 hover:bg-white/20 dark:hover:bg-slate-800/50 hover:text-white"
+                        :class="abierto ? 'bg-white/20 text-white' : ''">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="13" height="9" rx="1.5"></rect><path stroke-linecap="round" stroke-linejoin="round" d="M6 17h5M8.5 13v4"></path><rect x="13" y="9" width="9" height="7" rx="1.2"></rect><path stroke-linecap="round" d="M16 19.5h3M17.5 16v3.5"></path></svg>
+                </button>
+
+                <div x-show="abierto" x-cloak @click.outside="abierto = false" x-transition.opacity
+                     class="absolute left-16 bottom-0 w-80 z-50 bg-white dark:bg-[#0d1017] text-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-4 text-sm">
+                    <div class="font-black text-base mb-1">Pantallas</div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Abre vistas en ventanas aparte para arrastrarlas a otras TV. Se abren en Modo TV y la sesión no se cierra.</p>
+
+                    <div class="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Abrir en otra ventana</div>
+                    <div class="grid grid-cols-2 gap-1.5 mb-3">
+                        <template x-for="v in vistas" :key="v.url">
+                            <button type="button" @click="abrirVentana(v.url)" class="px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-left" x-text="v.nombre"></button>
+                        </template>
+                    </div>
+
+                    <template x-if="soportaPantallas">
+                        <div class="mb-3">
+                            <div class="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Repartir en los monitores conectados</div>
+                            <template x-if="!pantallas.length">
+                                <button type="button" @click="detectarPantallas()" class="w-full px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold">Detectar monitores</button>
+                            </template>
+                            <template x-for="(p, i) in pantallas" :key="i">
+                                <div class="flex items-center gap-2 mb-1.5">
+                                    <span class="text-xs font-semibold w-28 truncate" :title="p.etiqueta" x-text="p.etiqueta"></span>
+                                    <select x-model="p.vista" class="flex-1 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#090b10] px-2 py-1.5">
+                                        <option value="">— Nada —</option>
+                                        <template x-for="v in vistas" :key="v.url"><option :value="v.url" x-text="v.nombre"></option></template>
+                                    </select>
+                                </div>
+                            </template>
+                            <template x-if="pantallas.length">
+                                <button type="button" @click="repartir()" class="w-full mt-1 px-2.5 py-2 rounded-xl bg-black text-white dark:bg-white dark:text-black text-xs font-black">Abrir en los monitores</button>
+                            </template>
+                        </div>
+                    </template>
+
+                    <div class="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Esta ventana</div>
+                    <div class="flex flex-col gap-1.5">
+                        <button type="button" @click="pantallaCompleta()" class="px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-left">Pantalla completa (F11)</button>
+                        <button type="button" @click="activarModoTV()" class="px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-left">Modo TV: ocultar menú y mantener sesión</button>
+                    </div>
+                    <p class="text-[11px] mt-2" :class="error ? 'text-rose-600' : 'text-slate-500'" x-show="aviso" x-text="aviso"></p>
+                </div>
+            </div>
         </aside>
 
         <!-- ==================== MAIN CONTENT ==================== -->
-        <main class="flex-1 flex flex-col h-full overflow-y-auto custom-scrollbar pr-0 md:pr-2 pb-24 md:pb-0 relative">
+        <main id="contenidoPrincipal" class="flex-1 flex flex-col h-full overflow-y-auto custom-scrollbar pr-0 md:pr-2 pb-24 md:pb-0 relative">
             @include('partials.alert_banner')
             @yield('content')
         </main>
@@ -384,7 +446,7 @@
         @endif
 
         <!-- ==================== MOBILE FLOATING BOTTOM BAR ==================== -->
-        <nav class="fixed bottom-3 left-3 right-3 z-50 flex md:hidden items-center justify-around bg-white/95 dark:bg-[#0d1017]/95 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800/80 p-2 rounded-2xl shadow-2xl transition-all">
+        <nav id="navMovilInferior" class="fixed bottom-3 left-3 right-3 z-50 flex md:hidden items-center justify-around bg-white/95 dark:bg-[#0d1017]/95 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800/80 p-2 rounded-2xl shadow-2xl transition-all">
             @foreach($navItems as $item)
             <a href="{{ $item['href'] }}" title="{{ $item['title'] }}" @if($item['active']) aria-current="page" @endif
                class="flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-bold transition {{ $item['active'] ? 'text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-slate-800/80' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}">
@@ -395,6 +457,156 @@
         </nav>
 
     </div>
+
+    <!-- Controles del Modo TV: aparecen al mover el ratón -->
+    <div id="controlesTV" class="fixed bottom-4 left-4 z-[60] hidden items-center gap-2 bg-black/80 text-white rounded-2xl p-2 shadow-2xl backdrop-blur">
+        <button type="button" onclick="window.nocPantallas.pantallaCompleta()" class="px-3 py-2 rounded-xl hover:bg-white/15 text-xs font-bold">Pantalla completa</button>
+        <button type="button" onclick="window.nocPantallas.salirModoTV()" class="px-3 py-2 rounded-xl hover:bg-white/15 text-xs font-bold">Salir de Modo TV</button>
+        <span id="estadoSesionTV" class="text-[11px] text-slate-300 px-2"></span>
+    </div>
+
+    <script>
+        // ==================== PANTALLAS NOC / MODO TV ====================
+        window.nocPantallas = (function () {
+            const URL_MANTENER = @json(route('pantalla.mantener'));
+            const CSRF = @json(csrf_token());
+            const LATIDO_MS = 5 * 60 * 1000;          // renueva la sesión cada 5 min
+            const RECARGA_MS = 6 * 60 * 60 * 1000;    // recarga completa cada 6 h (libera memoria de pestañas que nunca se cierran)
+            const esModoTV = () => document.documentElement.classList.contains('modo-tv');
+
+            const conTV = (url) => {
+                const u = new URL(url, location.origin);
+                u.searchParams.set('tv', '1');
+                return u.toString();
+            };
+
+            async function latido() {
+                const estado = document.getElementById('estadoSesionTV');
+                try {
+                    const r = await fetch(URL_MANTENER, {
+                        method: 'POST', credentials: 'same-origin', redirect: 'manual',
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF, 'X-Requested-With': 'XMLHttpRequest' },
+                    });
+                    if (r.ok) {
+                        const j = await r.json();
+                        if (estado) estado.textContent = 'Sesión activa · ' + j.hora;
+                        return;
+                    }
+                    // 401/419/redirección al login: la sesión venció; recargar la restaura con la cookie recordada
+                    if (estado) estado.textContent = 'Reconectando sesión…';
+                    setTimeout(() => location.reload(), 3000);
+                } catch (e) {
+                    if (estado) estado.textContent = 'Sin conexión con el servidor, reintentando…';
+                }
+            }
+
+            let wakeLock = null;
+            async function mantenerPantallaEncendida() {
+                try {
+                    if ('wakeLock' in navigator && document.visibilityState === 'visible') {
+                        wakeLock = await navigator.wakeLock.request('screen');
+                    }
+                } catch (e) { /* solo disponible en HTTPS o localhost */ }
+            }
+
+            function iniciarModoTV() {
+                const controles = document.getElementById('controlesTV');
+                controles.classList.remove('hidden');
+                controles.classList.add('flex');
+                let t;
+                const mostrar = () => {
+                    controles.classList.add('visible');
+                    document.body.style.cursor = '';
+                    clearTimeout(t);
+                    t = setTimeout(() => { controles.classList.remove('visible'); document.body.style.cursor = 'none'; }, 3000);
+                };
+                document.addEventListener('mousemove', mostrar);
+                document.addEventListener('touchstart', mostrar, { passive: true });
+
+                latido();
+                setInterval(latido, LATIDO_MS);
+                mantenerPantallaEncendida();
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') { latido(); mantenerPantallaEncendida(); }
+                });
+                setTimeout(() => location.reload(), RECARGA_MS);
+            }
+
+            if (esModoTV()) {
+                document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', iniciarModoTV) : iniciarModoTV();
+            }
+
+            return {
+                conTV,
+                abrirVentana(url, opciones) {
+                    const w = window.open(conTV(url), '_blank', opciones || 'popup,width=1600,height=900');
+                    return w;
+                },
+                pantallaCompleta() {
+                    if (document.fullscreenElement) document.exitFullscreen();
+                    else document.documentElement.requestFullscreen?.().catch(() => {});
+                },
+                activarModoTV() {
+                    location.href = conTV(location.href);
+                },
+                salirModoTV() {
+                    try { sessionStorage.removeItem('nocModoTV'); } catch (e) {}
+                    const u = new URL(location.href);
+                    u.searchParams.delete('tv');
+                    if (document.fullscreenElement) document.exitFullscreen();
+                    location.href = u.toString();
+                },
+            };
+        })();
+
+        function pantallasNoc() {
+            return {
+                abierto: false, aviso: '', error: false, pantallas: [],
+                soportaPantallas: 'getScreenDetails' in window,
+                vistas: [
+                    { nombre: 'Dashboard', url: @json(route('dashboard')) },
+                    { nombre: 'Topología', url: @json(route('topologia.index')) },
+                    { nombre: 'Servicios web', url: @json(route('servicios_web.index')) },
+                    { nombre: 'Esta página', url: location.pathname + location.search },
+                ],
+                abrirPanel() { this.abierto = !this.abierto; this.aviso = ''; },
+                abrirVentana(url) {
+                    const w = window.nocPantallas.abrirVentana(url);
+                    this.error = !w;
+                    this.aviso = w ? 'Ventana abierta: arrástrala a la otra TV y pulsa F11.' : 'El navegador bloqueó la ventana: permite ventanas emergentes para este sitio.';
+                },
+                async detectarPantallas() {
+                    try {
+                        const det = await window.getScreenDetails();
+                        const orden = ['dashboard', 'topologia', 'servicios'];
+                        this.pantallas = det.screens.map((s, i) => ({
+                            etiqueta: (s.label || ('Monitor ' + (i + 1))) + (s.isPrimary ? ' (principal)' : ''),
+                            izquierda: s.availLeft, arriba: s.availTop, ancho: s.availWidth, alto: s.availHeight,
+                            vista: s.isPrimary ? '' : (this.vistas[i % 3]?.url || ''),
+                        }));
+                        this.error = false;
+                        this.aviso = det.screens.length + ' monitor(es) detectados.';
+                    } catch (e) {
+                        this.error = true;
+                        this.aviso = 'No se dio permiso para ver los monitores. Usa "Abrir en otra ventana" y arrástrala.';
+                    }
+                },
+                repartir() {
+                    let bloqueadas = 0, abiertas = 0;
+                    for (const p of this.pantallas) {
+                        if (!p.vista) continue;
+                        const w = window.nocPantallas.abrirVentana(p.vista,
+                            `popup,left=${p.izquierda},top=${p.arriba},width=${p.ancho},height=${p.alto}`);
+                        w ? abiertas++ : bloqueadas++;
+                    }
+                    this.error = bloqueadas > 0;
+                    this.aviso = bloqueadas
+                        ? `Se abrieron ${abiertas}; ${bloqueadas} bloqueadas: permite ventanas emergentes para este sitio.`
+                        : `${abiertas} ventana(s) abiertas. En cada TV pulsa F11 (o "Pantalla completa") para ocupar toda la pantalla.`;
+                },
+            };
+        }
+    </script>
 
     <!-- Global Theme Management Helper -->
     <script>

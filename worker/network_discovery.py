@@ -449,20 +449,13 @@ async def inspect_device(snmp, ip, is_seed, probe_timeout):
 
 
 # ============================================================================
-#  Persistencia MySQL (con caché en memoria)
+#  Persistencia en la BD de Laravel (MySQL o PostgreSQL, con caché en memoria)
 # ============================================================================
 class Store:
     def __init__(self, community):
-        import mysql.connector
-        env = load_env()
-        self.conn = mysql.connector.connect(
-            host=env.get('DB_HOST', '127.0.0.1'),
-            port=int(env.get('DB_PORT', '3306') or 3306),
-            user=env.get('DB_USERNAME', 'root'),
-            password=env.get('DB_PASSWORD', 'root'),
-            database=env.get('DB_DATABASE', 'network_monitor'),
-            autocommit=True,
-        )
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from nm_common import conectar
+        self.conn = conectar(autocommit=True)
         self.community = community
         self.by_ip = {}
         self.by_identity = {}
@@ -494,11 +487,11 @@ class Store:
             cur.close()
             return row['id'], False, row['ip']
         hostname = clean_hostname(name) or f"Switch-{ip.replace('.', '-')}"
-        cur.execute(
+        from nm_common import insertar_con_id
+        dev_id = insertar_con_id(cur,
             """INSERT INTO dispositivos (nombre, ip, comunidad_snmp, ubicacion, estado, ssh_port, ultima_vez_visto, created_at, updated_at)
                VALUES (%s, %s, %s, 'Auto-Descubierto por Crawler', %s, 22, NOW(), NOW(), NOW())""",
             (hostname[:255], ip, self.community, 'online' if online else 'offline'))
-        dev_id = cur.lastrowid
         try:
             cur.execute(
                 """INSERT INTO telemetria_chasis (dispositivo_id, model_name, created_at, updated_at)
@@ -552,12 +545,12 @@ class Store:
             25000 if low.startswith('twentyfive') else 10000 if is_fiber else 1000
         # Velocidad y tipo se deducen del nombre anunciado por CDP/LLDP; el estado real
         # (oper/admin, contadores) lo llenan snmp_poller.py y snmp_detail_collector.py.
-        cur.execute(
+        from nm_common import insertar_con_id
+        iid = insertar_con_id(cur,
             """INSERT INTO interfaces_red (dispositivo_id, if_index, nombre, velocidad_mbps, port_type,
                is_poe, created_at, updated_at)
-               VALUES (%s, %s, %s, %s, %s, 0, NOW(), NOW())""",
+               VALUES (%s, %s, %s, %s, %s, FALSE, NOW(), NOW())""",
             (dev_id, if_index, name[:255], speed, 'sfp_fiber' if is_fiber else 'copper_rj45'))
-        iid = cur.lastrowid
         cur.close()
         cache['by_name'][key] = (iid, if_index)
         cache['by_idx'][if_index] = (iid, name)
@@ -573,12 +566,12 @@ class Store:
             cur.execute("UPDATE enlaces_red SET estado='up', updated_at=NOW() WHERE id=%s", (row[0],))
             cur.close()
             return row[0], False
-        cur.execute(
+        from nm_common import insertar_con_id
+        lid = insertar_con_id(cur,
             """INSERT INTO enlaces_red (origen_dispositivo_id, origen_interfaz_id, destino_dispositivo_id, destino_interfaz_id,
                tipo_medio, estado, velocidad_mbps, trafico_in_mbps, trafico_out_mbps, vlans_permitidas, created_at, updated_at)
                VALUES (%s, %s, %s, %s, %s, 'up', %s, 0, 0, NULL, NOW(), NOW())""",
             (d1, i1, d2, i2, 'fibra_10g' if speed >= 10000 else 'trunk', speed))
-        lid = cur.lastrowid
         cur.close()
         return lid, True
 

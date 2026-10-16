@@ -1320,6 +1320,14 @@
             }
         }
 
+        // Llegada desde "Ver Alertas" de la cinta en otra página: abrir el centro de alertas
+        if (location.hash === '#alertas') {
+            document.addEventListener('DOMContentLoaded', () => {
+                document.getElementById('notifDropdownMenu')?.classList.remove('hidden');
+                history.replaceState(null, '', location.pathname + location.search);
+            });
+        }
+
         // Close dropdown on click outside
         document.addEventListener('click', function(e) {
             const container = document.getElementById('notifDropdownContainer');

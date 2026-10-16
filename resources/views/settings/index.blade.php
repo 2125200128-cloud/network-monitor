@@ -856,6 +856,41 @@
                         </div>
                     </div>
 
+                    {{-- Grupo 3: Retención de históricos --}}
+                    <div class="settings-group mt-6 mb-0">
+                        <h4 class="settings-group-title">
+                            <svg class="w-4 h-4 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3m-8 6c4.4 0 8-1 8-3"></path></svg>
+                            Retención de históricos
+                        </h4>
+                        <p class="settings-row-desc mb-2">Lo más antiguo que estos días se borra automáticamente (una vez por hora). Deja un campo vacío para usar el valor predeterminado.</p>
+
+                        @foreach($retencion as $r)
+                            <div class="settings-row">
+                                <div class="flex items-center gap-4">
+                                    <div class="icon-black-pill anim-spin-hover">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    </div>
+                                    <div>
+                                        <div class="settings-row-label">{{ $r['titulo'] }}</div>
+                                        <div class="settings-row-desc">
+                                            {{ $r['descripcion'] }}<br>
+                                            Hoy: {{ number_format($r['registros']) }} registros
+                                            @if($r['desde']) · desde {{ \Carbon\Carbon::parse($r['desde'])->format('d/m/Y') }} @endif
+                                            · se conservan {{ $r['efectivo'] }} días
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" name="{{ $r['campo'] }}" value="{{ old($r['campo'], $r['valor']) }}"
+                                           min="{{ $r['min'] }}" max="{{ $r['max'] }}" placeholder="{{ $r['predeterminado'] }}"
+                                           title="Entre {{ $r['min'] }} y {{ $r['max'] }} días"
+                                           class="settings-input text-right font-mono font-bold" style="width: 120px;">
+                                    <span class="text-xs font-bold text-slate-400">días</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
                     <div class="flex justify-end mt-6">
                         <button type="submit" class="btn-black-executive flex items-center gap-2.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
@@ -1436,6 +1471,139 @@
                         </span>
                     </div>
                 </div>
+
+                {{-- Alertas por Telegram --}}
+                <form action="{{ route('settings.telegram') }}" method="POST" class="settings-group" x-data="telegramAjustes()">
+                    @csrf
+                    <h4 class="settings-group-title">
+                        <svg class="w-4 h-4 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 4L3 11l6 2m12-9l-4 16-8-7m12-9L9 13m0 0v6l3-4"></path></svg>
+                        Alertas por Telegram
+                        @if($settings->telegram_activo)
+                            <span class="ml-auto text-[11px] font-black px-3 py-0.5 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center gap-1.5 normal-case tracking-normal">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Activo
+                            </span>
+                        @endif
+                    </h4>
+
+                    @if($telegram['ultimo_error'])
+                        <div class="mb-3 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-300 text-xs font-semibold">
+                            Último envío fallido ({{ \Carbon\Carbon::parse($telegram['ultimo_error']['fecha'])->format('d/m/Y H:i') }}): {{ $telegram['ultimo_error']['mensaje'] }}
+                        </div>
+                    @endif
+
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Enviar alertas a Telegram</div>
+                            <div class="settings-row-desc">Alarmas nuevas y resueltas del NOC. Avisos enviados en las últimas 24 h: {{ $telegram['notificadas_24h'] }}</div>
+                        </div>
+                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="telegram_activo" value="1" class="w-5 h-5 accent-black" @checked(old('telegram_activo', $settings->telegram_activo))>
+                            <span class="text-sm font-bold">Activar</span>
+                        </label>
+                    </div>
+
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Token del bot</div>
+                            <div class="settings-row-desc">
+                                Créalo con <b>@BotFather</b> en Telegram (comando /newbot). Se guarda cifrado y no se vuelve a mostrar.
+                                @if($telegram['token_guardado'])<br>Guardado: <span class="font-mono">{{ $telegram['token_guardado'] }}</span> · deja el campo vacío para conservarlo.@endif
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-1.5">
+                            <input type="password" name="telegram_bot_token" x-model="token" autocomplete="off" placeholder="{{ $telegram['token_guardado'] ? 'Sin cambios' : '123456789:AA...' }}" class="settings-input font-mono" style="width: 300px;">
+                            @if($telegram['token_guardado'])
+                                <label class="text-[11px] text-slate-500 flex items-center gap-1.5"><input type="checkbox" name="telegram_borrar_token" value="1"> Borrar token guardado</label>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Chat ID</div>
+                            <div class="settings-row-desc">Escribe cualquier mensaje al bot (o agrégalo a tu grupo y escribe en él) y pulsa <b>Detectar</b>.</div>
+                            <template x-if="chats.length">
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                    <template x-for="c in chats" :key="c.id">
+                                        <button type="button" @click="chatId = c.id" class="text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                :class="chatId === c.id ? 'ring-2 ring-black dark:ring-white' : ''">
+                                            <span x-text="c.nombre || c.id"></span> <span class="text-slate-400" x-text="'(' + c.tipo + ')'"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="text" name="telegram_chat_id" x-model="chatId" autocomplete="off" placeholder="-1001234567890" class="settings-input font-mono font-bold" style="width: 200px;">
+                            <button type="button" @click="detectar()" :disabled="cargando" class="text-xs font-bold px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50">Detectar</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Qué alarmas enviar</div>
+                            <div class="settings-row-desc">Si llegan más de 5 a la vez (p. ej. una caída masiva) se envía un solo resumen.</div>
+                        </div>
+                        <select name="telegram_severidad_min" class="settings-input font-bold" style="width: 240px;">
+                            <option value="critica" @selected(old('telegram_severidad_min', $settings->telegram_severidad_min) === 'critica')>Solo críticas</option>
+                            <option value="advertencia" @selected(old('telegram_severidad_min', $settings->telegram_severidad_min) === 'advertencia')>Críticas y advertencias</option>
+                        </select>
+                    </div>
+
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Opciones</div>
+                            <div class="settings-row-desc">La gráfica muestra latencia y pérdida de las últimas 3 h del equipo, con el inicio de la alarma marcado.</div>
+                        </div>
+                        <div class="flex flex-col gap-2 text-sm font-semibold">
+                            <label class="flex items-center gap-2"><input type="checkbox" name="telegram_imagenes" value="1" class="w-4 h-4 accent-black" @checked(old('telegram_imagenes', $settings->telegram_imagenes))> Adjuntar gráfica del equipo</label>
+                            <label class="flex items-center gap-2"><input type="checkbox" name="telegram_resueltas" value="1" class="w-4 h-4 accent-black" @checked(old('telegram_resueltas', $settings->telegram_resueltas))> Avisar cuando se resuelvan</label>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-end gap-3 mt-5">
+                        <span class="text-xs font-semibold mr-auto" :class="ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'" x-text="aviso"></span>
+                        <button type="button" @click="probar()" :disabled="cargando" class="text-sm font-bold px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
+                                title="Envía un mensaje de prueba con la configuración guardada">Enviar prueba</button>
+                        <button type="submit" class="btn-black-executive flex items-center gap-2.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                            <span>Guardar Telegram</span>
+                        </button>
+                    </div>
+                </form>
+                <script>
+                    function telegramAjustes() {
+                        const llamar = async (url, datos) => {
+                            const r = await fetch(url, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token()) },
+                                body: JSON.stringify(datos || {}),
+                            });
+                            const j = await r.json().catch(() => ({ ok: false, mensaje: 'Respuesta inválida del servidor (HTTP ' + r.status + ').' }));
+                            if (r.status === 429) j.mensaje = 'Demasiados intentos, espera un minuto.';
+                            return j;
+                        };
+                        return {
+                            token: '', chatId: @json(old('telegram_chat_id', $settings->telegram_chat_id) ?? ''), chats: [], aviso: '', ok: true, cargando: false,
+                            async detectar() {
+                                this.cargando = true; this.aviso = 'Consultando al bot…'; this.ok = true;
+                                const j = await llamar(@json(route('settings.telegram.chats')), { token: this.token });
+                                this.cargando = false; this.ok = !!j.ok;
+                                if (!j.ok) { this.aviso = j.mensaje; return; }
+                                this.chats = j.chats;
+                                if (j.chats.length === 1) this.chatId = j.chats[0].id;
+                                this.aviso = j.chats.length
+                                    ? `Bot ${j.bot}: ${j.chats.length} chat(s) encontrados. Elige uno y guarda.`
+                                    : `Bot ${j.bot} válido, pero nadie le ha escrito en las últimas 24 h. Escríbele un mensaje y vuelve a pulsar Detectar.`;
+                            },
+                            async probar() {
+                                this.cargando = true; this.aviso = 'Enviando…'; this.ok = true;
+                                const j = await llamar(@json(route('settings.telegram.probar')));
+                                this.cargando = false; this.ok = !!j.ok; this.aviso = j.mensaje;
+                            },
+                        };
+                    }
+                </script>
             </div>
 
             {{-- ========== SECTION: Apariencia ========== --}}

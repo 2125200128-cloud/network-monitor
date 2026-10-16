@@ -52,8 +52,10 @@ return new class extends Migration
         });
 
         // Restos de versiones anteriores: '{}' / '[]' no es un estado medido
-        foreach (['estado_fuentes', 'estado_ventiladores', 'sensores_temperatura'] as $col) {
-            DB::table('telemetria_chasis')->whereIn($col, ['{}', '[]', ''])->update([$col => null]);
+        if (DB::connection()->getDriverName() === 'mysql') {
+            foreach (['estado_fuentes', 'estado_ventiladores', 'sensores_temperatura'] as $col) {
+                DB::table('telemetria_chasis')->whereIn($col, ['{}', '[]', ''])->update([$col => null]);
+            }
         }
 
         Schema::table('alarmas_red', function (Blueprint $table) {

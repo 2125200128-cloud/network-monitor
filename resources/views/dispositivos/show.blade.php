@@ -390,55 +390,53 @@
     {{-- ==================== 1. HERO HEADER ==================== --}}
     <div class="bg-white dark:bg-[#12161f] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-            {{-- Render Oficial de Hardware según el Modelo Real --}}
-            <div class="w-44 sm:w-52 h-32 sm:h-36 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-2.5 border border-slate-700/60 shadow-lg flex-shrink-0 flex flex-col items-center justify-between relative overflow-hidden group">
-                <div class="absolute inset-0 bg-radial from-blue-500/10 to-transparent pointer-events-none"></div>
-                <div class="w-full flex items-center justify-between px-1.5 pt-0.5">
-                    <span class="text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">{{ $deviceHardware['rol'] }}</span>
-                    <span class="text-[8px] font-mono font-bold uppercase {{ $dispositivo->estado === 'online' ? 'text-emerald-400' : 'text-red-400' }}">{{ $dispositivo->estado === 'online' ? 'EN LÍNEA' : ($dispositivo->estado === 'warning' ? 'ADVERTENCIA' : 'SIN RESPUESTA') }}</span>
-                </div>
-                <div class="w-full flex-1 flex items-center justify-center px-1">
-                    <img src="{{ asset($deviceHardware['image']) }}" alt="{{ $chasis->model_name ?? $dispositivo->nombre }}" class="max-h-22 w-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300">
-                </div>
-                <div class="w-full text-center pb-0.5">
-                    <span class="text-[8px] font-mono text-slate-400 truncate block px-1">{{ $deviceHardware['factor_forma'] }}</span>
-                </div>
+            {{-- Ilustración del modelo --}}
+            <div class="w-44 sm:w-52 h-32 sm:h-36 rounded-2xl p-3 border border-slate-700/60 shadow-lg flex-shrink-0 flex items-center justify-center" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
+                <img src="{{ asset($deviceHardware['image']) }}" alt="{{ $deviceHardware['clean_model'] }}" class="max-h-24 w-full object-contain drop-shadow-md">
             </div>
 
-            <div class="space-y-1.5">
+            @php
+                $estadoTexto = ['online' => 'En línea', 'warning' => 'Con advertencia'][$dispositivo->estado] ?? 'Sin respuesta';
+                $uptimeHero = $chasis?->uptime_str && !in_array($chasis->uptime_str, ['Sin respuesta SNMP', 'Inaccesible'], true) ? $chasis->uptime_str : null;
+                $datosHero = array_filter([
+                    'IP' => $dispositivo->ip,
+                    'Ubicación' => $dispositivo->ubicacion ?: null,
+                    'Uptime' => $uptimeHero,
+                    'Software' => $chasis?->os_version,
+                    'Serie' => $chasis?->serial_number,
+                ]);
+            @endphp
+            <div class="space-y-1.5 min-w-0">
                 <div class="flex flex-wrap items-center gap-2.5">
-                    <span class="w-3.5 h-3.5 rounded-full {{ $dispositivo->estado === 'online' ? 'bg-emerald-500' : ($dispositivo->estado === 'warning' ? 'bg-amber-500' : 'bg-red-500 animate-pulse') }}" title="{{ $dispositivo->estado }}"></span>
+                    <span class="w-3.5 h-3.5 rounded-full {{ $dispositivo->estado === 'online' ? 'bg-emerald-500' : ($dispositivo->estado === 'warning' ? 'bg-amber-500' : 'bg-red-500 animate-pulse') }}" title="{{ $estadoTexto }}"></span>
                     <h1 class="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">{{ $dispositivo->nombre }}</h1>
-                    <span class="text-xs font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#3b5998] dark:text-blue-400 border border-blue-200 dark:border-blue-800/40">
-                        {{ $deviceHardware['clean_model'] }}
-                    </span>
-                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono">
-                        {{ $deviceHardware['factor_forma'] }}
-                    </span>
+                    <span class="text-xs font-bold px-2.5 py-0.5 rounded-full {{ $dispositivo->estado === 'online' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : ($dispositivo->estado === 'warning' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-red-50 text-red-700 border-red-200') }} border">{{ $estadoTexto }}</span>
                 </div>
+                <p class="text-sm font-semibold text-gray-700 dark:text-slate-300">
+                    {{ $deviceHardware['clean_model'] }}
+                    @if($ficha['etiqueta'])
+                        <span class="text-gray-400 dark:text-slate-500 font-normal">· {{ $ficha['etiqueta'] }}</span>
+                    @endif
+                </p>
                 <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-slate-400 font-medium">
-                    <span><strong>IP:</strong> <code class="text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono">{{ $dispositivo->ip }}</code></span>
-                    <span>•</span>
-                    <span><strong>Ubicación:</strong> {{ $dispositivo->ubicacion }}</span>
-                    <span>•</span>
-                    <span><strong>Uptime:</strong> <span class="text-gray-700 dark:text-slate-300 font-semibold">{{ $chasis?->uptime_str ?? 'Sin dato' }}</span></span>
-                    <span>•</span>
-                    <span><strong>OS:</strong> <span class="text-gray-700 dark:text-slate-300 font-semibold">{{ $chasis->os_version ?? 'Sin dato' }}</span></span>
-                    <span>•</span>
-                    <span><strong>Serial:</strong> <code class="text-gray-700 dark:text-slate-300 font-mono">{{ $chasis?->serial_number ?? 'Sin dato' }}</code></span>
+                    @foreach($datosHero as $etq => $valor)
+                        <span><strong>{{ $etq }}:</strong> <span class="text-gray-700 dark:text-slate-300 {{ in_array($etq, ['IP', 'Serie'], true) ? 'font-mono' : 'font-semibold' }}">{{ $valor }}</span></span>
+                    @endforeach
                 </div>
             </div>
         </div>
 
         {{-- Hero Quick Counters --}}
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3">
+            @if($totalPorts > 0)
             <div class="flex items-center gap-2 bg-gray-50 px-3.5 py-2 rounded-xl border border-gray-200">
                 <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm"></div>
                 <div class="text-left">
-                    <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Enlaces UP</p>
+                    <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Puertos arriba</p>
                     <p class="text-sm font-extrabold text-emerald-600">{{ $upPortsCount }} / {{ $totalPorts }}</p>
                 </div>
             </div>
+            @endif
 
             @if($errDisabledCount > 0)
             <div class="flex items-center gap-2 bg-red-50 px-3.5 py-2 rounded-xl border border-red-200">
@@ -450,15 +448,18 @@
             </div>
             @endif
 
+            {{-- Consumo PoE medido en el chasis (POWER-ETHERNET-MIB); solo en equipos que lo reportan --}}
+            @if(($chasis?->poe_total_budget_w ?? 0) > 0 && $chasis?->poe_used_w !== null)
             <div class="flex items-center gap-2 bg-amber-50 px-3.5 py-2 rounded-xl border border-amber-200">
                 <div class="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm"></div>
                 <div class="text-left">
-                    <p class="text-[10px] text-amber-600 uppercase font-bold tracking-wider">PoE Total</p>
-                    <p class="text-sm font-extrabold text-amber-700">{{ number_format($totalPoeWatts, 1) }} W</p>
+                    <p class="text-[10px] text-amber-600 uppercase font-bold tracking-wider">PoE</p>
+                    <p class="text-sm font-extrabold text-amber-700">{{ rtrim(rtrim(number_format($chasis->poe_used_w, 1), '0'), '.') }} / {{ rtrim(rtrim(number_format($chasis->poe_total_budget_w, 1), '0'), '.') }} W</p>
                 </div>
             </div>
+            @endif
 
-            <a href="{{ route('dispositivos.pdf', $dispositivo->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#3b5998] hover:bg-[#2d4677] text-white text-xs font-bold transition shadow-sm" title="Descargar Ficha Técnica en PDF">
+            <a href="{{ route('dispositivos.pdf', $dispositivo->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#3b5998] hover:bg-[#2d4677] text-white text-xs font-bold transition shadow-sm" title="Descargar la ficha en PDF">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Reporte PDF
             </a>
@@ -510,43 +511,23 @@
     <div x-data="faceplateComponent()" class="bg-white dark:bg-[#12161f] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800">
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2.5">
-                <div class="px-3 py-1.5 rounded-lg {{ $badgeBg }} flex items-center justify-center text-white font-black text-xs shadow-sm font-mono tracking-wider">
-                    @if($isFirewall)
-                        FIREWALL NGFW 1U
-                    @elseif($isPhone)
-                        TELÉFONO VOIP
-                    @elseif($isAP)
-                        ACCESS POINT WI-FI 6
-                    @elseif($isServer)
-                        SERVIDOR DEDICADO
-                    @elseif($isPC)
-                        PC CLIENT
-                    @elseif($isRouter)
-                        ROUTER 1U
-                    @else
-                        {{ $deviceHardware['factor_forma'] }}
-                    @endif
+                <div class="px-3 py-1.5 rounded-lg {{ $badgeBg }} flex items-center justify-center text-white font-bold text-xs shadow-sm tracking-wide">
+                    {{ $deviceHardware['tipo_equipo'] }}{{ $ficha['formato'] ? ' · ' . $ficha['formato'] : '' }}
                 </div>
                 <div>
-                    <h2 class="text-base font-extrabold text-gray-900 dark:text-white leading-tight">
-                        @if($isFirewall)
-                            Panel Frontal de Seguridad & Telemetría (FortiGate NGFW Faceplate)
-                        @elseif($isPhone)
-                            Panel Trasero de Conectividad & Puertos (VoIP Faceplate)
-                        @elseif($isAP)
-                            Panel de Enlace de Red & Radios RF (Wi-Fi 6 Faceplate)
-                        @elseif($isServer)
-                            Panel Posterior de Interfaces & Gestión (Server Faceplate)
-                        @elseif($isPC)
-                            Panel Posterior de E/S & Red (Workstation Faceplate)
-                        @elseif($isRouter)
-                            Panel Frontal Físico (Carrier-Grade Router Faceplate)
-                        @else
-                            Panel Frontal Físico (Carrier-Grade Switch Faceplate)
-                        @endif
-                    </h2>
+                    <h2 class="text-base font-extrabold text-gray-900 dark:text-white leading-tight">Puertos del equipo</h2>
+                    @php
+                        $cuentaPuertos = array_filter([
+                            count($copperPortsList) ? count($copperPortsList) . ' de cobre' : null,
+                            count($sfpPortsList) ? count($sfpPortsList) . ' ópticos' : null,
+                        ]);
+                    @endphp
                     <p class="text-xs text-gray-500 dark:text-slate-400 font-medium">
-                        {{ $chasis->model_name ?? $dispositivo->nombre }} · <span x-text="copperPorts.length"></span> Puertos de Red / <span x-text="sfpPorts.length"></span> Puertos SFP (<span x-text="interfaces.length"></span> Interfaces Totales) · Haz clic en cualquier puerto para abrir la telemetría y diagnósticos.
+                        @if($cuentaPuertos)
+                            {{ implode(' · ', $cuentaPuertos) }} reportados por SNMP · clic en un puerto para ver su telemetría
+                        @else
+                            El equipo no ha reportado sus interfaces por SNMP
+                        @endif
                     </p>
                 </div>
             </div>
@@ -555,20 +536,22 @@
             <div class="hidden md:flex items-center gap-4 text-xs font-semibold text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-slate-900/60 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-800">
                 <div class="flex items-center gap-1.5">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-sm"></span>
-                    <span>Link Up</span>
+                    <span>Arriba</span>
                 </div>
                 <div class="flex items-center gap-1.5">
                     <span class="w-2 h-2 rounded-full bg-red-500 shadow-sm"></span>
-                    <span>Err-Disabled</span>
+                    <span>Err-disabled</span>
                 </div>
                 <div class="flex items-center gap-1.5">
                     <span class="w-2 h-2 rounded-full bg-gray-400"></span>
-                    <span>Link Down</span>
+                    <span>Abajo</span>
                 </div>
+                @if($ficha['tiene_poe'])
                 <div class="flex items-center gap-1.5">
                     <span class="w-2 h-2 rounded-full bg-amber-500 shadow-sm"></span>
-                    <span>PoE Activo</span>
+                    <span>PoE activo</span>
                 </div>
+                @endif
             </div>
         </div>
 
@@ -589,7 +572,7 @@
                 <div>
                     <div class="flex items-center gap-1.5">
                         <span class="w-2.5 h-2.5 rounded-sm {{ $enLinea ? 'bg-emerald-400' : ($dispositivo->estado === 'warning' ? 'bg-amber-400' : 'bg-red-500') }}"></span>
-                        <span class="text-xs font-black text-slate-200 tracking-wider uppercase truncate">{{ $deviceHardware['fabricante'] ?? 'Fabricante no reportado' }}</span>
+                        <span class="text-xs font-black text-slate-200 tracking-wider uppercase truncate">{{ $ficha['grupos']['Identificación']['Fabricante'] ?? $deviceHardware['tipo_equipo'] }}</span>
                     </div>
                     <p class="text-[9px] font-mono text-slate-300 uppercase tracking-tight mt-0.5 truncate" title="{{ $deviceHardware['clean_model'] }}">{{ $deviceHardware['clean_model'] }}</p>
                 </div>
@@ -602,15 +585,14 @@
 
             {{-- ==================== CENTER: DYNAMIC HARDWARE LAYOUT ==================== --}}
 
-            {{-- 1. MORFOLOGÍA TELÉFONO IP (CISCO UNIFIED VOIP) --}}
+            {{-- 1. TELÉFONO IP: solo sus interfaces reportadas --}}
             <template x-if="isPhone">
                 <div class="flex-1 flex items-center justify-around px-4 gap-4">
-                    {{-- Puertos Ethernet del Teléfono (Switch Interno de 2 Puertos) --}}
                     <div class="bg-[#0a0d13] p-3 rounded-xl border border-blue-900/40 shadow-inner flex flex-col items-center">
-                        <span class="text-[8px] font-mono font-bold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                            SWITCH ETHERNET INTEGRADO (VOIP & DATA)
-                        </span>
+                        <span class="text-[8px] font-mono font-bold text-blue-400 uppercase tracking-wider mb-2">Puertos de red</span>
+                        <template x-if="interfaces.length === 0">
+                            <span class="text-xs text-slate-500 font-mono">Sin interfaces reportadas por SNMP</span>
+                        </template>
                         <div class="flex items-center gap-6">
                             <template x-for="(interfaz, index) in interfaces" :key="index">
                                 <div class="port-pair-column">
@@ -640,57 +622,17 @@
                         </div>
                     </div>
 
-                    {{-- Conectores de Audio RJ-9 (Handset & Headset) --}}
-                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-slate-800 shadow-inner hidden sm:flex flex-col items-center">
-                        <span class="text-[8px] font-mono font-bold text-slate-400 uppercase tracking-wider mb-2">PUERTOS DE AUDIO (RJ-9)</span>
-                        <div class="flex items-center gap-4">
-                            <div class="port-pair-column" title="Conector RJ-9 para Auricular Telefónico (Handset)">
-                                <span class="port-num-label text-slate-400">AURICULAR</span>
-                                <div class="rj9-socket">
-                                    <div class="rj9-notch"></div>
-                                    <div class="rj9-pins">
-                                        <div class="rj9-pin"></div><div class="rj9-pin"></div><div class="rj9-pin"></div><div class="rj9-pin"></div>
-                                    </div>
-                                </div>
-                                <span class="text-[7px] font-mono text-slate-500 mt-1 uppercase">HANDSET</span>
-                            </div>
-
-                            <div class="port-pair-column" title="Conector RJ-9 para Diadema / Casco Telefónico (Headset)">
-                                <span class="port-num-label text-slate-400">DIADEMA</span>
-                                <div class="rj9-socket">
-                                    <div class="rj9-notch"></div>
-                                    <div class="rj9-pins">
-                                        <div class="rj9-pin"></div><div class="rj9-pin"></div><div class="rj9-pin"></div><div class="rj9-pin"></div>
-                                    </div>
-                                </div>
-                                <span class="text-[7px] font-mono text-slate-500 mt-1 uppercase">HEADSET</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Entrada de Alimentación DC Auxiliar --}}
-                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-slate-800 shadow-inner hidden md:flex flex-col items-center">
-                        <span class="text-[8px] font-mono font-bold text-amber-400/90 uppercase tracking-wider mb-2">ALIMENTACIÓN DC</span>
-                        <div class="port-pair-column" title="Jack de Entrada de Energía Auxiliar 48V DC">
-                            <span class="port-num-label text-amber-300">AUX PWR</span>
-                            <div class="dc-jack">
-                                <div class="dc-jack-pin"></div>
-                            </div>
-                            <span class="text-[7px] font-mono text-amber-400/80 mt-1 uppercase">48V DC</span>
-                        </div>
-                    </div>
                 </div>
             </template>
 
-            {{-- 2. MORFOLOGÍA ACCESS POINT WI-FI 6 --}}
+            {{-- 2. ACCESS POINT / WLC --}}
             <template x-if="isAP">
                 <div class="flex-1 flex items-center justify-around px-4 gap-4">
-                    {{-- Puertos Físicos: mGig 2.5G PoE+ Uplink & Consola --}}
                     <div class="bg-[#0a0d13] p-3 rounded-xl border border-emerald-900/40 shadow-inner flex flex-col items-center">
-                        <span class="text-[8px] font-mono font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                            UPLINK MULTIGIGABIT & GESTIÓN
-                        </span>
+                        <span class="text-[8px] font-mono font-bold text-emerald-400 uppercase tracking-wider mb-2">Puertos de red</span>
+                        <template x-if="interfaces.length === 0">
+                            <span class="text-xs text-slate-500 font-mono">Sin interfaces reportadas por SNMP</span>
+                        </template>
                         <div class="flex items-center gap-5">
                             <template x-for="(interfaz, index) in interfaces" :key="index">
                                 <div class="port-pair-column">
@@ -722,15 +664,14 @@
                 </div>
             </template>
 
-            {{-- 3. MORFOLOGÍA SERVIDOR DEDICADO --}}
+            {{-- 3. SERVIDOR --}}
             <template x-if="isServer">
                 <div class="flex-1 flex items-center justify-around px-4 gap-4">
-                    {{-- Tarjetas de Red (NICs Gigabit) --}}
                     <div class="bg-[#0a0d13] p-3 rounded-xl border border-purple-900/40 shadow-inner flex flex-col items-center">
-                        <span class="text-[8px] font-mono font-bold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
-                            INTERFACES DE RED (NIC PRODUCTION & OOB MGMT)
-                        </span>
+                        <span class="text-[8px] font-mono font-bold text-purple-400 uppercase tracking-wider mb-2">Interfaces de red</span>
+                        <template x-if="interfaces.length === 0">
+                            <span class="text-xs text-slate-500 font-mono">Sin interfaces reportadas por SNMP</span>
+                        </template>
                         <div class="flex items-center gap-4">
                             <template x-for="(interfaz, index) in interfaces" :key="index">
                                 <div class="port-pair-column">
@@ -759,11 +700,14 @@
                 </div>
             </template>
 
-            {{-- 4. MORFOLOGÍA PC CLIENT --}}
+            {{-- 4. PC / IMPRESORA --}}
             <template x-if="isPC">
                 <div class="flex-1 flex items-center justify-around px-4 gap-4">
                     <div class="bg-[#0a0d13] p-3 rounded-xl border border-cyan-900/40 shadow-inner flex flex-col items-center">
-                        <span class="text-[8px] font-mono font-bold text-cyan-400 uppercase tracking-wider mb-2">PLACA BASE I/O · PUERTO GIGABIT ETHERNET</span>
+                        <span class="text-[8px] font-mono font-bold text-cyan-400 uppercase tracking-wider mb-2">Interfaces de red</span>
+                        <template x-if="interfaces.length === 0">
+                            <span class="text-xs text-slate-500 font-mono">Sin interfaces reportadas por SNMP</span>
+                        </template>
                         <div class="flex items-center gap-4">
                             <template x-for="(interfaz, index) in interfaces" :key="index">
                                 <div class="port-pair-column">
@@ -792,12 +736,12 @@
                 </div>
             </template>
 
-            {{-- 5. MORFOLOGÍA ROUTER WAN/LAN (CISCO 1841 / ISR 4400) --}}
+            {{-- 5. ROUTER: sus puertos reportados (cobre y SFP) --}}
             <template x-if="isRouter">
                 <div class="flex-1 flex items-center justify-around px-4 gap-4">
                     {{-- Puertos Físicos Dinámicos desde la Base de Datos --}}
                     <div class="bg-[#0a0d13] p-3 rounded-xl border border-slate-700/60 shadow-inner flex flex-col items-center">
-                        <span class="text-[8px] font-mono font-bold text-orange-400 uppercase tracking-wider mb-2">PUERTOS DE RED (ROUTER WAN/LAN)</span>
+                        <span class="text-[8px] font-mono font-bold text-orange-400 uppercase tracking-wider mb-2">Puertos de red</span>
                         <div class="flex items-center gap-3">
                             <template x-for="(interfaz, index) in interfaces" :key="index">
                                 <div class="port-pair-column">
@@ -852,75 +796,10 @@
                         </div>
                     </div>
 
-                    {{-- Bahía de Gestión: Console RJ45 (Azul Cisco) y AUX --}}
-                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-slate-800 shadow-inner hidden md:flex flex-col items-center">
-                        <span class="text-[8px] font-mono font-bold text-slate-400 uppercase tracking-wider mb-2">GESTIÓN LOCAL</span>
-                        <div class="flex items-center gap-3">
-                            <div class="port-pair-column">
-                                <span class="port-num-label text-sky-400">CON</span>
-                                <div class="w-[38px] h-[38px] bg-[#090c10] border-2 border-sky-500 rounded flex flex-col items-center justify-center cursor-default shadow-[0_0_8px_rgba(2,132,199,0.3)]" title="Puerto de Consola Serial RJ-45 (RS-232 9600-8-N-1)">
-                                    <div class="w-3.5 h-1 bg-sky-950 rounded-sm mb-1 border border-sky-800"></div>
-                                    <div class="flex gap-0.5">
-                                        <div class="w-0.5 h-1.5 bg-amber-400 rounded-xs"></div>
-                                        <div class="w-0.5 h-1.5 bg-amber-400 rounded-xs"></div>
-                                        <div class="w-0.5 h-1.5 bg-amber-400 rounded-xs"></div>
-                                        <div class="w-0.5 h-1.5 bg-amber-400 rounded-xs"></div>
-                                    </div>
-                                </div>
-                                <span class="text-[7px] font-mono text-sky-400 mt-1 uppercase">9600-8N1</span>
-                            </div>
-
-                            <div class="port-pair-column">
-                                <span class="port-num-label text-slate-400">AUX</span>
-                                <div class="w-[38px] h-[38px] bg-[#090c10] border border-slate-700 rounded flex flex-col items-center justify-center cursor-default" title="Puerto Auxiliar RJ-45 para Modem/Dial-up">
-                                    <div class="w-3.5 h-1 bg-slate-800 rounded-sm mb-1"></div>
-                                    <div class="flex gap-0.5">
-                                        <div class="w-0.5 h-1.5 bg-slate-500 rounded-xs"></div>
-                                        <div class="w-0.5 h-1.5 bg-slate-500 rounded-xs"></div>
-                                        <div class="w-0.5 h-1.5 bg-slate-500 rounded-xs"></div>
-                                    </div>
-                                </div>
-                                <span class="text-[7px] font-mono text-slate-500 mt-1 uppercase">MODEM</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Ranuras Modulares WIC / HWIC Reales (Slot 0 y Slot 1) --}}
-                    <div class="flex items-center gap-3">
-                        {{-- HWIC Slot 0 --}}
-                        <div class="w-28 sm:w-32 h-[90px] bg-gradient-to-b from-[#1c232d] to-[#11161d] border border-slate-600 rounded-lg p-2 flex flex-col justify-between items-center shadow-inner">
-                            <div class="flex items-center justify-between w-full">
-                                <div class="w-2.5 h-2.5 rounded-full bg-slate-700 border border-slate-400 shadow-sm"></div>
-                                <span class="text-[8px] font-mono text-slate-400 uppercase font-bold">SLOT 0: HWIC</span>
-                                <div class="w-2.5 h-2.5 rounded-full bg-slate-700 border border-slate-400 shadow-sm"></div>
-                            </div>
-                            <span class="text-[8px] font-mono text-slate-500 tracking-wider uppercase">WAN EXPANSION</span>
-                            <div class="flex items-center justify-between w-full">
-                                <div class="w-2.5 h-2.5 rounded-full bg-slate-700 border border-slate-400 shadow-sm"></div>
-                                <span class="text-[7px] font-mono text-slate-600">SERIAL/T1</span>
-                                <div class="w-2.5 h-2.5 rounded-full bg-slate-700 border border-slate-400 shadow-sm"></div>
-                            </div>
-                        </div>
-
-                        {{-- HWIC Slot 1 --}}
-                        <div class="w-28 sm:w-32 h-[90px] bg-gradient-to-b from-[#1c232d] to-[#11161d] border border-slate-600 rounded-lg p-2 flex flex-col justify-between items-center shadow-inner hidden sm:flex">
-                            <div class="flex items-center justify-between w-full">
-                                <div class="w-2.5 h-2.5 rounded-full bg-slate-700 border border-slate-400 shadow-sm"></div>
-                                <span class="text-[8px] font-mono text-slate-400 uppercase font-bold">SLOT 1: HWIC</span>
-                                <div class="w-2.5 h-2.5 rounded-full bg-slate-700 border border-slate-400 shadow-sm"></div>
-                            </div>
-                            <span class="text-[8px] font-mono text-slate-500 tracking-wider uppercase">MODULAR BAY</span>
-                            <div class="flex items-center justify-between w-full">
-                                <div class="w-2.5 h-2.5 rounded-full bg-slate-700 border border-slate-400 shadow-sm"></div>
-                                <span class="text-[7px] font-mono text-slate-600">VOICE/VPN</span>
-                                <div class="w-2.5 h-2.5 rounded-full bg-slate-700 border border-slate-400 shadow-sm"></div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </template>
 
-            {{-- 6. MORFOLOGÍA SWITCH RACK (CATALYST / SG200 / NEXUS) --}}
+            {{-- 6. SWITCH / FIREWALL: puertos de cobre en pares y uplinks ópticos --}}
             <template x-if="!isRouter && !isPhone && !isAP && !isServer && !isPC">
                 <div class="flex-1 flex items-center justify-center px-2">
                     <template x-if="copperPorts.length > 0">
@@ -1004,7 +883,7 @@
                     <div class="flex flex-col justify-center items-center px-3 py-1.5 bg-[#12161b] rounded-lg border border-gray-800 shadow-inner flex-shrink-0 ml-2">
                         <div class="text-[9px] font-extrabold {{ $isCatalyst ? 'text-blue-400' : ($isNexus ? 'text-cyan-400' : 'text-blue-400') }} font-mono tracking-wider text-center mb-1 flex items-center gap-1">
                             <span class="w-1.5 h-1.5 rounded-full {{ $isNexus ? 'bg-cyan-400' : 'bg-blue-400' }} animate-pulse"></span>
-                            <span>SFP {{ ($totalPorts >= 26 && !$isNexus) ? '1G' : '10G' }}</span>
+                            <span>{{ $ficha['uplink'] }}</span>
                         </div>
 
                         <div class="flex items-center gap-2">
@@ -1133,82 +1012,80 @@
 
     {{-- ==================== 3. LOWER TAB SYSTEM ==================== --}}
     <div class="bg-white dark:bg-[#12161f] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
-        {{-- Tabs Navigation Bar --}}
+        {{-- Pestañas: solo las que aplican al tipo de equipo (o si hay datos que mostrar) --}}
+        @php
+            $tieneTablas = !empty($tablas->mac_table) || !empty($tablas->arp_table);
+            $pestanas = array_filter([
+                'tab-hardware' => ['Ficha técnica y hardware', 'M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z'],
+                'tab-addressing' => in_array($tipo, ['switch', 'router', 'firewall', 'wlc'], true) || $tieneTablas
+                    ? ['Direccionamiento (MAC / ARP)', 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'] : null,
+                'tab-l2' => in_array($tipo, ['switch', 'router'], true) || !empty($tablas->vlans_table)
+                    ? ['VLANs, STP y LACP', 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'] : null,
+                // l2:sync guarda la estructura con listas vacías: solo cuenta si alguna lista tiene datos
+                'tab-security' => $tipo === 'switch' || collect($tablas->security_qos_multicast ?? [])->flatten()->filter()->isNotEmpty()
+                    ? ['Seguridad, QoS y multicast', 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'] : null,
+            ]);
+        @endphp
+        @if(count($pestanas) > 1)
         <div class="flex items-center border-b border-gray-200 dark:border-slate-800 px-4 bg-gray-50/70 dark:bg-slate-900/60 overflow-x-auto">
-            <button class="nav-tab-btn active" data-tab="tab-hardware">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
-                Tab 1: Ficha Técnica & Hardware
-            </button>
-            <button class="nav-tab-btn" data-tab="tab-addressing">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                Tab 2: Direccionamiento y Descubrimiento
-            </button>
-            <button class="nav-tab-btn" data-tab="tab-l2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
-                Tab 3: L2 / Switching & STP
-            </button>
-            <button class="nav-tab-btn" data-tab="tab-security">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                Tab 4: Seguridad, QoS y Multicast
-            </button>
+            @foreach($pestanas as $idPestana => [$etiqueta, $icono])
+                <button class="nav-tab-btn {{ $loop->first ? 'active' : '' }}" data-tab="{{ $idPestana }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icono }}"></path></svg>
+                    {{ $etiqueta }}
+                </button>
+            @endforeach
         </div>
+        @endif
 
         {{-- ==================== TAB 1: Ficha Técnica & Hardware ==================== --}}
         <div class="tab-pane active p-6" id="tab-hardware">
 
-            {{-- Ficha Técnica Oficial del Dispositivo / Official Datasheet & Architectural Specs --}}
-            <div class="border border-slate-800 rounded-2xl p-6 mb-6 shadow-md relative overflow-hidden" style="background: linear-gradient(90deg, #0f172a, #0e131d, #0f172a);">
-                <div class="absolute -right-16 -top-16 w-56 h-56 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+            {{-- Ficha técnica: lo que reporta el equipo (SNMP / CDP-LLDP) y lo que se deduce de su número de parte --}}
+            <div class="border border-slate-800 rounded-2xl p-6 mb-6 shadow-md" style="background: linear-gradient(90deg, #0f172a, #111827, #0f172a);">
                 <div class="flex flex-col gap-5">
-                    {{-- Header Row: Manufacturer, Model & Architecture Badges --}}
                     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 rounded-full bg-[#f26419] shadow-[0_0_10px_#f26419]"></div>
-                            <div>
-                                <span class="text-[9px] font-mono font-black text-blue-400 uppercase tracking-widest block">FICHA TÉCNICA OFICIAL DEL FABRICANTE</span>
-                                <h3 class="text-xl font-black text-white leading-tight mt-0.5">{{ $chasis->model_name ?? $dispositivo->nombre }}</h3>
-                            </div>
+                        <div>
+                            <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest block">Ficha técnica</span>
+                            <h3 class="text-xl font-black text-white leading-tight mt-0.5">{{ $deviceHardware['clean_model'] }}</h3>
+                            @if($ficha['etiqueta'])
+                                <p class="text-xs text-slate-400 mt-0.5">{{ $ficha['etiqueta'] }}</p>
+                            @endif
                         </div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="px-3 py-1 rounded-lg text-xs font-bold bg-blue-950/80 text-blue-300 border border-blue-800/50 uppercase font-mono">
-                                {{ $deviceHardware['tipo_equipo'] }}
-                            </span>
-                            <span class="px-3 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700/60 uppercase font-mono">
-                                {{ $deviceHardware['factor_forma'] }}
-                            </span>
-                            <span class="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800/50 uppercase font-mono flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                {{ $deviceHardware['rol'] }}
-                            </span>
-                        </div>
+                        <span class="px-3 py-1 rounded-lg text-xs font-bold bg-blue-950/80 text-blue-300 border border-blue-800/50">{{ $deviceHardware['tipo_equipo'] }}</span>
                     </div>
 
-                    {{-- Main Specs Grid & Device Render Asset --}}
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
-                        {{-- Left Column: High-Res Render Asset & Quick Facts --}}
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                        {{-- Ilustración del modelo --}}
                         <div class="lg:col-span-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex flex-col items-center justify-center text-center">
-                            <div class="w-full h-48 flex items-center justify-center p-2 mb-3 relative group">
-                                <div class="absolute inset-0 bg-radial from-blue-500/10 to-transparent pointer-events-none"></div>
-                                <img src="{{ asset($deviceHardware['image']) }}" alt="{{ $dispositivo->nombre }}" class="max-h-40 max-w-full object-contain drop-shadow-xl group-hover:scale-105 transition-transform duration-300">
+                            <div class="w-full h-44 flex items-center justify-center p-2 mb-2">
+                                <img src="{{ asset($deviceHardware['image']) }}" alt="{{ $deviceHardware['clean_model'] }}" class="max-h-40 max-w-full object-contain drop-shadow-xl">
                             </div>
-                            <h4 class="text-sm font-extrabold text-white">{{ $deviceHardware['clean_model'] ?? $dispositivo->nombre }}</h4>
-                            <p class="text-xs text-slate-400 mt-0.5">{{ $deviceHardware['tipo_equipo'] }}</p>
-                            <div class="flex items-center gap-2 mt-3 pt-3 border-t border-slate-800/80 w-full justify-center text-[10px] font-mono text-slate-400">
-                                <span>IP: <strong class="text-slate-200">{{ $dispositivo->ip }}</strong></span>
-                                <span>•</span>
-                                <span>MAC: <strong class="text-slate-200">{{ $dispositivo->mac_address ?: 'N/A' }}</strong></span>
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-3 border-t border-slate-800/80 w-full justify-center text-[11px] font-mono text-slate-400">
+                                <span>IP <strong class="text-slate-200">{{ $dispositivo->ip }}</strong></span>
+                                @if($dispositivo->mac_address)
+                                    <span>MAC <strong class="text-slate-200">{{ $dispositivo->mac_address }}</strong></span>
+                                @endif
                             </div>
                         </div>
 
-                        {{-- Right Column: Full Specifications Matrix --}}
+                        {{-- Datos agrupados --}}
                         <div class="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            @foreach($deviceHardware['specs'] as $specKey => $specVal)
-                            <div class="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/40 flex flex-col justify-between hover:border-slate-600 transition-colors">
-                                <span class="text-[10px] text-blue-400 uppercase font-bold tracking-wider block font-mono">{{ $specKey }}</span>
-                                <span class="font-bold text-slate-100 text-xs mt-1 block leading-snug">{{ $specVal }}</span>
-                            </div>
-                            @endforeach
-                            
+                            @forelse($ficha['grupos'] as $grupo => $datos)
+                                <div class="sm:col-span-2 flex items-baseline justify-between gap-2 {{ $loop->first ? '' : 'mt-2' }}">
+                                    <h5 class="text-[11px] font-bold uppercase tracking-wider text-slate-300">{{ $grupo }}</h5>
+                                    @if($grupo === 'Hardware según número de parte')
+                                        <span class="text-[10px] text-slate-500">Deducido del modelo, no medido</span>
+                                    @endif
+                                </div>
+                                @foreach($datos as $etiqueta => $valor)
+                                    <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/40 {{ mb_strlen($valor) > 48 ? 'sm:col-span-2' : '' }}">
+                                        <span class="text-[10px] text-blue-400 uppercase font-bold tracking-wider block">{{ $etiqueta }}</span>
+                                        <span class="font-semibold text-slate-100 text-xs mt-1 block leading-snug break-words">{{ $valor }}</span>
+                                    </div>
+                                @endforeach
+                            @empty
+                                <p class="sm:col-span-2 text-xs text-slate-400">El equipo aún no ha reportado información por SNMP.</p>
+                            @endforelse
                             {{-- Credencial SNMP del equipo: origen, edición y prueba (el valor nunca se envía al navegador) --}}
                             @php
                                 $origenSnmp = $dispositivo->comunidadConOrigen()[1];
@@ -1270,10 +1147,10 @@
                             </div>
 
                             <div class="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/40 flex flex-col justify-between hover:border-slate-600 transition-colors">
-                                <span class="text-[10px] text-sky-400 uppercase font-bold tracking-wider block font-mono">Gestión Local & Acceso Seguro</span>
+                                <span class="text-[10px] text-sky-400 uppercase font-bold tracking-wider block font-mono">Acceso SSH (consola CLI)</span>
                                 <div class="flex items-center justify-between mt-1">
                                     <span class="font-mono font-bold text-sky-200 text-xs">SSH: Puerto {{ $dispositivo->ssh_port ?? 22 }}</span>
-                                    <span class="text-[10px] text-slate-400 font-mono">Consola Local</span>
+                                    
                                 </div>
                             </div>
                         </div>
@@ -1285,18 +1162,26 @@
                 @include('dispositivos.partials.fortigate')
             @endif
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {{-- CPU Global & Cores --}}
-                @php
-                    // null = el equipo no reporta el dato (o no respondió en el último sondeo)
-                    $cpuVal = $chasis?->cpu_utilization ?? $ultimaMetrica?->cpu_usage;
-                    $ramVal = $chasis?->ram_utilization ?? $ultimaMetrica?->memory_usage;
-                    $tempVal = $chasis?->temperatura_c ?? $ultimaMetrica?->temperatura_celsius;
-                    $fmtPct = fn($v) => $v === null ? 'Sin dato' : round($v, 1) . '%';
-                @endphp
+            @php
+                // null = el equipo no reporta el dato (o no respondió en el último sondeo)
+                $cpuVal = $chasis?->cpu_utilization ?? $ultimaMetrica?->cpu_usage;
+                $ramVal = $chasis?->ram_utilization ?? $ultimaMetrica?->memory_usage;
+                $tempVal = $chasis?->temperatura_c ?? $ultimaMetrica?->temperatura_celsius;
+                $fmtPct = fn($v) => $v === null ? 'Sin dato' : round($v, 1) . '%';
+                $esInfra = in_array($tipo, ['switch', 'router', 'wlc', 'firewall', 'servidor'], true);
+                $mostrarRecursos = $esInfra || $cpuVal !== null || $ramVal !== null;
+                $poeBudget = (float) ($chasis?->poe_total_budget_w ?? 0);
+                $poeUsado = $chasis?->poe_used_w !== null ? (float) $chasis->poe_used_w : null;
+                $mostrarPoe = $ficha['tiene_poe'] || $poeBudget > 0;
+                $mostrarAmbiente = $tempVal !== null || !empty($chasis?->estado_fuentes) || !empty($chasis?->estado_ventiladores)
+                    || !empty($chasis?->sensores_temperatura) || in_array($tipo, ['switch', 'router', 'wlc'], true);
+                $columnas = 2 + ($mostrarPoe ? 1 : 0) + ($mostrarAmbiente ? 1 : 0);
+            @endphp
+            @if($mostrarRecursos)
+            <div class="grid grid-cols-1 md:grid-cols-2 {{ $columnas === 4 ? 'lg:grid-cols-4' : ($columnas === 3 ? 'lg:grid-cols-3' : '') }} gap-4 mb-6">
                 <div class="telemetry-card">
                     <div class="flex items-center justify-between mb-3">
-                        <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">CPU Global</span>
+                        <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">CPU</span>
                         <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-[#3b5998]">{{ $fmtPct($cpuVal) }}</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3 overflow-hidden">
@@ -1311,7 +1196,7 @@
                             </div>
                         @else
                             <div class="flex items-center justify-between text-xs font-sans text-gray-500">
-                                <span>Procesador Control Plane:</span>
+                                <span>Uso de CPU:</span>
                                 <span class="font-bold font-mono text-gray-800">{{ $fmtPct($cpuVal) }}</span>
                             </div>
                         @endif
@@ -1333,41 +1218,38 @@
                     </div>
                 </div>
 
-                {{-- PoE Budget --}}
+                {{-- PoE: presupuesto y consumo medidos en el chasis (POWER-ETHERNET-MIB) --}}
+                @if($mostrarPoe)
                 <div class="telemetry-card">
-                    @php
-                        $poeBudget = (float)($chasis->poe_total_budget_w ?? 0);
-                        $poePct = ($poeBudget > 0) ? round(($totalPoeWatts / $poeBudget) * 100, 1) : 0;
-                    @endphp
+                    @php $poePct = $poeBudget > 0 && $poeUsado !== null ? round($poeUsado / $poeBudget * 100, 1) : null; @endphp
                     <div class="flex items-center justify-between mb-3">
-                        <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">Presupuesto PoE</span>
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-full {{ $poeBudget > 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600' }}">
-                            {{ $poeBudget > 0 ? number_format($totalPoeWatts, 1) . ' / ' . $poeBudget . 'W' : 'Sin dato' }}
-                        </span>
+                        <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">PoE</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full {{ $poePct !== null ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600' }}">{{ $poePct !== null ? $poePct . '%' : 'Sin dato' }}</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3 overflow-hidden">
-                        <div class="bg-amber-500 h-2.5 rounded-full" style="width: {{ min($poePct, 100) }}%"></div>
+                        <div class="bg-amber-500 h-2.5 rounded-full" style="width: {{ min($poePct ?? 0, 100) }}%"></div>
                     </div>
                     <div class="space-y-1 text-xs text-gray-600 border-t border-gray-200 pt-2">
-                        <div class="flex justify-between"><span>Consumo:</span> <span class="font-bold text-amber-600">{{ $poeBudget > 0 ? $poePct . '%' : 'N/A' }}</span></div>
-                        <div class="flex justify-between"><span>Disponible:</span> <span class="font-bold font-mono text-gray-800">{{ $poeBudget > 0 ? number_format(max(0, $poeBudget - $totalPoeWatts), 1) . ' W' : 'N/A' }}</span></div>
+                        <div class="flex justify-between"><span>Consumo:</span> <span class="font-bold font-mono">{{ $poeUsado !== null ? $poeUsado . ' W' : 'Sin dato' }}</span></div>
+                        <div class="flex justify-between"><span>Presupuesto:</span> <span class="font-bold font-mono">{{ $poeBudget > 0 ? $poeBudget . ' W' : 'Sin dato' }}</span></div>
                     </div>
                 </div>
-
-                {{-- Environmental & Power Supply Status --}}
+                @endif
+                {{-- Temperatura, ventiladores y fuentes --}}
+                @if($mostrarAmbiente)
                 <div class="telemetry-card flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">Salud y Fuentes (PSU)</span>
+                            <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">Ambiente y fuentes</span>
                             @if($tempVal === null)
                                 <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">Sin dato</span>
                             @else
-                                <span class="text-xs font-bold px-2 py-0.5 rounded-full {{ $tempVal < 55 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">{{ $tempVal < 55 ? 'Normal' : 'Alerta Térmica' }}</span>
+                                <span class="text-xs font-bold px-2 py-0.5 rounded-full {{ $tempVal < 55 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">{{ $tempVal < 55 ? 'Normal' : 'Temperatura alta' }}</span>
                             @endif
                         </div>
                         <div class="space-y-1 text-xs text-gray-600 mt-2">
                             <div class="flex justify-between">
-                                <span>Temp. Térmica:</span>
+                                <span>Temperatura máxima:</span>
                                 @if($tempVal === null)
                                     <span class="font-bold font-mono text-gray-500">Sin sensor reportado</span>
                                 @else
@@ -1375,25 +1257,28 @@
                                 @endif
                             </div>
                             <div class="flex justify-between">
-                                <span>Ventilación / Fans:</span>
+                                <span>Ventilador:</span>
                                 <span class="font-bold text-gray-700">{{ isset($chasis->estado_ventiladores[0]) ? ($chasis->estado_ventiladores[0]['fan'] ?? 'Fan') . ': ' . ($chasis->estado_ventiladores[0]['status'] ?? 'Sin dato') : 'Sin dato' }}</span>
                             </div>
                         </div>
                     </div>
                     <div class="border-t border-gray-200 pt-2 mt-2 flex items-center justify-between text-xs font-mono">
-                        <span class="text-gray-500">Fuente de Poder:</span>
+                        <span class="text-gray-500">Fuente de poder:</span>
                         <span class="font-bold {{ isset($chasis->estado_fuentes[0]) ? 'text-emerald-600' : 'text-gray-500' }}">{{ isset($chasis->estado_fuentes[0]) ? ($chasis->estado_fuentes[0]['psu'] ?? 'PSU') . ': ' . ($chasis->estado_fuentes[0]['status'] ?? 'Sin dato') : 'Sin dato' }}</span>
                     </div>
                 </div>
+                @endif
             </div>
+            @endif
 
-            {{-- PSUs, Fans & Temperature Grid --}}
+            {{-- Fuentes, ventiladores y sensores reportados por el equipo --}}
+            @if($mostrarAmbiente)
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {{-- Power Supplies (PSU 1 / PSU 2) --}}
                 <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <h3 class="text-xs uppercase tracking-wider font-extrabold text-gray-600 mb-3 flex items-center gap-1.5">
                         <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        Fuentes de Poder (PSU Redundantes)
+                        Fuentes de poder
                     </h3>
                     <div class="space-y-3">
                         @forelse($chasis->estado_fuentes ?? [] as $psu)
@@ -1410,7 +1295,7 @@
                         </div>
                         @empty
                         <div class="bg-white p-3 rounded-lg border border-gray-200 text-xs text-gray-500">
-                            El equipo no reporta estado de fuentes por SNMP (CISCO-ENVMON-MIB).
+                            El equipo no reporta el estado de sus fuentes por SNMP.
                         </div>
                         @endforelse
                     </div>
@@ -1420,7 +1305,7 @@
                 <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <h3 class="text-xs uppercase tracking-wider font-extrabold text-gray-600 mb-3 flex items-center gap-1.5">
                         <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>
-                        Módulos de Ventilación (Fans RPM)
+                        Ventiladores
                     </h3>
                     <div class="space-y-3">
                         @forelse($chasis->estado_ventiladores ?? [] as $fan)
@@ -1434,7 +1319,7 @@
                         </div>
                         @empty
                         <div class="bg-white p-3 rounded-lg border border-gray-200 text-xs text-gray-500">
-                            El equipo no reporta estado de ventiladores por SNMP (CISCO-ENVMON-MIB).
+                            El equipo no reporta el estado de sus ventiladores por SNMP.
                         </div>
                         @endforelse
                     </div>
@@ -1444,132 +1329,39 @@
                 <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <h3 class="text-xs uppercase tracking-wider font-extrabold text-gray-600 mb-3 flex items-center gap-1.5">
                         <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                        Sensores Térmicos
+                        Sensores de temperatura
                     </h3>
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        @foreach($chasis->sensores_temperatura ?? [] as $sensor)
-                        @php
-                            $tempC = (int)($sensor['temp_c'] ?? 0);
-                            $percentage = min(100, max(0, ($tempC / 80) * 100)); // Asumiendo 80°C como escala max
-                            $dasharray = 125.6;
-                            $dashoffset = 125.6 - (125.6 * $percentage / 100);
-                            $color = $tempC >= 60 ? '#ef4444' : ($tempC >= 45 ? '#f59e0b' : '#10b981');
-                            
-                            // Formateo legible del nombre del sensor
-                            $rawName = $sensor['sensor'] ?? 'Sensor Térmico';
-                            $cleanName = str_ireplace([', GREEN', ', RED', ', YELLOW', ' Temp Sensor', ' temperature'], '', $rawName);
-                            
-                            // Extraer switch o slot si existe
-                            $memberBadge = '';
-                            if (preg_match('/(Switch \d+|SW#?\d+|Slot \d+|module \d+|VTT \d+)/i', $cleanName, $m)) {
-                                $memberBadge = strtoupper(trim($m[1]));
-                                $cleanName = trim(str_ireplace($m[0], '', $cleanName));
-                                $cleanName = ltrim($cleanName, ' -:');
-                            }
-                            if (empty($cleanName)) {
-                                $cleanName = 'Sensor ' . ($loop->index + 1);
-                            }
-
-                            // Clasificación detallada del componente físico
-                            $isHotspot = (bool)preg_match('/hotspot|asic|uadp|core/i', $rawName);
-                            $isInlet   = (bool)preg_match('/inlet|inlt/i', $rawName);
-                            $isOutlet  = (bool)preg_match('/outlet|otlt/i', $rawName);
-
-                            if ($isHotspot) {
-                                $zoneType = 'Núcleo / Silicio ASIC';
-                                $zoneDesc = 'Mide el procesador de paquetes de alta velocidad. Es el punto de mayor disipación térmica del chasis.';
-                                $rangeDesc = '10°C - 68°C (Silicio Seguro)';
-                            } elseif ($isInlet) {
-                                $zoneType = 'Entrada de Aire (Inlet)';
-                                $zoneDesc = 'Monitorea el aire frío ambiente que ingresa desde el pasillo frontal del rack hacia el equipo.';
-                                $rangeDesc = '15°C - 35°C (Ambiente Rack)';
-                            } elseif ($isOutlet) {
-                                $zoneType = 'Salida de Aire (Outlet)';
-                                $zoneDesc = 'Mide el calor disipado en el flujo de aire caliente expulsado hacia el pasillo trasero por los fans.';
-                                $rangeDesc = '25°C - 45°C (Disipación)';
-                            } else {
-                                $zoneType = 'Sensor de Chasis';
-                                $zoneDesc = 'Sonda térmica de control en la placa madre para prevenir fluctuaciones térmicas internas.';
-                                $rangeDesc = '20°C - 50°C (Nominal)';
-                            }
-                        @endphp
-                        <div class="relative bg-slate-900 p-3 rounded-xl shadow-lg border border-slate-800 flex flex-col items-center justify-between group hover:border-slate-600 hover:shadow-xl transition-all duration-300 cursor-pointer">
-                            
-                            {{-- Popover flotante con información detallada al pasar el cursor --}}
-                            <div class="absolute bottom-[108%] left-1/2 -translate-x-1/2 mb-1.5 w-72 sm:w-80 bg-slate-950/95 backdrop-blur-md text-white p-3.5 rounded-xl border border-slate-700 shadow-2xl z-50 pointer-events-none opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 ease-out text-left">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="w-2 h-2 rounded-full {{ $color == '#ef4444' ? 'bg-red-500 shadow-[0_0_6px_#ef4444]' : ($color == '#f59e0b' ? 'bg-amber-400' : 'bg-emerald-400 shadow-[0_0_6px_#10b981]') }}"></span>
-                                        <span class="text-[10px] font-mono font-bold text-slate-200 uppercase">{{ $memberBadge ? $memberBadge . ' · ' : '' }}{{ $zoneType }}</span>
-                                    </div>
-                                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded {{ $sensor['status'] == 'OK' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/50' : 'bg-red-950 text-red-300 border border-red-800/50' }}">{{ $sensor['status'] }}</span>
-                                </div>
-                                <div class="space-y-1.5 text-xs">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-slate-400 text-[11px]">Temperatura Actual:</span>
-                                        <span class="font-extrabold font-mono text-sm" style="color: {{ $color }};">{{ $tempC }} °C</span>
-                                    </div>
-                                    <div class="flex justify-between items-center text-[11px]">
-                                        <span class="text-slate-400">Rango Recomendado:</span>
-                                        <span class="font-mono text-slate-200 font-semibold">{{ $rangeDesc }}</span>
-                                    </div>
-                                    <div class="border-t border-slate-800/80 pt-1.5 mt-1">
-                                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Componente / Función:</span>
-                                        <p class="text-[11px] text-slate-300 leading-snug">{{ $zoneDesc }}</p>
-                                    </div>
-                                    <div class="bg-slate-900 p-1.5 rounded border border-slate-800 text-[10px] font-mono text-slate-400 mt-1 break-all">
-                                        <span class="text-blue-400 font-bold">SNMP MIB:</span> {{ $rawName }}
-                                    </div>
-                                </div>
-                                <div class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-950 rotate-45 border-r border-b border-slate-700"></div>
-                            </div>
-
-                            {{-- Encabezado de la tarjeta --}}
-                            <div class="text-center w-full mb-1">
-                                @if($memberBadge)
-                                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-950/80 text-blue-300 border border-blue-800/40 inline-block mb-1">{{ $memberBadge }}</span>
-                                @endif
-                                <span class="text-xs font-bold text-slate-200 block truncate w-full">{{ $cleanName }}</span>
-                            </div>
-                            
-                            <!-- Speedometer Gauge -->
-                            <div class="relative w-24 h-14 overflow-hidden mt-1">
-                                <svg viewBox="0 0 100 50" class="w-full h-full drop-shadow-md">
-                                    <!-- Background arc -->
-                                    <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#334155" stroke-width="12" stroke-linecap="round"/>
-                                    <!-- Animated fill arc -->
-                                    <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="{{ $color }}" stroke-width="12" stroke-linecap="round" 
-                                          stroke-dasharray="125.6" stroke-dashoffset="125.6" 
-                                          class="gauge-fill-animation drop-shadow-lg"
-                                          style="--target-offset: {{ $dashoffset }};"/>
-                                </svg>
-                                <div class="absolute bottom-0 left-0 w-full text-center flex flex-col items-center">
-                                    <span class="text-lg font-extrabold text-white font-mono leading-none">{{ $tempC }}<span class="text-xs text-slate-400">°C</span></span>
+                    {{-- Solo lo que reporta el equipo: nombre del sensor, valor y estado. Colores con los umbrales de la alarma térmica (55 / 65 °C). --}}
+                    <div class="grid grid-cols-2 gap-3">
+                        @forelse($chasis->sensores_temperatura ?? [] as $sensor)
+                            @php
+                                $tempC = round((float) ($sensor['temp_c'] ?? 0), 1);
+                                $color = $tempC >= 65 ? '#ef4444' : ($tempC >= 55 ? '#f59e0b' : '#10b981');
+                                $rawName = $sensor['sensor'] ?? 'Sensor';
+                                $cleanName = trim(str_ireplace([', GREEN', ', RED', ', YELLOW', ' Temp Sensor', ' temperature'], '', $rawName)) ?: 'Sensor ' . ($loop->index + 1);
+                                $estadoSensor = strtoupper((string) ($sensor['status'] ?? ''));
+                            @endphp
+                            <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm" title="{{ $rawName }}">
+                                <p class="text-[11px] font-semibold text-gray-600 truncate">{{ $cleanName }}</p>
+                                <div class="flex items-baseline justify-between mt-1">
+                                    <span class="text-lg font-extrabold font-mono" style="color: {{ $color }};">{{ $tempC }}<span class="text-xs text-gray-400"> °C</span></span>
+                                    @if($estadoSensor !== '')
+                                        <span class="text-[10px] font-bold {{ $estadoSensor === 'OK' ? 'text-emerald-600' : 'text-red-600' }}">{{ $estadoSensor }}</span>
+                                    @endif
                                 </div>
                             </div>
-                            
-                            <div class="mt-2 flex items-center justify-between w-full px-1">
-                                <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider {{ $sensor['status'] == 'OK' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30' }}">{{ $sensor['status'] }}</span>
-                                <span class="text-[9px] font-mono text-slate-400 group-hover:text-blue-400 transition-colors">Detalles ℹ️</span>
+                        @empty
+                            <div class="col-span-2 bg-white p-3 rounded-lg border border-gray-200 text-xs text-gray-500">
+                                El equipo no reporta sensores de temperatura por SNMP.
                             </div>
-                        </div>
-                        @endforeach
+                        @endforelse
                     </div>
-
-                    <!-- CSS para la animación dinámica de cada termómetro -->
-                    <style>
-                        @keyframes fillGauge {
-                            from { stroke-dashoffset: 125.6; }
-                            to { stroke-dashoffset: var(--target-offset); }
-                        }
-                        .gauge-fill-animation {
-                            animation: fillGauge 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-                        }
-                    </style>
                 </div>
             </div>
+            @endif
         </div>
 
+        @if(isset($pestanas['tab-addressing']))
         {{-- ==================== TAB 2: Direccionamiento y Descubrimiento ==================== --}}
         <div class="tab-pane p-6" id="tab-addressing">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -1723,7 +1515,9 @@
                 </div>
             </div>
         </div>
+        @endif
 
+        @if(isset($pestanas['tab-l2']))
         {{-- ==================== TAB 3: L2 / Switching & STP ==================== --}}
         <div class="tab-pane p-6" id="tab-l2">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1857,7 +1651,9 @@
                 </div>
             </div>
         </div>
+        @endif
 
+        @if(isset($pestanas['tab-security']))
         {{-- ==================== TAB 4: Seguridad, QoS y Multicast ==================== --}}
         <div class="tab-pane p-6" id="tab-security">
             @php $sec = $tablas->security_qos_multicast ?? []; @endphp
@@ -2009,6 +1805,7 @@
 
             </div>
         </div>
+        @endif
     </div>
 
 </div>

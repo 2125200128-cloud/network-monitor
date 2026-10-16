@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use App\Support\Sql;
 
 /**
  * Métricas del dashboard calculadas solo con datos medidos (snmp_poller, snmp_detail_collector,
@@ -211,8 +212,8 @@ class DashboardMetricsService
             ->havingRaw('COUNT(*) >= 10')
             ->orderByDesc('jitter')
             ->limit(5)
-            ->get([DB::raw('m.dispositivo_id'), DB::raw('d.nombre'), DB::raw('ROUND(STDDEV_POP(m.ping_ms), 1) AS jitter'),
-                DB::raw('ROUND(AVG(m.ping_ms), 1) AS ping')]);
+            ->get([DB::raw('m.dispositivo_id'), DB::raw('d.nombre'), DB::raw(Sql::redondear('STDDEV_POP(m.ping_ms)', 1) . ' AS jitter'),
+                DB::raw(Sql::redondear('AVG(m.ping_ms)', 1) . ' AS ping')]);
 
         return [
             'cpu' => $top('cpu_usage'),
@@ -243,7 +244,7 @@ class DashboardMetricsService
             ->where('h.hora', '>=', $desde->copy()->startOfHour())
             ->groupBy('h.dispositivo_id', 'd.nombre')
             ->get([DB::raw('h.dispositivo_id'), DB::raw('d.nombre'),
-                DB::raw('ROUND(SUM(h.muestras_up) / SUM(h.muestras) * 100, 2) AS pct'), DB::raw('SUM(h.muestras) AS muestras')]);
+                DB::raw(Sql::redondear('SUM(h.muestras_up) * 100.0 / SUM(h.muestras)', 2) . ' AS pct'), DB::raw('SUM(h.muestras) AS muestras')]);
 
         $dia = $porEquipo(now()->subHours(24));
         $semana = $porEquipo(now()->subDays(7));
@@ -251,7 +252,7 @@ class DashboardMetricsService
         // Disponibilidad global por hora (últimas 24 h) para la mini gráfica de la franja de salud
         $porHora = DB::table('metricas_red_hora')->where('hora', '>=', now()->subHours(23)->startOfHour())
             ->groupBy('hora')->orderBy('hora')
-            ->get([DB::raw('hora'), DB::raw('ROUND(SUM(muestras_up) / SUM(muestras) * 100, 2) AS pct')]);
+            ->get([DB::raw('hora'), DB::raw(Sql::redondear('SUM(muestras_up) * 100.0 / SUM(muestras)', 2) . ' AS pct')]);
 
         return [
             'global' => $global,
@@ -279,7 +280,7 @@ class DashboardMetricsService
         $hist = DB::table('historico_servicio_web')
             ->where('created_at', '>=', now()->subHours(24))
             ->groupBy('servicio_web_id')
-            ->get([DB::raw('servicio_web_id'), DB::raw("SUM(estado <> 'offline') AS up"), DB::raw('COUNT(*) AS n')])
+            ->get([DB::raw('servicio_web_id'), DB::raw(Sql::contarSi("estado <> 'offline'") . ' AS up'), DB::raw('COUNT(*) AS n')])
             ->keyBy('servicio_web_id');
         $totalN = $hist->sum('n');
 
@@ -323,7 +324,7 @@ class DashboardMetricsService
         $ventanaSeg = (int) max(1, min(7 * 86400, Carbon::parse($primera)->diffInSeconds(now())));
 
         $resueltas = DB::table('alarmas_red')->where('estado', 'resuelta')->where('fecha_resolucion', '>=', $desde7);
-        $mttr = (clone $resueltas)->selectRaw('AVG(TIMESTAMPDIFF(SECOND, fecha_inicio, fecha_resolucion)) s, COUNT(*) n')->first();
+        $mttr = (clone $resueltas)->selectRaw('AVG(' . Sql::segundosEntre('fecha_inicio', 'fecha_resolucion') . ') s, COUNT(*) n')->first();
 
         $caidas = DB::table('alarmas_red as a')
             ->join('dispositivos as d', 'd.id', '=', 'a.dispositivo_id')
@@ -332,7 +333,7 @@ class DashboardMetricsService
             ->groupBy('a.dispositivo_id', 'd.nombre')
             ->orderByDesc('n')
             ->get([DB::raw('a.dispositivo_id'), DB::raw('d.nombre'), DB::raw('COUNT(*) n'),
-                DB::raw("SUM(TIMESTAMPDIFF(SECOND, a.fecha_inicio, COALESCE(a.fecha_resolucion, NOW()))) caido_s")]);
+                DB::raw('SUM(' . Sql::segundosEntre('a.fecha_inicio', 'COALESCE(a.fecha_resolucion, NOW())') . ') caido_s')]);
         $totalCaidas = $caidas->sum('n');
         $equiposMonitoreados = DB::table('dispositivos')->count();
 
@@ -615,7 +616,7 @@ class DashboardMetricsService
         $q = DB::table('global_metrics')->where('recorded_at', '>=', $desde);
         $rows = $bucket > 0
             ? $q->groupBy('b')->orderBy('b')->get([
-                DB::raw("FLOOR(UNIX_TIMESTAMP(recorded_at) / {$bucket}) AS b"), DB::raw('MIN(recorded_at) AS t'),
+                DB::raw('FLOOR(' . Sql::epoch('recorded_at') . " / {$bucket}) AS b"), DB::raw('MIN(recorded_at) AS t'),
                 DB::raw('AVG(traffic_in_mbps) AS tin'), DB::raw('AVG(traffic_out_mbps) AS tout'),
                 DB::raw('AVG(latency_ms) AS lat'), DB::raw('AVG(packet_loss_pct) AS loss'),
                 DB::raw('AVG(cpu_avg_pct) AS cpu'), DB::raw('AVG(ram_avg_pct) AS ram'),
@@ -648,7 +649,7 @@ class DashboardMetricsService
         $conteos = DB::table('alarmas_red')
             ->where('fecha_inicio', '>=', now()->subHours($horas - 1)->startOfHour())
             ->groupBy('h')
-            ->get([DB::raw("DATE_FORMAT(fecha_inicio, '%Y-%m-%d %H:00') AS h"), DB::raw('COUNT(*) AS n')])
+            ->get([DB::raw(Sql::horaTexto('fecha_inicio') . ' AS h'), DB::raw('COUNT(*) AS n')])
             ->pluck('n', 'h');
 
         $serie = [];

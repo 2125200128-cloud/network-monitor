@@ -17,9 +17,6 @@ class WebServicePoller
     private const TIMEOUT_S = 8;
     private const CONNECT_TIMEOUT_S = 5;
 
-    /** Días de histórico que se conservan (la tabla crece ~1 fila por servicio cada 15 s). */
-    public const DIAS_HISTORICO = 7;
-
     /**
      * Revisa el estado de un servicio web específico.
      */
@@ -68,11 +65,13 @@ class WebServicePoller
     }
 
     /**
-     * Elimina registros de histórico más antiguos que DIAS_HISTORICO.
+     * Elimina el histórico más antiguo que los días configurados en Configuración → Retención
+     * (la tabla crece ~1 fila por servicio cada 15 s).
      */
     public function purgarHistorico(): int
     {
-        return HistoricoServicioWeb::where('created_at', '<', now()->subDays(self::DIAS_HISTORICO))->delete();
+        $dias = \App\Models\ConfiguracionGeneral::retencionDias()['historico_servicio_web'];
+        return HistoricoServicioWeb::where('created_at', '<', now()->subDays($dias))->delete();
     }
 
     /**

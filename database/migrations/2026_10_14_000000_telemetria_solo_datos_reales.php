@@ -67,6 +67,38 @@ return new class extends Migration
             $table->string('mode')->nullable()->default(null)->change();
         });
 
+        // Limpieza de los datos existentes: solo aplica a la base MySQL original. En una base nueva
+        // (p. ej. PostgreSQL, cuyos datos se copian ya limpios) las tablas están vacías y este SQL es de MySQL.
+        if (DB::connection()->getDriverName() === 'mysql') {
+            $this->limpiarDatosMysql();
+        }
+
+        $this->ensureUnique('telemetria_chasis', 'dispositivo_id', 'uq_disp_id');
+        $this->ensureUnique('telemetria_interfaces', 'interfaz_id', 'uq_interfaz_id');
+        $this->ensureUnique('tablas_dispositivo', 'dispositivo_id', 'uq_tablas_disp_id');
+
+        $this->ensureForeign('telemetria_chasis', 'dispositivo_id', 'dispositivos');
+        $this->ensureForeign('telemetria_interfaces', 'interfaz_id', 'interfaces_red');
+        $this->ensureForeign('tablas_dispositivo', 'dispositivo_id', 'dispositivos');
+    }
+
+    public function down(): void
+    {
+        // Los datos simulados eliminados no se restauran.
+        Schema::table('metricas_red', function (Blueprint $table) {
+            if (Schema::hasColumn('metricas_red', 'traffic_in_mbps')) {
+                $table->dropColumn(['traffic_in_mbps', 'traffic_out_mbps']);
+            }
+        });
+        Schema::table('global_metrics', function (Blueprint $table) {
+            if (Schema::hasColumn('global_metrics', 'traffic_in_mbps')) {
+                $table->dropColumn(['traffic_in_mbps', 'traffic_out_mbps']);
+            }
+        });
+    }
+
+    private function limpiarDatosMysql(): void
+    {
         // ---------------- Limpieza de datos simulados ----------------
         // Interfaces inventadas por snmp_detail_collector.py (MAC 00:1A:2B:3C:xx:xx)
         // y por el alta manual de dispositivos (MAC 00:1E:F7:28:44:xx, alias PORT-n).
@@ -137,29 +169,6 @@ return new class extends Migration
         DB::statement('DELETE t FROM telemetria_chasis t LEFT JOIN dispositivos d ON d.id = t.dispositivo_id WHERE d.id IS NULL');
         DB::statement('DELETE t FROM telemetria_interfaces t LEFT JOIN interfaces_red i ON i.id = t.interfaz_id WHERE i.id IS NULL');
         DB::statement('DELETE t FROM tablas_dispositivo t LEFT JOIN dispositivos d ON d.id = t.dispositivo_id WHERE d.id IS NULL');
-
-        $this->ensureUnique('telemetria_chasis', 'dispositivo_id', 'uq_disp_id');
-        $this->ensureUnique('telemetria_interfaces', 'interfaz_id', 'uq_interfaz_id');
-        $this->ensureUnique('tablas_dispositivo', 'dispositivo_id', 'uq_tablas_disp_id');
-
-        $this->ensureForeign('telemetria_chasis', 'dispositivo_id', 'dispositivos');
-        $this->ensureForeign('telemetria_interfaces', 'interfaz_id', 'interfaces_red');
-        $this->ensureForeign('tablas_dispositivo', 'dispositivo_id', 'dispositivos');
-    }
-
-    public function down(): void
-    {
-        // Los datos simulados eliminados no se restauran.
-        Schema::table('metricas_red', function (Blueprint $table) {
-            if (Schema::hasColumn('metricas_red', 'traffic_in_mbps')) {
-                $table->dropColumn(['traffic_in_mbps', 'traffic_out_mbps']);
-            }
-        });
-        Schema::table('global_metrics', function (Blueprint $table) {
-            if (Schema::hasColumn('global_metrics', 'traffic_in_mbps')) {
-                $table->dropColumn(['traffic_in_mbps', 'traffic_out_mbps']);
-            }
-        });
     }
 
     private function ensureUnique(string $table, string $column, string $name): void

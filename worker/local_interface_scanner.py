@@ -22,7 +22,6 @@ import argparse
 import ipaddress
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
-import mysql.connector
 from pysnmp.hlapi.v3arch.asyncio import *
 
 # Forzar salida en UTF-8 para compatibilidad absoluta con Windows y Laravel
@@ -32,12 +31,12 @@ if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from nm_common import db_config
+from nm_common import db_config, conectar, insertar_con_id
 
 DB_CONFIG = db_config()
 
 def get_db():
-    return mysql.connector.connect(**DB_CONFIG)
+    return conectar(DB_CONFIG)
 
 def log(msg, log_list=None):
     timestamp = time.strftime("%H:%M:%S")
@@ -384,14 +383,13 @@ def get_or_create_device(conn, ip, name, model, community):
         return row['id'], False
     
     clean_name = norm_name or name or f"Dispositivo-{ip.replace('.', '-')}"
-    cur.execute("""
+    dev_id = insertar_con_id(cur, """
         INSERT INTO dispositivos 
         (nombre, ip, comunidad_snmp, ubicacion, estado, ssh_port, created_at, updated_at)
         VALUES (%s, %s, %s, 'Auto-Descubierto Red', 'online', 22, NOW(), NOW())
     """, (clean_name, ip, community))
-    dev_id = cur.lastrowid
     
-    cur.execute("""
+    iface_id = insertar_con_id(cur, """
         INSERT INTO telemetria_chasis (dispositivo_id, model_name, created_at, updated_at)
         VALUES (%s, %s, NOW(), NOW())
     """, (dev_id, model or None))
@@ -428,9 +426,8 @@ def get_or_create_interface(conn, dev_id, port_name, if_index=None):
     cur.execute("""
         INSERT INTO interfaces_red
         (dispositivo_id, if_index, nombre, velocidad_mbps, port_type, is_poe, created_at, updated_at)
-        VALUES (%s, %s, %s, %s, %s, 0, NOW(), NOW())
+        VALUES (%s, %s, %s, %s, %s, FALSE, NOW(), NOW())
     """, (dev_id, idx, clean_port, speed, port_type))
-    iface_id = cur.lastrowid
     conn.commit()
     return iface_id
 
@@ -449,12 +446,11 @@ def get_or_create_link(conn, dev1_id, iface1_id, dev2_id, iface2_id, speed_mbps=
         return row['id'], False
     
     tipo_medio = 'fibra_10g' if speed_mbps >= 10000 else 'trunk'
-    cur.execute("""
+    link_id = insertar_con_id(cur, """
         INSERT INTO enlaces_red
         (origen_dispositivo_id, origen_interfaz_id, destino_dispositivo_id, destino_interfaz_id, tipo_medio, estado, velocidad_mbps, trafico_in_mbps, trafico_out_mbps, vlans_permitidas, created_at, updated_at)
         VALUES (%s, %s, %s, %s, %s, 'up', %s, 0.0, 0.0, NULL, NOW(), NOW())
     """, (dev1_id, iface1_id, dev2_id, iface2_id, tipo_medio, speed_mbps))
-    link_id = cur.lastrowid
     conn.commit()
     return link_id, True
 

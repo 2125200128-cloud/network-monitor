@@ -11,7 +11,6 @@ import time
 import json
 import asyncio
 import subprocess
-import mysql.connector
 
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -22,9 +21,9 @@ from pysnmp.hlapi.v3arch.asyncio import (
 )
 
 try:
-    from nm_common import db_config, PHYSICAL_IF_TYPES, COMUNIDAD_EFECTIVA_SQL
+    from nm_common import db_config, PHYSICAL_IF_TYPES, COMUNIDAD_EFECTIVA_SQL, conectar, upsert, contador
 except ImportError:  # importado como paquete desde la raíz (monitor:poll)
-    from worker.nm_common import db_config, PHYSICAL_IF_TYPES, COMUNIDAD_EFECTIVA_SQL
+    from worker.nm_common import db_config, PHYSICAL_IF_TYPES, COMUNIDAD_EFECTIVA_SQL, conectar, upsert, contador
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
@@ -77,9 +76,18 @@ ENT_SENSOR = '1.3.6.1.2.1.99.1.1.1'
 ENT_PHYS_NAME = '1.3.6.1.2.1.47.1.1.1.1.7'
 
 
+_COLS_PUERTO = ['oper_status', 'in_octets', 'out_octets', 'bandwidth_util_pct',
+                'in_errors', 'out_errors', 'in_discards', 'out_discards']
+SQL_TELEMETRIA_PUERTO = upsert(
+    'telemetria_interfaces',
+    ['interfaz_id', *_COLS_PUERTO, {'created_at': 'NOW()'}, {'updated_at': 'NOW()'}],
+    ['interfaz_id'],
+    {**{c: '{nuevo}' for c in _COLS_PUERTO}, 'updated_at': 'NOW()'})
+
+
 def get_db_connection():
     try:
-        return mysql.connector.connect(**DB_CONFIG)
+        return conectar(DB_CONFIG)
     except Exception as e:
         print(f"[DB] Error de conexión: {e}", flush=True)
         return None
@@ -326,18 +334,16 @@ def mark_device_offline(cursor, dev_id):
             traffic_in_mbps, traffic_out_mbps, fecha_registro)
         VALUES (%s, 0, 0, NULL, NULL, NULL, 100.0, NULL, NULL, NULL, NULL, NULL, NULL, NOW())
     """, (dev_id,))
-    cursor.execute("""
-        INSERT INTO telemetria_chasis (dispositivo_id, uptime_str, cpu_utilization, ram_utilization,
-            temperatura_c, created_at, updated_at)
-        VALUES (%s, 'Inaccesible', NULL, NULL, NULL, NOW(), NOW())
-        ON DUPLICATE KEY UPDATE uptime_str='Inaccesible', cpu_utilization=NULL, ram_utilization=NULL,
-            temperatura_c=NULL, updated_at=NOW()
-    """, (dev_id,))
+    cursor.execute(upsert(
+        'telemetria_chasis',
+        ['dispositivo_id', {'uptime_str': "'Inaccesible'"}, {'created_at': 'NOW()'}, {'updated_at': 'NOW()'}],
+        ['dispositivo_id'],
+        {'uptime_str': "'Inaccesible'", 'cpu_utilization': 'NULL', 'ram_utilization': 'NULL',
+         'temperatura_c': 'NULL', 'updated_at': 'NOW()'}), (dev_id,))
     # El estado de los puertos es desconocido mientras el equipo no responda.
     cursor.execute("""
-        UPDATE telemetria_interfaces ti JOIN interfaces_red ir ON ti.interfaz_id = ir.id
-        SET ti.oper_status=NULL, ti.bandwidth_util_pct=NULL, ti.updated_at=NOW()
-        WHERE ir.dispositivo_id=%s
+        UPDATE telemetria_interfaces SET oper_status=NULL, bandwidth_util_pct=NULL, updated_at=NOW()
+        WHERE interfaz_id IN (SELECT id FROM interfaces_red WHERE dispositivo_id=%s)
     """, (dev_id,))
 
 
@@ -445,19 +451,17 @@ async def poll_device(dev, engine, sem, thresholds):
                   snmp['sessions'] if snmp else None, err_delta_total, mbps_in, mbps_out))
 
             if snmp:
-                cursor.execute("""
-                    INSERT INTO telemetria_chasis (dispositivo_id, uptime_str, model_name, cpu_utilization,
-                        ram_utilization, ram_total_mb, ram_used_mb, temperatura_c, sensores_temperatura,
-                        created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
-                    ON DUPLICATE KEY UPDATE uptime_str=VALUES(uptime_str),
-                        model_name=COALESCE(VALUES(model_name), model_name),
-                        cpu_utilization=VALUES(cpu_utilization), ram_utilization=VALUES(ram_utilization),
-                        ram_total_mb=COALESCE(VALUES(ram_total_mb), ram_total_mb),
-                        ram_used_mb=COALESCE(VALUES(ram_used_mb), ram_used_mb),
-                        temperatura_c=VALUES(temperatura_c), sensores_temperatura=VALUES(sensores_temperatura),
-                        updated_at=NOW()
-                """, (dev_id, format_uptime(uptime), snmp['sys_descr'], cpu, mem,
+                cursor.execute(upsert(
+                    'telemetria_chasis',
+                    ['dispositivo_id', 'uptime_str', 'model_name', 'cpu_utilization', 'ram_utilization',
+                     'ram_total_mb', 'ram_used_mb', 'temperatura_c', 'sensores_temperatura',
+                     {'created_at': 'NOW()'}, {'updated_at': 'NOW()'}],
+                    ['dispositivo_id'],
+                    {'uptime_str': '{nuevo}', 'model_name': 'COALESCE({nuevo}, {actual})',
+                     'cpu_utilization': '{nuevo}', 'ram_utilization': '{nuevo}',
+                     'ram_total_mb': 'COALESCE({nuevo}, {actual})', 'ram_used_mb': 'COALESCE({nuevo}, {actual})',
+                     'temperatura_c': '{nuevo}', 'sensores_temperatura': '{nuevo}', 'updated_at': 'NOW()'}),
+                    (dev_id, format_uptime(uptime), snmp['sys_descr'], cpu, mem,
                       snmp['ram_total_mb'], snmp['ram_used_mb'], temp,
                       json.dumps(snmp['sensores']) if snmp['sensores'] else None))
 
@@ -467,25 +471,16 @@ async def poll_device(dev, engine, sem, thresholds):
                     if row is None:
                         continue  # la interfaz no existe en el equipo; el colector de detalle la depura
                     oper, cur_in, cur_out, util, idx = row
-                    cursor.execute("""
-                        INSERT INTO telemetria_interfaces (interfaz_id, oper_status, in_octets, out_octets,
-                            bandwidth_util_pct, in_errors, out_errors, in_discards, out_discards, created_at, updated_at)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
-                        ON DUPLICATE KEY UPDATE oper_status=VALUES(oper_status), in_octets=VALUES(in_octets),
-                            out_octets=VALUES(out_octets), bandwidth_util_pct=VALUES(bandwidth_util_pct),
-                            in_errors=VALUES(in_errors), out_errors=VALUES(out_errors),
-                            in_discards=VALUES(in_discards), out_discards=VALUES(out_discards), updated_at=NOW()
-                    """, (iface['id'], oper, cur_in, cur_out, util,
-                          snmp['in_err'].get(idx), snmp['out_err'].get(idx),
-                          snmp['in_disc'].get(idx), snmp['out_disc'].get(idx)))
+                    cursor.execute(SQL_TELEMETRIA_PUERTO, (iface['id'], oper, contador(cur_in), contador(cur_out), util,
+                          contador(snmp['in_err'].get(idx)), contador(snmp['out_err'].get(idx)),
+                          contador(snmp['in_disc'].get(idx)), contador(snmp['out_disc'].get(idx))))
             else:
-                cursor.execute("""
-                    INSERT INTO telemetria_chasis (dispositivo_id, uptime_str, cpu_utilization, ram_utilization,
-                        temperatura_c, created_at, updated_at)
-                    VALUES (%s, 'Sin respuesta SNMP', NULL, NULL, NULL, NOW(), NOW())
-                    ON DUPLICATE KEY UPDATE uptime_str='Sin respuesta SNMP', cpu_utilization=NULL,
-                        ram_utilization=NULL, temperatura_c=NULL, updated_at=NOW()
-                """, (dev_id,))
+                cursor.execute(upsert(
+                    'telemetria_chasis',
+                    ['dispositivo_id', {'uptime_str': "'Sin respuesta SNMP'"}, {'created_at': 'NOW()'}, {'updated_at': 'NOW()'}],
+                    ['dispositivo_id'],
+                    {'uptime_str': "'Sin respuesta SNMP'", 'cpu_utilization': 'NULL', 'ram_utilization': 'NULL',
+                     'temperatura_c': 'NULL', 'updated_at': 'NOW()'}), (dev_id,))
 
             conn.commit()
             return {

@@ -3,7 +3,6 @@ import os
 import json
 import asyncio
 import re
-import mysql.connector
 
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -16,15 +15,11 @@ from pysnmp.hlapi.v3arch.asyncio import (
     ContextData, ObjectType, ObjectIdentity
 )
 
-DB_CONFIG = {
-    'host': '127.0.0.1',
-    'user': 'root',
-    'password': 'root',
-    'database': 'network_monitor'
-}
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'worker'))
+from nm_common import conectar, insertar_con_id  # credenciales del .env (MySQL o PostgreSQL)
 
 def get_db():
-    return mysql.connector.connect(**DB_CONFIG)
+    return conectar()
 
 async def walk_oid(engine, target, comm, oid_str, max_rows=120):
     results = {}
@@ -279,7 +274,7 @@ async def sync_device_data(dev, engine, sem):
                 WHERE dispositivo_id=%s
             """, (json.dumps(arp_table), json.dumps(mac_table), json.dumps(vlans_table), json.dumps(spanning_tree), sec_json, dev_id))
         else:
-            cursor.execute("""
+            if_id = insertar_con_id(cursor, """
                 INSERT INTO tablas_dispositivo (dispositivo_id, arp_table, mac_table, vlans_table, spanning_tree, lacp_port_channels, security_qos_multicast, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, '[]', %s, NOW(), NOW())
             """, (dev_id, json.dumps(arp_table), json.dumps(mac_table), json.dumps(vlans_table), json.dumps(spanning_tree), sec_json))
@@ -329,7 +324,6 @@ async def sync_device_data(dev, engine, sem):
                         INSERT INTO interfaces_red (dispositivo_id, if_index, nombre, port_type, velocidad_mbps, admin_status, duplex, autoneg, mode, is_poe, created_at, updated_at)
                         VALUES (%s, %s, %s, %s, %s, %s, 'Full', 1, 'access', 0, NOW(), NOW())
                     """, (dev_id, if_idx_int, if_name, port_type, speed_val, admin_val))
-                    if_id = cursor.lastrowid
                     cursor.execute("""
                         INSERT INTO telemetria_interfaces (interfaz_id, oper_status, in_octets, out_octets, bandwidth_util_pct, created_at, updated_at)
                         VALUES (%s, %s, 0, 0, 0.0, NOW(), NOW())

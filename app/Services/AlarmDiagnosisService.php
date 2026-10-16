@@ -212,12 +212,12 @@ class AlarmDiagnosisService
         $fortiInterfacesDown = TelemetriaInterfaz::where('oper_status', 'down')
             ->whereHas('interfaz', function($q) {
                 $q->where(function($sub) {
-                    $sub->where('nombre', 'LIKE', '%wan%')
-                        ->orWhere('nombre', 'LIKE', '%port1%')
-                        ->orWhere('nombre', 'LIKE', '%port2%')
-                        ->orWhere('nombre', 'LIKE', '%ipsec%')
-                        ->orWhere('nombre', 'LIKE', '%vpn%')
-                        ->orWhere('nombre', 'LIKE', '%ssl%');
+                    $sub->where('nombre', \App\Support\Sql::like(), '%wan%')
+                        ->orWhere('nombre', \App\Support\Sql::like(), '%port1%')
+                        ->orWhere('nombre', \App\Support\Sql::like(), '%port2%')
+                        ->orWhere('nombre', \App\Support\Sql::like(), '%ipsec%')
+                        ->orWhere('nombre', \App\Support\Sql::like(), '%vpn%')
+                        ->orWhere('nombre', \App\Support\Sql::like(), '%ssl%');
                 });
             })
             ->with(['interfaz.dispositivo'])

@@ -64,6 +64,21 @@ return [
             ]) : [],
         ],
 
+        // Base MySQL original: solo la usa `php artisan db:copiar-a-pgsql` como origen de la migración
+        // a PostgreSQL. Por defecto toma las mismas credenciales DB_* mientras el .env siga en MySQL.
+        'mysql_origen' => [
+            'driver' => 'mysql',
+            'host' => env('MYSQL_ORIGEN_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('MYSQL_ORIGEN_PORT', '3306'),
+            'database' => env('MYSQL_ORIGEN_DATABASE', env('DB_DATABASE', 'laravel')),
+            'username' => env('MYSQL_ORIGEN_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('MYSQL_ORIGEN_PASSWORD', env('DB_PASSWORD', '')),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => false,
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

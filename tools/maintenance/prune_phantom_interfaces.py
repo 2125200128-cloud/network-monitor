@@ -1,13 +1,9 @@
-import mysql.connector
+import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'worker'))
+from nm_common import conectar, insertar_con_id  # credenciales del .env (MySQL o PostgreSQL)
 
-DB_CONFIG = {
-    'host': '127.0.0.1',
-    'user': 'root',
-    'password': 'root',
-    'database': 'network_monitor'
-}
-
-conn = mysql.connector.connect(**DB_CONFIG)
+conn = conectar()
 cursor = conn.cursor(dictionary=True, buffered=True)
 
 # For each device, find if it has real interfaces (e.g. Gi0/X or Fa0/X or with if_index >= 10000)

@@ -23,7 +23,6 @@ import sys
 import time
 import json
 import asyncio
-import mysql.connector
 
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -34,9 +33,9 @@ from pysnmp.hlapi.v3arch.asyncio import (
 )
 
 try:
-    from nm_common import db_config, normalize_iface, COMUNIDAD_EFECTIVA_SQL
+    from nm_common import db_config, normalize_iface, COMUNIDAD_EFECTIVA_SQL, conectar, upsert, contador
 except ImportError:
-    from worker.nm_common import db_config, normalize_iface, COMUNIDAD_EFECTIVA_SQL
+    from worker.nm_common import db_config, normalize_iface, COMUNIDAD_EFECTIVA_SQL, conectar, upsert, contador
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
@@ -122,9 +121,31 @@ FRU_FAN_STATE = {1: 'DESCONOCIDO', 2: 'OK', 3: 'FALLA', 4: 'WARNING'}
 PLACEHOLDER_NAME = re.compile(r'^(GigabitEthernet\d{5,}|ifIndex\d+|Port\d+|Desconocido)$', re.I)
 
 
+# Columnas de chasis que escribe este colector (UPSERT por dispositivo)
+_COLS_CHASIS = ['estado_fuentes', 'estado_ventiladores', 'poe_total_budget_w', 'poe_used_w', 'poe_available_w',
+                'stp_cambios_topologia', 'stp_seg_desde_cambio', 'vpn_tuneles', 'ha_estado', 'wifi_aps',
+                'wifi_clientes', 'forti_sistema', 'forti_sensores', 'forti_sdwan', 'forti_vpn_ssl', 'forti_seguridad']
+SQL_CHASIS_DETALLE = upsert(
+    'telemetria_chasis',
+    ['dispositivo_id', *_COLS_CHASIS, {'detalle_medido_en': 'NOW()'}, {'created_at': 'NOW()'}, {'updated_at': 'NOW()'}],
+    ['dispositivo_id'],
+    {**{c: '{nuevo}' for c in _COLS_CHASIS}, 'detalle_medido_en': 'NOW()', 'updated_at': 'NOW()'})
+
+# Contadores y estado por puerto (UPSERT por interfaz)
+_COLS_DETALLE_PUERTO = ['in_multicast_pkts', 'out_multicast_pkts', 'in_broadcast_pkts', 'out_broadcast_pkts',
+                        'broadcast_pps', 'crc_errors', 'fcs_errors', 'alignment_errors', 'is_errdisabled',
+                        'errdisabled_reason', 'optica_rx_dbm', 'optica_tx_dbm', 'optica_temp_c', 'optica_voltage_v',
+                        'optica_bias_ma']
+SQL_DETALLE_PUERTO = upsert(
+    'telemetria_interfaces',
+    ['interfaz_id', *_COLS_DETALLE_PUERTO, {'created_at': 'NOW()'}, {'updated_at': 'NOW()'}],
+    ['interfaz_id'],
+    _COLS_DETALLE_PUERTO)
+
+
 def get_db_connection():
     try:
-        return mysql.connector.connect(**DB_CONFIG)
+        return conectar(DB_CONFIG)
     except Exception as e:
         print(f"[DB] Error: {e}", flush=True)
         return None
@@ -607,22 +628,7 @@ def sync_device(conn, dev, data):
     wlc = data['wlc'] or {}
     forti = calcular_tasas_forti(dev_id, data['forti']) or {}
     as_json = lambda v: json.dumps(v) if v else None
-    cur.execute("""
-        INSERT INTO telemetria_chasis (dispositivo_id, estado_fuentes, estado_ventiladores,
-            poe_total_budget_w, poe_used_w, poe_available_w, stp_cambios_topologia, stp_seg_desde_cambio,
-            vpn_tuneles, ha_estado, wifi_aps, wifi_clientes, forti_sistema, forti_sensores, forti_sdwan,
-            forti_vpn_ssl, forti_seguridad, detalle_medido_en, created_at, updated_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), NOW())
-        ON DUPLICATE KEY UPDATE estado_fuentes=VALUES(estado_fuentes),
-            estado_ventiladores=VALUES(estado_ventiladores), poe_total_budget_w=VALUES(poe_total_budget_w),
-            poe_used_w=VALUES(poe_used_w), poe_available_w=VALUES(poe_available_w),
-            stp_cambios_topologia=VALUES(stp_cambios_topologia), stp_seg_desde_cambio=VALUES(stp_seg_desde_cambio),
-            vpn_tuneles=VALUES(vpn_tuneles), ha_estado=VALUES(ha_estado), wifi_aps=VALUES(wifi_aps),
-            wifi_clientes=VALUES(wifi_clientes), forti_sistema=VALUES(forti_sistema),
-            forti_sensores=VALUES(forti_sensores), forti_sdwan=VALUES(forti_sdwan),
-            forti_vpn_ssl=VALUES(forti_vpn_ssl), forti_seguridad=VALUES(forti_seguridad),
-            detalle_medido_en=NOW(), updated_at=NOW()
-    """, (dev_id, as_json(env['psu']), as_json(env['fan']),
+    cur.execute(SQL_CHASIS_DETALLE, (dev_id, as_json(env['psu']), as_json(env['fan']),
           poe.get('total_w'), poe.get('used_w'), poe.get('available_w'),
           data['stp']['cambios'], data['stp']['seg_desde_cambio'],
           as_json(forti.get('vpn')), as_json(forti.get('ha')), as_json(wlc.get('aps')), wlc.get('clientes'),
@@ -646,39 +652,25 @@ def sync_port_details(cur, dev_id, data):
     duplex_rows = []
     for r in cur.fetchall():
         idx = r['if_index']
-        bcast = c['in_bcast'].get(idx)
+        bcast = contador(c['in_bcast'].get(idx))
         pps = None
         if bcast is not None:
             new_prev[idx] = (bcast, now_ts)
             p = prev.get(idx)
             if p and bcast >= p[0] and now_ts > p[1]:
                 pps = round((bcast - p[0]) / (now_ts - p[1]), 2)
-        fcs = c['fcs'].get(idx)
+        fcs = contador(c['fcs'].get(idx))
         d = dom.get(idx, {})
-        rows.append((r['id'], c['in_mcast'].get(idx), c['out_mcast'].get(idx), bcast, c['out_bcast'].get(idx), pps,
-                     fcs, fcs, c['align'].get(idx),
-                     None if errdis is None else (1 if idx in errdis else 0),
+        rows.append((r['id'], contador(c['in_mcast'].get(idx)), contador(c['out_mcast'].get(idx)), bcast,
+                     contador(c['out_bcast'].get(idx)), pps, fcs, fcs, contador(c['align'].get(idx)),
+                     None if errdis is None else (idx in errdis),
                      errdis.get(idx) if errdis else None,
                      d.get('rx'), d.get('tx'), d.get('temp'), d.get('volt'), d.get('bias')))
         duplex_rows.append((c['duplex'].get(idx), r['id']))
     _prev_bcast[dev_id] = new_prev
 
     if rows:
-        cur.executemany("""
-            INSERT INTO telemetria_interfaces (interfaz_id, in_multicast_pkts, out_multicast_pkts, in_broadcast_pkts,
-                out_broadcast_pkts, broadcast_pps, crc_errors, fcs_errors, alignment_errors, is_errdisabled,
-                errdisabled_reason, optica_rx_dbm, optica_tx_dbm, optica_temp_c, optica_voltage_v, optica_bias_ma,
-                created_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
-            ON DUPLICATE KEY UPDATE in_multicast_pkts=VALUES(in_multicast_pkts),
-                out_multicast_pkts=VALUES(out_multicast_pkts), in_broadcast_pkts=VALUES(in_broadcast_pkts),
-                out_broadcast_pkts=VALUES(out_broadcast_pkts), broadcast_pps=VALUES(broadcast_pps),
-                crc_errors=VALUES(crc_errors), fcs_errors=VALUES(fcs_errors), alignment_errors=VALUES(alignment_errors),
-                is_errdisabled=VALUES(is_errdisabled), errdisabled_reason=VALUES(errdisabled_reason),
-                optica_rx_dbm=VALUES(optica_rx_dbm), optica_tx_dbm=VALUES(optica_tx_dbm),
-                optica_temp_c=VALUES(optica_temp_c), optica_voltage_v=VALUES(optica_voltage_v),
-                optica_bias_ma=VALUES(optica_bias_ma)
-        """, rows)
+        cur.executemany(SQL_DETALLE_PUERTO, rows)
         cur.executemany("UPDATE interfaces_red SET duplex=%s WHERE id=%s", duplex_rows)
 
 

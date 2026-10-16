@@ -159,6 +159,13 @@ class DispositivoShowController extends Controller
 
         $totalPorts = $physicalInterfaces->count() > 0 ? $physicalInterfaces->count() : $interfaces->count();
 
+        // Los contadores del encabezado se calculan sobre los mismos puertos del total (sin VLANs, loopback, etc.)
+        $contados = collect($physicalInterfaces->count() > 0 ? $physicalInterfaces : $interfaces)
+            ->map(fn ($i) => $interfacesData[$i->id]['oper_status'] ?? null);
+        $upPortsCount = $contados->filter(fn ($o) => $o === 'up')->count();
+        $downPortsCount = $contados->filter(fn ($o) => $o === 'down')->count();
+        $errDisabledCount = $contados->filter(fn ($o) => $o === 'err-disabled')->count();
+
         // Clasificación de interfaces físicas según medio de transmisión (Cobre RJ-45 vs Fibra Óptica SFP)
         $copperPorts = collect();
         $sfpPorts = collect();
@@ -211,35 +218,21 @@ class DispositivoShowController extends Controller
         usort($copperPortsList, fn($a, $b) => $a['port_num'] <=> $b['port_num']);
         usort($sfpPortsList, fn($a, $b) => $a['port_num'] <=> $b['port_num']);
 
-        // Mapeo dinámico de hardware fotorrealista para la Ficha Técnica según el modelo real
-        $modeloExacto = $chasis->model_name ?? '';
-        $osVersion = $chasis->os_version ?? '';
-        // Tipo por evidencia (fuente única); las especificaciones son solo las que reporta el equipo
+        // Tipo por evidencia (fuente única) y ficha según el número de parte del modelo
         $t = $dispositivo->resolveTypeInfo();
+        $ficha = \App\Services\FichaModelo::para($dispositivo, $chasis, $interfaces, $t);
+        $modelo = $t['modelo'] ?: ($ficha['spec']['modelo'] ?? null) ?: ($ficha['serie'] ?? null);
         $deviceHardware = [
             'tipo' => $t['tipo'],
             'image' => $t['image'],
             'rol' => $t['rol'],
             'tipo_equipo' => $t['label'],
-            'factor_forma' => $t['modelo'] ?? 'Modelo no reportado',
-            'clean_model' => $t['modelo'] ?? 'Modelo no reportado',
+            'clean_model' => $modelo ?: $t['label'],
             'fabricante' => $t['fabricante'],
             'confianza' => $t['confianza'],
             'fuente' => $t['fuente'],
             'evidencia' => $t['evidencia'],
         ];
-        $deviceHardware['specs'] = array_filter([
-            'Tipo de equipo' => $t['label'] . ' (confianza ' . $t['confianza'] . ')',
-            'Fabricante' => $t['fabricante'],
-            'Modelo' => $t['modelo'],
-            'sysObjectID' => $dispositivo->sys_object_id,
-            'Descripción SNMP (sysDescr)' => $modeloExacto ?: null,
-            'Versión de sistema' => $osVersion ?: null,
-            'Número de serie' => $chasis?->serial_number,
-            'Uptime' => $chasis?->uptime_str,
-            'Interfaces inventariadas' => $interfaces->count() ? (string) $interfaces->count() : null,
-            'Última respuesta' => $dispositivo->ultima_vez_visto ? \Carbon\Carbon::parse($dispositivo->ultima_vez_visto)->format('d/m/Y H:i:s') : null,
-        ]) ?: ['Sin datos' => 'El equipo aún no ha reportado información por SNMP'];
 
         // Resuelve la computadora conectada al puerto PC (Pass-Through) si es un Teléfono IP
         $attachedPc = \App\Services\PhonePcLinkResolver::resolveAttachedPc($dispositivo);
@@ -264,6 +257,7 @@ class DispositivoShowController extends Controller
             'totalOutBytes',
             'totalPorts',
             'deviceHardware',
+            'ficha',
             'ultimaMetrica',
             'attachedPc'
         ));

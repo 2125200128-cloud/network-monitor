@@ -137,12 +137,14 @@
             window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(ajustar, 200); });
         })();
 
+        // El centro de alertas vive en el dashboard: ahí se abre; desde otras páginas se va al dashboard y se abre al cargar
         if (typeof window.handleBannerNotifClick !== 'function') {
             window.handleBannerNotifClick = function(e) {
-                if (typeof window.toggleNotifDropdown === 'function') {
+                if (typeof window.toggleNotifDropdown === 'function' && document.getElementById('notifDropdownMenu')) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                     window.toggleNotifDropdown(e);
                 } else {
-                    window.location.href = "{{ route('settings.index', ['section' => 'notificaciones']) }}";
+                    window.location.href = "{{ route('dashboard') }}#alertas";
                 }
             };
         }

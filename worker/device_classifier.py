@@ -21,7 +21,6 @@ import time
 import json
 import asyncio
 import argparse
-import mysql.connector
 
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -32,9 +31,9 @@ from pysnmp.hlapi.v3arch.asyncio import (
 )
 
 try:
-    from nm_common import db_config, COMUNIDAD_EFECTIVA_SQL
+    from nm_common import db_config, COMUNIDAD_EFECTIVA_SQL, conectar
 except ImportError:
-    from worker.nm_common import db_config, COMUNIDAD_EFECTIVA_SQL
+    from worker.nm_common import db_config, COMUNIDAD_EFECTIVA_SQL, conectar
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
@@ -433,7 +432,7 @@ def _resultado(tipo, fabricante, modelo, confianza, evidencia, fuente):
 #  Ejecución sobre el inventario
 # ============================================================================
 async def analizar_inventario(concurrency=20):
-    conn = mysql.connector.connect(**db_config())
+    conn = conectar()
     cur = conn.cursor(dictionary=True)
     cur.execute(f"SELECT id, nombre, ip, estado, {COMUNIDAD_EFECTIVA_SQL} FROM dispositivos ORDER BY id")
     devices = cur.fetchall()
@@ -480,7 +479,7 @@ CONFIANZA_ORDEN = {'ninguna': 0, 'baja': 1, 'media': 2, 'alta': 3}
 def guardar(resultados):
     """Persiste la clasificación. Nunca reemplaza una clasificación con evidencia por una
     peor (p. ej. si un equipo deja de responder SNMP un rato, conserva lo que se supo de él)."""
-    conn = mysql.connector.connect(**db_config())
+    conn = conectar()
     cur = conn.cursor(dictionary=True)
     cur.execute("SELECT id, tipo_confianza FROM dispositivos")
     previo = {r['id']: r['tipo_confianza'] for r in cur.fetchall()}

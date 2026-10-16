@@ -41,13 +41,19 @@ class DeviceArtwork
      */
     public static function paraDispositivo(Dispositivo $d): ?array
     {
+        $spec = self::especificacionDispositivo($d);
+        return $spec ? self::asegurarArchivo($spec) : null;
+    }
+
+    /** Especificación del número de parte del equipo (modelo reportado, sysDescr y, como último recurso, su nombre). */
+    public static function especificacionDispositivo(Dispositivo $d): ?array
+    {
         $texto = trim(($d->modelo_detectado ?? '') . ' ' . ($d->telemetriaChasis->model_name ?? ''));
         if ($texto === '' || !self::especificacion($texto)) {
-            // Último recurso: equipos sin SNMP cuyo nombre trae el número de parte (p.ej. "Cisco SG200-26 Smart Switch")
+            // Equipos sin SNMP cuyo nombre trae el número de parte (p.ej. "Cisco SG200-26 Smart Switch")
             $texto = trim($texto . ' ' . $d->nombre);
         }
-        $spec = $texto !== '' ? self::especificacion($texto) : null;
-        return $spec ? self::asegurarArchivo($spec) : null;
+        return $texto !== '' ? self::especificacion($texto) : null;
     }
 
     /** Genera (si no existe) el SVG de la especificación y devuelve ruta pública, tamaño en el lienzo y serie. */
@@ -77,7 +83,7 @@ class DeviceArtwork
     {
         $t = strtoupper(preg_replace('/\s+/', ' ', $texto));
         $base = fn (array $extra) => $extra + ['u' => 1, 'rj45' => 0, 'sfp' => 0, 'qsfp' => 0, 'poe' => false, 'nim' => 0,
-            'filasRj45' => 2, 'ranuras' => 0, 'sups' => [], 'modelo' => ''];
+            'filasRj45' => 2, 'ranuras' => 0, 'sups' => [], 'modelo' => '', 'puertos_exactos' => true];
 
         // ---- Radioenlaces InfiNet (WANFleX) ----
         if (preg_match('/WANFLEX|INFINET/', $t)) {
@@ -96,7 +102,7 @@ class DeviceArtwork
         // ---- Controlador inalámbrico Catalyst 9800 ----
         if (preg_match('/C9800-(\w+)/', $t, $m)) {
             return $base(['clave' => 'cisco-c9800-' . strtolower($m[1]), 'dibujo' => 'rack', 'tema' => 'cisco9k', 'marca' => 'cisco',
-                'serie' => 'Catalyst 9800-' . $m[1], 'modelo' => 'Wireless Controller', 'rj45' => 2, 'filasRj45' => 1, 'sfp' => 4]);
+                'serie' => 'Catalyst 9800-' . $m[1], 'modelo' => 'Wireless Controller', 'rj45' => 2, 'filasRj45' => 1, 'sfp' => 4, 'puertos_exactos' => false]);
         }
 
         // ---- FortiGate / FortiSwitch ----
@@ -104,7 +110,7 @@ class DeviceArtwork
             $n = (int) $m[1];
             $serie = 'FortiGate ' . $n . $m[2];
             if ($n < 100) {
-                return $base(['clave' => 'fortigate-' . $n . strtolower($m[2]), 'dibujo' => 'escritorio', 'tema' => 'forti', 'marca' => 'FORTINET', 'serie' => $serie, 'rj45' => 8, 'sfp' => 2]);
+                return $base(['clave' => 'fortigate-' . $n . strtolower($m[2]), 'dibujo' => 'escritorio', 'tema' => 'forti', 'marca' => 'FORTINET', 'serie' => $serie, 'rj45' => 8, 'sfp' => 2, 'puertos_exactos' => false]);
             }
             [$u, $rj, $sfp, $q] = match (true) {
                 $n >= 1000 => [3, 2, 32, 4],
@@ -113,7 +119,7 @@ class DeviceArtwork
                 default => [1, 22, 6, 0],
             };
             return $base(['clave' => 'fortigate-' . $n . strtolower($m[2]), 'dibujo' => 'rack', 'tema' => 'forti', 'marca' => 'FORTINET', 'serie' => $serie,
-                'u' => $u, 'rj45' => $rj, 'sfp' => $sfp, 'qsfp' => $q]);
+                'u' => $u, 'rj45' => $rj, 'sfp' => $sfp, 'qsfp' => $q, 'puertos_exactos' => false]);
         }
         if (preg_match('/FORTISWITCH-(\d+)([A-Z])/', $t, $m)) {
             return $base(['clave' => 'fortiswitch-' . $m[1] . strtolower($m[2]), 'dibujo' => 'rack', 'tema' => 'forti', 'marca' => 'FORTINET',
@@ -139,7 +145,7 @@ class DeviceArtwork
                 'modelo' => ($m[1] !== '' ? 'N9K-C' : 'N3K-C') . $modelo, 'rj45' => $cobre ? 48 : 0, 'sfp' => $cobre ? 0 : 48, 'qsfp' => $qsfp]);
         }
         if (preg_match('/NX-OS.*\b(N3000|N9000|NXOS)\b/', $t)) {
-            return $base(['clave' => 'nexus-generico', 'dibujo' => 'rack', 'tema' => 'nexus', 'marca' => 'cisco', 'serie' => 'Nexus', 'sfp' => 48, 'qsfp' => 6]);
+            return $base(['clave' => 'nexus-generico', 'dibujo' => 'rack', 'tema' => 'nexus', 'marca' => 'cisco', 'serie' => 'Nexus', 'sfp' => 48, 'qsfp' => 6, 'puertos_exactos' => false]);
         }
 
         // ---- Catalyst modulares (9400 / 9600 / 6800) ----
@@ -163,7 +169,7 @@ class DeviceArtwork
         if (preg_match('/ISR(4\d{3}|1\d{3})/', $t, $m)) {
             $grande = (int) $m[1] >= 4400;
             return $base(['clave' => 'isr-' . $m[1], 'dibujo' => 'rack', 'tema' => 'isr', 'marca' => 'cisco', 'serie' => 'ISR ' . $m[1],
-                'u' => $grande ? 2 : 1, 'nim' => $grande ? 3 : 2, 'rj45' => $grande ? 4 : 3, 'filasRj45' => 1, 'sfp' => $grande ? 4 : 2]);
+                'u' => $grande ? 2 : 1, 'nim' => $grande ? 3 : 2, 'rj45' => $grande ? 4 : 3, 'filasRj45' => 1, 'sfp' => $grande ? 4 : 2, 'puertos_exactos' => false]);
         }
         if (preg_match('/CISCO\s?(18\d{2}|19\d{2}|28\d{2}|29\d{2})|C(1841|2811|2911)/', $t, $m)) {
             $modelo = $m[1] !== '' ? $m[1] : $m[2];
@@ -172,7 +178,7 @@ class DeviceArtwork
         }
         if (preg_match('/NETENGINE\s?8000\s?(\w+)?|NE8000/', $t, $m)) {
             return $base(['clave' => 'huawei-ne8000', 'dibujo' => 'rack', 'tema' => 'huawei', 'marca' => 'HUAWEI',
-                'serie' => 'NetEngine 8000' . (!empty($m[1]) ? ' ' . $m[1] : ''), 'sfp' => 12, 'rj45' => 4, 'filasRj45' => 1]);
+                'serie' => 'NetEngine 8000' . (!empty($m[1]) ? ' ' . $m[1] : ''), 'sfp' => 12, 'rj45' => 4, 'filasRj45' => 1, 'puertos_exactos' => false]);
         }
 
         // ---- Switches de acceso Cisco ----
@@ -189,7 +195,7 @@ class DeviceArtwork
                 'rj45' => $soloSfp ? 0 : $n, 'sfp' => ($soloSfp ? $n : 0) + ((int) ($m[5] ?? 0) ?: 4), 'poe' => str_contains($m[4], 'P')]);
         }
         if (str_contains($t, 'HUAWEI') && preg_match('/\(S(\d{3,4})\b/', $t, $m)) {
-            return $base(['clave' => 'huawei-s' . $m[1], 'dibujo' => 'rack', 'tema' => 'huawei', 'marca' => 'HUAWEI', 'serie' => 'S' . $m[1], 'rj45' => 24, 'sfp' => 4]);
+            return $base(['clave' => 'huawei-s' . $m[1], 'dibujo' => 'rack', 'tema' => 'huawei', 'marca' => 'HUAWEI', 'serie' => 'S' . $m[1], 'rj45' => 24, 'sfp' => 4, 'puertos_exactos' => false]);
         }
 
         // ---- Arista ----

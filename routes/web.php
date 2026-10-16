@@ -8,12 +8,14 @@ use App\Http\Controllers\DiscoveryController;
 use App\Http\Controllers\DispositivoController;
 use App\Http\Controllers\DispositivoShowController;
 use App\Http\Controllers\NotaDispositivoController;
+use App\Http\Controllers\PantallaController;
 use App\Http\Controllers\ServicioWebController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TopologiaController;
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/pantalla/mantener-sesion', [PantallaController::class, 'mantener'])->middleware('throttle:30,1')->name('pantalla.mantener');
 
     Route::get('/setup-2fa', function () {
         return view('auth.setup-2fa');
@@ -25,6 +27,9 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['password.confirm:password.confirm,900', 'check.admin'])->group(function () {
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+        Route::post('/settings/telegram', [SettingController::class, 'guardarTelegram'])->name('settings.telegram');
+        Route::post('/settings/telegram/chats', [SettingController::class, 'chatsTelegram'])->middleware('throttle:20,1')->name('settings.telegram.chats');
+        Route::post('/settings/telegram/probar', [SettingController::class, 'probarTelegram'])->middleware('throttle:10,1')->name('settings.telegram.probar');
         Route::post('/settings/role/{user}', [SettingController::class, 'updateRole'])->name('settings.update_role');
         Route::post('/settings/register', [SettingController::class, 'register'])->name('settings.register');
         Route::put('/settings/user/{user}', [SettingController::class, 'updateUser'])->name('settings.update_user');
@@ -62,8 +67,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/consola/guardar-credenciales', [ConsolaSeguraController::class, 'guardarCredenciales'])->name('consola.guardar_credenciales');
         Route::post('/consola/probar-conexion', [ConsolaSeguraController::class, 'probarConexion'])->name('consola.probar_conexion');
 
-        Route::get('/dispositivos/create', [DispositivoController::class, 'create'])->name('dispositivos.create');
-        Route::post('/dispositivos', [DispositivoController::class, 'store'])->name('dispositivos.store');
         Route::post('/api/dispositivos/{id}/tipo', [DispositivoController::class, 'corregirTipo'])->whereNumber('id')->name('dispositivos.corregir_tipo');
         Route::post('/api/dispositivos/{id}/snmp', [DispositivoController::class, 'guardarSnmp'])->whereNumber('id')->name('dispositivos.snmp.guardar');
         Route::post('/api/dispositivos/{id}/snmp/probar', [DispositivoController::class, 'probarSnmp'])->whereNumber('id')->middleware('throttle:20,1')->name('dispositivos.snmp.probar');

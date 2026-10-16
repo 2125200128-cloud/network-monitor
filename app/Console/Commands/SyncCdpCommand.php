@@ -84,7 +84,7 @@ class SyncCdpCommand extends Command
                 }
                 
                 if (!$destino) {
-                    $destino = Dispositivo::where('nombre', 'LIKE', "%{$hostnameLimpio}%")
+                    $destino = Dispositivo::where('nombre', \App\Support\Sql::like(), "%{$hostnameLimpio}%")
                                           ->orWhere('ip', $hostnameLimpio)
                                           ->first();
                 }

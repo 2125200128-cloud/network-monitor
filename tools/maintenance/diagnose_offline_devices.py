@@ -1,13 +1,15 @@
 import asyncio
 import socket
 import subprocess
-import mysql.connector
+import os
+import sys
 from pysnmp.hlapi.asyncio import (
     SnmpEngine, CommunityData, UdpTransportTarget,
     ContextData, ObjectType, ObjectIdentity, get_cmd
 )
 
-DB_CFG = dict(host='127.0.0.1', user='root', password='root', database='network_monitor', port=3306)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'worker'))
+from nm_common import conectar, insertar_con_id  # credenciales del .env (MySQL o PostgreSQL)
 
 def test_ping(ip):
     try:
@@ -43,7 +45,7 @@ async def test_snmp(snmpEngine, ip, community):
     return False, "No response / Timeout"
 
 async def main():
-    db = mysql.connector.connect(**DB_CFG)
+    db = conectar()
     cur = db.cursor(dictionary=True)
     cur.execute("SELECT id, nombre, ip, comunidad_snmp, ubicacion, estado FROM dispositivos WHERE estado = 'offline' OR id IN (1, 68, 13, 67, 66, 26, 73, 24, 11, 14, 76, 49, 50)")
     devices = cur.fetchall()

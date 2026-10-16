@@ -17,7 +17,7 @@ class DashboardController extends Controller
     public function index(\App\Services\DashboardMetricsService $metricas)
     {
         $dispositivos = Dispositivo::with(['telemetriaChasis', 'ultimaMetrica'])
-            ->orderByRaw("FIELD(estado, 'online', 'warning', 'offline')")
+            ->orderByRaw("CASE estado WHEN 'online' THEN 1 WHEN 'warning' THEN 2 ELSE 3 END")
             ->orderBy('nombre')
             ->get();
         

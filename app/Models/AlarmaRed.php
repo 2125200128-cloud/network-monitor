@@ -27,12 +27,14 @@ class AlarmaRed extends Model
         'estado',
         'fecha_inicio',
         'fecha_resolucion',
-        'reconocido_por'
+        'reconocido_por',
+        'notificada_telegram_at',
     ];
 
     protected $casts = [
         'fecha_inicio' => 'datetime',
         'fecha_resolucion' => 'datetime',
+        'notificada_telegram_at' => 'datetime',
     ];
 
     public function dispositivo()
