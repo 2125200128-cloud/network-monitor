@@ -43,13 +43,13 @@
     {{-- Mensajes de resultado (alta / edición / eliminación) y errores de validación --}}
     @if(session('status'))
         <div class="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="m9 12 2 2 4-4" /></svg>
             <span>{{ session('status') }}</span>
         </div>
     @endif
     @if($errors->any())
         <div class="flex items-start gap-3 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 text-red-700 dark:text-red-300 text-xs font-semibold">
-            <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <svg class="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <line x1="12" x2="12" y1="8" y2="12" /> <line x1="12" x2="12.01" y1="16" y2="16" /></svg>
             <ul class="space-y-0.5">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -59,12 +59,10 @@
     @endif
 
     {{-- Header Top --}}
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#0d1017] p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-nm-surface p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
         <div class="flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-2xl text-white flex items-center justify-center shrink-0 shadow-md" style="background: linear-gradient(135deg, #3b5998, #5c8096);">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
-                </svg>
+            <div class="w-12 h-12 rounded-2xl text-white flex items-center justify-center shrink-0 shadow-md" style="background: linear-gradient(135deg, var(--nm-primary), var(--nm-primary-2));">
+                <svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /> <path d="M2 12h20" /></svg>
             </div>
             <div>
                 <div class="flex items-center gap-2.5">
@@ -87,9 +85,7 @@
             <button type="button" onclick="reprobarTodosServicios()" id="btnScanAll" class="fancy">
                 <span class="top-key"></span>
                 <span class="text">
-                    <svg id="iconScanAll" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
+                    <svg id="iconScanAll" class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /> <path d="M8 16H3v5" /></svg>
                     Verificar Todos
                 </span>
                 <span class="bottom-key-1"></span>
@@ -99,9 +95,7 @@
             <button type="button" onclick="openAddModal()" class="fancy">
                 <span class="top-key"></span>
                 <span class="text">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
-                    </svg>
+                    <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /> <path d="M12 5v14" /></svg>
                     Agregar Sitio
                 </span>
                 <span class="bottom-key-1"></span>
@@ -113,76 +107,66 @@
     {{-- Metrics KPI Cards --}}
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         {{-- Total --}}
-        <div class="bg-white dark:bg-[#0d1017] p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
+        <div class="bg-white dark:bg-nm-surface p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
             <div>
                 <p class="text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Total Sitios</p>
                 <p id="kpiTotal" class="text-2xl font-black text-gray-900 dark:text-white mt-0.5">{{ $stats['total'] }}</p>
             </div>
-            <div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-[#3b5998] dark:text-blue-400 flex items-center justify-center border border-slate-200/60 dark:border-slate-700/60">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
-                </svg>
+            <div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-nm-primary dark:text-blue-400 flex items-center justify-center border border-slate-200/60 dark:border-slate-700/60">
+                <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /> <path d="M2 12h20" /></svg>
             </div>
         </div>
 
         {{-- Online --}}
-        <div class="bg-white dark:bg-[#0d1017] p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
+        <div class="bg-white dark:bg-nm-surface p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
             <div>
                 <p class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">En Línea</p>
                 <p id="kpiOnline" class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{{ $stats['online'] }}</p>
             </div>
             <div class="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/60 dark:border-emerald-800/60">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
-                </svg>
+                <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
             </div>
         </div>
 
         {{-- Warning --}}
-        <div class="bg-white dark:bg-[#0d1017] p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
+        <div class="bg-white dark:bg-nm-surface p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
             <div>
                 <p class="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Advertencias</p>
                 <p id="kpiWarning" class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-0.5">{{ $stats['warning'] }}</p>
             </div>
             <div class="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-200/60 dark:border-amber-800/60">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                </svg>
+                <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /></svg>
             </div>
         </div>
 
         {{-- Offline --}}
-        <div class="bg-white dark:bg-[#0d1017] p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
+        <div class="bg-white dark:bg-nm-surface p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
             <div>
                 <p class="text-[11px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">Caídos</p>
                 <p id="kpiOffline" class="text-2xl font-black text-red-600 dark:text-red-400 mt-0.5">{{ $stats['offline'] }}</p>
             </div>
             <div class="w-10 h-10 rounded-lg bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center border border-red-200/60 dark:border-red-800/60">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
+                <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
             </div>
         </div>
 
         {{-- Avg Latency --}}
-        <div class="col-span-2 lg:col-span-1 bg-white dark:bg-[#0d1017] p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
+        <div class="col-span-2 lg:col-span-1 bg-white dark:bg-nm-surface p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
             <div>
-                <p class="text-[11px] font-bold text-[#3b5998] dark:text-blue-400 uppercase tracking-wider">Latencia Prom.</p>
+                <p class="text-[11px] font-bold text-nm-primary dark:text-blue-400 uppercase tracking-wider">Latencia Prom.</p>
                 <p id="kpiLatency" class="text-2xl font-black text-gray-900 dark:text-white mt-0.5">{{ $stats['avg_latency'] }} <span class="text-sm font-semibold text-gray-500">ms</span></p>
             </div>
-            <div class="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#3b5998] dark:text-blue-400 flex items-center justify-center border border-blue-200/60 dark:border-blue-800/60">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
+            <div class="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-nm-primary dark:text-blue-400 flex items-center justify-center border border-blue-200/60 dark:border-blue-800/60">
+                <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
             </div>
         </div>
     </div>
 
     {{-- Filters & Search Bar --}}
-    <div class="bg-white dark:bg-[#0d1017] p-3.5 sm:p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3.5">
+    <div class="bg-white dark:bg-nm-surface p-3.5 sm:p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3.5">
         {{-- Category Pills --}}
         <div class="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 text-xs custom-scrollbar">
-            <button type="button" onclick="filterCategory('todas', this)" class="cat-tab-btn px-3.5 py-1.5 rounded-lg font-bold bg-[#3b5998] text-white shadow-xs transition">
+            <button type="button" onclick="filterCategory('todas', this)" class="cat-tab-btn px-3.5 py-1.5 rounded-lg font-bold bg-nm-primary text-white shadow-xs transition">
                 Todas ({{ count($servicios) }})
             </button>
             @foreach($categorias as $cat)
@@ -194,7 +178,7 @@
 
         {{-- Search Input & Status Select --}}
         <div class="flex items-center gap-2.5 w-full md:w-auto shrink-0">
-            <select id="statusFilter" onchange="applyFilters()" class="text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#3b5998] outline-none">
+            <select id="statusFilter" onchange="applyFilters()" class="text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-nm-primary outline-none">
                 <option value="todos">Todos los Estados</option>
                 <option value="online">En Línea (200 OK)</option>
                 <option value="warning">Advertencias (4xx / Latencia)</option>
@@ -202,18 +186,18 @@
             </select>
 
             <div class="relative flex-1 md:w-64">
-                <input type="text" id="searchInput" onkeyup="applyFilters()" placeholder="Buscar sitio o URL..." class="w-full text-xs bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 placeholder-gray-400 pl-8 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#3b5998] outline-none">
-                <svg class="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" id="searchInput" onkeyup="applyFilters()" placeholder="Buscar sitio o URL..." class="w-full text-xs bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 placeholder-gray-400 pl-8 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-nm-primary outline-none">
+                <svg class="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /> <path d="m21 21-4.3-4.3" /></svg>
             </div>
         </div>
     </div>
 
     {{-- Web Services Table --}}
-    <div class="bg-white dark:bg-[#0d1017] rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+    <div class="bg-white dark:bg-nm-surface rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
         <div class="overflow-x-auto custom-scrollbar">
             <table class="w-full text-left text-xs border-collapse">
                 <thead>
-                    <tr class="bg-slate-50/80 dark:bg-[#090b10] border-b border-slate-200/80 dark:border-slate-800 text-gray-500 dark:text-slate-400 font-extrabold uppercase text-[10px] tracking-wider">
+                    <tr class="bg-slate-50/80 dark:bg-nm-sunken border-b border-slate-200/80 dark:border-slate-800 text-gray-500 dark:text-slate-400 font-extrabold uppercase text-[11px] tracking-wider">
                         <th class="p-3.5 pl-5">Sitio Web / URL</th>
                         <th class="p-3.5">Categoría</th>
                         <th class="p-3.5">Estado HTTP</th>
@@ -235,15 +219,13 @@
                                 <div class="flex items-center gap-3">
                                     <div class="web-icon-box w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border 
                                         {{ $web->estado === 'online' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/60' : ($web->estado === 'warning' ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/60' : ($web->estado === 'offline' ? 'bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400 border-red-200/60 dark:border-red-800/60' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border-slate-200/60 dark:border-slate-700/60')) }}">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
-                                        </svg>
+                                        <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /> <path d="M2 12h20" /></svg>
                                     </div>
                                     <div class="min-w-0 max-w-md">
                                         <h3 class="font-extrabold text-gray-900 dark:text-white leading-snug truncate">{{ $web->nombre }}</h3>
-                                        <a href="{{ $web->url }}" target="_blank" rel="noopener noreferrer" class="text-[11px] font-mono text-[#3b5998] dark:text-blue-400 hover:underline truncate flex items-center gap-1 group mt-0.5" title="{{ $web->url }}">
+                                        <a href="{{ $web->url }}" target="_blank" rel="noopener noreferrer" class="text-[11px] font-mono text-nm-primary dark:text-blue-400 hover:underline truncate flex items-center gap-1 group mt-0.5" title="{{ $web->url }}">
                                             <span class="truncate">{{ $web->url }}</span>
-                                            <svg class="w-3 h-3 group-hover:translate-x-0.5 transition-transform flex-shrink-0 opacity-70 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                            <svg class="w-3 h-3 group-hover:translate-x-0.5 transition-transform flex-shrink-0 opacity-70 group-hover:opacity-100" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6" /> <path d="M10 14 21 3" /> <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>
                                         </a>
                                     </div>
                                 </div>
@@ -251,7 +233,7 @@
 
                             {{-- Category --}}
                             <td class="p-3.5">
-                                <span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/70 dark:border-slate-700">
+                                <span class="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/70 dark:border-slate-700">
                                     {{ $web->categoria }}
                                 </span>
                             </td>
@@ -300,16 +282,16 @@
                             {{-- Actions --}}
                             <td class="p-3.5 text-right pr-5">
                                 <div class="flex items-center justify-end gap-1.5">
-                                    <button type="button" onclick="reprobarSingleService('{{ $web->id }}', this)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-[#3b5998] hover:text-white dark:bg-slate-800 dark:hover:bg-[#3b5998] text-slate-700 dark:text-slate-200 text-[11px] font-bold transition flex items-center gap-1 shadow-2xs">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                    <button type="button" onclick="reprobarSingleService('{{ $web->id }}', this)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-nm-primary hover:text-white dark:bg-slate-800 dark:hover:bg-nm-primary text-slate-700 dark:text-slate-200 text-[11px] font-bold transition flex items-center gap-1 shadow-2xs">
+                                        <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /> <path d="M8 16H3v5" /></svg>
                                         <span>Probar</span>
                                     </button>
 
-                                    <form action="{{ route('servicios_web.destroy', $web->id) }}" method="POST" onsubmit="return confirm('¿Eliminar {{ addslashes($web->nombre) }}?');" class="inline">
+                                    <form action="{{ route('servicios_web.destroy', $web->id) }}" method="POST" onsubmit="event.preventDefault(); nmConfirmar('¿Eliminar el servicio {{ addslashes($web->nombre) }}?', { titulo: 'Eliminar servicio', boton: 'Eliminar' }).then(ok => ok && this.submit());" class="inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="p-1 rounded-lg text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition" title="Eliminar sitio">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        <button type="submit" class="p-1 rounded-lg text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition" title="Eliminar sitio" aria-label="Eliminar sitio">
+                                            <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /> <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /> <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /> <line x1="10" x2="10" y1="11" y2="17" /> <line x1="14" x2="14" y1="11" y2="17" /></svg>
                                         </button>
                                     </form>
                                 </div>
@@ -331,18 +313,16 @@
 
 {{-- MODAL AGREGAR SITIO WEB --}}
 <div id="addModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white dark:bg-[#0d1017] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl max-w-md w-full overflow-hidden transform transition-all">
+    <div class="nm-glass bg-white dark:bg-nm-surface rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl max-w-md w-full overflow-hidden transform transition-all">
         <div class="p-4 bg-slate-50 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-lg bg-[#3b5998] text-white flex items-center justify-center font-bold shadow-xs">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
-                    </svg>
+                <div class="w-8 h-8 rounded-lg bg-nm-primary text-white flex items-center justify-center font-bold shadow-xs">
+                    <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /> <path d="M12 5v14" /></svg>
                 </div>
                 <h3 class="text-sm font-extrabold text-gray-900 dark:text-white">Agregar Nuevo Sitio Web</h3>
             </div>
             <button type="button" onclick="closeAddModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
             </button>
         </div>
 
@@ -350,18 +330,18 @@
             @csrf
             <div>
                 <label class="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1">Nombre del Sitio / Servicio</label>
-                <input type="text" name="nombre" required value="{{ old('nombre') }}" placeholder="Ej. Portal de Trámites Jalisco" class="w-full text-xs bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#3b5998] outline-none">
+                <input type="text" name="nombre" required value="{{ old('nombre') }}" placeholder="Ej. Portal de Trámites Jalisco" class="w-full text-xs bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-nm-primary outline-none">
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1">URL (http:// o https://)</label>
-                <input type="url" name="url" required value="{{ old('url') }}" placeholder="https://gobiernoenlinea1.jalisco.gob.mx/ejemplo" class="w-full text-xs font-mono bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#3b5998] outline-none">
+                <input type="url" name="url" required value="{{ old('url') }}" placeholder="https://gobiernoenlinea1.jalisco.gob.mx/ejemplo" class="w-full text-xs font-mono bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-nm-primary outline-none">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1">Categoría</label>
-                    <select name="categoria" required class="w-full text-xs bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#3b5998] outline-none">
+                    <select name="categoria" required class="w-full text-xs bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-nm-primary outline-none">
                         <option value="Trámites">Trámites</option>
                         <option value="Sefin">Sefin</option>
                         <option value="Bancos">Bancos</option>
@@ -373,7 +353,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1">Método HTTP</label>
-                    <select name="metodo" class="w-full text-xs bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#3b5998] outline-none">
+                    <select name="metodo" class="w-full text-xs bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-nm-primary outline-none">
                         <option value="GET">GET</option>
                         <option value="HEAD">HEAD</option>
                     </select>
@@ -415,7 +395,7 @@
             b.className = 'cat-tab-btn px-3.5 py-1.5 rounded-lg font-semibold text-gray-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition';
         });
         if (btn) {
-            btn.className = 'cat-tab-btn px-3.5 py-1.5 rounded-lg font-bold bg-[#3b5998] text-white shadow-xs transition';
+            btn.className = 'cat-tab-btn px-3.5 py-1.5 rounded-lg font-bold bg-nm-primary text-white shadow-xs transition';
         }
         applyFilters();
     }
@@ -453,7 +433,7 @@
     async function reprobarSingleService(id, btn) {
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = `<svg class="w-3.5 h-3.5 animate-spin text-[#3b5998] dark:text-blue-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> <span>Probando...</span>`;
+        btn.innerHTML = `<svg class="w-3.5 h-3.5 animate-spin text-nm-primary dark:text-blue-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> <span>Probando...</span>`;
 
         try {
             const resp = await fetch(`/servicios-web/${id}/reprobar`, {

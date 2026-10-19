@@ -47,6 +47,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/topologia', [TopologiaController::class, 'index'])->name('topologia.index');
     Route::get('/api/topologia/nodos-enlaces', [TopologiaController::class, 'datosGrafos'])->name('topologia.datos');
+    Route::get('/api/topologia/sitios', [TopologiaController::class, 'sitios'])->name('topologia.sitios');
     Route::get('/api/dispositivos/{id}/notas', [NotaDispositivoController::class, 'index'])->whereNumber('id')->name('notas.index');
 
     Route::get('/reportes/inventario-pdf', [DashboardController::class, 'descargarInventarioPdf'])->name('reportes.inventario_pdf');
@@ -77,6 +78,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/api/topologia/zonas/{id}', [TopologiaController::class, 'actualizarZona'])->whereNumber('id')->name('topologia.zonas.update');
         Route::delete('/api/topologia/zonas', [TopologiaController::class, 'eliminarTodasLasZonas'])->name('topologia.zonas.destroy_all');
         Route::delete('/api/topologia/zonas/{id}',[TopologiaController::class, 'eliminarZona'])->whereNumber('id')->name('topologia.zonas.destroy');
+        Route::put('/api/topologia/dispositivos/{id}/sitio', [TopologiaController::class, 'asignarSitio'])->whereNumber('id')->name('topologia.dispositivos.sitio');
 
         // Notas de dispositivo (las secretas solo se revelan aquí, con registro en log)
         Route::post('/api/dispositivos/{id}/notas', [NotaDispositivoController::class, 'store'])->whereNumber('id')->name('notas.store');

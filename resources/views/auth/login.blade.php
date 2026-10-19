@@ -19,11 +19,11 @@
             border: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-        .text-institutional-blue { color: #5c8096; }
-        .bg-institutional-blue { background-color: #5c8096; }
-        .hover-bg-institutional-blue:hover { background-color: #4a6b7d; }
-        .text-institutional-orange { color: #e67e22; }
-        .bg-institutional-orange { background-color: #e67e22; }
+        .text-institutional-blue { color: #5b7d95; }
+        .bg-institutional-blue { background-color: #5b7d95; }
+        .hover-bg-institutional-blue:hover { background-color: #5b7d95; }
+        .text-institutional-orange { color: #f07f12; }
+        .bg-institutional-orange { background-color: #f07f12; }
 
         /* From Uiverse.io by cssbuttons-io */ 
         .fancy {
@@ -147,9 +147,7 @@
                 <div class="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                            </svg>
+                            <svg class="h-5 w-5 text-red-500" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="m15 9-6 6" /> <path d="m9 9 6 6" /></svg>
                         </div>
                         <div class="ml-3">
                             <p class="text-sm text-red-700">

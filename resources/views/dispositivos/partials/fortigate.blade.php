@@ -10,7 +10,7 @@
     $hayDatos = $fSis || $fSdwan || $fSensores || $fSsl || $fSeg || $fVpn || $fHa;
     $fn = fn ($v, $suf = '') => $v === null ? '—' : (is_numeric($v) ? number_format((float) $v, fmod((float) $v, 1) ? 2 : 0) : $v) . $suf;
     $mbpsF = fn ($v) => $v === null ? '—' : ($v >= 1000 ? number_format($v / 1000, 2) . ' Gbps' : number_format($v, 2) . ' Mbps');
-    $th = 'text-left text-[10px] font-bold uppercase tracking-wider text-gray-400 pb-2 pr-3';
+    $th = 'text-left text-[11px] font-bold uppercase tracking-wider text-gray-400 pb-2 pr-3';
     $td = 'py-1.5 pr-3 text-xs text-gray-700 border-t border-gray-100';
 @endphp
 <div class="mb-6 rounded-2xl border border-rose-100 bg-white shadow-sm overflow-hidden">
@@ -19,7 +19,7 @@
             <span class="w-2.5 h-2.5 rounded-full bg-[#da291c]"></span>
             <h3 class="text-sm font-extrabold text-gray-800">FortiGate · Seguridad perimetral</h3>
         </div>
-        <span class="text-[10px] font-mono text-gray-500">
+        <span class="text-[11px] font-mono text-gray-500">
             {{ $chasis?->detalle_medido_en ? 'Medido ' . $chasis->detalle_medido_en->diffForHumans() : 'Sin mediciones' }} · se actualiza cada 5 min
         </span>
     </div>
@@ -43,7 +43,7 @@
                     ['IPS último ciclo', $fn($fSeg['ips_detectadas_ciclo'] ?? null) . (($fSeg['ips_criticas_ciclo'] ?? 0) ? ' (' . $fSeg['ips_criticas_ciclo'] . ' críticas)' : '')],
                 ] as [$etq, $val])
                     <div class="rounded-xl bg-gray-50 border border-gray-100 px-3 py-2.5">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">{{ $etq }}</p>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">{{ $etq }}</p>
                         <p class="text-base font-extrabold font-mono text-gray-900">{{ $val }}</p>
                     </div>
                 @endforeach
@@ -114,7 +114,7 @@
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             @foreach(collect($fSensores)->sortByDesc('alarma') as $s)
                                 <div class="rounded-lg px-2.5 py-1.5 border {{ !empty($s['alarma']) ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100' }}">
-                                    <p class="text-[10px] text-gray-500 truncate" title="{{ $s['nombre'] ?? '' }}">{{ $s['nombre'] ?? '—' }}</p>
+                                    <p class="text-[11px] text-gray-500 truncate" title="{{ $s['nombre'] ?? '' }}">{{ $s['nombre'] ?? '—' }}</p>
                                     <p class="text-xs font-bold font-mono {{ !empty($s['alarma']) ? 'text-red-600' : 'text-gray-800' }}">
                                         {{ $fn($s['valor'] ?? null, ['temperatura' => ' °C', 'ventilador' => ' RPM', 'voltaje' => ' V'][$s['tipo'] ?? ''] ?? '') }}{{ !empty($s['alarma']) ? ' · ALARMA' : '' }}
                                     </p>

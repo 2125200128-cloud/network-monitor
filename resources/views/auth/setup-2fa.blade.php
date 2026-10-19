@@ -10,7 +10,7 @@
 
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            <h1 class="text-2xl font-bold text-[#5c8096] mb-6">Seguridad de la Cuenta</h1>
+            <h1 class="text-2xl font-bold text-[#5b7d95] mb-6">Seguridad de la Cuenta</h1>
             
             <div class="border-t border-gray-200 pt-6">
                 <h3 class="text-lg font-medium text-gray-900">Autenticación de Dos Factores (2FA)</h3>
@@ -22,7 +22,7 @@
                     <div class="mt-5">
                         <form method="POST" action="{{ url('/user/two-factor-authentication') }}">
                             @csrf
-                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#5c8096] hover:bg-[#4a6b7d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5c8096]">
+                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#5b7d95] hover:bg-[#5b7d95] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5b7d95]">
                                 Habilitar 2FA
                             </button>
                         </form>
@@ -53,9 +53,9 @@
                                     @csrf
                                     <div>
                                         <label for="code" class="block text-sm font-medium text-gray-700">Código OTP</label>
-                                        <input id="code" type="text" name="code" required class="mt-1 block w-48 border-gray-300 rounded-md shadow-sm focus:ring-[#e67e22] focus:border-[#e67e22] sm:text-sm">
+                                        <input id="code" type="text" name="code" required class="mt-1 block w-48 border-gray-300 rounded-md shadow-sm focus:ring-[#f07f12] focus:border-[#f07f12] sm:text-sm">
                                     </div>
-                                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e67e22] hover:bg-[#d67118] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e67e22]">
+                                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#f07f12] hover:bg-[#d96f0c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f07f12]">
                                         Confirmar
                                     </button>
                                 </form>
@@ -96,7 +96,7 @@
             </div>
             
             <div class="mt-8 flex">
-                <a href="{{ url('/') }}" class="text-sm font-medium text-[#5c8096] hover:text-[#4a6b7d]">&larr; Volver al Dashboard</a>
+                <a href="{{ url('/') }}" class="text-sm font-medium text-[#5b7d95] hover:text-[#5b7d95]">&larr; Volver al Dashboard</a>
             </div>
         </div>
     </div>

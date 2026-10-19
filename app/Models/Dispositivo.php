@@ -60,6 +60,11 @@ class Dispositivo extends Model
         return $this->hasMany(InterfazRed::class, 'dispositivo_id');
     }
 
+    public function sitio()
+    {
+        return $this->belongsTo(SitioRed::class, 'sitio_id');
+    }
+
     public function telemetriaChasis()
     {
         return $this->hasOne(TelemetriaChasis::class, 'dispositivo_id')->latestOfMany();

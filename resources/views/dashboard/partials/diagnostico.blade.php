@@ -37,19 +37,19 @@
     <div class="flex flex-col gap-3 mb-5 pb-4 border-b border-gray-100 dark:border-slate-800/40">
         <div>
             <div class="flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-[#3b5998] shadow-sm"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-nm-primary shadow-sm"></span>
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white tracking-tight">Diagnóstico de red</h3>
             </div>
             <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Solo valores reportados por los equipos. "Sin dato" = el equipo no expone esa métrica por SNMP. Se recalcula cada minuto.</p>
         </div>
-        <div class="flex flex-wrap gap-1.5 bg-gray-100/80 dark:bg-[#090b10] p-1 rounded-xl text-xs font-semibold" role="tablist">
+        <div class="flex flex-wrap gap-1.5 bg-gray-100/80 dark:bg-nm-sunken p-1 rounded-xl text-xs font-semibold" role="tablist">
             @foreach($tabs as $k => [$label, $count])
                 <button type="button" role="tab" @click="tab = '{{ $k }}'" :aria-selected="tab === '{{ $k }}'"
                         :class="tab === '{{ $k }}' ? 'bg-white dark:bg-slate-800 text-hacienda-blue dark:text-blue-400 shadow-sm font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
                         class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
                     {{ $label }}
                     @if($count > 0)
-                        <span class="min-w-[18px] h-[18px] px-1 rounded-full bg-[#f26419] text-white text-[10px] font-black flex items-center justify-center">{{ $count }}</span>
+                        <span class="min-w-[18px] h-[18px] px-1 rounded-full bg-[#f07f12] text-white text-[11px] font-black flex items-center justify-center">{{ $count }}</span>
                     @endif
                 </button>
             @endforeach
@@ -280,7 +280,7 @@
                         ['key' => 'resuelta', 'label' => 'Resuelta', 'align' => 'text-right']],
                 ])
             </div>
-            <p class="text-[10px] text-gray-400 mt-3">Historial desde {{ \Carbon\Carbon::parse($inc['registro_desde'])->format('d/m/Y H:i') }} (ventana efectiva: {{ $inc['ventana'] }}). Las alarmas que ya existían al iniciar el registro conservan su hora real de inicio cuando se conoce.</p>
+            <p class="text-[11px] text-gray-400 mt-3">Historial desde {{ \Carbon\Carbon::parse($inc['registro_desde'])->format('d/m/Y H:i') }} (ventana efectiva: {{ $inc['ventana'] }}). Las alarmas que ya existían al iniciar el registro conservan su hora real de inicio cuando se conoce.</p>
         @endif
     </div>
 

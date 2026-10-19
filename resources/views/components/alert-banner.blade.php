@@ -50,11 +50,11 @@
                         @if(!$n['leida'])
                             <div class="inline-flex items-center gap-2 cursor-pointer hover:text-amber-300 transition" onclick="toggleGlobalNotifModal(event)">
                                 @if($n['tipo'] === 'critica')
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-black bg-red-500/30 text-red-300 border border-red-500/40">🔴 CRÍTICA</span>
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-red-500/30 text-red-300 border border-red-500/40">🔴 CRÍTICA</span>
                                 @elseif($n['tipo'] === 'advertencia')
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/40">🟡 ADVERTENCIA</span>
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/40">🟡 ADVERTENCIA</span>
                                 @else
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/40">⚡ SISTEMA</span>
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/40">⚡ SISTEMA</span>
                                 @endif
                                 <span class="font-extrabold text-white">{{ $n['titulo'] }}</span>
                                 <span class="text-slate-300 font-mono text-[11px]">({{ $n['dispositivo'] }} · {{ $n['hora_falla'] ?? $n['tiempo'] }})</span>
@@ -69,11 +69,11 @@
                         @if(!$n['leida'])
                             <div class="inline-flex items-center gap-2 cursor-pointer hover:text-amber-300 transition" onclick="toggleGlobalNotifModal(event)">
                                 @if($n['tipo'] === 'critica')
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-black bg-red-500/30 text-red-300 border border-red-500/40">🔴 CRÍTICA</span>
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-red-500/30 text-red-300 border border-red-500/40">🔴 CRÍTICA</span>
                                 @elseif($n['tipo'] === 'advertencia')
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/40">🟡 ADVERTENCIA</span>
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/40">🟡 ADVERTENCIA</span>
                                 @else
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/40">⚡ SISTEMA</span>
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/40">⚡ SISTEMA</span>
                                 @endif
                                 <span class="font-extrabold text-white">{{ $n['titulo'] }}</span>
                                 <span class="text-slate-300 font-mono text-[11px]">({{ $n['dispositivo'] }} · {{ $n['hora_falla'] ?? $n['tiempo'] }})</span>
@@ -89,21 +89,21 @@
         <div class="flex items-center gap-2 shrink-0 z-10">
             <button type="button" onclick="toggleGlobalNotifModal(event)" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/10 transition flex items-center gap-1.5">
                 <span>Ver Alertas</span>
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
+                <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
             </button>
-            <button type="button" onclick="document.getElementById('dashboardAlertBanner').remove()" class="p-1.5 text-slate-400 hover:text-white rounded-lg transition" title="Ocultar">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <button type="button" onclick="document.getElementById('dashboardAlertBanner').remove()" class="p-1.5 text-slate-400 hover:text-white rounded-lg transition" title="Ocultar" aria-label="Ocultar">
+                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
             </button>
         </div>
     </div>
 
     {{-- MODAL FLOTANTE GLOBAL DE NOTIFICACIONES --}}
-    <div id="globalNotifModal" class="global-notif-modal hidden fixed top-20 right-4 sm:right-8 w-80 sm:w-96 md:w-[440px] bg-white dark:bg-[#0d1017] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] z-[9999] overflow-hidden flex flex-col">
+    <div id="globalNotifModal" class="global-notif-modal hidden fixed top-20 right-4 sm:right-8 w-80 sm:w-96 md:w-[440px] bg-white dark:bg-nm-surface border border-gray-100 dark:border-slate-800 rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] z-[9999] overflow-hidden flex flex-col">
         {{-- Header --}}
         <div class="p-4 bg-gray-50/80 dark:bg-slate-900/40 border-b border-gray-100 dark:border-slate-800/60 flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-xl bg-[#3b5998] text-white flex items-center justify-center">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                <div class="w-8 h-8 rounded-xl bg-nm-primary text-white flex items-center justify-center">
+                    <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0" /> <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></svg>
                 </div>
                 <div>
                     <h3 class="text-sm font-bold text-gray-900 dark:text-white leading-tight">Centro de Notificaciones</h3>
@@ -111,13 +111,13 @@
                 </div>
             </div>
             <button onclick="toggleGlobalNotifModal(event)" class="text-gray-400 hover:text-gray-600 transition p-1 rounded">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
             </button>
         </div>
 
         {{-- Tabs --}}
-        <div class="px-4 py-2 bg-gray-50/70 dark:bg-[#090b10] border-b border-gray-100 dark:border-slate-800/60 flex gap-2 overflow-x-auto">
-            <button onclick="filterGlobalNotifs('all')" class="text-xs font-bold text-[#3b5998] bg-white dark:bg-slate-800 px-2 py-1 rounded shadow-sm border border-gray-200 dark:border-slate-700">Todas</button>
+        <div class="px-4 py-2 bg-gray-50/70 dark:bg-nm-sunken border-b border-gray-100 dark:border-slate-800/60 flex gap-2 overflow-x-auto">
+            <button onclick="filterGlobalNotifs('all')" class="text-xs font-bold text-nm-primary bg-white dark:bg-slate-800 px-2 py-1 rounded shadow-sm border border-gray-200 dark:border-slate-700">Todas</button>
             <button onclick="filterGlobalNotifs('critica')" class="text-xs font-semibold text-gray-600 dark:text-slate-400 hover:bg-slate-100 px-2 py-1 rounded flex items-center gap-1"><span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span> Críticas</button>
         </div>
 

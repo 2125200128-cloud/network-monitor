@@ -10,14 +10,14 @@
 
     /* Modo Claro (Colores Institucionales: Azul Hacienda & Naranja Hacienda) */
     html:not(.dark) .traffic-gauge-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+        background: var(--nm-surface);
+        border: 1px solid var(--nm-border);
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-        color: #0f172a;
+        color: var(--nm-text);
     }
     html:not(.dark) .traffic-gauge-box {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
+        background: var(--nm-sunken);
+        border: 1px solid var(--nm-border);
     }
     html:not(.dark) .st-gauge-arc-bg {
         stroke: #cbd5e1;
@@ -92,57 +92,57 @@
     .dash-lista th { padding: 0 0.5rem 0.375rem 0; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; }
     .dash-lista td { padding: 0.375rem 0.5rem 0.375rem 0; color: #374151; border-top: 1px solid #f3f4f6; }
     .dash-lista .dash-disp { font-weight: 600; color: #1f2937; display: inline-block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
-    .dash-lista .dash-disp:hover { color: #3b5998; text-decoration: underline; }
+    .dash-lista .dash-disp:hover { color: var(--nm-primary); text-decoration: underline; }
     .dark .dash-lista th { color: #64748b; }
     .dark .dash-lista td { color: #cbd5e1; border-top-color: rgba(30, 41, 59, 0.5); }
     .dark .dash-lista .dash-disp { color: #e2e8f0; }
-    .dark .dash-lista .dash-disp:hover { color: #60a5fa; }
+    .dark .dash-lista .dash-disp:hover { color: #4d94fd; }
 
     /* Selector de rango/métrica de la gráfica de tendencias */
-    .trend-btn { color: #6b7280; }
+    .trend-btn { color: var(--nm-text-muted); }
     .trend-btn:hover { color: #1f2937; }
-    .trend-btn-active { background: #ffffff; color: #3b5998; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+    .trend-btn-active { background: var(--nm-surface); color: var(--nm-primary); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
     .dark .trend-btn { color: #94a3b8; }
     .dark .trend-btn:hover { color: #e2e8f0; }
-    .dark .trend-btn-active { background: #1e293b; color: #60a5fa; box-shadow: none; }
+    .dark .trend-btn-active { background: #1e293b; color: #4d94fd; box-shadow: none; }
 </style>
 @endsection
 
 @section('content')
             <!-- Top Bar -->
             <div class="flex justify-end items-center gap-3 mb-4 sm:mb-6">
-                    <a href="{{ route('reportes.inventario_pdf') }}" target="_blank" class="fancy fancy-sm hidden sm:inline-flex" title="Descargar Reporte Ejecutivo de Inventario en PDF">
+                    <a href="{{ route('reportes.inventario_pdf') }}" target="_blank" class="fancy fancy-sm hidden sm:inline-flex" title="Descargar Reporte Ejecutivo de Inventario en PDF" aria-label="Descargar Reporte Ejecutivo de Inventario en PDF">
                         <span class="top-key"></span>
                         <span class="text">
-                            <svg class="w-3.5 h-3.5 text-[#3b5998]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            <svg class="w-3.5 h-3.5 text-nm-primary" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M12 18v-6" /> <path d="m9 15 3 3 3-3" /></svg>
                             Reporte PDF
                         </span>
                         <span class="bottom-key-1"></span>
                         <span class="bottom-key-2"></span>
                     </a>
-                    <a href="{{ route('setup-2fa') }}" class="w-10 h-10 bg-white dark:bg-[#0d1017] rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400 hover:text-hacienda-blue dark:hover:text-blue-400 shadow-sm dark:shadow-none border border-gray-100 dark:border-slate-800/60 transition" title="Configurar 2FA">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    <a href="{{ route('setup-2fa') }}" class="w-10 h-10 bg-white dark:bg-nm-surface rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400 hover:text-hacienda-blue dark:hover:text-blue-400 shadow-sm dark:shadow-none border border-gray-100 dark:border-slate-800/60 transition" title="Configurar 2FA" aria-label="Configurar 2FA">
+                        <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                     </a>
                     {{-- Notification Bell and Dropdown Center --}}
                     <div class="relative" id="notifDropdownContainer">
-                        <button id="notifBellBtn" type="button" onclick="toggleNotifDropdown(event)" class="w-10 h-10 bg-white dark:bg-[#0d1017] rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400 hover:text-hacienda-orange shadow-sm dark:shadow-none border border-gray-100 dark:border-slate-800/60 transition relative focus:outline-none focus:ring-2 focus:ring-[#3b5998]/30" title="Centro de Notificaciones y Alertas">
+                        <button id="notifBellBtn" type="button" onclick="toggleNotifDropdown(event)" class="w-10 h-10 bg-white dark:bg-nm-surface rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400 hover:text-hacienda-orange shadow-sm dark:shadow-none border border-gray-100 dark:border-slate-800/60 transition relative focus:outline-none focus:ring-2 focus:ring-nm-primary/30" title="Centro de Notificaciones y Alertas" aria-label="Centro de Notificaciones y Alertas">
                             @if($unreadNotificaciones > 0)
-                                <span id="notifPulseRing" class="absolute top-2 right-2 w-2.5 h-2.5 bg-[#f26419] rounded-full animate-ping"></span>
-                                <span id="notifPulseDot" class="absolute top-2 right-2 w-2.5 h-2.5 bg-[#f26419] rounded-full ring-2 ring-white"></span>
-                                <span id="notifCountBadge" class="absolute -top-1 -right-1 min-w-[19px] h-[19px] px-1 bg-[#f26419] text-white text-[10px] font-black rounded-full flex items-center justify-center ring-2 ring-white shadow">
+                                <span id="notifPulseRing" class="absolute top-2 right-2 w-2.5 h-2.5 bg-[#f07f12] rounded-full animate-ping"></span>
+                                <span id="notifPulseDot" class="absolute top-2 right-2 w-2.5 h-2.5 bg-[#f07f12] rounded-full ring-2 ring-white"></span>
+                                <span id="notifCountBadge" class="absolute -top-1 -right-1 min-w-[19px] h-[19px] px-1 bg-[#f07f12] text-white text-[11px] font-black rounded-full flex items-center justify-center ring-2 ring-white shadow">
                                     {{ $unreadNotificaciones }}
                                 </span>
                             @endif
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                            <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0" /> <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></svg>
                         </button>
 
                         {{-- Dropdown Card --}}
-                        <div id="notifDropdownMenu" class="hidden absolute right-0 mt-3 w-80 sm:w-96 md:w-[440px] bg-white dark:bg-[#0d1017] rounded-2xl shadow-2xl dark:shadow-none border border-gray-100 dark:border-slate-800/60 z-50 overflow-hidden transform transition-all duration-200 origin-top-right">
+                        <div id="notifDropdownMenu" class="hidden absolute right-0 mt-3 w-80 sm:w-96 md:w-[440px] nm-glass bg-white dark:bg-nm-surface rounded-2xl shadow-2xl dark:shadow-none border border-gray-100 dark:border-slate-800/60 z-50 overflow-hidden transform transition-all duration-200 origin-top-right">
                             {{-- Header --}}
-                            <div class="p-4 bg-gradient-to-r from-slate-50 to-blue-50/40 dark:from-[#090b10] dark:to-slate-900/90 border-b border-gray-100 dark:border-slate-800/60 flex items-center justify-between">
+                            <div class="p-4 bg-gradient-to-r from-slate-50 to-blue-50/40 dark:from-nm-sunken dark:to-slate-900/90 border-b border-gray-100 dark:border-slate-800/60 flex items-center justify-between">
                                 <div class="flex items-center gap-2.5">
-                                    <div class="w-8 h-8 rounded-xl bg-[#3b5998] text-white flex items-center justify-center shadow-sm">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                                    <div class="w-8 h-8 rounded-xl bg-nm-primary text-white flex items-center justify-center shadow-sm">
+                                        <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0" /> <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></svg>
                                     </div>
                                     <div>
                                         <h3 class="text-sm font-bold text-gray-900 dark:text-white leading-tight">Centro de Notificaciones</h3>
@@ -150,21 +150,21 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-1.5">
-                                    <span id="notifBadgeText" class="px-2 py-0.5 rounded-full text-[10px] font-black {{ $unreadNotificaciones > 0 ? 'bg-[#3b5998]/10 text-[#3b5998] dark:bg-blue-950/60 dark:text-blue-400' : 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-slate-400' }}">
+                                    <span id="notifBadgeText" class="px-2 py-0.5 rounded-full text-[11px] font-black {{ $unreadNotificaciones > 0 ? 'bg-nm-primary/10 text-nm-primary dark:bg-blue-950/60 dark:text-blue-400' : 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-slate-400' }}">
                                         {{ $unreadNotificaciones }} no leídas
                                     </span>
-                                    <button type="button" onclick="markAllNotificationsAsRead()" class="text-[11px] text-gray-500 dark:text-slate-400 hover:text-[#3b5998] dark:hover:text-blue-400 font-bold transition px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" title="Marcar todas como leídas">
+                                    <button type="button" onclick="markAllNotificationsAsRead()" class="text-[11px] text-gray-500 dark:text-slate-400 hover:text-nm-primary dark:hover:text-blue-400 font-bold transition px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" title="Marcar todas como leídas" aria-label="Marcar todas como leídas">
                                         Marcar Leídas
                                     </button>
-                                    <button type="button" onclick="clearAllNotifications()" class="text-[11px] text-gray-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-bold transition px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40" title="Descartar y limpiar todas las alertas">
+                                    <button type="button" onclick="clearAllNotifications()" class="text-[11px] text-gray-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-bold transition px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40" title="Descartar y limpiar todas las alertas" aria-label="Descartar y limpiar todas las alertas">
                                         Limpiar Todas
                                     </button>
                                 </div>
                             </div>
 
                             {{-- Filter Tabs --}}
-                            <div class="px-4 py-2 bg-gray-50/70 dark:bg-[#090b10] border-b border-gray-100 dark:border-slate-800/60 flex items-center gap-1.5 overflow-x-auto text-xs">
-                                <button type="button" onclick="filterNotifs('all', this)" class="notif-tab-btn px-2.5 py-1 rounded-lg font-bold text-xs bg-white dark:bg-slate-800 text-[#3b5998] dark:text-blue-400 shadow-xs dark:shadow-none border border-gray-200 dark:border-slate-700">
+                            <div class="px-4 py-2 bg-gray-50/70 dark:bg-nm-sunken border-b border-gray-100 dark:border-slate-800/60 flex items-center gap-1.5 overflow-x-auto text-xs">
+                                <button type="button" onclick="filterNotifs('all', this)" class="notif-tab-btn px-2.5 py-1 rounded-lg font-bold text-xs bg-white dark:bg-slate-800 text-nm-primary dark:text-blue-400 shadow-xs dark:shadow-none border border-gray-200 dark:border-slate-700">
                                     Todas ({{ count($notificaciones) }})
                                 </button>
                                 <button type="button" onclick="filterNotifs('critica', this)" class="notif-tab-btn px-2.5 py-1 rounded-lg font-semibold text-xs text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-100 transition flex items-center gap-1">
@@ -172,11 +172,11 @@
                                     Críticas
                                 </button>
                                 <button type="button" onclick="filterNotifs('advertencia', this)" class="notif-tab-btn px-2.5 py-1 rounded-lg font-semibold text-xs text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-100 transition flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-[#f26419]"></span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-[#f07f12]"></span>
                                     Advertencias
                                 </button>
                                 <button type="button" onclick="filterNotifs('sistema', this)" class="notif-tab-btn px-2.5 py-1 rounded-lg font-semibold text-xs text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-100 transition flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-[#5c8096]"></span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-[var(--nm-primary-2)]"></span>
                                     Sistema
                                 </button>
                             </div>
@@ -192,15 +192,15 @@
                                         {{-- Icon by Type --}}
                                         @if($n['tipo'] === 'critica')
                                             <div class="w-8 h-8 rounded-xl bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs border border-transparent dark:border-red-900/40">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /></svg>
                                             </div>
                                         @elseif($n['tipo'] === 'advertencia')
-                                            <div class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-[#f26419] flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs border border-transparent dark:border-amber-900/40">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            <div class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-[#f07f12] flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs border border-transparent dark:border-amber-900/40">
+                                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg>
                                             </div>
                                         @else
-                                            <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-[#3b5998] dark:text-blue-400 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs border border-transparent dark:border-slate-700">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-nm-primary dark:text-blue-400 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs border border-transparent dark:border-slate-700">
+                                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="m9 12 2 2 4-4" /></svg>
                                             </div>
                                         @endif
 
@@ -208,8 +208,8 @@
                                         <div class="flex-1 min-w-0 pr-2">
                                             <div class="flex items-center justify-between gap-2 mb-1">
                                                 <h4 class="text-xs font-extrabold text-gray-900 dark:text-slate-100 leading-tight">{{ $n['titulo'] }}</h4>
-                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold font-mono bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 shrink-0" title="Hora de falla: {{ $n['fecha_falla'] ?? $n['tiempo'] }}">
-                                                    <svg class="w-3 h-3 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-extrabold font-mono bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 shrink-0" title="Hora de falla: {{ $n['fecha_falla'] ?? $n['tiempo'] }}">
+                                                    <svg class="w-3 h-3 text-red-500 flex-shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <polyline points="12 6 12 12 16 14" /></svg>
                                                     <span>{{ $n['hora_falla'] ?? $n['tiempo'] }}</span>
                                                 </span>
                                             </div>
@@ -217,8 +217,8 @@
                                             <p class="text-xs text-gray-600 dark:text-slate-300 leading-snug mb-1 font-medium">{{ $n['mensaje'] }}</p>
 
                                             @if(!empty($n['fecha_falla']))
-                                                <div class="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-mono mb-2">
-                                                    <span class="font-bold text-slate-600 dark:text-slate-300">🕒 Ocurrencia:</span>
+                                                <div class="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-mono mb-2">
+                                                    <span class="font-bold text-slate-600 dark:text-slate-300"><svg class="w-3.5 h-3.5 inline-block align-[-2px]" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <polyline points="12 6 12 12 16 14" /></svg> Ocurrencia:</span>
                                                     <span class="font-extrabold text-slate-900 dark:text-slate-100">{{ $n['fecha_falla'] }}</span>
                                                     @if(!empty($n['hace_cuanto']))
                                                         <span class="text-slate-400">({{ $n['hace_cuanto'] }})</span>
@@ -228,9 +228,9 @@
 
                                             {{-- Bloque de Causa Raíz Inteligente --}}
                                             @if(!empty($n['causa_raiz']))
-                                                <div class="mb-2 p-2 rounded-xl bg-slate-50 dark:bg-[#07090e] border border-slate-200/80 dark:border-slate-800/80 text-[11px] leading-relaxed">
+                                                <div class="mb-2 p-2 rounded-xl bg-slate-50 dark:bg-nm-sunken border border-slate-200/80 dark:border-slate-800/80 text-[11px] leading-relaxed">
                                                     <div class="flex items-start gap-1.5 text-slate-700 dark:text-slate-300 mb-1">
-                                                        <svg class="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                        <svg class="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 flex-shrink-0 mt-0.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg>
                                                         <div>
                                                             <strong class="font-bold text-slate-900 dark:text-white">¿Por qué falló?</strong>
                                                             <span class="text-slate-600 dark:text-slate-400">{{ $n['causa_raiz'] }}</span>
@@ -238,7 +238,7 @@
                                                     </div>
                                                     @if(!empty($n['accion_sugerida']))
                                                         <div class="flex items-start gap-1.5 text-emerald-700 dark:text-emerald-400 pt-1 border-t border-slate-200/50 dark:border-slate-800/50">
-                                                            <svg class="w-3.5 h-3.5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                            <svg class="w-3.5 h-3.5 flex-shrink-0 mt-0.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="m9 12 2 2 4-4" /></svg>
                                                             <span><strong class="font-bold">Acción:</strong> {{ $n['accion_sugerida'] }}</span>
                                                         </div>
                                                     @endif
@@ -247,21 +247,21 @@
                                             
                                             <div class="flex items-center justify-between pt-1">
                                                 <div class="flex items-center gap-1.5 flex-wrap">
-                                                    <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-transparent dark:border-slate-700">
-                                                        <span class="w-1.5 h-1.5 rounded-full {{ $n['tipo'] === 'critica' ? 'bg-red-500' : ($n['tipo'] === 'advertencia' ? 'bg-[#f26419]' : 'bg-blue-500') }}"></span>
+                                                    <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-transparent dark:border-slate-700">
+                                                        <span class="w-1.5 h-1.5 rounded-full {{ $n['tipo'] === 'critica' ? 'bg-red-500' : ($n['tipo'] === 'advertencia' ? 'bg-[#f07f12]' : 'bg-blue-500') }}"></span>
                                                         {{ $n['dispositivo'] }}
                                                     </span>
                                                     @if(!empty($n['ubicacion']) && $n['ubicacion'] !== 'No especificada')
-                                                        <span class="text-[9px] text-gray-400 dark:text-slate-500 truncate max-w-[120px]" title="{{ $n['ubicacion'] }}">
-                                                            📍 {{ $n['ubicacion'] }}
+                                                        <span class="text-[11px] text-gray-400 dark:text-slate-500 truncate max-w-[120px]" title="{{ $n['ubicacion'] }}">
+                                                            <svg class="w-3.5 h-3.5 inline-block align-[-2px]" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /> <circle cx="12" cy="10" r="3" /></svg> {{ $n['ubicacion'] }}
                                                         </span>
                                                     @endif
                                                 </div>
 
                                                 @if(isset($n['link']))
-                                                    <a href="{{ $n['link'] }}" class="text-[11px] font-bold text-[#3b5998] dark:text-blue-400 hover:text-[#f26419] dark:hover:text-cyan-400 transition flex items-center gap-0.5 group">
+                                                    <a href="{{ $n['link'] }}" class="text-[11px] font-bold text-nm-primary dark:text-blue-400 hover:text-[#f07f12] dark:hover:text-cyan-400 transition flex items-center gap-0.5 group">
                                                         <span>{{ $n['accion'] }}</span>
-                                                        <svg class="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                                        <svg class="w-3 h-3 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
                                                     </a>
                                                 @endif
                                             </div>
@@ -270,17 +270,17 @@
                                         {{-- Unread Dot & Dismiss --}}
                                         <div class="flex flex-col items-center gap-2">
                                             @if(!$n['leida'])
-                                                <span class="notif-unread-dot w-2 h-2 rounded-full bg-[#f26419]"></span>
+                                                <span class="notif-unread-dot w-2 h-2 rounded-full bg-[#f07f12]"></span>
                                             @endif
-                                            <button type="button" onclick="dismissNotification('{{ $n['id'] }}', event)" class="text-gray-300 dark:text-slate-600 hover:text-gray-500 dark:hover:text-slate-400 p-0.5 rounded transition" title="Descartar">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                            <button type="button" onclick="dismissNotification('{{ $n['id'] }}', event)" class="text-gray-300 dark:text-slate-600 hover:text-gray-500 dark:hover:text-slate-400 p-0.5 rounded transition" title="Descartar" aria-label="Descartar">
+                                                <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
                                             </button>
                                         </div>
                                     </div>
                                 @empty
                                     <div class="p-8 text-center">
                                         <div class="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2 border border-transparent dark:border-emerald-800/40">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                                            <svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                                         </div>
                                         <p class="text-sm font-bold text-gray-800 dark:text-slate-100">Red Operando Normal</p>
                                         <p class="text-xs text-gray-400 dark:text-slate-400 mt-1">No hay alertas ni incidencias reportadas en el sistema.</p>
@@ -290,7 +290,7 @@
                                 {{-- Empty filter state --}}
                                 <div id="notifFilterEmpty" class="hidden p-8 text-center">
                                     <div class="w-12 h-12 rounded-full bg-gray-50 dark:bg-slate-800 text-gray-400 flex items-center justify-center mx-auto mb-2">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                                        <svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12" /> <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></svg>
                                     </div>
                                     <p class="text-xs font-bold text-gray-700 dark:text-slate-300">Sin elementos en esta categoría</p>
                                     <p class="text-[11px] text-gray-400 mt-0.5">Selecciona otra pestaña o regresa a "Todas".</p>
@@ -298,12 +298,12 @@
                             </div>
 
                             {{-- Footer --}}
-                            <div class="p-3 bg-gray-50 dark:bg-[#090b10] border-t border-gray-100 dark:border-slate-800/60 flex items-center justify-between text-xs">
+                            <div class="p-3 bg-gray-50 dark:bg-nm-sunken border-t border-gray-100 dark:border-slate-800/60 flex items-center justify-between text-xs">
                                 <div class="flex items-center gap-1.5 text-gray-500 dark:text-slate-400 text-[11px]">
                                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                                     <span>Sondeo SNMP/ICMP cada 15 s</span>
                                 </div>
-                                <a href="{{ route('settings.index', ['section' => 'notificaciones']) }}" class="text-[11px] font-bold text-[#3b5998] dark:text-blue-400 hover:text-[#f26419] transition">
+                                <a href="{{ route('settings.index', ['section' => 'notificaciones']) }}" class="text-[11px] font-bold text-nm-primary dark:text-blue-400 hover:text-[#f07f12] transition">
                                     Configurar Alertas →
                                 </a>
                             </div>
@@ -313,13 +313,13 @@
 
 
             <!-- Hero Banner -->
-            <div class="bg-white dark:bg-[#0d1017] border border-gray-100 dark:border-slate-800/40 rounded-[2rem] p-6 lg:p-8 text-gray-800 dark:text-slate-100 mb-8 relative overflow-hidden shadow-sm dark:shadow-none flex flex-col md:flex-row md:items-center justify-between gap-4 lg:gap-6 min-h-min">
+            <div class="bg-white dark:bg-nm-surface border border-gray-100 dark:border-slate-800/40 rounded-2xl p-6 lg:p-8 text-gray-800 dark:text-slate-100 mb-8 relative overflow-hidden shadow-sm dark:shadow-none flex flex-col md:flex-row md:items-center justify-between gap-4 lg:gap-6 min-h-min">
                 <!-- Background pattern (simulated) -->
-                <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(circle at 2px 2px, #3b5998 1px, transparent 0); background-size: 32px 32px; z-index: 0;"></div>
+                <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(circle at 2px 2px, var(--nm-primary) 1px, transparent 0); background-size: 32px 32px; z-index: 0;"></div>
                 
                 <div class="relative z-10 w-full md:flex-1">
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 mb-3 md:mb-4 border border-transparent dark:border-blue-900/40">
-                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
+                        <svg class="w-4 h-4 mr-1" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4" /> <path d="M16 2v4" /> <rect width="18" height="18" x="3" y="4" rx="2" /> <path d="M3 10h18" /></svg>
                         <span title="Menor sysUpTime entre los equipos en línea (el equipo reiniciado más recientemente)">{{ now()->format('d/m/Y') }} | Uptime mínimo: {{ $formattedUptime }}</span>
                     </span>
                     @php
@@ -358,16 +358,16 @@
             <!-- Mini Stat Cards (NOC Time Series) -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <!-- Card 1: Tráfico -->
-                <div class="floating-card p-5 flex flex-col justify-between">
+                <div class="floating-card nm-metal-navy p-5 flex flex-col justify-between">
                     <div class="flex justify-between items-start mb-2">
                         <div>
-                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider font-mono">Tráfico de Red</p>
+                            <p class="text-xs font-bold text-white/75 uppercase tracking-wider font-mono">Tráfico de Red</p>
                             <div class="flex items-baseline gap-1 mt-1">
-                                <span class="text-2xl font-bold text-gray-900 dark:text-white font-mono tracking-tight" id="kpiTraffic">{{ $trafficTotal !== null ? number_format($trafficTotal, 1) : 'Sin dato' }}</span>
-                                <span class="text-xs font-mono text-gray-500">Mbps</span>
+                                <span class="text-2xl font-bold text-white font-mono tracking-tight" id="kpiTraffic">{{ $trafficTotal !== null ? number_format($trafficTotal, 1) : 'Sin dato' }}</span>
+                                <span class="text-xs font-mono text-white/70">Mbps</span>
                             </div>
                         </div>
-                        <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100 font-mono" title="Suma de puertos físicos (entrada + salida) de todos los equipos">Σ puertos</span>
+                        <span class="text-xs font-semibold text-white bg-white/15 px-2.5 py-1 rounded-full border border-white/25 font-mono" title="Suma de puertos físicos (entrada + salida) de todos los equipos">Σ puertos</span>
                     </div>
                     <div class="w-full h-20 relative">
                         <canvas id="sparkTraffic"></canvas>
@@ -375,16 +375,16 @@
                 </div>
 
                 <!-- Card 2: Latencia -->
-                <div class="floating-card p-5 flex flex-col justify-between">
+                <div class="floating-card nm-metal-azure p-5 flex flex-col justify-between">
                     <div class="flex justify-between items-start mb-2">
                         <div>
-                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider font-mono">Latencia Global</p>
+                            <p class="text-xs font-bold text-white/75 uppercase tracking-wider font-mono">Latencia Global</p>
                             <div class="flex items-baseline gap-1 mt-1">
-                                <span class="text-2xl font-bold text-gray-900 dark:text-white font-mono tracking-tight" id="kpiPing">{{ $avgPing !== null ? $avgPing : 'Sin dato' }}</span>
-                                <span class="text-xs font-mono text-gray-500">ms</span>
+                                <span class="text-2xl font-bold text-white font-mono tracking-tight" id="kpiPing">{{ $avgPing !== null ? $avgPing : 'Sin dato' }}</span>
+                                <span class="text-xs font-mono text-white/70">ms</span>
                             </div>
                         </div>
-                        <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 font-mono" title="Promedio ICMP de los equipos en línea">ICMP prom.</span>
+                        <span class="text-xs font-semibold text-white bg-white/15 px-2.5 py-1 rounded-full border border-white/25 font-mono" title="Promedio ICMP de los equipos en línea">ICMP prom.</span>
                     </div>
                     <div class="w-full h-20 relative">
                         <canvas id="sparkPing"></canvas>
@@ -419,8 +419,8 @@
                 {{-- Header: Título Institucional + Status SNMP --}}
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-white/10">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-2xl bg-[#3b5998]/10 dark:bg-white/10 text-[#3b5998] dark:text-blue-400 flex items-center justify-center font-bold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        <div class="w-10 h-10 rounded-2xl bg-nm-primary/10 dark:bg-white/10 text-nm-primary dark:text-blue-400 flex items-center justify-center font-bold">
+                            <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
                         </div>
                         <div>
                             <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white tracking-tight">Monitoreo de Tráfico de Red en Tiempo Real</h3>
@@ -438,22 +438,22 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
                     {{-- Gauge 1: DESCARGA (DOWN) --}}
                     <div class="traffic-gauge-box relative flex flex-col items-center justify-center p-5 sm:p-6 rounded-2xl transition">
-                        <div class="flex items-center gap-2 text-xs font-black text-[#3b5998] dark:text-[#00e5ff] tracking-widest uppercase mb-3">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                        <div class="flex items-center gap-2 text-xs font-black text-nm-primary dark:text-[#4d94fd] tracking-widest uppercase mb-3">
+                            <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" /> <path d="m19 12-7 7-7-7" /></svg>
                             <span>TRÁFICO DE DESCARGA (DOWN)</span>
                         </div>
                         <div class="relative w-[260px] sm:w-[300px] h-[220px] sm:h-[250px] flex items-center justify-center">
                             <svg viewBox="0 0 320 320" class="w-full h-full overflow-visible">
                                 <defs>
                                     <linearGradient id="stDownGradDark" x1="0%" y1="100%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#00b4d8" />
-                                        <stop offset="50%" stop-color="#00e5ff" />
-                                        <stop offset="100%" stop-color="#00f5a0" />
+                                        <stop offset="0%" stop-color="#0168fa" />
+                                        <stop offset="50%" stop-color="#4d94fd" />
+                                        <stop offset="100%" stop-color="#00b8c4" />
                                     </linearGradient>
                                     <linearGradient id="stDownGradLight" x1="0%" y1="100%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#3b5998" />
-                                        <stop offset="50%" stop-color="#2563eb" />
-                                        <stop offset="100%" stop-color="#1d4ed8" />
+                                        <stop offset="0%" stop-color="#023f99" />
+                                        <stop offset="50%" stop-color="#0168fa" />
+                                        <stop offset="100%" stop-color="#4d94fd" />
                                     </linearGradient>
                                     <filter id="stDownGlow" x="-20%" y="-20%" width="140%" height="140%">
                                         <feGaussianBlur stdDeviation="5" result="blur" />
@@ -481,13 +481,13 @@
                                 <g id="stDownNeedleWedge" class="st-needle-wedge" style="transform: rotate(-135deg);">
                                     <polygon points="156,160 164,160 161.5,42 158.5,42" class="st-needle-pointer drop-shadow-md" />
                                     <circle cx="160" cy="160" r="13" class="st-needle-cap-bg" stroke-width="2.5" />
-                                    <circle cx="160" cy="160" r="5" fill="#3b5998" class="dark:fill-[#00e5ff]" />
+                                    <circle cx="160" cy="160" r="5" fill="#0168fa" class="dark:fill-[#4d94fd]" />
                                 </g>
                             </svg>
 
                             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center pt-14">
                                 <span id="stDownMainValue" class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-gray-900 dark:text-white drop-shadow-xs">{{ $trafficInNow !== null ? number_format($trafficInNow, 2) : '—' }}</span>
-                                <div class="flex items-center gap-1 text-xs font-bold text-[#3b5998] dark:text-[#00e5ff] tracking-widest uppercase mt-0.5">
+                                <div class="flex items-center gap-1 text-xs font-bold text-nm-primary dark:text-[#4d94fd] tracking-widest uppercase mt-0.5">
                                     <span id="stDownUnit">↓ Mbps</span>
                                 </div>
                             </div>
@@ -496,8 +496,8 @@
 
                     {{-- Gauge 2: SUBIDA (UP) --}}
                     <div class="traffic-gauge-box relative flex flex-col items-center justify-center p-5 sm:p-6 rounded-2xl transition">
-                        <div class="flex items-center gap-2 text-xs font-black text-[#f26419] dark:text-pink-400 tracking-widest uppercase mb-3">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                        <div class="flex items-center gap-2 text-xs font-black text-[#f07f12] dark:text-pink-400 tracking-widest uppercase mb-3">
+                            <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7" /> <path d="M12 19V5" /></svg>
                             <span>TRÁFICO DE SUBIDA (UP)</span>
                         </div>
                         <div class="relative w-[260px] sm:w-[300px] h-[220px] sm:h-[250px] flex items-center justify-center">
@@ -506,10 +506,10 @@
                                     <linearGradient id="stUpGradDark" x1="0%" y1="100%" x2="100%" y2="0%">
                                         <stop offset="0%" stop-color="#8b5cf6" />
                                         <stop offset="50%" stop-color="#d946ef" />
-                                        <stop offset="100%" stop-color="#ec4899" />
+                                        <stop offset="100%" stop-color="#00b8c4" />
                                     </linearGradient>
                                     <linearGradient id="stUpGradLight" x1="0%" y1="100%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#f26419" />
+                                        <stop offset="0%" stop-color="#f07f12" />
                                         <stop offset="50%" stop-color="#ea580c" />
                                         <stop offset="100%" stop-color="#c2410c" />
                                     </linearGradient>
@@ -539,13 +539,13 @@
                                 <g id="stUpNeedleWedge" class="st-needle-wedge" style="transform: rotate(-135deg);">
                                     <polygon points="156,160 164,160 161.5,42 158.5,42" class="st-needle-pointer drop-shadow-md" />
                                     <circle cx="160" cy="160" r="13" class="st-needle-cap-bg" stroke-width="2.5" />
-                                    <circle cx="160" cy="160" r="5" fill="#f26419" class="dark:fill-[#ec4899]" />
+                                    <circle cx="160" cy="160" r="5" fill="#f07f12" class="dark:fill-[#00b8c4]" />
                                 </g>
                             </svg>
 
                             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center pt-14">
                                 <span id="stUpMainValue" class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-gray-900 dark:text-white drop-shadow-xs">{{ $trafficOutNow !== null ? number_format($trafficOutNow, 2) : '—' }}</span>
-                                <div class="flex items-center gap-1 text-xs font-bold text-[#f26419] dark:text-pink-400 tracking-widest uppercase mt-0.5">
+                                <div class="flex items-center gap-1 text-xs font-bold text-[#f07f12] dark:text-pink-400 tracking-widest uppercase mt-0.5">
                                     <span id="stUpUnit">↑ Mbps</span>
                                 </div>
                             </div>
@@ -556,8 +556,8 @@
                 {{-- Footer: Metadata Institucional --}}
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200 dark:border-white/10 text-xs text-gray-600 dark:text-slate-300">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-xl bg-[#3b5998]/10 dark:bg-white/10 flex items-center justify-center text-[#3b5998] dark:text-slate-300 shrink-0">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        <div class="w-8 h-8 rounded-xl bg-nm-primary/10 dark:bg-white/10 flex items-center justify-center text-nm-primary dark:text-slate-300 shrink-0">
+                            <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" /> <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" /> <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" /> <path d="M10 6h4" /> <path d="M10 10h4" /> <path d="M10 14h4" /> <path d="M10 18h4" /></svg>
                         </div>
                         <div>
                             <p class="font-bold text-gray-900 dark:text-white text-xs leading-tight">Secretaría de la Hacienda Pública</p>
@@ -566,8 +566,8 @@
                     </div>
 
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-xl bg-[#f26419]/10 dark:bg-white/10 flex items-center justify-center text-[#f26419] dark:text-slate-300 shrink-0">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                        <div class="w-8 h-8 rounded-xl bg-[#f07f12]/10 dark:bg-white/10 flex items-center justify-center text-[#f07f12] dark:text-slate-300 shrink-0">
+                            <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /> <rect width="20" height="8" x="2" y="14" rx="2" ry="2" /> <line x1="6" x2="6.01" y1="6" y2="6" /> <line x1="6" x2="6.01" y1="18" y2="18" /></svg>
                         </div>
                         <div>
                             <p class="font-bold text-gray-900 dark:text-white text-xs leading-tight" id="snmpTrafficDevice">—</p>
@@ -596,44 +596,44 @@
                             <canvas id="mainDoughnut"></canvas>
                             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
                                 <span class="text-2xl font-extrabold text-gray-900 dark:text-white font-mono leading-none tracking-tight">{{ $avgCpu !== null ? round($avgCpu) : '—' }}<span class="text-xs text-gray-400 dark:text-slate-500 font-sans ml-0.5">%</span></span>
-                                <span class="text-[9px] font-bold text-[#f26419] font-mono uppercase tracking-widest mt-0.5">CPU CORE</span>
+                                <span class="text-[11px] font-bold text-blue-600 dark:text-blue-400 font-mono uppercase tracking-widest mt-0.5">CPU CORE</span>
                                 <div class="mt-1 flex items-center gap-1 font-mono text-[11px] text-gray-500">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-[#3b5998]"></span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-[#00b8c4]"></span>
                                     <span>RAM</span>
-                                    <span class="font-bold text-[#3b5998]">{{ $avgMem !== null ? round($avgMem) . '%' : 'Sin dato' }}</span>
+                                    <span class="font-bold text-[#00838c] dark:text-[#33d6e0]">{{ $avgMem !== null ? round($avgMem) . '%' : 'Sin dato' }}</span>
                                 </div>
                             </div>
                         </div>
                               <!-- Legend -->
                         <div class="flex-1 w-full space-y-3">
-                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/70 dark:bg-[#090b10] border border-gray-100 dark:border-slate-800/40">
+                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/70 dark:bg-nm-sunken border border-gray-100 dark:border-slate-800/40">
                                 <div class="flex items-center">
-                                    <span class="w-3 h-3 rounded-md bg-hacienda-orange mr-2.5 flex-shrink-0 shadow-sm"></span>
+                                    <span class="w-3 h-3 rounded-md bg-blue-600 dark:bg-blue-400 mr-2.5 flex-shrink-0 shadow-sm"></span>
                                     <div>
                                         <p class="text-xs font-bold text-gray-800 dark:text-slate-200">CPU Consumo</p>
-                                        <p class="text-[10px] text-gray-400 dark:text-slate-500 font-mono">Track: 0 - 100%</p>
+                                        <p class="text-[11px] text-gray-400 dark:text-slate-500 font-mono">Track: 0 - 100%</p>
                                     </div>
                                 </div>
                                 <span class="text-lg font-extrabold text-gray-900 dark:text-white font-mono" id="kpiCpuValue">{{ $avgCpu !== null ? round($avgCpu) . '%' : 'Sin dato' }}</span>
                             </div>
 
-                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/70 dark:bg-[#090b10] border border-gray-100 dark:border-slate-800/40">
+                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/70 dark:bg-nm-sunken border border-gray-100 dark:border-slate-800/40">
                                 <div class="flex items-center">
-                                    <span class="w-3 h-3 rounded-md bg-hacienda-blue mr-2.5 flex-shrink-0 shadow-sm"></span>
+                                    <span class="w-3 h-3 rounded-md bg-[#00b8c4] mr-2.5 flex-shrink-0 shadow-sm"></span>
                                     <div>
                                         <p class="text-xs font-bold text-gray-800 dark:text-slate-200">Memoria RAM</p>
-                                        <p class="text-[10px] text-gray-400 dark:text-slate-500 font-mono">Track: 0 - 100%</p>
+                                        <p class="text-[11px] text-gray-400 dark:text-slate-500 font-mono">Track: 0 - 100%</p>
                                     </div>
                                 </div>
                                 <span class="text-lg font-extrabold text-gray-900 dark:text-white font-mono" id="kpiMemValue">{{ $avgMem !== null ? round($avgMem) . '%' : 'Sin dato' }}</span>
                             </div>
 
-                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/70 dark:bg-[#090b10] border border-gray-100 dark:border-slate-800/40">
+                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/70 dark:bg-nm-sunken border border-gray-100 dark:border-slate-800/40">
                                 <div class="flex items-center">
                                     <span class="w-3 h-3 rounded-md bg-emerald-500 mr-2.5 flex-shrink-0 shadow-sm"></span>
                                     <div>
                                         <p class="text-xs font-bold text-gray-800 dark:text-slate-200">Nodos Activos</p>
-                                        <p class="text-[10px] text-gray-400 dark:text-slate-500 font-mono">Dispositivos en línea</p>
+                                        <p class="text-[11px] text-gray-400 dark:text-slate-500 font-mono">Dispositivos en línea</p>
                                     </div>
                                 </div>
                                 <span class="text-sm font-bold text-gray-900 dark:text-white font-mono" id="kpiNodesValue">{{ $dispositivosOnline }} / {{ $totalDispositivos }}</span>
@@ -681,7 +681,7 @@
                                 </svg>
                                 <div class="absolute bottom-0 left-0 w-full text-center flex flex-col items-center">
                                     <span class="text-2xl font-extrabold text-gray-800 dark:text-white font-mono leading-none">{{ $tempMax !== null ? round($tempMax) : '—' }}<span class="text-sm text-gray-400">°C</span></span>
-                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">{{ $tempMax === null ? 'SIN DATO' : ($tempMax < 55 ? 'NORMAL' : ($tempMax < 65 ? 'ELEVADA' : 'CRÍTICA')) }}</span>
+                                    <span class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">{{ $tempMax === null ? 'SIN DATO' : ($tempMax < 55 ? 'NORMAL' : ($tempMax < 65 ? 'ELEVADA' : 'CRÍTICA')) }}</span>
                                 </div>
                             </div>
                             
@@ -719,7 +719,7 @@
                         </div>
 
                         <div class="mt-8 pt-4 border-t border-dashed border-gray-200 dark:border-slate-800/40">
-                            <a href="{{ route('reportes.inventario_pdf') }}" target="_blank" class="w-full py-2 text-sm font-semibold text-hacienda-blue dark:text-blue-400 hover:text-[#4a6b7d] dark:hover:text-blue-300 transition flex items-center justify-center">
+                            <a href="{{ route('reportes.inventario_pdf') }}" target="_blank" class="w-full py-2 text-sm font-semibold text-hacienda-blue dark:text-blue-400 hover:text-[#5b7d95] dark:hover:text-blue-300 transition flex items-center justify-center">
                                 Generar reporte PDF de inventario +
                             </a>
                         </div>
@@ -757,13 +757,13 @@
                         <!-- Buscador en tiempo real -->
                         <div class="relative w-full sm:w-72">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                <svg class="w-4 h-4 text-gray-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /> <path d="m21 21-4.3-4.3" /></svg>
                             </div>
                             <input 
                                 type="text" 
                                 x-model="filtroBusqueda"
                                 placeholder="Buscar por nombre, IP, tipo..." 
-                                class="w-full pl-9 pr-8 py-2 bg-gray-50 dark:bg-[#090b10] border border-gray-200 dark:border-slate-800/60 rounded-xl text-xs focus:ring-2 focus:ring-hacienda-blue dark:focus:ring-blue-500 focus:border-transparent outline-none transition placeholder-gray-400 dark:placeholder-slate-500 text-gray-800 dark:text-slate-200"
+                                class="w-full pl-9 pr-8 py-2 bg-gray-50 dark:bg-nm-sunken border border-gray-200 dark:border-slate-800/60 rounded-xl text-xs focus:ring-2 focus:ring-hacienda-blue dark:focus:ring-blue-500 focus:border-transparent outline-none transition placeholder-gray-400 dark:placeholder-slate-500 text-gray-800 dark:text-slate-200"
                             >
                             <button 
                                 x-show="filtroBusqueda.length > 0" 
@@ -771,7 +771,7 @@
                                 type="button" 
                                 class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
                                 style="display: none;">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
                             </button>
                         </div>
                     </div>
@@ -779,7 +779,7 @@
                     <!-- Barra de Filtros Dual: Categorías de Hardware + Estado Online/Offline -->
                     <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
                         <!-- Filtros por Tipo de Dispositivo -->
-                        <div class="flex flex-wrap items-center gap-1.5 bg-gray-100/80 dark:bg-[#090b10] border border-transparent dark:border-slate-800/40 p-1 rounded-xl text-xs font-semibold">
+                        <div class="flex flex-wrap items-center gap-1.5 bg-gray-100/80 dark:bg-nm-sunken border border-transparent dark:border-slate-800/40 p-1 rounded-xl text-xs font-semibold">
                             <button 
                                 @click="filtroTipo = 'todos'"
                                 :class="filtroTipo === 'todos' ? 'bg-white dark:bg-slate-800 text-hacienda-blue dark:text-blue-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
@@ -792,7 +792,7 @@
                                 :class="filtroTipo === 'switch' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
                                 class="px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
                                 type="button">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /> <rect width="20" height="8" x="2" y="14" rx="2" ry="2" /> <line x1="6" x2="6.01" y1="6" y2="6" /> <line x1="6" x2="6.01" y1="18" y2="18" /></svg>
                                 Switches ({{ $totalSwitches }})
                             </button>
                             <button 
@@ -838,7 +838,7 @@
                         </div>
 
                         <!-- Filtros por Estado -->
-                        <div class="flex items-center bg-gray-100/80 dark:bg-[#090b10] border border-transparent dark:border-slate-800/40 p-1 rounded-xl text-xs font-semibold">
+                        <div class="flex items-center bg-gray-100/80 dark:bg-nm-sunken border border-transparent dark:border-slate-800/40 p-1 rounded-xl text-xs font-semibold">
                             <button 
                                 @click="filtroEstado = 'todos'"
                                 :class="filtroEstado === 'todos' ? 'bg-white dark:bg-slate-800 text-hacienda-blue dark:text-blue-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
@@ -867,21 +867,21 @@
                 </div>
 
                 <!-- Contenedor con Scroll Interno Controlado (Evita scroll infinito de la página) -->
-                <div class="rounded-xl border border-gray-200/80 dark:border-slate-800/40 overflow-hidden shadow-xs dark:shadow-none bg-white dark:bg-[#0d1017]">
+                <div class="rounded-xl border border-gray-200/80 dark:border-slate-800/40 overflow-hidden shadow-xs dark:shadow-none bg-white dark:bg-nm-surface">
                     <div x-ref="tableContainer" class="max-h-[420px] overflow-y-auto overflow-x-auto custom-scrollbar relative" style="scrollbar-gutter: stable;">
                         <table class="w-full text-left border-separate border-spacing-0 text-xs">
                             <thead class="sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.04)] dark:shadow-none">
                                 <tr class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-28">Estado</th>
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 min-w-[210px]">Dispositivo / Hostname</th>
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-32">Dirección IP</th>
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 min-w-[160px]">Tipo / Modelo</th>
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-32">CPU / RAM (%)</th>
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-28">Uptime</th>
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-[#0d1017]/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-36 text-right">Acciones</th>
+                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-nm-surface/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-28">Estado</th>
+                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-nm-surface/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 min-w-[210px]">Dispositivo / Hostname</th>
+                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-nm-surface/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-32">Dirección IP</th>
+                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-nm-surface/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 min-w-[160px]">Tipo / Modelo</th>
+                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-nm-surface/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-32">CPU / RAM (%)</th>
+                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-nm-surface/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-28">Uptime</th>
+                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-nm-surface/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-36 text-right">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100 dark:divide-slate-800/30 bg-white dark:bg-[#0d1017]">
+                            <tbody class="divide-y divide-gray-100 dark:divide-slate-800/30 bg-white dark:bg-nm-surface">
                                 @forelse($dispositivos as $disp)
                                 <tr 
                                     x-show="matches('{{ addslashes($disp->nombre) }}', '{{ $disp->ip }}', '{{ $disp->estado }}', '{{ $disp->tipo_dispositivo }}')"
@@ -914,7 +914,7 @@
                                             <div class="w-9 h-9 rounded-xl {{ $disp->tipo_icon_container_classes }} flex items-center justify-center flex-shrink-0 font-bold shadow-xs border border-transparent dark:border-white/5" title="{{ $disp->tipo_label }}">
                                                 @if($disp->tipo_dispositivo === 'firewall')
                                                     <!-- Firewall -->
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l8 4v5c0 4.5-3.4 8.4-8 9-4.6-.6-8-4.5-8-9V7l8-4z"></path></svg>
+                                                    <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></svg>
                                                 @elseif($disp->tipo_dispositivo === 'telefono')
                                                     <!-- Teléfono IP (VoIP) -->
                                                     <img src="{{ asset('images/topology/ip-phone.png') }}" class="w-6 h-6 object-contain" alt="Teléfono">
@@ -932,21 +932,21 @@
                                                     <img src="{{ asset('images/topology/router.png') }}" class="w-6 h-6 object-contain" alt="Router">
                                                 @else
                                                     <!-- Switch L2/L3 -->
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                                                    <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /> <rect width="20" height="8" x="2" y="14" rx="2" ry="2" /> <line x1="6" x2="6.01" y1="6" y2="6" /> <line x1="6" x2="6.01" y1="18" y2="18" /></svg>
                                                 @endif
                                             </div>
                                             <div class="min-w-0 max-w-[200px] sm:max-w-[240px]">
                                                 <a href="{{ route('dispositivos.show', $disp->id) }}" class="font-bold text-gray-900 dark:text-slate-100 group-hover:text-hacienda-blue dark:group-hover:text-blue-400 hover:underline transition truncate block" title="{{ $disp->nombre }}">
                                                     {{ $disp->nombre }}
                                                 </a>
-                                                <span class="text-[10px] text-gray-400 dark:text-slate-500 font-mono truncate block">{{ $disp->ubicacion ?: 'NOC Data Center' }}</span>
+                                                <span class="text-[11px] text-gray-400 dark:text-slate-500 font-mono truncate block">{{ $disp->ubicacion ?: 'NOC Data Center' }}</span>
                                             </div>
                                         </div>
                                     </td>
 
                                     <!-- Dirección IP -->
                                     <td class="py-2.5 px-3.5 whitespace-nowrap border-b border-gray-100 dark:border-slate-800/30">
-                                        <span class="font-mono text-xs text-gray-700 dark:text-slate-300 bg-gray-50 dark:bg-[#090b10] px-2 py-0.5 rounded-md border border-gray-200 dark:border-slate-800/60">
+                                        <span class="font-mono text-xs text-gray-700 dark:text-slate-300 bg-gray-50 dark:bg-nm-sunken px-2 py-0.5 rounded-md border border-gray-200 dark:border-slate-800/60">
                                             {{ $disp->ip }}
                                         </span>
                                     </td>
@@ -963,13 +963,13 @@
                                         <div class="flex flex-col gap-1.5">
                                             @foreach(['CPU' => $disp->latest_cpu, 'RAM' => $disp->latest_mem] as $etiqueta => $valor)
                                                 <div class="flex items-center gap-2">
-                                                    <span class="text-[9px] font-bold text-gray-400 w-6">{{ $etiqueta }}</span>
+                                                    <span class="text-[11px] font-bold text-gray-400 w-6">{{ $etiqueta }}</span>
                                                     <div class="w-12 bg-gray-100 dark:bg-slate-800/80 rounded-full h-1.5 overflow-hidden flex-shrink-0">
                                                         @if($valor !== null)
-                                                            <div class="h-1.5 rounded-full {{ $valor > 75 ? 'bg-red-500' : ($valor > 40 ? 'bg-[#f26419]' : 'bg-[#3b5998]') }}" style="width: {{ min(100, max(4, $valor)) }}%"></div>
+                                                            <div class="h-1.5 rounded-full {{ $valor > 75 ? 'bg-red-500' : ($valor > 40 ? 'bg-[#f07f12]' : 'bg-nm-primary') }}" style="width: {{ min(100, max(4, $valor)) }}%"></div>
                                                         @endif
                                                     </div>
-                                                    <span class="font-mono font-bold text-gray-800 dark:text-slate-200 text-[10px] w-6 text-right">{{ $valor !== null ? $valor . '%' : '—' }}</span>
+                                                    <span class="font-mono font-bold text-gray-800 dark:text-slate-200 text-[11px] w-6 text-right">{{ $valor !== null ? $valor . '%' : '—' }}</span>
                                                 </div>
                                             @endforeach
                                         </div>
@@ -989,14 +989,14 @@
                                             <a href="{{ route('dispositivos.show', $disp->id) }}" 
                                                class="px-2.5 py-1 rounded-lg text-xs font-semibold text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-hacienda-blue dark:hover:bg-blue-600 hover:text-white dark:hover:text-white transition flex items-center gap-1 shadow-xs border border-transparent dark:border-blue-900/40"
                                                title="Ver detalles e interfaces del dispositivo">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                                <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /></svg>
                                                 <span>Detalles</span>
                                             </a>
                                             <!-- Consola CLI -->
                                             <a href="{{ route('consola.index') }}" 
                                                class="px-2.5 py-1 rounded-lg text-xs font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-900 dark:hover:bg-slate-700 hover:text-emerald-400 transition font-mono flex items-center gap-1 shadow-xs border border-transparent dark:border-slate-700"
-                                               title="Abrir consola CLI remota">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                               title="Abrir consola CLI remota" aria-label="Abrir consola CLI remota">
+                                                <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m7 11 2-2-2-2" /> <path d="M11 13h4" /> <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /></svg>
                                                 <span>CLI</span>
                                             </a>
                                         </div>
@@ -1022,15 +1022,15 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="text-[11px] font-mono text-gray-400 flex items-center gap-1">
-                            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>
+                            <svg class="w-3.5 h-3.5 text-gray-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4" /> <path d="M17 20V4" /> <path d="m3 8 4-4 4 4" /> <path d="M7 4v16" /></svg>
                             <span>Scroll interno activo</span>
                         </div>
                         <button 
                             @click="$refs.tableContainer.scrollTo({top: 0, behavior: 'smooth'})" 
                             type="button" 
-                            class="px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300 transition flex items-center gap-1 border border-transparent dark:border-slate-700"
-                            title="Subir al inicio de la tabla">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                            class="px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300 transition flex items-center gap-1 border border-transparent dark:border-slate-700"
+                            title="Subir al inicio de la tabla" aria-label="Subir al inicio de la tabla">
+                            <svg class="w-3 h-3" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7" /> <path d="M12 19V5" /></svg>
                             <span>Inicio</span>
                         </button>
                     </div>
@@ -1106,6 +1106,11 @@
                 const canvas = document.getElementById(canvasId);
                 if (!canvas) return null;
                 const ctx = canvas.getContext('2d');
+                // Sobre tarjetas metálicas la serie y los ejes van en blanco translúcido
+                const sobreMetal = !!canvas.closest('.nm-metal-navy, .nm-metal-azure');
+                if (sobreMetal) colorRgb = '255, 255, 255';
+                const colorRejilla = sobreMetal ? 'rgba(255, 255, 255, 0.14)' : getGridColor();
+                const colorEjes = sobreMetal ? 'rgba(255, 255, 255, 0.72)' : getAxisColor();
 
                 const chart = new Chart(ctx, {
                     type: 'line',
@@ -1151,14 +1156,14 @@
                                 display: true,
                                 grid: {
                                     display: true,
-                                    color: getGridColor(),
+                                    color: colorRejilla,
                                     borderDash: [3, 3],
                                     drawTicks: false
                                 },
                                 border: { display: false },
                                 ticks: {
-                                    font: { family: 'monospace', size: 9 },
-                                    color: getAxisColor(),
+                                    font: { family: 'monospace', size: 10 },
+                                    color: colorEjes,
                                     maxRotation: 0,
                                     autoSkip: true,
                                     maxTicksLimit: 4
@@ -1169,14 +1174,14 @@
                                 position: 'right',
                                 grid: {
                                     display: true,
-                                    color: getGridColor(),
+                                    color: colorRejilla,
                                     borderDash: [3, 3],
                                     drawTicks: false
                                 },
                                 border: { display: false },
                                 ticks: {
-                                    font: { family: 'monospace', size: 9 },
-                                    color: getAxisColor(),
+                                    font: { family: 'monospace', size: 10 },
+                                    color: colorEjes,
                                     maxTicksLimit: 3,
                                     callback: function(val) {
                                         return val + ' ' + unit;
@@ -1191,18 +1196,19 @@
                     }
                 });
 
+                chart.$sobreMetal = sobreMetal;
                 window.dashboardCharts.push(chart);
                 return chart;
             }
 
-            // 1. Tráfico: Azul Rey (#3b5998 -> 59, 89, 152)
-            initNocTimeSeries('sparkTraffic', 'TRAFFIC', trafficData, '59, 89, 152', 'Mbps');
+            // 1. Tráfico: azul real (#0168fa)
+            initNocTimeSeries('sparkTraffic', 'TRAFFIC', trafficData, '1, 104, 250', 'Mbps');
 
-            // 2. Latencia: Slate Blue (#5c8096 -> 92, 128, 150)
-            initNocTimeSeries('sparkPing', 'LATENCY', pingData, '92, 128, 150', 'ms');
+            // 2. Latencia: turquesa (#00b8c4)
+            initNocTimeSeries('sparkPing', 'LATENCY', pingData, '0, 184, 196', 'ms');
 
-            // 3. Pérdida: Naranja Institucional (#f26419 -> 242, 100, 25)
-            initNocTimeSeries('sparkLoss', 'LOSS', lossData, '242, 100, 25', '%');
+            // 3. Pérdida: Naranja Institucional (#f07f12 -> 242, 100, 25)
+            initNocTimeSeries('sparkLoss', 'LOSS', lossData, '240, 127, 18', '%');
 
             // 4. Concentric Dual-Gauge Donut (Health CPU / RAM)
             const doughnutCanvas = document.getElementById('mainDoughnut');
@@ -1216,7 +1222,7 @@
                             {
                                 label: 'CPU',
                                 data: [avgCpu, Math.max(0, 100 - avgCpu)],
-                                backgroundColor: ['#f26419', emptyTrackColor],
+                                backgroundColor: [isDarkTheme() ? '#4d94fd' : '#0168fa', emptyTrackColor],
                                 borderWidth: 0,
                                 borderRadius: [4, 0],
                                 hoverOffset: 3,
@@ -1225,7 +1231,7 @@
                             {
                                 label: 'RAM',
                                 data: [avgMem, Math.max(0, 100 - avgMem)],
-                                backgroundColor: ['#3b5998', emptyTrackColor],
+                                backgroundColor: ['#00b8c4', emptyTrackColor],
                                 borderWidth: 0,
                                 borderRadius: [4, 0],
                                 hoverOffset: 3,
@@ -1279,7 +1285,7 @@
                 const tooltipBorder = isDark ? '#334155' : 'rgba(255, 255, 255, 0.1)';
 
                 window.dashboardCharts.forEach(ch => {
-                    if (ch.config.type === 'line') {
+                    if (ch.config.type === 'line' && !ch.$sobreMetal) {
                         if (ch.options.scales.x) {
                             ch.options.scales.x.grid.color = gridCol;
                             ch.options.scales.x.ticks.color = axisCol;
@@ -1348,11 +1354,11 @@
         function filterNotifs(tipo, btn) {
             // Update tab styles
             document.querySelectorAll('.notif-tab-btn').forEach(b => {
-                b.classList.remove('bg-white', 'text-[#3b5998]', 'shadow-xs', 'border', 'border-gray-200');
+                b.classList.remove('bg-white', 'text-nm-primary', 'shadow-xs', 'border', 'border-gray-200');
                 b.classList.add('text-gray-600');
             });
             if (btn) {
-                btn.classList.add('bg-white', 'text-[#3b5998]', 'shadow-xs', 'border', 'border-gray-200');
+                btn.classList.add('bg-white', 'text-nm-primary', 'shadow-xs', 'border', 'border-gray-200');
                 btn.classList.remove('text-gray-600');
             }
 
@@ -1419,7 +1425,7 @@
                         list.innerHTML = `
                             <div class="p-8 text-center">
                                 <div class="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2 border border-transparent dark:border-emerald-800/40">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                                    <svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                                 </div>
                                 <p class="text-sm font-bold text-gray-800 dark:text-slate-100">Todo en orden</p>
                                 <p class="text-xs text-gray-400 dark:text-slate-400 mt-1">Has atendido todas las alertas del sistema.</p>
@@ -1456,7 +1462,7 @@
             const badgeText = document.getElementById('notifBadgeText');
             if (badgeText) {
                 badgeText.textContent = '0 no leídas';
-                badgeText.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500';
+                badgeText.className = 'px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-500';
             }
 
             // Remove badge and pulse from bell button
@@ -1504,7 +1510,7 @@
                     list.innerHTML = `
                         <div class="p-8 text-center">
                             <div class="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2 border border-transparent dark:border-emerald-800/40">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                                <svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                             </div>
                             <p class="text-sm font-bold text-gray-800 dark:text-slate-100">Todo en orden</p>
                             <p class="text-xs text-gray-400 dark:text-slate-400 mt-1">Has atendido y limpiado todas las alertas del sistema.</p>
@@ -1517,7 +1523,7 @@
             const badgeText = document.getElementById('notifBadgeText');
             if (badgeText) {
                 badgeText.textContent = '0 no leídas';
-                badgeText.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500';
+                badgeText.className = 'px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-500';
             }
 
             // Remove badge and pulse from bell button
@@ -1568,7 +1574,7 @@
             if (badgeText) {
                 badgeText.textContent = `${unreadNotifCount} no leídas`;
                 if (unreadNotifCount === 0) {
-                    badgeText.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500';
+                    badgeText.className = 'px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-500';
                 }
             }
 
@@ -1765,19 +1771,19 @@
                             } else if (bellBtn) {
                                 const newBadge = document.createElement('span');
                                 newBadge.id = 'notifCountBadge';
-                                newBadge.className = 'absolute -top-1 -right-1 min-w-[19px] h-[19px] px-1 bg-[#f26419] text-white text-[10px] font-black rounded-full flex items-center justify-center ring-2 ring-white shadow';
+                                newBadge.className = 'absolute -top-1 -right-1 min-w-[19px] h-[19px] px-1 bg-[#f07f12] text-white text-[11px] font-black rounded-full flex items-center justify-center ring-2 ring-white shadow';
                                 newBadge.textContent = data.unread_notif_count;
                                 bellBtn.appendChild(newBadge);
                             }
                             if (badgeText) {
                                 badgeText.textContent = `${data.unread_notif_count} no leídas`;
-                                badgeText.className = 'px-2 py-0.5 rounded-full text-[10px] font-black bg-[#3b5998]/10 text-[#3b5998]';
+                                badgeText.className = 'px-2 py-0.5 rounded-full text-[11px] font-black bg-nm-primary/10 text-nm-primary';
                             }
                         } else {
                             if (countBadge) countBadge.remove();
                             if (badgeText) {
                                 badgeText.textContent = '0 no leídas';
-                                badgeText.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500';
+                                badgeText.className = 'px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-500';
                             }
                         }
                     }
@@ -1942,7 +1948,7 @@
   bottom: 0;
   width: 10px;
   height: 50%;
-  background: #3b5998; /* Azul Hacienda */
+  background: var(--nm-primary);
   transform-origin: center bottom;
   box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.2);
   transition: background 0.3s ease;
@@ -1981,7 +1987,7 @@
   left: 0;
   width: 10px;
   height: 10px;
-  background: #f26419; /* Naranja Institucional */
+  background: #f07f12; /* Naranja Institucional */
   border-radius: 50%;
   animation: ball624 4s infinite;
   transition: background 0.3s ease;
