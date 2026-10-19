@@ -172,6 +172,39 @@ class TopologiaController extends Controller
         return response()->json(['success' => true, 'eliminadas' => $n]);
     }
 
+    // ==================== SITIOS (dependencias, recaudadoras, escuelas…) ====================
+
+    /**
+     * Sitios con los equipos asignados. Formato compacto: son miles de puntos para el mapa.
+     */
+    public function sitios()
+    {
+        $equipos = Dispositivo::whereNotNull('sitio_id')->get(['id', 'sitio_id'])->groupBy('sitio_id');
+
+        $sitios = \App\Models\SitioRed::orderBy('categoria')->orderBy('nombre')
+            ->get(['id', 'origen', 'nombre', 'categoria', 'direccion', 'municipio', 'operador', 'lat', 'lon'])
+            ->map(fn ($s) => [
+                'id' => $s->id, 'n' => $s->nombre, 'c' => $s->categoria, 'd' => $s->direccion, 'm' => $s->municipio, 'op' => $s->operador,
+                'o' => $s->origen, 'lat' => $s->lat, 'lon' => $s->lon,
+                'eq' => $equipos->get($s->id, collect())->pluck('id')->values(),
+            ]);
+
+        return response()->json(['sitios' => $sitios]);
+    }
+
+    /**
+     * Asigna un equipo a un sitio, o lo quita si sitio_id viene vacío (Admin/Operador).
+     */
+    public function asignarSitio(Request $request, int $id)
+    {
+        $data = $request->validate(['sitio_id' => 'nullable|integer|exists:sitios_red,id']);
+        $dispositivo = Dispositivo::findOrFail($id);
+        $dispositivo->sitio_id = $data['sitio_id'] ?? null;
+        $dispositivo->save();
+
+        return response()->json(['success' => true, 'dispositivo_id' => $dispositivo->id, 'sitio_id' => $dispositivo->sitio_id]);
+    }
+
     /**
      * Ajusta la velocidad y el estado en vivo de los enlaces según la salud de los equipos conectados
      */

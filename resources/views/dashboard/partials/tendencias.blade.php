@@ -11,12 +11,12 @@
             <p class="text-xs text-gray-500 dark:text-slate-400">Promedios de cada ciclo de sondeo (global_metrics). Huecos = sin sondeo en ese periodo.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-            <div class="flex items-center bg-gray-100/80 dark:bg-[#090b10] p-1 rounded-xl text-xs font-semibold" role="group" aria-label="Métrica">
+            <div class="flex items-center bg-gray-100/80 dark:bg-nm-sunken p-1 rounded-xl text-xs font-semibold" role="group" aria-label="Métrica">
                 @foreach(['trafico' => 'Tráfico', 'latencia' => 'Latencia / pérdida', 'recursos' => 'CPU / RAM'] as $k => $label)
                     <button type="button" data-trend-metric="{{ $k }}" class="trend-btn px-2.5 py-1.5 rounded-lg transition {{ $loop->first ? 'trend-btn-active' : '' }}">{{ $label }}</button>
                 @endforeach
             </div>
-            <div class="flex items-center bg-gray-100/80 dark:bg-[#090b10] p-1 rounded-xl text-xs font-semibold" role="group" aria-label="Rango">
+            <div class="flex items-center bg-gray-100/80 dark:bg-nm-sunken p-1 rounded-xl text-xs font-semibold" role="group" aria-label="Rango">
                 @foreach(['1h' => '1 h', '24h' => '24 h', '7d' => '7 d'] as $k => $label)
                     <button type="button" data-trend-range="{{ $k }}" class="trend-btn px-2.5 py-1.5 rounded-lg transition {{ $k === '24h' ? 'trend-btn-active' : '' }}">{{ $label }}</button>
                 @endforeach
@@ -31,14 +31,14 @@
 
     <div class="grid grid-cols-2 lg:grid-cols-6 gap-3 mt-5 pt-4 border-t border-gray-100 dark:border-slate-800/40">
         <div title="Percentil 95 del tráfico total (entrada + salida) de las últimas 24 h">
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider font-mono">P95 tráfico 24 h</p>
+            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider font-mono">P95 tráfico 24 h</p>
             <p class="text-sm font-extrabold font-mono text-gray-900 dark:text-white">{{ $mbps($tr['p95_total']) }}</p>
-            <p class="text-[10px] text-gray-500">↓ {{ $mbps($tr['p95_in']) }} · ↑ {{ $mbps($tr['p95_out']) }}</p>
+            <p class="text-[11px] text-gray-500">↓ {{ $mbps($tr['p95_in']) }} · ↑ {{ $mbps($tr['p95_out']) }}</p>
         </div>
         <div>
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider font-mono">Pico 24 h</p>
+            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider font-mono">Pico 24 h</p>
             <p class="text-sm font-extrabold font-mono text-gray-900 dark:text-white">{{ $mbps($tr['pico']) }}</p>
-            <p class="text-[10px] text-gray-500">{{ $tr['muestras_24h'] }} muestras</p>
+            <p class="text-[11px] text-gray-500">{{ $tr['muestras_24h'] }} muestras</p>
         </div>
         @foreach($tr['vs_ayer'] as $k => $c)
             @php
@@ -49,9 +49,9 @@
                 $actual = $c['actual'] === null ? 'Sin dato' : ($k === 'trafico' ? $mbps($c['actual']) : $c['actual'] . $unidad);
             @endphp
             <div title="Promedio de la última hora contra la misma hora de ayer">
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider font-mono">{{ $etiquetas[$k] }} (1 h)</p>
+                <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider font-mono">{{ $etiquetas[$k] }} (1 h)</p>
                 <p class="text-sm font-extrabold font-mono text-gray-900 dark:text-white">{{ $actual }}</p>
-                <p class="text-[10px] font-semibold {{ $color }}">
+                <p class="text-[11px] font-semibold {{ $color }}">
                     @if($d === null)
                         Sin dato de ayer para comparar
                     @else

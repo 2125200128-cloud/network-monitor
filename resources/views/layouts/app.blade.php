@@ -7,14 +7,28 @@
     <!-- Tailwind CSS (via CDN & Vite) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        // Escalas del sistema de diseño (partials/design-tokens): "blue" = azul real, "indigo" = marino.
+        // Se redefinen para que las clases existentes de las vistas adopten la paleta.
+        const nmAzure = { 50: '#eef5ff', 100: '#d9e8ff', 200: '#b3d1ff', 300: '#80b3ff', 400: '#4d94fd', 500: '#1a7afb', 600: '#0168fa', 700: '#0153c7', 800: '#023f99', 900: '#03306f', 950: '#031d45' };
+        const nmNavy = { 50: '#eef2fb', 100: '#d6e0f5', 200: '#aebfe9', 300: '#7e97d6', 400: '#4f6fc0', 500: '#2c4fa6', 600: '#1a3d8f', 700: '#123178', 800: '#0d2660', 900: '#0a1d4a', 950: '#060f2b' };
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        'hacienda-blue': '#3b5998',
-                        'hacienda-orange': '#f26419'
-                    }
+                        'hacienda-blue': '#123178',
+                        'hacienda-orange': '#f07f12',
+                        'inst-azul': '#5b7d95',
+                        'inst-naranja': '#f07f12',
+                        'nm-primary': 'rgb(var(--nm-primary-rgb) / <alpha-value>)',
+                        'nm-surface': 'rgb(var(--nm-surface-rgb) / <alpha-value>)',
+                        'nm-sunken': 'rgb(var(--nm-sunken-rgb) / <alpha-value>)',
+                        'nm-ink': 'rgb(var(--nm-ink-rgb) / <alpha-value>)',
+                        blue: nmAzure,
+                        indigo: nmNavy,
+                    },
+                    // Esquinas más sobrias (referencia Azia): tarjetas 12px, controles 8–10px
+                    borderRadius: { xl: '0.625rem', '2xl': '0.75rem', '3xl': '0.875rem' },
                 }
             }
         }
@@ -52,48 +66,41 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
-        
-        /* Custom Colors */
-        .text-hacienda-blue { color: #3b5998; }
-        .text-hacienda-orange { color: #f26419; }
-        .bg-hacienda-blue { background-color: #3b5998 !important; }
-        .bg-hacienda-orange { background-color: #f26419 !important; }
+        body { font-family: 'Inter', sans-serif; }
 
-        /* Smooth scrollbar for lists & tables */
+        .text-hacienda-orange { color: var(--nm-inst-naranja); }
+        .bg-hacienda-orange { background-color: var(--nm-inst-naranja) !important; }
+
+        /* Entrada escalonada de tarjetas: solo en la primera carga (la quita JS al terminar) */
+        @keyframes nmEntrada {
+            from { opacity: 0; transform: translate3d(0, 8px, 0); }
+            to { opacity: 1; transform: none; }
+        }
+        .nm-entrada { animation: nmEntrada 0.36s var(--nm-ease) both; animation-delay: calc(var(--nm-i, 0) * 45ms); }
+
+        /* Navegación lateral */
+        .nm-nav-item { position: relative; transition: background-color .18s ease, color .18s ease, transform .18s var(--nm-ease); }
+        .nm-nav-item svg { transition: transform .2s var(--nm-ease); }
+        .nm-nav-item:hover svg { transform: scale(1.08); }
+        .nm-nav-item:active { transform: scale(0.96); }
+        .nm-nav-item[aria-current="page"]::before {
+            content: ''; position: absolute; left: -18px; top: 50%; width: 4px; height: 22px; border-radius: 4px;
+            background: #ffffff; transform: translateY(-50%); animation: nmIndicador .3s var(--nm-ease) both;
+        }
+        .dark .nm-nav-item[aria-current="page"]::before { background: var(--nm-primary-2); }
+        @keyframes nmIndicador { from { height: 0; opacity: 0; } to { height: 22px; opacity: 1; } }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+            .floating-card:hover { transform: none !important; }
+        }
+
+        /* Barras de desplazamiento finas (la tarjeta flotante y el vidrio viven en partials/design-tokens) */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; border-radius: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #cbd5e1 #f8fafc; }
-
-        /* Floating Cards */
-        .floating-card {
-            background: white;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
-        }
-        .floating-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-
-        /* Dark Mode High-End NOC Overrides */
-        .dark body { background-color: #07090e; color: #f1f5f9; }
-        .dark .floating-card {
-            background: #0d1017;
-            border: 1px solid rgba(51, 65, 85, 0.4);
-            box-shadow: none !important;
-        }
-        .dark .floating-card:hover {
-            box-shadow: none !important;
-            border-color: rgba(51, 65, 85, 0.65);
-        }
-        .dark .custom-scrollbar::-webkit-scrollbar-track { background: #07090e; }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
-        .dark .custom-scrollbar { scrollbar-color: #334155 #07090e; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--nm-border-strong); border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--nm-neutral-400); }
+        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: var(--nm-border-strong) transparent; }
         
         /* NOC Live Marquee Banner Animation */
         /* La duración la calcula JS (partials/alert_banner) según el ancho, para una velocidad constante en px/s */
@@ -112,165 +119,20 @@
             animation-play-state: paused;
         }
 
-        /* ======================== FANCY BUTTON (UIVERSE) ======================== */
+        /* Botón secundario (.fancy): borde fino y superficie; se ocultan las rayitas decorativas heredadas */
         .fancy {
-            background-color: transparent;
-            border: 2px solid #0f172a;
-            border-radius: 0;
-            box-sizing: border-box;
-            color: #0f172a;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            margin: 0;
-            outline: none;
-            overflow: visible;
-            padding: 0.65em 1.4em;
-            position: relative;
-            text-align: center;
-            text-decoration: none;
-            text-transform: uppercase;
-            transition: all 0.3s ease-in-out;
-            user-select: none;
-            font-size: 12px;
-            line-height: 1.2;
-            vertical-align: middle;
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; margin: 0;
+            padding: 0.55rem 1rem; font-size: 12.5px; font-weight: 600; line-height: 1.2; letter-spacing: 0.01em;
+            text-transform: none; text-decoration: none; white-space: nowrap; user-select: none; position: relative;
+            color: var(--nm-text); background: var(--nm-surface); border: 1px solid var(--nm-border-strong);
+            border-radius: var(--nm-btn-radius); box-shadow: var(--nm-shadow-sm); cursor: pointer;
+            transition: background-color var(--nm-dur-fast) ease, border-color var(--nm-dur-fast) ease, color var(--nm-dur-fast) ease;
         }
-
-        .fancy::before {
-            content: " ";
-            width: 1.3rem;
-            height: 2px;
-            background: #0f172a;
-            top: 50%;
-            left: 1.1em;
-            position: absolute;
-            transform: translateY(-50%);
-            transform-origin: center;
-            transition: background 0.3s linear, width 0.3s linear;
-        }
-
-        .fancy .text {
-            font-size: 1.05em;
-            line-height: 1.33333em;
-            padding-left: 1.6em;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            text-align: left;
-            transition: all 0.3s ease-in-out;
-            text-transform: uppercase;
-            text-decoration: none;
-            color: #0f172a;
-        }
-
-        .fancy .top-key {
-            height: 2px;
-            width: 1.5625rem;
-            top: -2px;
-            left: 0.625rem;
-            position: absolute;
-            background: #ffffff;
-            transition: width 0.5s ease-out, left 0.3s ease-out;
-        }
-
-        .fancy .bottom-key-1 {
-            height: 2px;
-            width: 1.5625rem;
-            right: 1.875rem;
-            bottom: -2px;
-            position: absolute;
-            background: #ffffff;
-            transition: width 0.5s ease-out, right 0.3s ease-out;
-        }
-
-        .fancy .bottom-key-2 {
-            height: 2px;
-            width: 0.625rem;
-            right: 0.625rem;
-            bottom: -2px;
-            position: absolute;
-            background: #ffffff;
-            transition: width 0.5s ease-out, right 0.3s ease-out;
-        }
-
-        .fancy:hover {
-            color: #ffffff;
-            background: #0f172a;
-        }
-
-        .fancy:hover::before {
-            width: 0.8rem;
-            background: #ffffff;
-        }
-
-        .fancy:hover .text {
-            color: #ffffff;
-            padding-left: 1.25em;
-        }
-
-        .fancy:hover .top-key {
-            left: -2px;
-            width: 0px;
-        }
-
-        .fancy:hover .bottom-key-1,
-        .fancy:hover .bottom-key-2 {
-            right: 0;
-            width: 0px;
-        }
-
-        /* Dark mode for .fancy */
-        .dark .fancy {
-            border-color: #cbd5e1;
-            color: #f1f5f9;
-        }
-        .dark .fancy::before {
-            background: #cbd5e1;
-        }
-        .dark .fancy .text {
-            color: #f1f5f9;
-        }
-        .dark .fancy .top-key,
-        .dark .fancy .bottom-key-1,
-        .dark .fancy .bottom-key-2 {
-            background: #0d1017;
-        }
-        .dark .fancy:hover {
-            color: #0f172a;
-            background: #f8fafc;
-            border-color: #f8fafc;
-        }
-        .dark .fancy:hover::before {
-            background: #0f172a;
-        }
-        .dark .fancy:hover .text {
-            color: #0f172a;
-        }
-
-        /* Compact variant */
-        .fancy-sm {
-            padding: 0.4em 0.85em;
-            font-size: 11px;
-        }
-        .fancy-sm::before {
-            left: 0.65em;
-            width: 0.9rem;
-        }
-        .fancy-sm .text {
-            padding-left: 1.2em;
-            font-size: 0.95em;
-            gap: 0.3rem;
-        }
-        .fancy-sm:hover .text {
-            padding-left: 0.95em;
-        }
-        .fancy-sm:hover::before {
-            width: 0.55rem;
-        }
+        .fancy::before, .fancy .top-key, .fancy .bottom-key-1, .fancy .bottom-key-2 { display: none; }
+        .fancy .text { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0; color: inherit; text-transform: none; font-size: inherit; }
+        .fancy:hover { color: var(--nm-azure-700); background: var(--nm-azure-50); border-color: var(--nm-azure-300); }
+        .dark .fancy:hover { color: var(--nm-azure-200); background: rgb(var(--nm-primary-rgb) / 0.14); border-color: rgb(var(--nm-primary-rgb) / 0.45); }
+        .fancy-sm { padding: 0.35rem 0.7rem; font-size: 11.5px; }
     </style>
     {{-- Modo TV: se decide antes de pintar para no mostrar y luego esconder la barra lateral --}}
     <script>
@@ -291,11 +153,12 @@
         #controlesTV { opacity: 0; pointer-events: none; transition: opacity .3s; }
         #controlesTV.visible { opacity: 1; pointer-events: auto; }
     </style>
+    @include('partials.design-tokens')
     @yield('styles')
 </head>
-<body class="text-gray-800 dark:text-slate-100 antialiased min-h-screen selection:bg-[#f26419] selection:text-white overflow-hidden bg-[#e8eef3] dark:bg-[#07090e] transition-colors duration-200">
+<body class="antialiased min-h-screen overflow-hidden transition-colors duration-200">
     @php
-        // Navegación unificada: mismo set de iconos (estilo outline, viewBox 24, stroke 2) y mismo orden
+        // Navegación unificada: iconos estilo Lucide (outline, viewBox 24, trazo 1.75) y mismo orden
         // para el sidebar de escritorio y la barra inferior móvil.
         $navItems = [
             [
@@ -303,50 +166,50 @@
                 'active' => request()->routeIs('dashboard', 'dispositivos.show'),
                 'title'  => 'Dashboard',
                 'label'  => 'Inicio',
-                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>',
+                'svg'    => '<rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect>',
             ],
             [
                 'href'   => route('topologia.index'),
                 'active' => request()->is('topologia*'),
                 'title'  => 'Mapa de Topología',
                 'label'  => 'Topología',
-                'svg'    => '<circle cx="6" cy="6" r="2.5"></circle><circle cx="18" cy="6" r="2.5"></circle><circle cx="12" cy="18" r="2.5"></circle><path stroke-linecap="round" stroke-linejoin="round" d="M8.2 7.2l2.6 8.6m2.4 0l2.6-8.6M8.5 6h7"></path>',
+                'svg'    => '<rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path stroke-linecap="round" stroke-linejoin="round" d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3M12 12V8"></path>',
             ],
             [
                 'href'   => route('servicios_web.index'),
                 'active' => request()->is('servicios-web*'),
                 'title'  => 'Monitoreo de Servicios Web y HTTP',
                 'label'  => 'Webs',
-                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>',
+                'svg'    => '<circle cx="12" cy="12" r="9.5"></circle><path stroke-linecap="round" stroke-linejoin="round" d="M12 2.5a14 14 0 0 0 0 19 14 14 0 0 0 0-19M2.5 12h19"></path>',
             ],
             [
                 'href'   => route('consola.index'),
                 'active' => request()->is('consola*'),
                 'title'  => 'Consola Segura CLI',
                 'label'  => 'CLI',
-                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M7 8.5l3 2.5-3 2.5m5 0h4M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>',
+                'svg'    => '<rect x="3" y="3" width="18" height="18" rx="2.5"></rect><path stroke-linecap="round" stroke-linejoin="round" d="m7.5 9.5 2.5 2.5-2.5 2.5M12.5 14.5h4"></path>',
             ],
             [
                 'href'   => route('settings.index'),
                 'active' => request()->is('settings*'),
                 'title'  => 'Configuraciones Generales',
                 'label'  => 'Ajustes',
-                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>',
+                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M20 7h-9M14 17H4"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle>',
             ],
         ];
     @endphp
     
-    <div id="contenedorPrincipal" class="flex flex-col md:flex-row h-screen bg-[#e8eef3] dark:bg-[#07090e] p-2 sm:p-4 lg:p-6 gap-3 md:gap-6 transition-colors duration-200">
+    <div id="contenedorPrincipal" class="flex flex-col md:flex-row h-screen p-2 sm:p-4 lg:p-6 gap-3 md:gap-6 transition-colors duration-200">
 
         <!-- ==================== MOBILE TOP HEADER ==================== -->
-        <header id="navMovilSuperior" class="flex md:hidden items-center justify-between bg-hacienda-blue dark:bg-[#090b10] text-white p-3 px-4 rounded-2xl shadow-lg shrink-0 z-40 border border-blue-900/20 dark:border-slate-800">
+        <header id="navMovilSuperior" class="flex md:hidden items-center justify-between nm-sidebar text-white p-3 px-4 rounded-2xl shadow-lg shrink-0 z-40">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 flex items-center justify-center p-1 bg-white/10 rounded-xl overflow-hidden shadow-xs">
                     <img src="{{ asset('images/logo_swoop.png') }}" alt="Logo" class="w-full h-full object-contain dark:brightness-0 dark:invert" onerror="this.src='https://ui-avatars.com/api/?name=NM&background=fff&color=3b5998'">
                 </div>
                 <div>
                     <h1 class="text-sm font-black tracking-tight leading-none text-white">Network Monitor</h1>
-                    <p class="text-[10px] text-blue-200 dark:text-slate-400 font-medium mt-0.5">Sistema NOC Enterprise</p>
+                    <p class="text-[11px] text-blue-100/80 font-medium mt-0.5">Centro de Operaciones de Red</p>
                 </div>
             </div>
             <div class="flex items-center gap-2" x-data="{ isDark: document.documentElement.classList.contains('dark') }">
@@ -354,15 +217,15 @@
                     type="button" 
                     @click="isDark = window.toggleTheme()" 
                     class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition border border-white/10"
-                    title="Cambiar Tema (Claro / Oscuro)">
-                    <svg x-show="!isDark" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                    <svg x-show="isDark" class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    title="Cambiar Tema (Claro / Oscuro)" aria-label="Cambiar Tema (Claro / Oscuro)">
+                    <svg x-show="!isDark" class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>
+                    <svg x-show="isDark" class="w-4 h-4 text-amber-300" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /> <path d="M12 2v2" /> <path d="M12 20v2" /> <path d="m4.93 4.93 1.41 1.41" /> <path d="m17.66 17.66 1.41 1.41" /> <path d="M2 12h2" /> <path d="M20 12h2" /> <path d="m6.34 17.66-1.41 1.41" /> <path d="m19.07 4.93-1.41 1.41" /></svg>
                 </button>
             </div>
         </header>
 
         <!-- ==================== DESKTOP SIDEBAR ==================== -->
-        <aside id="navLateral" class="w-24 bg-hacienda-blue dark:bg-[#090b10] dark:border-r dark:border-slate-800/50 dark:shadow-none rounded-[2rem] flex flex-col items-center py-8 shadow-2xl flex-shrink-0 z-30 relative hidden md:flex transition-colors duration-200">
+        <aside id="navLateral" class="w-24 nm-sidebar rounded-2xl flex flex-col items-center py-8 shadow-2xl flex-shrink-0 z-30 relative hidden md:flex transition-colors duration-200">
             <!-- Logo/Brand -->
             <div class="mb-12">
                 <div class="w-14 h-14 flex items-center justify-center p-2 overflow-hidden">
@@ -374,9 +237,9 @@
             <nav class="flex-1 flex flex-col gap-6 items-center w-full">
                 @foreach($navItems as $item)
                 <a href="{{ $item['href'] }}"
-                   class="w-12 h-12 {{ $item['active'] ? 'bg-white dark:bg-slate-800/90 text-hacienda-blue dark:text-blue-400 shadow-md dark:shadow-none transform scale-110 border border-transparent dark:border-slate-700/50' : 'text-blue-100 dark:text-slate-400 hover:bg-white/20 dark:hover:bg-slate-800/50 hover:text-white dark:hover:text-slate-200' }} rounded-xl flex items-center justify-center transition"
+                   class="nm-nav-item w-12 h-12 {{ $item['active'] ? 'bg-white dark:bg-slate-800/90 text-hacienda-blue dark:text-blue-300 shadow-md dark:shadow-none border border-transparent dark:border-slate-700/50' : 'text-blue-100/75 hover:bg-white/10 dark:hover:bg-slate-800/50 hover:text-white dark:hover:text-slate-200' }} rounded-xl flex items-center justify-center"
                    title="{{ $item['title'] }}" aria-label="{{ $item['title'] }}" @if($item['active']) aria-current="page" @endif>
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">{!! $item['svg'] !!}</svg>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75" aria-hidden="true">{!! $item['svg'] !!}</svg>
                 </a>
                 @endforeach
             </nav>
@@ -384,13 +247,13 @@
             <!-- Pantallas NOC: ventanas para otras TV, pantalla completa y modo TV -->
             <div class="relative mt-6" x-data="pantallasNoc()" @keydown.escape.window="abierto = false">
                 <button type="button" @click="abrirPanel()" title="Pantallas: abrir vistas en otras TV" aria-label="Pantallas"
-                        class="w-12 h-12 rounded-xl flex items-center justify-center transition text-blue-100 dark:text-slate-400 hover:bg-white/20 dark:hover:bg-slate-800/50 hover:text-white"
-                        :class="abierto ? 'bg-white/20 text-white' : ''">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="13" height="9" rx="1.5"></rect><path stroke-linecap="round" stroke-linejoin="round" d="M6 17h5M8.5 13v4"></path><rect x="13" y="9" width="9" height="7" rx="1.2"></rect><path stroke-linecap="round" d="M16 19.5h3M17.5 16v3.5"></path></svg>
+                        class="nm-nav-item w-12 h-12 rounded-xl flex items-center justify-center text-blue-100/75 hover:bg-white/10 dark:hover:bg-slate-800/50 hover:text-white"
+                        :class="abierto ? 'bg-white/10 text-white' : ''">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75" aria-hidden="true"><rect x="2" y="4" width="13" height="9" rx="1.5"></rect><path stroke-linecap="round" stroke-linejoin="round" d="M6 17h5M8.5 13v4"></path><rect x="13" y="9" width="9" height="7" rx="1.2"></rect><path stroke-linecap="round" d="M16 19.5h3M17.5 16v3.5"></path></svg>
                 </button>
 
                 <div x-show="abierto" x-cloak @click.outside="abierto = false" x-transition.opacity
-                     class="absolute left-16 bottom-0 w-80 z-50 bg-white dark:bg-[#0d1017] text-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-4 text-sm">
+                     class="absolute left-16 bottom-0 w-80 z-50 nm-glass bg-white dark:bg-nm-surface text-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-4 text-sm">
                     <div class="font-black text-base mb-1">Pantallas</div>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Abre vistas en ventanas aparte para arrastrarlas a otras TV. Se abren en Modo TV y la sesión no se cierra.</p>
 
@@ -410,14 +273,14 @@
                             <template x-for="(p, i) in pantallas" :key="i">
                                 <div class="flex items-center gap-2 mb-1.5">
                                     <span class="text-xs font-semibold w-28 truncate" :title="p.etiqueta" x-text="p.etiqueta"></span>
-                                    <select x-model="p.vista" class="flex-1 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#090b10] px-2 py-1.5">
+                                    <select x-model="p.vista" class="flex-1 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-nm-sunken px-2 py-1.5">
                                         <option value="">— Nada —</option>
                                         <template x-for="v in vistas" :key="v.url"><option :value="v.url" x-text="v.nombre"></option></template>
                                     </select>
                                 </div>
                             </template>
                             <template x-if="pantallas.length">
-                                <button type="button" @click="repartir()" class="w-full mt-1 px-2.5 py-2 rounded-xl bg-black text-white dark:bg-white dark:text-black text-xs font-black">Abrir en los monitores</button>
+                                <button type="button" @click="repartir()" class="w-full mt-1 px-2.5 py-2 rounded-xl bg-blue-600 text-white text-xs font-black">Abrir en los monitores</button>
                             </template>
                         </div>
                     </template>
@@ -446,12 +309,12 @@
         @endif
 
         <!-- ==================== MOBILE FLOATING BOTTOM BAR ==================== -->
-        <nav id="navMovilInferior" class="fixed bottom-3 left-3 right-3 z-50 flex md:hidden items-center justify-around bg-white/95 dark:bg-[#0d1017]/95 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800/80 p-2 rounded-2xl shadow-2xl transition-all">
+        <nav id="navMovilInferior" class="fixed bottom-3 left-3 right-3 z-50 flex md:hidden items-center justify-around nm-glass p-2 rounded-2xl shadow-2xl transition-all">
             @foreach($navItems as $item)
             <a href="{{ $item['href'] }}" title="{{ $item['title'] }}" @if($item['active']) aria-current="page" @endif
-               class="flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-bold transition {{ $item['active'] ? 'text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-slate-800/80' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">{!! $item['svg'] !!}</svg>
-                <span class="text-[10px] leading-none">{{ $item['label'] }}</span>
+               class="flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-bold transition active:scale-95 {{ $item['active'] ? 'text-hacienda-blue dark:text-blue-300 bg-slate-100 dark:bg-slate-800/80' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}" aria-label="{{ $item['title'] }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75" aria-hidden="true">{!! $item['svg'] !!}</svg>
+                <span class="text-[11px] leading-none">{{ $item['label'] }}</span>
             </a>
             @endforeach
         </nav>
@@ -645,6 +508,106 @@
                 document.documentElement.classList.remove('dark');
             }
         });
+    </script>
+    {{-- Avisos y confirmaciones propios (sustituyen alert/confirm nativos, que bloquean y no siguen el tema) --}}
+    <div id="nmAvisos" class="fixed top-4 right-4 z-[80] flex flex-col gap-2 w-[min(24rem,calc(100vw-2rem))]" role="status" aria-live="polite"></div>
+    <div id="nmDialogo" class="fixed inset-0 z-[90] hidden items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
+        <div role="alertdialog" aria-modal="true" aria-labelledby="nmDialogoTitulo" aria-describedby="nmDialogoTexto"
+             class="nm-glass w-full max-w-md rounded-2xl shadow-2xl p-5 text-slate-800 dark:text-slate-100">
+            <h2 id="nmDialogoTitulo" class="text-base font-bold mb-1">Confirmar acción</h2>
+            <p id="nmDialogoTexto" class="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-line"></p>
+            <div class="flex justify-end gap-2 mt-5">
+                <button type="button" data-respuesta="no" class="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800">Cancelar</button>
+                <button type="button" data-respuesta="si" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function () {
+            const ESTILOS = {
+                error: 'border-l-red-500', advertencia: 'border-l-amber-500', exito: 'border-l-emerald-500', info: 'border-l-blue-600',
+            };
+            window.nmAviso = function (mensaje, tipo = 'info') {
+                const caja = document.getElementById('nmAvisos');
+                const el = document.createElement('div');
+                el.className = 'nm-glass nm-entrada rounded-xl shadow-lg border-l-4 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 whitespace-pre-line flex items-start gap-3 ' + (ESTILOS[tipo] || ESTILOS.info);
+                const texto = document.createElement('span');
+                texto.className = 'flex-1';
+                texto.textContent = String(mensaje);
+                const cerrar = document.createElement('button');
+                cerrar.type = 'button';
+                cerrar.setAttribute('aria-label', 'Cerrar aviso');
+                cerrar.className = 'text-slate-500 hover:text-slate-800 dark:hover:text-white text-lg leading-none';
+                cerrar.textContent = '×';
+                cerrar.onclick = () => el.remove();
+                el.append(texto, cerrar);
+                caja.appendChild(el);
+                // Los errores se quedan más tiempo: hay que leerlos y actuar
+                setTimeout(() => el.remove(), tipo === 'error' ? 9000 : 5000);
+            };
+
+            window.nmConfirmar = function (mensaje, { titulo = 'Confirmar acción', boton = 'Confirmar', peligro = true } = {}) {
+                const fondo = document.getElementById('nmDialogo');
+                const si = fondo.querySelector('[data-respuesta="si"]');
+                const no = fondo.querySelector('[data-respuesta="no"]');
+                document.getElementById('nmDialogoTitulo').textContent = titulo;
+                document.getElementById('nmDialogoTexto').textContent = String(mensaje);
+                si.textContent = boton;
+                si.className = 'px-4 py-2 rounded-lg text-sm font-semibold text-white ' + (peligro ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700');
+                const previo = document.activeElement;
+                fondo.classList.replace('hidden', 'flex');
+                no.focus();
+                return new Promise((resolver) => {
+                    const terminar = (valor) => {
+                        fondo.classList.replace('flex', 'hidden');
+                        fondo.removeEventListener('keydown', teclas);
+                        si.onclick = no.onclick = fondo.onclick = null;
+                        previo?.focus?.();
+                        resolver(valor);
+                    };
+                    const teclas = (e) => {
+                        if (e.key === 'Escape') terminar(false);
+                        if (e.key === 'Tab') { e.preventDefault(); (document.activeElement === si ? no : si).focus(); }
+                    };
+                    fondo.addEventListener('keydown', teclas);
+                    si.onclick = () => terminar(true);
+                    no.onclick = () => terminar(false);
+                    fondo.onclick = (e) => { if (e.target === fondo) terminar(false); };
+                });
+            };
+        })();
+    </script>
+    <script>
+        // Entrada escalonada de las tarjetas visibles al cargar; se retira la clase para que los
+        // re-render de Alpine (sondeos en vivo) no vuelvan a animar.
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            const alto = window.innerHeight;
+            let i = 0;
+            document.querySelectorAll('#contenidoPrincipal .floating-card').forEach(function (el) {
+                if (i >= 14 || el.getBoundingClientRect().top > alto) return;
+                el.style.setProperty('--nm-i', i++);
+                el.classList.add('nm-entrada');
+                el.addEventListener('animationend', function () { el.classList.remove('nm-entrada'); }, { once: true });
+            });
+        });
+
+        // Colores por defecto de Chart.js alineados con la paleta (las gráficas con colores propios no cambian)
+        (function () {
+            if (!window.Chart) return;
+            function aplicar() {
+                const oscuro = document.documentElement.classList.contains('dark');
+                Chart.defaults.font.family = "'Inter', sans-serif";
+                Chart.defaults.color = oscuro ? '#9aa8bf' : '#637087';
+                Chart.defaults.borderColor = oscuro ? 'rgba(71, 85, 105, 0.42)' : '#e3e7ed';
+                Chart.defaults.plugins.tooltip.backgroundColor = oscuro ? '#111a2b' : '#0a1d4a';
+                Chart.defaults.plugins.tooltip.cornerRadius = 8;
+                Chart.defaults.plugins.tooltip.padding = 10;
+                Chart.defaults.animation.duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 500;
+            }
+            aplicar();
+            window.addEventListener('theme-changed', aplicar);
+        })();
     </script>
     @yield('scripts')
 </body>

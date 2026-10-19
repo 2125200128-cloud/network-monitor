@@ -2,10 +2,10 @@
 
 @section('styles')
     <style>
-        .text-hacienda-blue { color: #5c8096; }
-        .bg-hacienda-blue { background-color: #5c8096; }
-        .text-hacienda-orange { color: #e67e22; }
-        .bg-hacienda-orange { background-color: #e67e22; }
+        .text-hacienda-blue { color: var(--nm-primary-2); }
+        .bg-hacienda-blue { background-color: var(--nm-primary-2); }
+        .text-hacienda-orange { color: #f07f12; }
+        .bg-hacienda-orange { background-color: #f07f12; }
         .terminal-panel {
             background-color: #111827;
             color: #d1d5db;
@@ -17,7 +17,7 @@
 @section('content')
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        <header class="mb-8 flex justify-between items-center bg-white dark:bg-[#0d1017] p-6 rounded-2xl shadow-sm dark:shadow-none border border-gray-100 dark:border-slate-800/60">
+        <header class="mb-8 flex justify-between items-center bg-white dark:bg-nm-surface p-6 rounded-2xl shadow-sm dark:shadow-none border border-gray-100 dark:border-slate-800/60">
             <div class="flex items-center">
                 <img src="{{ asset('images/logo.png') }}" alt="Logo Hacienda" class="h-16 mr-6 dark:brightness-0 dark:invert dark:opacity-90 transition">
                 <div>
@@ -47,10 +47,10 @@
             <!-- Panel Izquierdo: Controles e Historial -->
             <div class="lg:col-span-1 space-y-6">
                 
-                <div class="bg-white dark:bg-[#0d1017] p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800">
+                <div class="bg-white dark:bg-nm-surface p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800">
                     <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4 border-b border-gray-200 dark:border-slate-800 pb-2">Seleccionar Dispositivo</h3>
                     <form method="GET" action="{{ route('configuraciones.index') }}" class="mb-6">
-                        <select name="dispositivo_id" class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-[#090b10] text-gray-900 dark:text-white shadow-sm p-2.5 focus:border-[#5c8096] focus:ring focus:ring-[#5c8096] focus:ring-opacity-50 text-sm font-medium" onchange="this.form.submit()">
+                        <select name="dispositivo_id" class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white shadow-sm p-2.5 focus:border-[var(--nm-primary-2)] focus:ring focus:ring-[var(--nm-primary-2)] focus:ring-opacity-50 text-sm font-medium" onchange="this.form.submit()">
                             @foreach($dispositivos as $d)
                                 <option value="{{ $d->id }}" {{ $selectedDispositivoId == $d->id ? 'selected' : '' }}>
                                     {{ $d->nombre }} ({{ $d->ip }})
@@ -66,7 +66,7 @@
                         
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Tipo de Configuración</label>
-                            <select name="tipo" class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-[#090b10] text-gray-900 dark:text-white shadow-sm p-2.5 focus:border-[#e67e22] focus:ring focus:ring-[#e67e22] focus:ring-opacity-50 text-sm font-medium">
+                            <select name="tipo" class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white shadow-sm p-2.5 focus:border-[#f07f12] focus:ring focus:ring-[#f07f12] focus:ring-opacity-50 text-sm font-medium">
                                 <option value="running">Running-Config</option>
                                 <option value="startup">Startup-Config</option>
                             </select>
@@ -75,7 +75,7 @@
                         <button type="submit" id="btnRespaldar" class="fancy w-full justify-center">
                             <span class="top-key"></span>
                             <span class="text">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <polyline points="17 8 12 3 7 8" /> <line x1="12" x2="12" y1="3" y2="15" /></svg>
                                 Obtener Respaldo Actual
                             </span>
                             <span class="bottom-key-1"></span>
@@ -84,17 +84,17 @@
                     </form>
                 </div>
 
-                <div class="bg-white dark:bg-[#0d1017] p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800">
+                <div class="bg-white dark:bg-nm-surface p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800">
                     <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4 border-b border-gray-200 dark:border-slate-800 pb-2">Historial de Versiones</h3>
                     
                     @if($historial->count() > 0)
                         <div class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar">
                             @foreach($historial as $config)
-                                <div class="p-3 bg-gray-50 dark:bg-[#090b10] rounded-xl border border-gray-200 dark:border-slate-800 flex justify-between items-center {{ $loop->first ? 'border-hacienda-blue bg-blue-50/50 dark:bg-blue-950/20' : '' }}">
+                                <div class="p-3 bg-gray-50 dark:bg-nm-sunken rounded-xl border border-gray-200 dark:border-slate-800 flex justify-between items-center {{ $loop->first ? 'border-hacienda-blue bg-blue-50/50 dark:bg-blue-950/20' : '' }}">
                                     <div>
                                         <p class="text-sm font-semibold text-gray-800 dark:text-slate-100">{{ $config->created_at->format('d/m/Y H:i:s') }}</p>
                                         <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                                            <span class="inline-block bg-gray-200 dark:bg-slate-800 rounded px-1.5 py-0.5 text-gray-800 dark:text-slate-300 font-mono text-[10px] font-bold">{{ strtoupper($config->tipo) }}</span>
+                                            <span class="inline-block bg-gray-200 dark:bg-slate-800 rounded px-1.5 py-0.5 text-gray-800 dark:text-slate-300 font-mono text-[11px] font-bold">{{ strtoupper($config->tipo) }}</span>
                                             • {{ $config->user ? $config->user->name : 'Sistema' }}
                                         </p>
                                     </div>
@@ -104,8 +104,8 @@
                                         @else
                                             <span class="text-xs font-bold text-green-600 dark:text-emerald-400">Latest</span>
                                         @endif
-                                        <a href="{{ route('configuraciones.pdf', $config->id) }}" target="_blank" class="p-1 rounded-lg hover:bg-white dark:hover:bg-slate-800 text-gray-400 dark:text-slate-400 hover:text-[#3b5998] dark:hover:text-blue-400 transition shadow-xs" title="Exportar respaldo a PDF">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                        <a href="{{ route('configuraciones.pdf', $config->id) }}" target="_blank" class="p-1 rounded-lg hover:bg-white dark:hover:bg-slate-800 text-gray-400 dark:text-slate-400 hover:text-nm-primary dark:hover:text-blue-400 transition shadow-xs" title="Exportar respaldo a PDF">
+                                            <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /></svg>
                                         </a>
                                     </div>
                                 </div>
@@ -139,15 +139,15 @@
                         @if($ultimaConfig)
                             <div class="flex items-center space-x-3">
                                 <button onclick="copiarAlPortapapeles()" class="text-gray-300 hover:text-white transition flex items-center text-sm font-medium">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                    <svg class="w-4 h-4 mr-1" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /> <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
                                     Copiar
                                 </button>
                                 <a href="{{ route('configuraciones.descargar', $ultimaConfig->id) }}" class="text-gray-300 hover:text-white transition flex items-center text-sm font-medium">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                    <svg class="w-4 h-4 mr-1" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <polyline points="7 10 12 15 17 10" /> <line x1="12" x2="12" y1="15" y2="3" /></svg>
                                     Descargar
                                 </a>
-                                <a href="{{ route('configuraciones.pdf', $ultimaConfig->id) }}" target="_blank" class="bg-[#3b5998] hover:bg-[#2d4677] text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center text-xs shadow-sm">
-                                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <a href="{{ route('configuraciones.pdf', $ultimaConfig->id) }}" target="_blank" class="bg-nm-primary hover:bg-[#1a3d8f] text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center text-xs shadow-sm">
+                                    <svg class="w-4 h-4 mr-1.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M12 18v-6" /> <path d="m9 15 3 3 3-3" /></svg>
                                     Reporte PDF
                                 </a>
                             </div>
@@ -178,7 +178,7 @@
         function copiarAlPortapapeles() {
             const contenido = document.querySelector('.terminal-panel').innerText;
             navigator.clipboard.writeText(contenido).then(() => {
-                alert('¡Configuración copiada al portapapeles!');
+                nmAviso('¡Configuración copiada al portapapeles!', 'exito');
             }).catch(err => {
                 console.error('Error al copiar: ', err);
             });

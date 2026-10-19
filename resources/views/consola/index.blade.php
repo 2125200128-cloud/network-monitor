@@ -5,9 +5,9 @@
     <style>
         /* ======================== NOC CONSOLA CLI STYLES ======================== */
         .noc-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 1.5rem;
+            background: var(--nm-surface);
+            border: 1px solid var(--nm-border);
+            border-radius: var(--nm-card-radius);
             box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
         }
         .dark .noc-card {
@@ -19,8 +19,8 @@
         .noc-icon-box {
             width: 48px;
             height: 48px;
-            border-radius: 1rem;
-            background: linear-gradient(135deg, #3b5998 0%, #5c8096 100%);
+            border-radius: var(--nm-radius-md);
+            background: linear-gradient(135deg, var(--nm-primary) 0%, var(--nm-primary-2) 100%);
             color: #ffffff !important;
             display: flex;
             align-items: center;
@@ -33,7 +33,7 @@
         }
 
         .btn-primary-hacienda {
-            background: linear-gradient(135deg, #3b5998 0%, #4a6b82 100%) !important;
+            background: linear-gradient(135deg, var(--nm-primary) 0%, var(--nm-primary-2) 100%) !important;
             color: #ffffff !important;
             border-radius: 12px;
             padding: 9px 18px;
@@ -50,7 +50,7 @@
             user-select: none;
         }
         .btn-primary-hacienda:hover {
-            background: linear-gradient(135deg, #2d4373 0%, #3b5998 100%) !important;
+            background: linear-gradient(135deg, #0a1d4a 0%, var(--nm-primary) 100%) !important;
             transform: translateY(-1px);
             box-shadow: 0 6px 18px rgba(59, 89, 152, 0.4);
         }
@@ -59,13 +59,13 @@
         }
 
         .btn-secondary-noc {
-            background: #f1f5f9;
-            color: #334155 !important;
+            background: var(--nm-sunken);
+            color: var(--nm-text) !important;
             border-radius: 12px;
             padding: 9px 14px;
             font-size: 12px;
             font-weight: 700;
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--nm-border-strong);
             cursor: pointer;
             display: inline-flex;
             align-items: center;
@@ -75,10 +75,10 @@
         }
         .btn-secondary-noc:hover {
             background: #e2e8f0;
-            color: #0f172a !important;
+            color: var(--nm-text) !important;
         }
         .dark .btn-secondary-noc {
-            background: #161b22;
+            background: var(--nm-surface);
             color: #cbd5e1 !important;
             border-color: #30363d;
         }
@@ -90,9 +90,9 @@
 
         /* Quick Command Buttons */
         .noc-cmd-btn {
-            background: #f8fafc;
-            color: #1e293b !important;
-            border: 1px solid #cbd5e1;
+            background: var(--nm-sunken);
+            color: var(--nm-text) !important;
+            border: 1px solid var(--nm-border-strong);
             border-radius: 10px;
             padding: 6px 12px;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -108,9 +108,9 @@
             user-select: none;
         }
         .noc-cmd-btn:hover {
-            background: #3b5998 !important;
+            background: var(--nm-primary) !important;
             color: #ffffff !important;
-            border-color: #3b5998 !important;
+            border-color: var(--nm-primary) !important;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(59, 89, 152, 0.3);
         }
@@ -118,20 +118,20 @@
             color: #ffffff !important;
         }
         .dark .noc-cmd-btn {
-            background: #161b22;
+            background: var(--nm-surface);
             color: #e2e8f0 !important;
             border-color: #30363d;
         }
         .dark .noc-cmd-btn:hover {
-            background: #3b82f6 !important;
+            background: #1a7afb !important;
             color: #ffffff !important;
-            border-color: #3b82f6 !important;
+            border-color: #1a7afb !important;
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
         }
 
         /* Custom Terminal Chassis & Scrollbar */
         .terminal-chassis {
-            background: #080c14;
+            background: var(--nm-ink);
             border: 1px solid #1e293b;
             border-radius: 18px;
             box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.7);
@@ -152,23 +152,23 @@
             justify-content: space-between;
         }
         .dark .terminal-header {
-            background: #080c14;
+            background: var(--nm-sunken);
             border-bottom-color: #182030;
         }
         #terminal-container {
             width: 100%;
             height: 520px;
-            background-color: #080c14;
+            background-color: var(--nm-ink);
             padding: 14px 16px;
         }
         .xterm-viewport {
-            background-color: #080c14 !important;
+            background-color: var(--nm-ink) !important;
         }
         .xterm-viewport::-webkit-scrollbar {
             width: 8px;
         }
         .xterm-viewport::-webkit-scrollbar-track {
-            background: #080c14;
+            background: var(--nm-ink);
         }
         .xterm-viewport::-webkit-scrollbar-thumb {
             background: #1e293b;
@@ -188,12 +188,12 @@
         {{-- Left Title & Icon --}}
         <div class="flex items-center gap-4">
             <div class="noc-icon-box">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 8.5l3 2.5-3 2.5m5 0h4M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m7 11 2-2-2-2" /> <path d="M11 13h4" /> <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /></svg>
             </div>
             <div>
                 <div class="flex items-center gap-2.5">
                     <h1 class="text-xl lg:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Consola Segura CLI & Terminal</h1>
-                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                         <span x-text="sessionActive ? 'SSH Bridge Activo' : 'SSH Bridge Listo'">SSH Bridge Listo</span>
                     </span>
@@ -213,21 +213,21 @@
                 
                 {{-- Selector Button Trigger --}}
                 <button type="button" @click="deviceDropdownOpen = !deviceDropdownOpen" 
-                        class="w-full py-2.5 pl-3.5 pr-10 rounded-xl bg-slate-50 dark:bg-[#161b22] border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#3b5998] transition shadow-xs flex items-center justify-between text-left">
+                        class="w-full py-2.5 pl-3.5 pr-10 rounded-xl bg-slate-50 dark:bg-nm-surface border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-xs font-bold focus:outline-none focus:ring-2 focus:ring-nm-primary transition shadow-xs flex items-center justify-between text-left">
                     <div class="flex items-center gap-2.5 min-w-0 pr-2">
                         <template x-if="currentDeviceType === 'firewall' || currentDeviceType === 'fortigate'">
                             <span class="p-1.5 rounded-lg bg-rose-500/10 text-rose-500 shrink-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" /></svg>
                             </span>
                         </template>
                         <template x-if="currentDeviceType === 'router'">
                             <span class="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500 shrink-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 7l4 4" /> <path d="M4 7h16" /> <path d="m16 21 4-4-4-4" /> <path d="M20 17H4" /></svg>
                             </span>
                         </template>
                         <template x-if="currentDeviceType !== 'firewall' && currentDeviceType !== 'fortigate' && currentDeviceType !== 'router'">
-                            <span class="p-1.5 rounded-lg bg-[#3b5998]/10 text-[#3b5998] dark:text-blue-400 shrink-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            <span class="p-1.5 rounded-lg bg-nm-primary/10 text-nm-primary dark:text-blue-400 shrink-0">
+                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z" /> <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12" /> <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17" /></svg>
                             </span>
                         </template>
                         <div class="truncate">
@@ -237,7 +237,7 @@
                     </div>
                     <div class="flex items-center gap-1.5 shrink-0">
                         <span class="w-2.5 h-2.5 rounded-full" :class="currentDeviceStatus === 'online' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]' : 'bg-slate-400'"></span>
-                        <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" :class="{'rotate-180': deviceDropdownOpen}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" :class="{'rotate-180': deviceDropdownOpen}" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                     </div>
                 </button>
 
@@ -249,28 +249,28 @@
                      x-transition:leave="transition ease-in duration-100"
                      x-transition:leave-start="opacity-100 translate-y-0"
                      x-transition:leave-end="opacity-0 translate-y-1"
-                     class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#12161f] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/80 overflow-hidden z-50 p-2.5 max-h-[380px] flex flex-col"
+                     class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-nm-surface rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/80 overflow-hidden z-50 p-2.5 max-h-[380px] flex flex-col"
                      style="display: none;">
                     
                     {{-- Input de Filtro / Buscador en Vivo --}}
                     <div class="relative mb-2 shrink-0">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /> <path d="m21 21-4.3-4.3" /></svg>
                         </div>
                         <input type="text" x-model="deviceSearchQuery" 
                                placeholder="Buscar por nombre, IP, modelo..."
-                               class="w-full pl-8 pr-7 py-2 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#3b5998]">
+                               class="w-full pl-8 pr-7 py-2 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-nm-primary">
                         <button type="button" x-show="deviceSearchQuery" @click="deviceSearchQuery = ''" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
                         </button>
                     </div>
 
                     {{-- Filtros Rápidos de Categoría --}}
-                    <div class="flex items-center gap-1 mb-2 pb-2 border-b border-slate-100 dark:border-slate-800 overflow-x-auto shrink-0 custom-scrollbar text-[10px] font-bold">
-                        <button type="button" @click="deviceFilterType = 'all'" :class="deviceFilterType === 'all' ? 'bg-[#3b5998] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'" class="px-2.5 py-1 rounded-lg transition shrink-0">Todos</button>
-                        <button type="button" @click="deviceFilterType = 'switch'" :class="deviceFilterType === 'switch' ? 'bg-[#3b5998] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'" class="px-2.5 py-1 rounded-lg transition shrink-0">Switches</button>
-                        <button type="button" @click="deviceFilterType = 'firewall'" :class="deviceFilterType === 'firewall' ? 'bg-[#3b5998] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'" class="px-2.5 py-1 rounded-lg transition shrink-0">Firewalls</button>
-                        <button type="button" @click="deviceFilterType = 'router'" :class="deviceFilterType === 'router' ? 'bg-[#3b5998] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'" class="px-2.5 py-1 rounded-lg transition shrink-0">Routers</button>
+                    <div class="flex items-center gap-1 mb-2 pb-2 border-b border-slate-100 dark:border-slate-800 overflow-x-auto shrink-0 custom-scrollbar text-[11px] font-bold">
+                        <button type="button" @click="deviceFilterType = 'all'" :class="deviceFilterType === 'all' ? 'bg-nm-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'" class="px-2.5 py-1 rounded-lg transition shrink-0">Todos</button>
+                        <button type="button" @click="deviceFilterType = 'switch'" :class="deviceFilterType === 'switch' ? 'bg-nm-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'" class="px-2.5 py-1 rounded-lg transition shrink-0">Switches</button>
+                        <button type="button" @click="deviceFilterType = 'firewall'" :class="deviceFilterType === 'firewall' ? 'bg-nm-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'" class="px-2.5 py-1 rounded-lg transition shrink-0">Firewalls</button>
+                        <button type="button" @click="deviceFilterType = 'router'" :class="deviceFilterType === 'router' ? 'bg-nm-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'" class="px-2.5 py-1 rounded-lg transition shrink-0">Routers</button>
                     </div>
 
                     {{-- Lista de Dispositivos Filtrados --}}
@@ -278,30 +278,30 @@
                         <template x-for="d in filteredDevices" :key="d.id">
                             <div @click="selectDevice(d)" 
                                  class="p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition text-xs"
-                                 :class="selectedDeviceId == d.id ? 'bg-blue-50 dark:bg-blue-950/50 border border-[#3b5998]/40' : 'hover:bg-slate-100 dark:hover:bg-slate-800/70 border border-transparent'">
+                                 :class="selectedDeviceId == d.id ? 'bg-blue-50 dark:bg-blue-950/50 border border-nm-primary/40' : 'hover:bg-slate-100 dark:hover:bg-slate-800/70 border border-transparent'">
                                 <div class="flex items-center gap-2.5 min-w-0">
                                     <template x-if="d.tipo && (d.tipo.toLowerCase().includes('firewall') || d.tipo.toLowerCase().includes('forti'))">
                                         <span class="p-1.5 rounded-lg bg-rose-500/10 text-rose-500 shrink-0">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                            <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" /></svg>
                                         </span>
                                     </template>
                                     <template x-if="d.tipo && d.tipo.toLowerCase().includes('router')">
                                         <span class="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500 shrink-0">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                                            <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 7l4 4" /> <path d="M4 7h16" /> <path d="m16 21 4-4-4-4" /> <path d="M20 17H4" /></svg>
                                         </span>
                                     </template>
                                     <template x-if="!d.tipo || (!d.tipo.toLowerCase().includes('firewall') && !d.tipo.toLowerCase().includes('forti') && !d.tipo.toLowerCase().includes('router'))">
-                                        <span class="p-1.5 rounded-lg bg-[#3b5998]/10 text-[#3b5998] dark:text-blue-400 shrink-0">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                                        <span class="p-1.5 rounded-lg bg-nm-primary/10 text-nm-primary dark:text-blue-400 shrink-0">
+                                            <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z" /> <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12" /> <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17" /></svg>
                                         </span>
                                     </template>
                                     <div class="truncate">
                                         <p class="font-bold text-slate-800 dark:text-slate-100 truncate" x-text="d.nombre"></p>
-                                        <p class="text-[10px] text-slate-400 font-mono truncate" x-text="d.ip + ' · ' + (d.tipo ? d.tipo.toUpperCase() : 'SWITCH')"></p>
+                                        <p class="text-[11px] text-slate-400 font-mono truncate" x-text="d.ip + ' · ' + (d.tipo ? d.tipo.toUpperCase() : 'SWITCH')"></p>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-1.5 shrink-0 ml-2">
-                                    <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold"
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-mono font-bold"
                                           :class="d.estado === 'online' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-slate-500/10 text-slate-400'"
                                           x-text="d.estado === 'online' ? 'ONLINE' : 'OFFLINE'"></span>
                                 </div>
@@ -316,14 +316,14 @@
             </div>
 
             {{-- Botón Visible: Credenciales SSH --}}
-            <button type="button" @click="openLoginModal = true" class="btn-primary-hacienda" title="Configurar credenciales SSH del equipo">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+            <button type="button" @click="openLoginModal = true" class="btn-primary-hacienda" title="Configurar credenciales SSH del equipo" aria-label="Configurar credenciales SSH del equipo">
+                <svg class="w-4 h-4 text-white" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z" /> <circle cx="16.5" cy="7.5" r=".5" fill="currentColor" /></svg>
                 <span>Credenciales SSH</span>
             </button>
 
             {{-- Botón Visible: Limpiar Terminal --}}
-            <button type="button" onclick="window.clearTerminalScreen()" class="btn-secondary-noc" title="Limpiar Pantalla (Ctrl + L)">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            <button type="button" onclick="window.clearTerminalScreen()" class="btn-secondary-noc" title="Limpiar Pantalla (Ctrl + L)" aria-label="Limpiar Pantalla (Ctrl + L)">
+                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /> <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /> <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /> <line x1="10" x2="10" y1="11" y2="17" /> <line x1="14" x2="14" y1="11" y2="17" /></svg>
                 <span class="hidden sm:inline">Limpiar</span>
             </button>
         </div>
@@ -332,47 +332,47 @@
     {{-- ==================== 2. QUICK COMMANDS BAR ==================== --}}
     <div class="noc-card p-3 sm:p-3.5 flex-shrink-0 flex items-center gap-2 overflow-x-auto custom-scrollbar">
         <span class="text-[11px] font-mono font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1.5">
-            <svg class="w-4 h-4 text-[#3b5998] dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <svg class="w-4 h-4 text-nm-primary dark:text-blue-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
             Comandos Rápidos:
         </span>
         
         <button type="button" onclick="window.runPresetCommand('show version')" class="noc-cmd-btn">
-            <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <svg class="w-3.5 h-3.5 text-blue-500" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg>
             <span>show version</span>
         </button>
 
         <button type="button" onclick="window.runPresetCommand('show ip interface brief')" class="noc-cmd-btn">
-            <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <svg class="w-3.5 h-3.5 text-emerald-500" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m7 11 2-2-2-2" /> <path d="M11 13h4" /> <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /></svg>
             <span>show ip int brief</span>
         </button>
 
         <button type="button" onclick="window.runPresetCommand('show running-config')" class="noc-cmd-btn">
-            <svg class="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <svg class="w-3.5 h-3.5 text-purple-500" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M10 9H8" /> <path d="M16 13H8" /> <path d="M16 17H8" /></svg>
             <span>show running-config</span>
         </button>
 
         <button type="button" onclick="window.runPresetCommand('get system status')" class="noc-cmd-btn">
-            <svg class="w-3.5 h-3.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+            <svg class="w-3.5 h-3.5 text-rose-500" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2" /> <rect width="6" height="6" x="9" y="9" rx="1" /> <path d="M15 2v2" /> <path d="M15 20v2" /> <path d="M2 15h2" /> <path d="M2 9h2" /> <path d="M20 15h2" /> <path d="M20 9h2" /> <path d="M9 2v2" /> <path d="M9 20v2" /></svg>
             <span>get sys status</span>
         </button>
 
         <button type="button" onclick="window.runPresetCommand('diagnose sys session stat')" class="noc-cmd-btn">
-            <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <svg class="w-3.5 h-3.5 text-amber-500" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" /></svg>
             <span>diagnose sys session</span>
         </button>
 
         <button type="button" onclick="window.runPresetCommand('show mac address-table')" class="noc-cmd-btn">
-            <svg class="w-3.5 h-3.5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+            <svg class="w-3.5 h-3.5 text-cyan-500" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" /> <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" /></svg>
             <span>show mac</span>
         </button>
 
         <button type="button" onclick="window.runPresetCommand('ping 10.4.1.1')" class="noc-cmd-btn">
-            <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <svg class="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
             <span>ping 10.4.1.1</span>
         </button>
 
         <button type="button" onclick="window.runPresetCommand('help')" class="noc-cmd-btn">
-            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <svg class="w-3.5 h-3.5 text-slate-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /> <path d="M12 17h.01" /></svg>
             <span>help / ?</span>
         </button>
     </div>
@@ -412,32 +412,32 @@
     <div class="noc-card p-4 sm:p-5 flex-shrink-0">
         <div class="flex items-center justify-between mb-3">
             <span class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                <div class="w-6 h-6 rounded-lg bg-[#3b5998]/10 text-[#3b5998] dark:text-blue-400 flex items-center justify-center">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                <div class="w-6 h-6 rounded-lg bg-nm-primary/10 text-nm-primary dark:text-blue-400 flex items-center justify-center">
+                    <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" /></svg>
                 </div>
                 Auditoría de Comandos Ejecutados
             </span>
             <span class="text-[11px] text-slate-400 font-mono font-medium flex items-center gap-1">
-                <svg class="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                <svg class="w-3 h-3 text-emerald-500" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                 SOC Compliance Activo
             </span>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
             @forelse($historial->take(3) as $h)
-                <div class="p-3 rounded-xl bg-slate-50 dark:bg-[#161b22] border border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs transition hover:border-slate-300 dark:hover:border-slate-700">
+                <div class="p-3 rounded-xl bg-slate-50 dark:bg-nm-surface border border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs transition hover:border-slate-300 dark:hover:border-slate-700">
                     <div class="min-w-0 flex items-center gap-2">
-                        <div class="p-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-500 shrink-0 font-mono text-[10px] font-bold">
+                        <div class="p-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-500 shrink-0 font-mono text-[11px] font-bold">
                             &gt;_
                         </div>
                         <div class="min-w-0">
-                            <p class="font-mono font-bold text-[#3b5998] dark:text-blue-400 truncate">&gt; {{ $h->comando_solicitado }}</p>
-                            <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{{ $h->dispositivo?->nombre ?? 'N/A' }} · {{ $h->user?->name ?? 'Admin' }}</p>
+                            <p class="font-mono font-bold text-nm-primary dark:text-blue-400 truncate">&gt; {{ $h->comando_solicitado }}</p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{{ $h->dispositivo?->nombre ?? 'N/A' }} · {{ $h->user?->name ?? 'Admin' }}</p>
                         </div>
                     </div>
-                    <span class="text-[10px] font-mono text-slate-400 shrink-0 ml-2 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200/50 dark:border-slate-700/50">{{ $h->fecha_ejecucion ? \Carbon\Carbon::parse($h->fecha_ejecucion)->format('H:i:s') : 'Hoy' }}</span>
+                    <span class="text-[11px] font-mono text-slate-400 shrink-0 ml-2 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200/50 dark:border-slate-700/50">{{ $h->fecha_ejecucion ? \Carbon\Carbon::parse($h->fecha_ejecucion)->format('H:i:s') : 'Hoy' }}</span>
                 </div>
             @empty
-                <div class="p-4 rounded-xl bg-slate-50 dark:bg-[#161b22] border border-slate-200/60 dark:border-slate-800 col-span-3 text-center text-xs text-slate-400">
+                <div class="p-4 rounded-xl bg-slate-50 dark:bg-nm-surface border border-slate-200/60 dark:border-slate-800 col-span-3 text-center text-xs text-slate-400">
                     No hay registros recientes de auditoría para este dispositivo.
                 </div>
             @endforelse
@@ -456,13 +456,13 @@
          style="display: none;">
         
         <div @click.outside="openLoginModal = false"
-             class="bg-white dark:bg-[#12161f] border border-slate-200 dark:border-slate-700 rounded-[2rem] p-6 sm:p-7 shadow-2xl max-w-md w-full relative">
+             class="bg-white dark:bg-nm-surface border border-slate-200 dark:border-slate-700 rounded-2xl p-6 sm:p-7 shadow-2xl max-w-md w-full relative">
             
             {{-- Encabezado Modal --}}
             <div class="flex items-center justify-between mb-5 pb-3.5 border-b border-slate-100 dark:border-slate-800">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-[#3b5998] text-white flex items-center justify-center shadow-md shadow-[#3b5998]/30">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    <div class="w-10 h-10 rounded-2xl bg-nm-primary text-white flex items-center justify-center shadow-md shadow-nm-primary/30">
+                        <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                     </div>
                     <div>
                         <h3 class="text-base font-black text-slate-900 dark:text-white">Credenciales de Acceso SSH</h3>
@@ -470,7 +470,7 @@
                     </div>
                 </div>
                 <button type="button" @click="openLoginModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
                 </button>
             </div>
 
@@ -478,41 +478,41 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <svg class="w-3.5 h-3.5 text-slate-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg>
                         Puerto SSH (TCP):
                     </label>
                     <input type="number" x-model="sshPort" 
-                           class="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#3b5998] focus:outline-none transition shadow-xs font-bold"
+                           class="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-nm-primary focus:outline-none transition shadow-xs font-bold"
                            placeholder="22">
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        <svg class="w-3.5 h-3.5 text-slate-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /> <circle cx="12" cy="7" r="4" /></svg>
                         Usuario SSH (Username):
                     </label>
                     <input type="text" x-model="sshUser" 
-                           class="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#3b5998] focus:outline-none transition shadow-xs font-bold"
+                           class="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-nm-primary focus:outline-none transition shadow-xs font-bold"
                            placeholder="admin / cisco / root">
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        <svg class="w-3.5 h-3.5 text-slate-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                         Contraseña SSH (Password):
                     </label>
                     <div class="relative">
                         <input :type="showPassword ? 'text' : 'password'" x-model="sshPassword" 
-                               class="w-full px-3.5 py-2.5 pr-10 text-xs font-mono rounded-xl bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#3b5998] focus:outline-none transition shadow-xs font-bold"
+                               class="w-full px-3.5 py-2.5 pr-10 text-xs font-mono rounded-xl bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-nm-primary focus:outline-none transition shadow-xs font-bold"
                                placeholder="Ingrese la clave SSH">
                         <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /></svg>
                         </button>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-2.5 pt-1">
-                    <input type="checkbox" id="saveCreds" x-model="saveCredentials" class="w-4 h-4 rounded text-[#3b5998] focus:ring-[#3b5998] bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700">
+                    <input type="checkbox" id="saveCreds" x-model="saveCredentials" class="w-4 h-4 rounded text-nm-primary focus:ring-nm-primary bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700">
                     <label for="saveCreds" class="text-xs text-slate-600 dark:text-slate-400 font-medium cursor-pointer">
                         Guardar credenciales cifradas para este equipo
                     </label>
@@ -686,7 +686,7 @@
             const term = new Terminal({
                 cursorBlink: true,
                 theme: { 
-                    background: '#080c14', 
+                    background: '#090e18', 
                     foreground: '#f1f5f9',
                     cursor: '#38bdf8',
                     selection: 'rgba(59, 130, 246, 0.35)',
@@ -694,7 +694,7 @@
                     red: '#f87171',
                     green: '#34d399',
                     yellow: '#fbbf24',
-                    blue: '#60a5fa',
+                    blue: '#4d94fd',
                     magenta: '#c084fc',
                     cyan: '#38bdf8',
                     white: '#ffffff',
@@ -702,7 +702,7 @@
                     brightRed: '#fca5a5',
                     brightGreen: '#6ee7b7',
                     brightYellow: '#fde047',
-                    brightBlue: '#93c5fd',
+                    brightBlue: '#80b3ff',
                     brightMagenta: '#d8b4fe',
                     brightCyan: '#67e8f9',
                     brightWhite: '#ffffff'

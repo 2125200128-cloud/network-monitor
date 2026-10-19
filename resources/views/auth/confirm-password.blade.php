@@ -19,16 +19,16 @@
             border: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-        .text-institutional-blue { color: #5c8096; }
-        .bg-institutional-blue { background-color: #5c8096; }
-        .hover-bg-institutional-blue:hover { background-color: #4a6b7d; }
-        .text-institutional-orange { color: #e67e22; }
+        .text-institutional-blue { color: #5b7d95; }
+        .bg-institutional-blue { background-color: #5b7d95; }
+        .hover-bg-institutional-blue:hover { background-color: #5b7d95; }
+        .text-institutional-orange { color: #f07f12; }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-900 flex items-center justify-center min-h-screen">
     
     <div class="max-w-md w-full mx-auto p-6">
-        <div class="glass-panel rounded-2xl p-8 border-t-4 border-[#e67e22]">
+        <div class="glass-panel rounded-2xl p-8 border-t-4 border-[#f07f12]">
             
             <div class="text-center mb-6">
                 <img src="{{ asset('images/logo.png') }}" alt="Logo Hacienda" class="h-20 mx-auto mb-4 dark:brightness-0 dark:invert dark:opacity-90 transition">
@@ -57,7 +57,7 @@
                     <a href="{{ url()->previous() }}" class="text-sm text-gray-500 hover:text-gray-700">
                         Cancelar y Volver
                     </a>
-                    <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-institutional-orange hover:bg-[#d67118] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-institutional-orange transition-colors duration-200">
+                    <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-institutional-orange hover:bg-[#d96f0c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-institutional-orange transition-colors duration-200">
                         Confirmar Identidad
                     </button>
                 </div>

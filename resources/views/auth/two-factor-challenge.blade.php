@@ -27,10 +27,10 @@
             border: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-        .text-institutional-blue { color: #5c8096; }
-        .bg-institutional-blue { background-color: #5c8096; }
-        .hover-bg-institutional-blue:hover { background-color: #4a6b7d; }
-        .text-institutional-orange { color: #e67e22; }
+        .text-institutional-blue { color: #5b7d95; }
+        .bg-institutional-blue { background-color: #5b7d95; }
+        .hover-bg-institutional-blue:hover { background-color: #5b7d95; }
+        .text-institutional-orange { color: #f07f12; }
     </style>
     <script>
         function toggleRecovery() {

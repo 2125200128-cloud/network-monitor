@@ -18,7 +18,7 @@
     // $espacios: ancho mínimo en barras, para que 1-2 valores no se dibujen como un bloque (se alinean a la derecha)
     $barras = function (array $vals, array $titulos, string $rgb, int $espacios = 0) {
         $n = count($vals);
-        if ($n === 0) return '<span class="text-[10px] text-gray-400">Sin datos</span>';
+        if ($n === 0) return '<span class="text-[11px] text-gray-400">Sin datos</span>';
         $slots = max($n, $espacios);
         $max = max(1, max($vals));
         $gap = 2;
@@ -35,7 +35,7 @@
     // Área con línea, escalada al rango propio de la serie (con margen) para que las variaciones se vean
     $area = function (array $vals, string $rgb) {
         $n = count($vals);
-        if ($n < 2) return '<span class="text-[10px] text-gray-400">Sin serie</span>';
+        if ($n < 2) return '<span class="text-[11px] text-gray-400">Sin serie</span>';
         $margen = max(0.5, (max($vals) - min($vals)) * 0.2);
         $min = min($vals) - $margen;
         $rango = max($vals) + $margen - $min;
@@ -78,13 +78,13 @@
             {{-- Estado de los procesos de recolección, plegado en un menú --}}
             <div class="relative" x-data="{ abierto: false }" @click.outside="abierto = false">
                 <button type="button" @click="abierto = !abierto"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border bg-white dark:bg-[#0d1017] border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 transition">
+                        class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border bg-white dark:bg-nm-surface border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 transition">
                     <span class="w-2 h-2 rounded-full {{ $workersOk === count($cob['workers']) ? 'bg-emerald-500' : 'bg-red-500 animate-pulse' }}"></span>
                     Recolección {{ $workersOk }}/{{ count($cob['workers']) }} al día
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                 </button>
                 <div x-show="abierto" x-transition style="display: none;"
-                     class="absolute right-0 mt-2 w-80 z-30 rounded-xl bg-white dark:bg-[#0d1017] border border-gray-100 dark:border-slate-800 shadow-xl p-2">
+                     class="absolute right-0 mt-2 w-80 z-30 rounded-xl nm-glass bg-white dark:bg-nm-surface border border-gray-100 dark:border-slate-800 shadow-xl p-2">
                     @foreach($cob['workers'] as $w)
                         <div class="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg text-xs">
                             <span class="flex items-center gap-2 text-gray-700 dark:text-slate-300">
@@ -93,12 +93,12 @@
                             <span class="font-mono text-[11px] {{ $w['ok'] ? 'text-gray-400' : 'text-red-600 dark:text-red-400 font-bold' }}">{{ $w['edad'] }}</span>
                         </div>
                     @endforeach
-                    <p class="px-2 pt-1.5 mt-1 border-t border-gray-100 dark:border-slate-800 text-[10px] text-gray-400">Un proceso atrasado deja de actualizar sus métricas: revisar su ventana en iniciar_monitor.bat.</p>
+                    <p class="px-2 pt-1.5 mt-1 border-t border-gray-100 dark:border-slate-800 text-[11px] text-gray-400">Un proceso atrasado deja de actualizar sus métricas: revisar su ventana en iniciar_monitor.bat.</p>
                 </div>
             </div>
             <button type="button" onclick="abrirDiagnostico('incidentes')"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border bg-white dark:bg-[#0d1017] border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border bg-white dark:bg-nm-surface border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 transition">
+                <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <polyline points="12 6 12 12 16 14" /></svg>
                 Actividad reciente
             </button>
         </div>

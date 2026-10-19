@@ -19,122 +19,62 @@
             transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .uiverse-btn {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.35rem;
-            padding: 0.45rem 1.4rem;
-            border: 2px solid #0f172a;
-            border-radius: 0.75rem;
-            font-size: 0.75rem;
-            font-weight: 700;
-            background: #1e293b;
-            color: #ffffff;
-            cursor: pointer;
-            overflow: hidden;
-            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-            user-select: none;
-            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+        /* Botones de la barra de herramientas (sistema de diseño): superficie, borde fino y activo metálico.
+           Se ocultan los adornos animados heredados (círculo expansivo y flechas deslizantes). */
+        .uiverse-btn, .uiverse-btn-sm {
+            position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+            padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 600; white-space: nowrap; user-select: none;
+            color: var(--nm-text); background: var(--nm-surface); border: 1px solid var(--nm-border-strong);
+            border-radius: var(--nm-btn-radius); box-shadow: var(--nm-shadow-sm); overflow: hidden;
+            transition: background-color var(--nm-dur-fast) ease, border-color var(--nm-dur-fast) ease, color var(--nm-dur-fast) ease, box-shadow var(--nm-dur-fast) ease;
             pointer-events: auto !important;
         }
-
-        .uiverse-btn:hover {
-            color: #0f172a !important;
-            border-radius: 1.25rem;
-            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.2);
-            border-color: #0f172a;
+        .uiverse-btn-sm { padding: 0.3rem 0.65rem; font-size: 0.74rem; }
+        .uiverse-btn > span.absolute, .uiverse-btn-sm > span.absolute,
+        .uiverse-btn > svg:first-child, .uiverse-btn-sm > svg:first-child { display: none !important; }
+        .uiverse-btn > svg, .uiverse-btn-sm > svg {
+            position: static !important; order: 2; width: 0.95rem; height: 0.95rem; fill: none !important; stroke: currentColor; opacity: 0.75;
+        }
+        .uiverse-btn > span, .uiverse-btn-sm > span { transform: none !important; }
+        .uiverse-btn:hover, .uiverse-btn-sm:hover {
+            color: var(--nm-azure-700); background: var(--nm-azure-50); border-color: var(--nm-azure-300);
+        }
+        .uiverse-btn.active, .uiverse-btn-sm.active {
+            color: #fff !important; background: var(--nm-metal-sheen), var(--nm-metal-azure) !important;
+            border-color: transparent !important; box-shadow: 0 2px 8px -2px rgb(var(--nm-primary-rgb) / 0.5) !important;
+        }
+        .uiverse-btn.active > svg, .uiverse-btn-sm.active > svg { opacity: 1; }
+        .dark .uiverse-btn:hover, .dark .uiverse-btn-sm:hover {
+            color: var(--nm-azure-200); background: rgb(var(--nm-primary-rgb) / 0.14); border-color: rgb(var(--nm-primary-rgb) / 0.45);
         }
 
-        .uiverse-btn.active {
-            border-color: #3b82f6 !important;
-            background: #0f172a !important;
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.4) !important;
+        /* Barra de herramientas del mapa (sistema de diseño) */
+        .nm-toolbar { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem; border-radius: var(--nm-radius-lg); box-shadow: var(--nm-shadow-md); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+        .nm-toolbar::-webkit-scrollbar { display: none; }
+        .nm-toolbar-sep { width: 1px; height: 1.5rem; background: var(--nm-border-strong); flex-shrink: 0; }
+        .nm-tool {
+            position: relative; display: inline-flex; align-items: center; gap: 0.4rem; height: 2.25rem; padding: 0 0.7rem;
+            font-size: 0.8rem; font-weight: 600; white-space: nowrap; color: var(--nm-text-muted);
+            background: transparent; border: 1px solid transparent; border-radius: var(--nm-radius-sm);
+            transition: background-color var(--nm-dur-fast) ease, color var(--nm-dur-fast) ease, border-color var(--nm-dur-fast) ease;
         }
+        .nm-tool:hover { color: var(--nm-text); background: rgb(var(--nm-primary-rgb) / 0.08); }
+        /* Segmentado: una sola opción activa, rellena */
+        .nm-seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: calc(var(--nm-radius-sm) + 2px); background: var(--nm-sunken); border: 1px solid var(--nm-border); }
+        .nm-seg .nm-tool { height: 2rem; }
+        .nm-seg .nm-tool.active { color: #fff; background: var(--nm-metal-sheen), var(--nm-metal-azure); box-shadow: 0 1px 4px -1px rgb(var(--nm-primary-rgb) / 0.6); }
+        /* Interruptor: encendido = tinte azul + punto indicador */
+        .nm-toggle.active { color: var(--nm-azure-700); background: rgb(var(--nm-primary-rgb) / 0.1); border-color: rgb(var(--nm-primary-rgb) / 0.3); }
+        .dark .nm-toggle.active { color: var(--nm-azure-200); background: rgb(var(--nm-primary-rgb) / 0.18); }
+        .nm-toggle::after { content: ''; width: 6px; height: 6px; border-radius: 9999px; background: var(--nm-border-strong); margin-left: 0.1rem; transition: background-color var(--nm-dur-fast) ease; }
+        .nm-toggle.active::after { background: var(--nm-success); box-shadow: 0 0 0 3px rgb(16 185 129 / 0.18); }
+        /* En pantallas angostas solo iconos: el texto se oculta visualmente pero sigue siendo el nombre accesible */
+        @media (max-width: 1280px) { .nm-toolbar .nm-tool > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .nm-toolbar .nm-tool { padding: 0 0.55rem; } }
 
-        .dark .blueprint-canvas {
-            background-color: #1a2333;
-            background-image:
-                radial-gradient(ellipse at 50% 35%, rgba(59, 89, 152, 0.22), transparent 70%),
-                linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
-            background-size: 100% 100%, 28px 28px, 28px 28px;
-        }
-
-        .dark .uiverse-btn {
-            background: #0f131c;
-            border-color: #334155;
-            color: #f1f5f9;
-        }
-
-        .dark .uiverse-btn:hover {
-            color: #090d16 !important;
-            border-color: #f8fafc;
-        }
-
-        .dark .uiverse-btn.active {
-            border-color: #60a5fa !important;
-            background: #1e2638 !important;
-            box-shadow: 0 0 12px rgba(96, 165, 250, 0.4) !important;
-        }
-
-        /* Compact Uiverse Buttons for Filter & Action Bars */
-        .uiverse-btn-sm {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.25rem;
-            padding: 0.28rem 0.65rem;
-            border: 1.5px solid #0f172a;
-            border-radius: 0.65rem;
-            font-size: 0.68rem;
-            font-weight: 700;
-            background: #1e293b;
-            color: #ffffff;
-            cursor: pointer;
-            overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            user-select: none;
-            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
-            pointer-events: auto !important;
-            white-space: nowrap;
-        }
-
-        .uiverse-btn-sm:hover,
-        .uiverse-btn-sm.active:hover {
-            color: #0f172a !important;
-            border-radius: 0.95rem;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
-            border-color: #0f172a;
-        }
-
-        .uiverse-btn-sm.active {
-            border-color: #3b82f6 !important;
-            background: #0f172a !important;
-            box-shadow: 0 0 8px rgba(59, 130, 246, 0.45) !important;
-            color: #60a5fa !important;
-        }
-
-        .dark .uiverse-btn-sm {
-            background: #0f131c;
-            border-color: #334155;
-            color: #f1f5f9;
-        }
-
-        .dark .uiverse-btn-sm:hover,
-        .dark .uiverse-btn-sm.active:hover {
-            color: #090d16 !important;
-            border-color: #f8fafc;
-        }
-
-        .dark .uiverse-btn-sm.active {
-            border-color: #60a5fa !important;
-            background: #1e2638 !important;
-            box-shadow: 0 0 10px rgba(96, 165, 250, 0.45) !important;
-            color: #93c5fd !important;
-        }
+        /* El selector Jalisco/ZMG no tiene icono: su texto nunca se oculta */
+        @media (max-width: 1280px) { #segVistaMapa .nm-tool > span { position: static; width: auto; height: auto; overflow: visible; clip: auto; } #segVistaMapa .nm-tool { padding: 0 0.6rem; } }
+        /* En pantallas angostas el recuadro de la ZMG taparía el mapa: se queda solo el fondo */
+        @media (max-width: 767px) { #recuadroMapa, #panelSitios { display: none !important; } }
 
         .interactive-bar-island {
             pointer-events: auto !important;
@@ -146,12 +86,11 @@
         }
 
         /* KPIs del encabezado */
-        .noc-kpi { display: flex; flex-direction: column; gap: 2px; padding: 6px 12px; border-radius: 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; min-width: 96px; }
-        .dark .noc-kpi { background: rgba(30, 41, 59, 0.6); border-color: rgba(51, 65, 85, 0.7); }
-        .noc-kpi-title { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; }
+        .noc-kpi { display: flex; flex-direction: column; gap: 2px; padding: 6px 12px; border-radius: var(--nm-radius-md); background: var(--nm-sunken); border: 1px solid var(--nm-border); min-width: 96px; }
+        
+        .noc-kpi-title { font-size: 11px; line-height: 1; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--nm-text-muted); }
         .noc-kpi-row { display: flex; align-items: center; gap: 10px; }
-        .noc-kpi-item { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: #0f172a; }
-        .dark .noc-kpi-item { color: #f1f5f9; }
+        .noc-kpi-item { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--nm-text); }
         .noc-kpi-item b { font-family: ui-monospace, Consolas, monospace; font-weight: 800; }
         .noc-dot { display: inline-block; width: 8px; height: 8px; border-radius: 9999px; }
         .noc-stale { color: #dc2626 !important; }
@@ -179,247 +118,161 @@
 @endsection
 
 @section('content')
-<div class="flex flex-col h-full space-y-4">
+<div class="flex flex-col h-full space-y-3">
     
 
 
-    {{-- ==================== 1. TOP HEADER & METRICS ==================== --}}
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#12161f] rounded-[2rem] p-5 lg:p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex-shrink-0">
-        <div class="flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-md flex-shrink-0" style="background: linear-gradient(135deg, #3b5998, #5c8096);">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
-                    <circle cx="6" cy="6" r="2.5"></circle>
-                    <circle cx="18" cy="6" r="2.5"></circle>
-                    <circle cx="12" cy="18" r="2.5"></circle>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.2 7.2l2.6 8.6m2.4 0l2.6-8.6M8.5 6h7"></path>
-                </svg>
-            </div>
-            <div>
-                <div class="flex items-center gap-2">
-                    <h1 class="text-xl lg:text-2xl font-black text-gray-900 dark:text-white leading-tight">Topología y Conexiones de Red</h1>
-                    <div id="liveStatusContainer" class="flex items-center justify-center transition-all duration-300 ml-1">
-                        <dotlottie-player id="liveWifiAnim" src="https://lottie.host/8b5830cd-4218-4247-87fb-5bd887d203d8/PomLBEIdAK.lottie" background="transparent" speed="1" style="width: 85px; height: 85px; margin-top: -12px; margin-bottom: -12px;" loop autoplay></dotlottie-player>
-                    </div>
-                </div>
-                <p class="text-xs text-gray-500 dark:text-slate-400 font-medium mt-0.5">Mapa cartográfico de interconexión espacial L2/L3 · CDP & LLDP Telemetry</p>
-            </div>
+    {{-- ==================== 1. ENCABEZADO COMPACTO: título + resumen en una fila ==================== --}}
+    <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-white dark:bg-nm-surface rounded-xl px-4 py-2 shadow-sm border border-gray-100 dark:border-slate-800 flex-shrink-0">
+        <div class="flex items-center gap-2.5">
+            <h1 class="text-base font-bold text-gray-900 dark:text-white">Topología</h1>
+            <span id="liveStatusDot" class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400" title="Estado del monitoreo en vivo">
+                <i class="w-2 h-2 rounded-full bg-slate-400"></i><span>En vivo</span>
+            </span>
         </div>
 
         {{-- Resumen real: equipos y enlaces por estado + frescura del dato --}}
-        <div class="flex flex-wrap items-stretch gap-2.5">
-            <div class="noc-kpi">
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px]">
+            <div class="flex items-center gap-2">
                 <span class="noc-kpi-title">Equipos</span>
-                <div class="noc-kpi-row">
-                    <span class="noc-kpi-item" title="En línea"><i class="noc-dot" style="background:#10b981"></i><b id="kpiDispOnline">{{ $resumen['disp_online'] }}</b></span>
-                    <span class="noc-kpi-item" title="Advertencia (umbrales de CPU / pérdida)"><i class="noc-dot" style="background:#f59e0b"></i><b id="kpiDispWarning">{{ $resumen['disp_warning'] }}</b></span>
-                    <span class="noc-kpi-item" title="Sin respuesta (ICMP y SNMP)"><i class="noc-dot" style="background:#ef4444"></i><b id="kpiDispOffline">{{ $resumen['disp_offline'] }}</b></span>
-                </div>
+                <span class="noc-kpi-item" title="En línea"><i class="noc-dot" style="background:#10b981"></i><b id="kpiDispOnline">{{ $resumen['disp_online'] }}</b></span>
+                <span class="noc-kpi-item" title="Advertencia (umbrales de CPU / pérdida)"><i class="noc-dot" style="background:#f59e0b"></i><b id="kpiDispWarning">{{ $resumen['disp_warning'] }}</b></span>
+                <span class="noc-kpi-item" title="Sin respuesta (ICMP y SNMP)"><i class="noc-dot" style="background:#ef4444"></i><b id="kpiDispOffline">{{ $resumen['disp_offline'] }}</b></span>
             </div>
-
-            <div class="noc-kpi">
+            <span class="w-px h-4 bg-slate-200 dark:bg-slate-700" aria-hidden="true"></span>
+            <div class="flex items-center gap-2">
                 <span class="noc-kpi-title">Enlaces</span>
-                <div class="noc-kpi-row">
-                    <span class="noc-kpi-item" title="UP (puerto operativo)"><i class="noc-dot" style="background:#10b981"></i><b id="kpiEnlUp">{{ $resumen['enl_up'] }}</b></span>
-                    <span class="noc-kpi-item" title="Degradado / utilización ≥ 80 %"><i class="noc-dot" style="background:#f59e0b"></i><b id="kpiEnlDegraded">{{ $resumen['enl_degraded'] }}</b></span>
-                    <span class="noc-kpi-item" title="DOWN"><i class="noc-dot" style="background:#ef4444"></i><b id="kpiEnlDown">{{ $resumen['enl_down'] }}</b></span>
-                    <span class="noc-kpi-item" title="Sin dato de los puertos"><i class="noc-dot" style="background:#94a3b8"></i><b id="kpiEnlUnknown">{{ $resumen['enl_unknown'] }}</b></span>
-                </div>
+                <span class="noc-kpi-item" title="UP (puerto operativo)"><i class="noc-dot" style="background:#10b981"></i><b id="kpiEnlUp">{{ $resumen['enl_up'] }}</b></span>
+                <span class="noc-kpi-item" title="Degradado / utilización ≥ 80 %"><i class="noc-dot" style="background:#f59e0b"></i><b id="kpiEnlDegraded">{{ $resumen['enl_degraded'] }}</b></span>
+                <span class="noc-kpi-item" title="DOWN"><i class="noc-dot" style="background:#ef4444"></i><b id="kpiEnlDown">{{ $resumen['enl_down'] }}</b></span>
+                <span class="noc-kpi-item" title="Sin dato de los puertos"><i class="noc-dot" style="background:#94a3b8"></i><b id="kpiEnlUnknown">{{ $resumen['enl_unknown'] }}</b></span>
             </div>
-
-            <div class="noc-kpi">
-                <span class="noc-kpi-title">Último sondeo</span>
-                <div class="noc-kpi-row">
-                    <span id="kpiFrescura" class="noc-kpi-item font-mono" data-ts="{{ $resumen['ultimo_sondeo'] }}">—</span>
-                </div>
-            </div>
+            <span class="w-px h-4 bg-slate-200 dark:bg-slate-700" aria-hidden="true"></span>
+            <span id="kpiFrescura" class="noc-kpi-item font-mono text-slate-500 dark:text-slate-400" title="Último sondeo" data-ts="{{ $resumen['ultimo_sondeo'] }}">—</span>
         </div>
     </div>
 
     {{-- ==================== 2. CANVAS & INTERACTIVE WORKSPACE ==================== --}}
-    <div class="relative flex-1 rounded-[2rem] overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800 blueprint-canvas flex flex-col min-h-[600px]">
+    <div class="relative flex-1 rounded-2xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800 blueprint-canvas flex flex-col min-h-[600px]">
         
         {{-- Unified Floating Top Bar (Organizada en dos grupos lógicos con separadores) --}}
         <div class="absolute z-10 flex flex-wrap items-center justify-between gap-3 pointer-events-none" style="top: 1rem; left: 1rem; right: 1rem;">
             
-            {{-- Left Bar: Toolbar Groups (Uiverse Buttons) --}}
-            <div class="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white/95 dark:bg-[#0d1017]/95 border border-slate-200/90 dark:border-slate-800/70 shadow-lg dark:shadow-none interactive-bar-island" style="pointer-events: auto;">
-                
-                {{-- Grupo 1: Vista / Disposición --}}
-                <div class="flex items-center gap-1.5">
-                    {{-- 1. Centrar Todo --}}
-                    <button type="button" onclick="resetZoom()" class="uiverse-btn group" title="Centrar y encuadrar vista completa">
-                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
-                        </svg>
-                        <span class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Ver Todo</span>
-                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[220px] group-hover:h-[220px] group-hover:opacity-100 pointer-events-none"></span>
-                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
-                        </svg>
+            {{-- Barra de herramientas: disposición (segmentado), capas (interruptores) y acciones --}}
+            <div class="nm-toolbar nm-glass interactive-bar-island" role="toolbar" aria-label="Herramientas del mapa" style="pointer-events: auto;">
+
+                <div class="nm-seg" role="group" aria-label="Disposición del mapa">
+                    <button type="button" id="btnLayoutTree" onclick="setLayout('tree')" class="nm-tool" title="Organizar en niveles jerárquicos (núcleo a acceso)">
+                        <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1" /> <rect x="2" y="16" width="6" height="6" rx="1" /> <rect x="9" y="2" width="6" height="6" rx="1" /> <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" /> <path d="M12 12V8" /></svg><span>Jerárquico</span>
                     </button>
-
-                    <div class="h-4 w-px bg-slate-200 dark:bg-slate-700/60 mx-0.5"></div>
-
-                    {{-- 2. Física Pausada / Activa --}}
-                    <button type="button" id="btnTogglePhysics" onclick="togglePhysics()" class="uiverse-btn group" title="Alternar simulación de física y fuerzas gravitatorias">
-                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-amber-400 z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-amber-600" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" fill="currentColor"></path>
-                        </svg>
-                        <span id="physicsStatusLabel" class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Física Pausada</span>
-                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[220px] group-hover:h-[220px] group-hover:opacity-100 pointer-events-none"></span>
-                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-amber-400 z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-amber-600" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" fill="currentColor"></path>
-                        </svg>
+                    <button type="button" id="btnLayoutFree" onclick="setLayout('free')" class="nm-tool active" title="Disposición orgánica libre">
+                        <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="2.5" /> <path d="m10.2 6.3-3.9 3.9" /> <circle cx="4.5" cy="12" r="2.5" /> <path d="M7 12h10" /> <circle cx="19.5" cy="12" r="2.5" /> <path d="m13.8 17.7 3.9-3.9" /> <circle cx="12" cy="19.5" r="2.5" /></svg><span>Libre</span>
                     </button>
+                </div>
 
-                    {{-- 7. Jerárquico --}}
-                    <button type="button" id="btnLayoutTree" onclick="setLayout('tree')" class="uiverse-btn group" title="Organizar en niveles jerárquicos (Core ➔ Acceso)">
-                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
-                        </svg>
-                        <span class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Jerárquico</span>
-                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[220px] group-hover:h-[220px] group-hover:opacity-100 pointer-events-none"></span>
-                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
-                        </svg>
+                <div class="nm-toolbar-sep" aria-hidden="true"></div>
+
+                <div class="flex items-center gap-1" role="group" aria-label="Capas del mapa">
+                    <button type="button" id="btnTogglePhysics" onclick="togglePhysics()" class="nm-tool nm-toggle" title="Activa o pausa la simulación de fuerzas que acomoda los nodos">
+                        <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1" /> <path d="M20.2 20.2c2.04-2.03.02-7.36-4.5-11.9-4.54-4.52-9.87-6.54-11.9-4.5-2.04 2.03-.02 7.36 4.5 11.9 4.54 4.52 9.87 6.54 11.9 4.5Z" /> <path d="M15.7 15.7c4.52-4.54 6.54-9.87 4.5-11.9-2.03-2.04-7.36-.02-11.9 4.5-4.52 4.54-6.54 9.87-4.5 11.9 2.03 2.04 7.36.02 11.9-4.5Z" /></svg><span id="physicsStatusLabel">Física</span>
                     </button>
-
-                    {{-- 8. Libre --}}
-                    <button type="button" id="btnLayoutFree" onclick="setLayout('free')" class="uiverse-btn group active" title="Disposición orgánica libre">
-                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
-                        </svg>
-                        <span class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Libre</span>
-                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[220px] group-hover:h-[220px] group-hover:opacity-100 pointer-events-none"></span>
-                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
-                        </svg>
+                    <button type="button" id="btnToggleBeams" onclick="toggleTrafficBeams()" class="nm-tool nm-toggle active" title="Muestra el tráfico en vivo como haces animados sobre los enlaces">
+                        <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" /></svg><span id="beamsStatusLabel">Tráfico animado</span>
                     </button>
-
-                    <div class="h-4 w-px bg-slate-200 dark:bg-slate-700/60 mx-0.5"></div>
-
-                    {{-- 9. Haces de Tráfico Animados (MagicUI Animated Beams) --}}
-                    <button type="button" id="btnToggleBeams" onclick="toggleTrafficBeams()" class="uiverse-btn group active" title="Alternar simulación de tráfico de red en vivo (MagicUI Animated Beams)">
-                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-cyan-400 z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-cyan-600" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M13 10V3L4 14h7v7l9-11h-7z" fill="currentColor"></path>
-                        </svg>
-                        <span id="beamsStatusLabel" class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Haces (Beams)</span>
-                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[240px] group-hover:h-[240px] group-hover:opacity-100 pointer-events-none"></span>
-                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-cyan-400 z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-cyan-600" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M13 10V3L4 14h7v7l9-11h-7z" fill="currentColor"></path>
-                        </svg>
+                    <button type="button" id="btnToggleEndpoints" onclick="toggleEndpoints()" class="nm-tool nm-toggle active" title="Agrupa teléfonos y PCs dentro de su switch de acceso">
+                        <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5c0-1.1.9-2 2-2h2" /> <path d="M17 3h2c1.1 0 2 .9 2 2v2" /> <path d="M21 17v2c0 1.1-.9 2-2 2h-2" /> <path d="M7 21H5c-1.1 0-2-.9-2-2v-2" /> <rect width="7" height="5" x="7" y="7" rx="1" /> <rect width="7" height="5" x="10" y="12" rx="1" /></svg><span id="endpointsStatusLabel">Agrupar finales</span>
                     </button>
-
-                    {{-- Equipos finales agrupados en su switch --}}
-                    <button type="button" id="btnToggleEndpoints" onclick="toggleEndpoints()" class="uiverse-btn-sm group active" title="Agrupar teléfonos y PCs dentro de su switch de acceso">
-                        <span id="endpointsStatusLabel" class="relative z-[1]">Finales: agrupados</span>
-                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[180px] group-hover:h-[180px] group-hover:opacity-100 pointer-events-none"></span>
+                    <button type="button" id="btnMapaJalisco" onclick="toggleMapaJalisco()" class="nm-tool nm-toggle active" title="Muestra de fondo el mapa municipal de Jalisco con sus cabeceras y la Zona Metropolitana de Guadalajara">
+                        <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /> <path d="M15 5.764v15" /> <path d="M9 3.236v15" /></svg><span>Mapa de Jalisco</span>
                     </button>
-
+                    <div id="segVistaMapa" class="nm-seg" role="group" aria-label="Mapa en grande">
+                        <button type="button" data-vista="jalisco" onclick="cambiarVistaMapa('jalisco')" class="nm-tool" title="Ver en grande el estado de Jalisco"><span>Jalisco</span></button>
+                        <button type="button" data-vista="zmg" onclick="cambiarVistaMapa('zmg')" class="nm-tool" title="Ver en grande la Zona Metropolitana de Guadalajara"><span>ZMG</span></button>
+                    </div>
                     @if($puedeEditar)
-                    {{-- Zonas tipo Packet Tracer --}}
-                    <button type="button" id="btnZonas" onclick="toggleZonaEdicion()" class="uiverse-btn-sm group" title="Crear, mover y redimensionar zonas (edificios, datacenters, sitios)">
-                        <svg class="w-3.5 h-3.5 relative z-[1]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2" stroke-dasharray="4 3"></rect></svg>
-                        <span class="relative z-[1]">Zonas</span>
-                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[140px] group-hover:h-[140px] group-hover:opacity-100 pointer-events-none"></span>
+                    <button type="button" id="btnZonas" onclick="toggleZonaEdicion()" class="nm-tool nm-toggle" title="Crear, mover y redimensionar zonas (edificios, datacenters, sitios)">
+                        <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3a2 2 0 0 0-2 2" /> <path d="M19 3a2 2 0 0 1 2 2" /> <path d="M21 19a2 2 0 0 1-2 2" /> <path d="M5 21a2 2 0 0 1-2-2" /> <path d="M9 3h1" /> <path d="M9 21h1" /> <path d="M14 3h1" /> <path d="M14 21h1" /> <path d="M3 9v1" /> <path d="M21 9v1" /> <path d="M3 14v1" /> <path d="M21 14v1" /></svg><span>Zonas</span>
                     </button>
                     @endif
                 </div>
 
-                {{-- Separador principal entre grupos --}}
-                <div class="h-5 w-px bg-slate-300 dark:bg-slate-700 mx-1 hidden sm:block"></div>
+                <div class="nm-toolbar-sep" aria-hidden="true"></div>
 
-                {{-- Grupo 2: Acciones --}}
-                <div class="flex items-center gap-1.5" x-data>
-                    {{-- 5. Auto-Descubrimiento SNMP --}}
-                    <button type="button" onclick="openDiscoveryModal()" class="uiverse-btn group" title="Auto-Descubrimiento SNMP (CDP/LLDP)">
-                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-cyan-400 z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-cyan-600" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
-                        </svg>
-                        <span class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Auto-Descubrimiento SNMP</span>
-                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[260px] group-hover:h-[260px] group-hover:opacity-100 pointer-events-none"></span>
-                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-cyan-400 z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-cyan-600" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
-                        </svg>
+                <div class="flex items-center gap-1" role="group" aria-label="Acciones">
+                    <button type="button" onclick="resetZoom()" class="nm-tool" title="Centrar y encuadrar la vista completa">
+                        <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2" /> <path d="M17 3h2a2 2 0 0 1 2 2v2" /> <path d="M21 17v2a2 2 0 0 1-2 2h-2" /> <path d="M7 21H5a2 2 0 0 1-2-2v-2" /></svg><span>Ver todo</span>
                     </button>
-
-                    {{-- 6. Exportar PNG --}}
-                    <button type="button" onclick="exportTopologyImage()" class="uiverse-btn group" title="Exportar topología de red como imagen PNG en alta definición">
-                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-3 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
-                        </svg>
-                        <span class="relative z-[1] transition-all duration-500 ease-custom -translate-x-2 group-hover:translate-x-2 whitespace-nowrap">Exportar PNG</span>
-                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[220px] group-hover:h-[220px] group-hover:opacity-100 pointer-events-none"></span>
-                        <svg viewBox="0 0 24 24" class="absolute w-4 h-4 fill-white z-[9] transition-all duration-500 ease-custom right-3 group-hover:-right-1/4 group-hover:fill-slate-900" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
-                        </svg>
+                    <button type="button" onclick="openDiscoveryModal()" class="nm-tool" title="Auto-descubrimiento por SNMP (CDP/LLDP)">
+                        <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19.07 4.93A10 10 0 0 0 6.99 3.34" /> <path d="M4 6h.01" /> <path d="M2.29 9.62A10 10 0 1 0 21.31 8.35" /> <path d="M16.24 7.76A6 6 0 1 0 8.23 16.67" /> <path d="M12 18h.01" /> <path d="M17.99 11.66A6 6 0 0 1 15.77 16.67" /> <circle cx="12" cy="12" r="2" /> <path d="m13.41 10.59 5.66-5.66" /></svg><span>Descubrir</span>
+                    </button>
+                    <button type="button" onclick="exportTopologyImage()" class="nm-tool" title="Exportar la topología como imagen PNG en alta definición">
+                        <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21" /> <path d="m14 19 3 3v-5.5" /> <path d="m17 22 3-3" /> <circle cx="9" cy="9" r="2" /></svg><span>Exportar PNG</span>
                     </button>
                 </div>
-
             </div>
+
+            <script>
+                // aria-pressed refleja el estado "active" que manejan las funciones del mapa
+                (function () {
+                    const botones = document.querySelectorAll('.nm-toolbar .nm-toggle, .nm-toolbar .nm-seg .nm-tool');
+                    const sincronizar = (b) => b.setAttribute('aria-pressed', b.classList.contains('active') ? 'true' : 'false');
+                    const obs = new MutationObserver((cambios) => cambios.forEach((c) => sincronizar(c.target)));
+                    botones.forEach((b) => { sincronizar(b); obs.observe(b, { attributes: true, attributeFilter: ['class'] }); });
+                })();
+            </script>
 
             {{-- Right Island: Search & Category / Edge Filter Pills (Colapsable y estilo Uiverse Compacto) --}}
             <div id="rightFilterBarContainer" class="flex items-center transition-all duration-300 pointer-events-auto" style="margin-left: auto;">
                 
                 {{-- Collapsed State: Botón flotante compacto para expandir --}}
                 <div id="rightFilterBarCollapsed" class="hidden">
-                    <button type="button" onclick="toggleRightFilterBar()" class="uiverse-btn-sm group" title="Mostrar barra de búsqueda y filtros de red">
-                        <svg class="w-3.5 h-3.5 fill-cyan-400 z-[9] transition-all duration-500 ease-custom -left-1/4 group-hover:left-2" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                        <span class="relative z-[1] transition-all duration-500 ease-custom -translate-x-1 group-hover:translate-x-1 flex items-center gap-1.5 font-bold">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                            Filtros & Búsqueda
-                        </span>
-                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[180px] group-hover:h-[180px] group-hover:opacity-100 pointer-events-none"></span>
-                        <svg class="w-3.5 h-3.5 fill-cyan-400 z-[9] transition-all duration-500 ease-custom right-2 group-hover:-right-1/4" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M9 5l7 7-7 7"></path>
-                        </svg>
+                    <button type="button" onclick="toggleRightFilterBar()" class="nm-tool nm-glass shadow-md" title="Mostrar búsqueda y filtros de red" aria-expanded="false">
+                        <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4" /> <line x1="10" x2="3" y1="4" y2="4" /> <line x1="21" x2="12" y1="12" y2="12" /> <line x1="8" x2="3" y1="12" y2="12" /> <line x1="21" x2="16" y1="20" y2="20" /> <line x1="12" x2="3" y1="20" y2="20" /> <line x1="14" x2="14" y1="2" y2="6" /> <line x1="8" x2="8" y1="10" y2="14" /> <line x1="16" x2="16" y1="18" y2="22" /></svg><span>Filtros y búsqueda</span>
                     </button>
                 </div>
 
                 {{-- Expanded State: Barra Completa con Botones Uiverse Compactos --}}
-                <div id="rightFilterBarExpanded" class="flex flex-wrap items-center gap-1.5 bg-white/95 dark:bg-[#0d1017]/95 p-1.5 rounded-2xl border border-slate-200/90 dark:border-slate-800/70 shadow-lg dark:shadow-none interactive-bar-island">
+                <div id="rightFilterBarExpanded" class="flex flex-wrap items-center gap-1.5 nm-glass p-1.5 rounded-xl shadow-md interactive-bar-island">
                     
                     {{-- Quick Device Search Input --}}
                     <div class="relative flex items-center">
-                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /> <path d="m21 21-4.3-4.3" /></svg>
                         <input type="text" id="topoSearchInput" oninput="searchTopologyDevice(this.value)" placeholder="Buscar IP, router, switch..." class="w-32 sm:w-40 pl-8 pr-2 py-1 text-[11px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition font-medium">
                     </div>
 
                     <div class="h-4 w-px bg-slate-200 dark:bg-slate-700/60 mx-0.5"></div>
 
                     {{-- Device Category Filter Buttons (Estilo Uiverse Pequeño) --}}
-                    <button type="button" onclick="filterDeviceCategory('all', this)" class="uiverse-btn-sm group device-filter-btn active" title="Mostrar todos los nodos">
+                    <button type="button" onclick="filterDeviceCategory('all', this)" class="uiverse-btn-sm group device-filter-btn active" title="Mostrar todos los nodos" aria-label="Mostrar todos los nodos">
                         <span class="relative z-[1] transition-all duration-500 ease-custom">Todos</span>
                         <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[140px] group-hover:h-[140px] group-hover:opacity-100 pointer-events-none"></span>
                     </button>
 
-                    <button type="button" onclick="filterDeviceCategory('router', this)" class="uiverse-btn-sm group device-filter-btn" title="Ver y centrar en Routers WAN">
+                    <button type="button" onclick="filterDeviceCategory('router', this)" class="uiverse-btn-sm group device-filter-btn" title="Ver y centrar en Routers WAN" aria-label="Ver y centrar en Routers WAN">
                         <img src="{{ asset('images/topology/router.png') }}" class="w-3.5 h-3.5 object-contain relative z-[1]" alt="Routers">
                         <span class="relative z-[1] transition-all duration-500 ease-custom">Routers</span>
                         <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[140px] group-hover:h-[140px] group-hover:opacity-100 pointer-events-none"></span>
                     </button>
 
-                    <button type="button" onclick="filterDeviceCategory('switch', this)" class="uiverse-btn-sm group device-filter-btn" title="Ver y centrar en Switches">
-                        <svg class="w-3.5 h-3.5 relative z-[1]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                    <button type="button" onclick="filterDeviceCategory('switch', this)" class="uiverse-btn-sm group device-filter-btn" title="Ver y centrar en Switches" aria-label="Ver y centrar en Switches">
+                        <svg class="w-3.5 h-3.5 relative z-[1]" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /> <rect width="20" height="8" x="2" y="14" rx="2" ry="2" /> <line x1="6" x2="6.01" y1="6" y2="6" /> <line x1="6" x2="6.01" y1="18" y2="18" /></svg>
                         <span class="relative z-[1] transition-all duration-500 ease-custom">Switches</span>
                         <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[140px] group-hover:h-[140px] group-hover:opacity-100 pointer-events-none"></span>
                     </button>
 
-                    <button type="button" onclick="filterDeviceCategory('servidor', this)" class="uiverse-btn-sm group device-filter-btn" title="Ver Servidores Enterprise">
+                    <button type="button" onclick="filterDeviceCategory('servidor', this)" class="uiverse-btn-sm group device-filter-btn" title="Ver Servidores Enterprise" aria-label="Ver Servidores Enterprise">
                         <img src="{{ asset('images/topology/server.png') }}" class="w-3.5 h-3.5 object-contain relative z-[1]" alt="Servidores">
                         <span class="relative z-[1] transition-all duration-500 ease-custom">Servidores</span>
                         <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[140px] group-hover:h-[140px] group-hover:opacity-100 pointer-events-none"></span>
                     </button>
 
-                    <button type="button" onclick="filterDeviceCategory('access_point', this)" class="uiverse-btn-sm group device-filter-btn" title="Ver y centrar en Access Points">
+                    <button type="button" onclick="filterDeviceCategory('access_point', this)" class="uiverse-btn-sm group device-filter-btn" title="Ver y centrar en Access Points" aria-label="Ver y centrar en Access Points">
                         <img src="{{ asset('images/topology/access-point.png') }}" class="w-3.5 h-3.5 object-contain relative z-[1]" alt="APs">
                         <span class="relative z-[1] transition-all duration-500 ease-custom">APs</span>
                         <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[140px] group-hover:h-[140px] group-hover:opacity-100 pointer-events-none"></span>
                     </button>
 
-                    <button type="button" onclick="filterDeviceCategory('phone', this)" class="uiverse-btn-sm group device-filter-btn" title="Ver Teléfonos IP">
+                    <button type="button" onclick="filterDeviceCategory('phone', this)" class="uiverse-btn-sm group device-filter-btn" title="Ver Teléfonos IP" aria-label="Ver Teléfonos IP">
                         <img src="{{ asset('images/topology/ip-phone.png') }}" class="w-3.5 h-3.5 object-contain relative z-[1]" alt="VoIP">
                         <span class="relative z-[1] transition-all duration-500 ease-custom">VoIP</span>
                         <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[140px] group-hover:h-[140px] group-hover:opacity-100 pointer-events-none"></span>
@@ -428,18 +281,18 @@
                     <div class="h-4 w-px bg-slate-200 dark:bg-slate-700/60 mx-0.5"></div>
 
                     {{-- Enlaces Filter Buttons (Estilo Uiverse Pequeño) --}}
-                    <button type="button" onclick="filterEdges('all', this)" class="uiverse-btn-sm group filter-pill-btn active" title="Mostrar todos los enlaces">
+                    <button type="button" onclick="filterEdges('all', this)" class="uiverse-btn-sm group filter-pill-btn active" title="Mostrar todos los enlaces" aria-label="Mostrar todos los enlaces">
                         <span class="relative z-[1] transition-all duration-500 ease-custom">Enlaces ({{ $totalEnlaces }})</span>
                         <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[160px] group-hover:h-[160px] group-hover:opacity-100 pointer-events-none"></span>
                     </button>
 
-                    <button type="button" onclick="filterEdges('up', this)" class="uiverse-btn-sm group filter-pill-btn" title="Filtrar enlaces UP">
+                    <button type="button" onclick="filterEdges('up', this)" class="uiverse-btn-sm group filter-pill-btn" title="Filtrar enlaces UP" aria-label="Filtrar enlaces UP">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 relative z-[1]"></span>
                         <span class="relative z-[1] transition-all duration-500 ease-custom">UP</span>
                         <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[120px] group-hover:h-[120px] group-hover:opacity-100 pointer-events-none"></span>
                     </button>
 
-                    <button type="button" onclick="filterEdges('down', this)" class="uiverse-btn-sm group filter-pill-btn" title="Filtrar enlaces en Alerta">
+                    <button type="button" onclick="filterEdges('down', this)" class="uiverse-btn-sm group filter-pill-btn" title="Filtrar enlaces en Alerta" aria-label="Filtrar enlaces en Alerta">
                         <span class="w-1.5 h-1.5 rounded-full bg-red-400 relative z-[1]"></span>
                         <span class="relative z-[1] transition-all duration-500 ease-custom">Alertas</span>
                         <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[120px] group-hover:h-[120px] group-hover:opacity-100 pointer-events-none"></span>
@@ -448,8 +301,8 @@
                     <div class="h-4 w-px bg-slate-200 dark:bg-slate-700/60 mx-0.5"></div>
 
                     {{-- Collapse Toggle Button (Ocultar Barra) --}}
-                    <button type="button" onclick="toggleRightFilterBar()" class="uiverse-btn-sm group px-2 text-slate-400 hover:text-slate-900 dark:hover:text-slate-100" title="Ocultar barra de filtros">
-                        <svg class="w-3.5 h-3.5 relative z-[1] transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <button type="button" onclick="toggleRightFilterBar()" class="uiverse-btn-sm group px-2 text-slate-400 hover:text-slate-900 dark:hover:text-slate-100" title="Ocultar barra de filtros" aria-label="Ocultar barra de filtros">
+                        <svg class="w-3.5 h-3.5 relative z-[1] transition-transform duration-300" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
                         <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 transition-all duration-500 ease-custom group-hover:w-[100px] group-hover:h-[100px] group-hover:opacity-100 pointer-events-none"></span>
                     </button>
                 </div>
@@ -460,12 +313,66 @@
         {{-- Main Vis.js Graph Canvas --}}
         <div id="networkTopologyCanvas" class="w-full h-full flex-1 cursor-grab active:cursor-grabbing"></div>
 
+        {{-- Sitios de la ZMG: filtros por categoría (solo con la ZMG en grande) --}}
+        <div id="panelSitios" class="hidden absolute z-10 right-4 bottom-4 w-[230px] nm-glass rounded-xl shadow-lg p-3 pointer-events-auto text-xs">
+            <div class="flex items-center justify-between mb-2">
+                <p class="font-bold text-slate-800 dark:text-slate-100">Sitios en la ZMG</p>
+                <span id="panelSitiosTotal" class="text-[11px] text-slate-500 dark:text-slate-400"></span>
+            </div>
+            <div id="panelSitiosLista" class="flex flex-col gap-1"></div>
+            <p class="mt-2 pt-2 border-t border-[var(--nm-border)] text-[11px] leading-snug text-slate-500 dark:text-slate-400">
+                Ubicaciones: © colaboradores de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" class="underline hover:text-slate-800 dark:hover:text-white">OpenStreetMap</a> (ODbL). Son candidatos: verifica antes de asignar.
+            </p>
+        </div>
+
+        {{-- Ficha de un sitio: datos y equipos asignados --}}
+        <div id="fichaSitio" class="hidden absolute z-20 w-[320px] nm-glass rounded-xl shadow-2xl p-3.5 pointer-events-auto text-xs" role="dialog" aria-labelledby="fichaSitioNombre">
+            <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                    <span id="fichaSitioCategoria" class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide"></span>
+                    <p id="fichaSitioNombre" class="mt-0.5 text-sm font-bold text-slate-900 dark:text-white leading-snug"></p>
+                    <p id="fichaSitioDireccion" class="mt-0.5 text-slate-500 dark:text-slate-400"></p>
+                </div>
+                <button type="button" onclick="cerrarFichaSitio()" class="w-7 h-7 -mr-1 -mt-1 shrink-0 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-500/10 text-lg leading-none" aria-label="Cerrar ficha del sitio">&times;</button>
+            </div>
+            <p class="mt-3 mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Equipos asignados</p>
+            <ul id="fichaSitioEquipos" class="flex flex-col gap-1 max-h-40 overflow-y-auto custom-scrollbar"></ul>
+            @if($puedeEditar)
+            <form id="fichaSitioForm" class="mt-2.5 flex gap-1.5" onsubmit="event.preventDefault(); asignarEquipoASitio();">
+                <label for="fichaSitioBuscar" class="sr-only">Equipo a asignar</label>
+                <input id="fichaSitioBuscar" list="listaEquiposSitio" autocomplete="off" placeholder="Buscar equipo por nombre o IP…"
+                       class="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-[var(--nm-border-strong)] bg-[var(--nm-surface)] text-slate-800 dark:text-slate-100">
+                <datalist id="listaEquiposSitio"></datalist>
+                <button type="submit" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold">Asignar</button>
+            </form>
+            <p id="fichaSitioAviso" class="hidden mt-1.5 text-[11px]"></p>
+            @endif
+            <p class="mt-2.5 text-[11px] text-slate-400" id="fichaSitioFuente"></p>
+        </div>
+
+        {{-- Recuadro del mapa: muestra la vista que no está en grande; al hacer clic se intercambian --}}
+        <div id="recuadroMapa" class="hidden absolute z-10 left-4 bottom-4 w-[300px] nm-glass rounded-xl shadow-lg p-3 pointer-events-auto">
+            <div class="flex items-start justify-between gap-2 mb-1.5">
+                <div>
+                    <p id="recuadroMapaTitulo" class="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight">Zona Metropolitana de Guadalajara</p>
+                    <p id="recuadroMapaDetalle" class="text-[11px] text-slate-500 dark:text-slate-400">10 municipios · clic para verla en grande</p>
+                </div>
+                <button type="button" onclick="cerrarRecuadroMapa()" class="w-7 h-7 -mr-1 -mt-1 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-500/10 text-lg leading-none" aria-label="Ocultar recuadro del mapa">&times;</button>
+            </div>
+            <button type="button" id="recuadroMapaSvg" onclick="cambiarVistaMapa(mapaJalisco.vista === 'zmg' ? 'jalisco' : 'zmg')" class="block w-full rounded-lg overflow-hidden bg-[var(--nm-sunken)] border border-[var(--nm-border)] hover:border-[#f07f12] transition-colors" aria-label="Ver en grande el mapa de la ZMG"></button>
+            <div class="flex items-center justify-between mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#f07f12]"></span>Cabecera municipal</span>
+                <span>Fuente: INEGI</span>
+            </div>
+        </div>
+        </div>
+
         {{-- Barra del modo edición de zonas --}}
         <div id="zonaEditBar" class="absolute z-10 left-4 right-4 bottom-4 flex-col gap-2 px-4 py-3 rounded-2xl bg-slate-900/95 text-white text-xs shadow-xl border border-blue-500/60">
             <div class="flex flex-wrap items-center gap-2">
                 <span class="font-bold text-blue-300 mr-1">Modo zonas</span>
-                <button type="button" onclick="acomodarPorIps()" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 font-bold" title="Coloca dentro de cada zona, en cuadrícula, los equipos cuya IP coincide con sus rangos">Acomodar por IPs</button>
-                <button type="button" onclick="crearZonasPorSubred()" class="px-3 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 font-bold" title="Crea una zona por cada subred /24 con equipos y los acomoda">Zonas por subred /24</button>
+                <button type="button" onclick="acomodarPorIps()" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 font-bold" title="Coloca dentro de cada zona, en cuadrícula, los equipos cuya IP coincide con sus rangos" aria-label="Coloca dentro de cada zona, en cuadrícula, los equipos cuya IP coincide con sus rangos">Acomodar por IPs</button>
+                <button type="button" onclick="crearZonasPorSubred()" class="px-3 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 font-bold" title="Crea una zona por cada subred /24 con equipos y los acomoda" aria-label="Crea una zona por cada subred /24 con equipos y los acomoda">Zonas por subred /24</button>
                 <span class="text-slate-400 hidden lg:inline ml-2">Arrastra en vacío para dibujar · arrastra el título para mover · esquina para redimensionar · ✎ editar · 🗑 borrar</span>
                 <button type="button" onclick="toggleZonaEdicion(false)" class="ml-auto px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 font-bold">Listo</button>
             </div>
@@ -474,7 +381,7 @@
 
         {{-- Qué hacer con las zonas al cambiar el acomodo automático --}}
         <div id="layoutZonasDialog" class="hidden absolute inset-0 z-40 flex items-center justify-center bg-slate-900/40">
-            <div class="w-[26rem] max-w-[calc(100%-2rem)] p-5 rounded-2xl bg-white dark:bg-[#12161f] shadow-2xl border border-slate-200 dark:border-slate-700 text-xs">
+            <div class="w-[26rem] max-w-[calc(100%-2rem)] p-5 rounded-2xl bg-white dark:bg-nm-surface shadow-2xl border border-slate-200 dark:border-slate-700 text-xs">
                 <p class="text-sm font-black text-slate-800 dark:text-slate-100 mb-1">Hay <span id="layoutZonasCount"></span> zonas en el mapa</p>
                 <p class="text-slate-500 dark:text-slate-400 mb-4">El acomodo <b id="layoutZonasNombre"></b> mueve todos los equipos. ¿Qué hacemos con las zonas?</p>
                 <div class="space-y-2">
@@ -498,13 +405,13 @@
         </div>
 
         {{-- Editor de zona (nombre / color / eliminar) --}}
-        <div id="zonaEditor" class="hidden absolute z-30 w-72 p-4 rounded-2xl bg-white dark:bg-[#12161f] shadow-2xl border border-slate-200 dark:border-slate-700 text-xs" style="left: 50%; top: 30%; transform: translateX(-50%);">
+        <div id="zonaEditor" class="hidden absolute z-30 w-72 p-4 rounded-2xl nm-glass bg-white dark:bg-nm-surface shadow-2xl border border-slate-200 dark:border-slate-700 text-xs" style="left: 50%; top: 30%; transform: translateX(-50%);">
             <p class="font-black text-slate-800 dark:text-slate-100 mb-2" id="zonaEditorTitulo">Zona</p>
             <label class="block text-slate-500 mb-1">Nombre</label>
             <input id="zonaEditorNombre" maxlength="80" class="w-full mb-3 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" placeholder="EDIFICIO 1">
             <label class="block text-slate-500 mb-1">Rangos de IP <span class="text-slate-400">(opcional, separados por coma)</span></label>
             <input id="zonaEditorRangos" maxlength="500" class="w-full mb-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono" placeholder="10.4.155.0/24, 10.4.20.*, 10.4.1.10-10.4.1.50">
-            <p id="zonaEditorRangosInfo" class="text-[10px] text-slate-400 mb-3"></p>
+            <p id="zonaEditorRangosInfo" class="text-[11px] text-slate-400 mb-3"></p>
             <label class="block text-slate-500 mb-1">Color</label>
             <div id="zonaEditorColores" class="flex flex-wrap gap-1.5 mb-4"></div>
             <div class="flex items-center justify-between">
@@ -517,29 +424,29 @@
         </div>
 
         {{-- ==================== 3. INSPECTOR DRAWER (SIDE PANEL) ==================== --}}
-        <div id="inspectorDrawer" class="absolute w-96 max-w-[calc(100%-2rem)] bg-white/95 dark:bg-[#12161f]/95 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800 p-5 z-20 pointer-events-none" style="top: 4.5rem; right: 1rem; max-height: calc(100% - 5.5rem); overflow-y: auto;">
+        <div id="inspectorDrawer" class="absolute w-96 max-w-[calc(100%-2rem)] bg-white/95 dark:bg-nm-surface/95 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800 p-5 z-20 pointer-events-none" style="top: 4.5rem; right: 1rem; max-height: calc(100% - 5.5rem); overflow-y: auto;">
             
             {{-- Drawer Header with Close Button --}}
             <div class="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-slate-800 mb-4">
                 <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-[#3b5998]"></span>
-                    <span class="text-[10px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider">Telemetría de Red</span>
+                    <span class="w-2 h-2 rounded-full bg-nm-primary"></span>
+                    <span class="text-[11px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider">Telemetría de Red</span>
                 </div>
-                <button type="button" onclick="closeDrawer()" class="w-7 h-7 rounded-full bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white flex items-center justify-center transition" title="Cerrar inspector">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <button type="button" onclick="closeDrawer()" class="w-7 h-7 rounded-full bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white flex items-center justify-center transition" title="Cerrar inspector" aria-label="Cerrar inspector">
+                    <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
                 </button>
             </div>
 
             {{-- Device Inspector Container --}}
             <div id="drawerDeviceContent" class="space-y-4 hidden">
                 <div class="flex items-start gap-3 pr-6">
-                    <div id="drawerDeviceIcon" class="w-11 h-11 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-md flex-shrink-0">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg>
+                    <div id="drawerDeviceIcon" class="w-11 h-11 rounded-xl nm-metal-azure text-white flex items-center justify-center shadow-md flex-shrink-0">
+                        <svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /> <rect width="20" height="8" x="2" y="14" rx="2" ry="2" /> <line x1="6" x2="6.01" y1="6" y2="6" /> <line x1="6" x2="6.01" y1="18" y2="18" /></svg>
                     </div>
                     <div>
                         <div class="flex items-center gap-1.5">
-                            <span id="drawerDeviceRol" class="px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider bg-blue-100 text-[#3b5998]">CORE</span>
-                            <span id="drawerDeviceStatusBadge" class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700">ONLINE</span>
+                            <span id="drawerDeviceRol" class="px-2 py-0.5 rounded-full text-[11px] font-black tracking-wider bg-blue-100 text-nm-primary">CORE</span>
+                            <span id="drawerDeviceStatusBadge" class="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700">ONLINE</span>
                         </div>
                         <h3 id="drawerDeviceNombre" class="text-sm font-extrabold text-gray-900 dark:text-white mt-1 leading-tight truncate">Switch Core Catalyst 9300</h3>
                         <p id="drawerDeviceIp" class="text-xs text-gray-500 dark:text-slate-400 font-mono mt-0.5">192.168.1.1</p>
@@ -547,15 +454,15 @@
                 </div>
 
                 {{-- Ficha Técnica Preview del Hardware --}}
-                <div class="rounded-xl bg-gradient-to-br from-slate-900 via-[#0d1017] to-slate-950 p-2.5 border border-slate-800 shadow-inner flex flex-col items-center justify-center relative overflow-hidden group">
+                <div class="rounded-xl bg-gradient-to-br from-slate-900 via-nm-ink to-slate-950 p-2.5 border border-slate-800 shadow-inner flex flex-col items-center justify-center relative overflow-hidden group">
                     <div class="w-full flex items-center justify-between mb-1 px-1">
-                        <span class="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider">CHASIS FÍSICO</span>
-                        <span id="drawerDeviceTipoEquipo" class="text-[9px] font-mono font-bold text-blue-400">Switch Gestionado</span>
+                        <span class="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">CHASIS FÍSICO</span>
+                        <span id="drawerDeviceTipoEquipo" class="text-[11px] font-mono font-bold text-blue-400">Switch Gestionado</span>
                     </div>
                     <div class="w-full h-24 flex items-center justify-center p-2 bg-black/40 rounded-lg border border-slate-800/60">
                         <img id="drawerDeviceChassisImage" src="{{ asset('images/topology/switch-core.svg') }}" alt="Chasis" class="max-h-20 max-w-full object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-105">
                     </div>
-                    <div class="w-full flex items-center justify-between mt-1.5 px-1 text-[10px] text-slate-400 font-mono">
+                    <div class="w-full flex items-center justify-between mt-1.5 px-1 text-[11px] text-slate-400 font-mono">
                         <span id="drawerDeviceFactorForma">1U Rackmount</span>
                         <span id="drawerDeviceVendor" class="text-slate-300 font-bold">Cisco Systems</span>
                     </div>
@@ -564,15 +471,15 @@
                 {{-- Gauges --}}
                 <div class="grid grid-cols-3 gap-2 bg-gray-50 dark:bg-slate-900/80 p-3 rounded-xl border border-gray-100 dark:border-slate-800 text-center">
                     <div>
-                        <p class="text-[10px] text-gray-400 font-bold uppercase">CPU</p>
+                        <p class="text-[11px] text-gray-400 font-bold uppercase">CPU</p>
                         <p id="drawerDeviceCpu" class="text-sm font-black text-gray-800 dark:text-slate-100 font-mono">15%</p>
                     </div>
                     <div>
-                        <p class="text-[10px] text-gray-400 font-bold uppercase">Memoria</p>
+                        <p class="text-[11px] text-gray-400 font-bold uppercase">Memoria</p>
                         <p id="drawerDeviceMem" class="text-sm font-black text-gray-800 dark:text-slate-100 font-mono">32%</p>
                     </div>
                     <div>
-                        <p class="text-[10px] text-gray-400 font-bold uppercase">Ping</p>
+                        <p class="text-[11px] text-gray-400 font-bold uppercase">Ping</p>
                         <p id="drawerDevicePing" class="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">1.2 ms</p>
                     </div>
                 </div>
@@ -600,8 +507,8 @@
                 {{-- Conexiones Activas de Cableado / Puertos --}}
                 <div class="border-t border-gray-100 dark:border-slate-800 pt-3">
                     <div class="flex items-center justify-between mb-2">
-                        <p class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Cables y Puertos Conectados</p>
-                        <span id="drawerDeviceConnCount" class="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-transparent dark:border-slate-700">0 cables</span>
+                        <p class="text-[11px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Cables y Puertos Conectados</p>
+                        <span id="drawerDeviceConnCount" class="text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-transparent dark:border-slate-700">0 cables</span>
                     </div>
                     <div id="drawerDeviceConnectionsList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                         <!-- Generado dinámicamente -->
@@ -613,42 +520,42 @@
                     <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-                            <p class="text-[10px] font-black text-indigo-900 dark:text-indigo-400 uppercase tracking-wider">Puerto PC (Pass-Through)</p>
+                            <p class="text-[11px] font-black text-indigo-900 dark:text-indigo-400 uppercase tracking-wider">Puerto PC (Pass-Through)</p>
                         </div>
-                        <span id="drawerPhonePcStatusBadge" class="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">CONECTADA</span>
+                        <span id="drawerPhonePcStatusBadge" class="text-[11px] font-black px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">CONECTADA</span>
                     </div>
 
                     <div class="bg-gradient-to-br from-indigo-50/70 to-slate-50 dark:from-slate-900/90 dark:to-indigo-950/30 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900/40 space-y-2 text-xs">
                         <div class="flex items-center gap-2.5">
                             <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2" /> <line x1="8" x2="16" y1="21" y2="21" /> <line x1="12" x2="12" y1="17" y2="21" /></svg>
                             </div>
                             <div class="truncate">
                                 <h5 id="drawerPhonePcHostname" class="font-extrabold text-slate-800 dark:text-slate-100 leading-tight truncate">PC-DELL-OPTIPLEX</h5>
-                                <p id="drawerPhonePcVendor" class="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold truncate">Dell Inc. / Workstation</p>
+                                <p id="drawerPhonePcVendor" class="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold truncate">Dell Inc. / Workstation</p>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-2 pt-1 border-t border-indigo-100/60 dark:border-slate-800 font-mono text-[11px]">
                             <div>
-                                <span class="text-[10px] text-slate-400 block">IP de Datos:</span>
+                                <span class="text-[11px] text-slate-400 block">IP de Datos:</span>
                                 <span id="drawerPhonePcIp" class="font-bold text-blue-600 dark:text-blue-400">10.204.1.159</span>
                             </div>
                             <div>
-                                <span class="text-[10px] text-slate-400 block">MAC (Switch CAM):</span>
+                                <span class="text-[11px] text-slate-400 block">MAC (Switch CAM):</span>
                                 <span id="drawerPhonePcMac" class="font-bold text-slate-800 dark:text-slate-200">24:7E:12:5A:21:18</span>
                             </div>
                             <div>
-                                <span class="text-[10px] text-slate-400 block">Velocidad Enlace:</span>
+                                <span class="text-[11px] text-slate-400 block">Velocidad Enlace:</span>
                                 <span id="drawerPhonePcSpeed" class="font-bold text-emerald-600 dark:text-emerald-400">1.0 Gbps (Full)</span>
                             </div>
                             <div>
-                                <span class="text-[10px] text-slate-400 block">VLAN Tráfico:</span>
+                                <span class="text-[11px] text-slate-400 block">VLAN Tráfico:</span>
                                 <span id="drawerPhonePcVlan" class="font-bold text-slate-700 dark:text-slate-300">VLAN Datos (1)</span>
                             </div>
                         </div>
 
-                        <div class="pt-1 text-[9px] text-slate-400 font-mono flex items-center justify-between border-t border-indigo-100/40 dark:border-slate-800">
+                        <div class="pt-1 text-[11px] text-slate-400 font-mono flex items-center justify-between border-t border-indigo-100/40 dark:border-slate-800">
                             <span>Switch / Puerto:</span>
                             <span id="drawerPhonePcSwitchPort" class="text-slate-600 dark:text-slate-400 font-bold truncate max-w-[160px]">HMAG_IDF2A_B (Gi1/0/23)</span>
                         </div>
@@ -658,13 +565,13 @@
                 {{-- Tipo de equipo: de dónde sale y qué tan seguro es --}}
                 <div class="border-t border-gray-100 dark:border-slate-800 pt-3">
                     <div class="flex items-center justify-between mb-1.5">
-                        <p class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Tipo de equipo</p>
-                        <span id="drawerTipoConfianza" class="text-[9px] font-black px-1.5 py-0.5 rounded"></span>
+                        <p class="text-[11px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Tipo de equipo</p>
+                        <span id="drawerTipoConfianza" class="text-[11px] font-black px-1.5 py-0.5 rounded"></span>
                     </div>
-                    <ul id="drawerTipoEvidencia" class="text-[10px] text-slate-600 dark:text-slate-300 space-y-0.5 list-disc pl-4"></ul>
+                    <ul id="drawerTipoEvidencia" class="text-[11px] text-slate-600 dark:text-slate-300 space-y-0.5 list-disc pl-4"></ul>
                     @if($puedeEditar)
                     <div class="flex items-center gap-2 mt-2">
-                        <label for="drawerTipoManual" class="text-[10px] text-slate-500">Corregir:</label>
+                        <label for="drawerTipoManual" class="text-[11px] text-slate-500">Corregir:</label>
                         <select id="drawerTipoManual" onchange="corregirTipo(this.value)" class="flex-1 text-[11px] px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
                             <option value="">Automático (por evidencia)</option>
                             @foreach(\App\Services\TipoDispositivoResolver::CATALOGO as $clave => $info)
@@ -678,8 +585,8 @@
                 {{-- Equipos finales agrupados en este switch --}}
                 <div id="drawerEndpointsSection" class="hidden border-t border-gray-100 dark:border-slate-800 pt-3">
                     <div class="flex items-center justify-between mb-2">
-                        <p class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Equipos finales conectados</p>
-                        <span id="drawerEndpointsCount" class="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded"></span>
+                        <p class="text-[11px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Equipos finales conectados</p>
+                        <span id="drawerEndpointsCount" class="text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded"></span>
                     </div>
                     <div id="drawerEndpointsList" class="space-y-1 max-h-40 overflow-y-auto pr-1"></div>
                 </div>
@@ -687,8 +594,8 @@
                 {{-- Notas del equipo --}}
                 <div class="border-t border-gray-100 dark:border-slate-800 pt-3">
                     <div class="flex items-center justify-between mb-2">
-                        <p class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Notas del equipo</p>
-                        <button type="button" id="btnNuevaNota" onclick="abrirFormNota()" class="hidden text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline">+ Agregar</button>
+                        <p class="text-[11px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Notas del equipo</p>
+                        <button type="button" id="btnNuevaNota" onclick="abrirFormNota()" class="hidden text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline">+ Agregar</button>
                     </div>
                     <div id="notaForm" class="hidden mb-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 space-y-2">
                         <input id="notaTitulo" maxlength="120" placeholder="Título (ej. Acceso local, Ubicación del rack)" class="w-full px-2 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
@@ -706,12 +613,12 @@
 
                 {{-- Action Links --}}
                 <div class="pt-2 flex flex-col gap-2">
-                    <a id="drawerDeviceLink" href="#" class="w-full py-2.5 px-3 rounded-xl bg-[#3b5998] hover:bg-[#2d4677] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+                    <a id="drawerDeviceLink" href="#" class="w-full py-2.5 px-3 rounded-xl bg-nm-primary hover:bg-[#1a3d8f] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
                         <span>Ver Ficha Técnica y Puertos</span>
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /> <path d="m12 5 7 7-7 7" /></svg>
                     </a>
                     <a href="{{ route('consola.index') }}" class="w-full py-2 px-3 rounded-xl bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 text-xs font-bold transition flex items-center justify-center gap-1.5 border border-transparent dark:border-slate-700">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m7 11 2-2-2-2" /> <path d="M11 13h4" /> <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /></svg>
                         <span>Abrir Consola CLI</span>
                     </a>
                 </div>
@@ -720,13 +627,13 @@
             {{-- Link / Cable Inspector Container --}}
             <div id="drawerLinkContent" class="space-y-4 hidden">
                 <div class="flex items-start gap-3 pr-6">
-                    <div class="w-11 h-11 rounded-xl bg-[#3b5998] text-white flex items-center justify-center shadow-md flex-shrink-0">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <div class="w-11 h-11 rounded-xl bg-nm-primary text-white flex items-center justify-center shadow-md flex-shrink-0">
+                        <svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
                     </div>
                     <div>
                         <div class="flex items-center gap-1.5">
-                            <span id="drawerLinkTipo" class="px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider bg-blue-100 dark:bg-blue-950/60 text-[#3b5998] dark:text-blue-400">FIBRA 10G SFP+</span>
-                            <span id="drawerLinkStatusBadge" class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">UP</span>
+                            <span id="drawerLinkTipo" class="px-2 py-0.5 rounded-full text-[11px] font-black tracking-wider bg-blue-100 dark:bg-blue-950/60 text-nm-primary dark:text-blue-400">FIBRA 10G SFP+</span>
+                            <span id="drawerLinkStatusBadge" class="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">UP</span>
                         </div>
                         <h3 class="text-sm font-extrabold text-gray-900 dark:text-white mt-1 leading-tight">Enlace de Interconexión</h3>
                         <p id="drawerLinkVelocidad" class="text-xs text-gray-500 dark:text-slate-400 font-mono mt-0.5">10000 Mbps Negociados</p>
@@ -734,7 +641,7 @@
                 </div>
 
                 {{-- Endpoints Visual Box --}}
-                <div class="bg-gray-50 dark:bg-[#090b10] p-3 rounded-xl border border-gray-100 dark:border-slate-800 space-y-2.5">
+                <div class="bg-gray-50 dark:bg-nm-sunken p-3 rounded-xl border border-gray-100 dark:border-slate-800 space-y-2.5">
                     <div class="flex items-center justify-between text-xs">
                         <div class="flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-blue-500"></span>
@@ -744,7 +651,7 @@
                     </div>
 
                     <div class="flex items-center justify-center text-gray-300 dark:text-slate-600">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                        <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" /> <path d="m19 12-7 7-7-7" /></svg>
                     </div>
 
                     <div class="flex items-center justify-between text-xs">
@@ -774,12 +681,12 @@
 
                 {{-- Allowed VLANs --}}
                 <div class="border-t border-gray-100 dark:border-slate-800 pt-3">
-                    <p class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">VLANs Transportadas (Trunk)</p>
+                    <p class="text-[11px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">VLANs Transportadas (Trunk)</p>
                     <div id="drawerLinkVlans" class="flex flex-wrap gap-1">
-                        <span class="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 text-[10px] font-bold rounded">VLAN 1</span>
-                        <span class="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 text-[10px] font-bold rounded">VLAN 10</span>
-                        <span class="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 text-[10px] font-bold rounded">VLAN 20</span>
-                        <span class="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 text-[10px] font-bold rounded">VLAN 99</span>
+                        <span class="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 text-[11px] font-bold rounded">VLAN 1</span>
+                        <span class="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 text-[11px] font-bold rounded">VLAN 10</span>
+                        <span class="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 text-[11px] font-bold rounded">VLAN 20</span>
+                        <span class="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 text-[11px] font-bold rounded">VLAN 99</span>
                     </div>
                 </div>
             </div>
@@ -794,8 +701,8 @@
             <span id="ttNombre" class="text-xs font-black text-white truncate w-3/4">Nombre</span>
             <span id="ttEstadoBadge" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
         </div>
-        <p id="ttIp" class="text-[10px] text-cyan-400 font-mono mb-2">192.168.x.x</p>
-        <div class="space-y-1 text-[10px]">
+        <p id="ttIp" class="text-[11px] text-cyan-400 font-mono mb-2">192.168.x.x</p>
+        <div class="space-y-1 text-[11px]">
             <div class="flex justify-between">
                 <span class="text-slate-500">Modelo:</span>
                 <span id="ttModelo" class="text-slate-300 font-semibold truncate max-w-[100px]">...</span>
@@ -814,21 +721,21 @@
          style="display: none;"
          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm transition-opacity">
         
-        <div class="bg-[#12161f] border border-[#1e293b] rounded-2xl w-full max-w-md shadow-2xl shadow-cyan-900/20 overflow-hidden"
+        <div class="bg-nm-ink border border-[#1e293b] rounded-2xl w-full max-w-md shadow-2xl shadow-cyan-900/20 overflow-hidden"
              @click.away="if(!isScanning) openScanner = false">
             
             <div class="p-5 border-b border-[#1e293b] flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg bg-cyan-900/30 border border-cyan-800/50 flex items-center justify-center text-cyan-400">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" /></svg>
+                        <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /> <path d="M2 12h20" /></svg>
                     </div>
                     <div>
                         <h3 class="text-sm font-black text-white">Rastreo Profundo L2/L3</h3>
-                        <p class="text-[10px] text-slate-400">Motor Crawler Python Asíncrono</p>
+                        <p class="text-[11px] text-slate-400">Motor Crawler Python Asíncrono</p>
                     </div>
                 </div>
                 <button type="button" @click="if(!isScanning) openScanner = false" class="text-slate-500 hover:text-white transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
                 </button>
             </div>
 
@@ -855,15 +762,13 @@
 
     {{-- ==================== 3. MODAL: AUTO-DESCUBRIMIENTO DE RED ==================== --}}
     <div id="discoveryModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300 opacity-0 pointer-events-none">
-        <div id="discoveryModalCard" class="bg-white dark:bg-[#0d1017] rounded-[2rem] max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-slate-100 dark:border-slate-800 transition-all duration-300 transform scale-95 flex flex-col space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div id="discoveryModalCard" class="nm-glass bg-white dark:bg-nm-surface rounded-2xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-slate-100 dark:border-slate-800 transition-all duration-300 transform scale-95 flex flex-col space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar">
             
             {{-- Modal Header --}}
             <div class="flex items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
                 <div class="flex items-center gap-3">
                     <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
+                        <svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /> <path d="m21 21-4.3-4.3" /></svg>
                     </div>
                     <div>
                         <h3 class="text-lg font-black text-slate-900 dark:text-white leading-tight">Auto-Descubrimiento de Red</h3>
@@ -871,7 +776,7 @@
                     </div>
                 </div>
                 <button type="button" onclick="closeDiscoveryModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white flex items-center justify-center transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
                 </button>
             </div>
 
@@ -880,13 +785,13 @@
                 {{-- Method selector tabs --}}
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Método de Descubrimiento</label>
-                    <div class="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-[#090b10] p-1 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <div class="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-nm-sunken p-1 rounded-2xl border border-slate-200 dark:border-slate-800">
                         <button type="button" id="btnMethodCdp" onclick="setDiscoveryMethod('cdp_lldp')" class="py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-white dark:bg-slate-800 text-indigo-900 dark:text-indigo-300 shadow-sm border border-slate-200 dark:border-slate-700">
-                            <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
+                            <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /> <circle cx="12" cy="12" r="3" /></svg>
                             <span>Vecinos CDP / LLDP</span>
                         </button>
                         <button type="button" id="btnMethodCidr" onclick="setDiscoveryMethod('cidr_sweep')" class="py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                            <svg class="w-4 h-4 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <svg class="w-4 h-4 text-slate-500 dark:text-slate-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21.54 15H17a2 2 0 0 0-2 2v4.54" /> <path d="M7 3.34V5a3 3 0 0 0 3 3a2 2 0 0 1 2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1.9-2 2-2h3.17" /> <path d="M11 21.95V18a2 2 0 0 0-2-2a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05" /> <circle cx="12" cy="12" r="10" /></svg>
                             <span>Barrido Subred CIDR</span>
                         </button>
                     </div>
@@ -896,8 +801,8 @@
                 <div id="fieldSeedIpGroup">
                     <label for="discSeedIp" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">IP Semilla / Equipo Raíz (Seed IP)</label>
                     <div class="relative">
-                        <input type="text" id="discSeedIp" value="{{ $config->ip_switch_core ?? '192.168.1.254' }}" class="w-full bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#0d1017] focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/50 transition outline-none" placeholder="10.4.254.3">
-                        <span class="absolute right-3 top-2.5 text-[10px] font-bold text-slate-400 uppercase">Core Switch</span>
+                        <input type="text" id="discSeedIp" value="{{ $config->ip_switch_core ?? '192.168.1.254' }}" class="w-full bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-nm-surface focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/50 transition outline-none" placeholder="10.4.254.3">
+                        <span class="absolute right-3 top-2.5 text-[11px] font-bold text-slate-400 uppercase">Core Switch</span>
                     </div>
                     <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">El crawler conectará a este switch y consultará recursivamente sus tablas de vecinos.</p>
                 </div>
@@ -905,7 +810,7 @@
                 {{-- CIDR Input (Hidden by default) --}}
                 <div id="fieldCidrGroup" class="hidden">
                     <label for="discCidr" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Segmento de Red (CIDR)</label>
-                    <input type="text" id="discCidr" value="10.4.254.0/24" class="w-full bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#0d1017] focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/50 transition outline-none" placeholder="10.4.254.0/24">
+                    <input type="text" id="discCidr" value="10.4.254.0/24" class="w-full bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-nm-surface focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/50 transition outline-none" placeholder="10.4.254.0/24">
                     <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Se realizará un ping sweep paralelo en todo el segmento buscando switches gestionables.</p>
                 </div>
 
@@ -913,11 +818,11 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label for="discCommunity" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Comunidad SNMP</label>
-                        <input type="text" id="discCommunity" value="{{ $config->comunidad_snmp_default ?? 'public' }}" class="w-full bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#0d1017] focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/50 transition outline-none" placeholder="public">
+                        <input type="text" id="discCommunity" value="{{ $config->comunidad_snmp_default ?? 'public' }}" class="w-full bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-nm-surface focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/50 transition outline-none" placeholder="public">
                     </div>
                     <div>
                         <label for="discMaxDepth" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Profundidad Máxima (Saltos)</label>
-                        <select id="discMaxDepth" class="w-full bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#0d1017] focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/50 transition outline-none">
+                        <select id="discMaxDepth" class="w-full bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-nm-surface focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/50 transition outline-none">
                             <option value="1">1 salto (Solo vecinos directos)</option>
                             <option value="2">2 saltos (Distribución)</option>
                             <option value="3" selected>3 saltos (Recomendado)</option>
@@ -933,7 +838,7 @@
                         Cancelar
                     </button>
                     <button type="button" id="btnSubmitDiscovery" onclick="startAutoDiscovery()" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" /></svg>
                         <span>Iniciar Auto-Descubrimiento</span>
                     </button>
                 </div>
@@ -971,7 +876,7 @@
             <div id="discoveryResultState" class="hidden space-y-4 py-2">
                 <div class="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60">
                     <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/20">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                        <svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                     </div>
                     <div>
                         <h4 class="text-sm font-black text-emerald-900 dark:text-emerald-300" id="discoveryResultTitle">¡Mapeo de Topología Finalizado!</h4>
@@ -980,20 +885,20 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 text-center">
-                    <div class="bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-800 rounded-2xl p-3">
-                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Dispositivos Detectados</span>
+                    <div class="bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-800 rounded-2xl p-3">
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Dispositivos Detectados</span>
                         <span class="text-xl font-black text-slate-800 dark:text-white font-mono" id="resTotalDevices">0</span>
-                        <span class="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 block mt-0.5" id="resNewDevices">(0 nuevos)</span>
+                        <span class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 block mt-0.5" id="resNewDevices">(0 nuevos)</span>
                     </div>
-                    <div class="bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-800 rounded-2xl p-3">
-                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Enlaces Físicos</span>
+                    <div class="bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-800 rounded-2xl p-3">
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Enlaces Físicos</span>
                         <span class="text-xl font-black text-slate-800 dark:text-white font-mono" id="resTotalLinks">0</span>
-                        <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 block mt-0.5" id="resNewLinks">(0 nuevos)</span>
+                        <span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 block mt-0.5" id="resNewLinks">(0 nuevos)</span>
                     </div>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-2">
-                    <button type="button" onclick="closeDiscoveryModal()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700 transition shadow-md">
+                    <button type="button" onclick="closeDiscoveryModal()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 border border-transparent dark:border-slate-700 transition shadow-md">
                         Cerrar y Ver Lienzo
                     </button>
                 </div>
@@ -1005,17 +910,15 @@
 
 {{-- ==================== 5. MODAL: ESCANEO POR CABLE RJ-45 ==================== --}}
 <div id="localRj45Modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden transition-all duration-300">
-    <div class="bg-white dark:bg-[#0d1017] rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 max-w-lg w-full overflow-hidden transform transition-all scale-100">
+    <div class="nm-glass bg-white dark:bg-nm-surface rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 max-w-lg w-full overflow-hidden transform transition-all scale-100">
         {{-- Modal Header --}}
         <div class="p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white relative">
             <button type="button" onclick="closeLocalRj45Modal()" class="absolute top-5 right-5 text-slate-400 hover:text-white transition p-1.5 rounded-full hover:bg-white/10">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
             </button>
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shadow-inner">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                    </svg>
+                    <svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
                 </div>
                 <div>
                     <h3 class="text-lg font-black tracking-tight">Rastreo de Red Local por Cable (RJ-45)</h3>
@@ -1034,23 +937,23 @@
                         Subred o IP a Escanear
                     </label>
                     <div class="relative">
-                        <input type="text" id="rj45SubnetInput" value="10.4.155.0/24" class="w-full bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#0d1017] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-900/50 transition outline-none" placeholder="ej. 10.4.155.0/24, 192.168.1.0/24, 10.4.155.2 o cualquier IP">
+                        <input type="text" id="rj45SubnetInput" value="10.4.155.0/24" class="w-full bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-nm-surface focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-900/50 transition outline-none" placeholder="ej. 10.4.155.0/24, 192.168.1.0/24, 10.4.155.2 o cualquier IP">
                     </div>
                     <p class="text-[11px] text-slate-400 mt-1">Escribe <strong>cualquier IP o segmento /24</strong> de tu red.</p>
                 </div>
 
                 {{-- Fast selector pills --}}
                 <div class="space-y-1.5">
-                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Accesos Rápidos a Redes Locales:</span>
+                    <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Accesos Rápidos a Redes Locales:</span>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" onclick="setRj45Target('10.4.155.0/24')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 transition">
-                            📶 Red Wi-Fi (10.4.155.0/24)
+                            <svg class="w-3.5 h-3.5 inline-block align-[-2px]" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01" /> <path d="M2 8.82a15 15 0 0 1 20 0" /> <path d="M5 12.859a10 10 0 0 1 14 0" /> <path d="M8.5 16.429a5 5 0 0 1 7 0" /></svg> Red Wi-Fi (10.4.155.0/24)
                         </button>
                         <button type="button" onclick="setRj45Target('192.168.1.0/24')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition">
-                            🔌 Cable RJ-45 (192.168.1.0/24)
+                            <svg class="w-3.5 h-3.5 inline-block align-[-2px]" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a1 1 0 0 1-1-1v-1a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1" /> <path d="M19 15V6.5a1 1 0 0 0-7 0v11a1 1 0 0 1-7 0V9" /> <path d="M21 21v-2h-4" /> <path d="M3 5h4V3" /> <path d="M7 5a1 1 0 0 1 1 1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a1 1 0 0 1 1-1V3" /></svg> Cable RJ-45 (192.168.1.0/24)
                         </button>
                         <button type="button" onclick="setRj45Target('')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 transition">
-                            ⚡ Autodetectar Interfaz
+                            <svg class="w-3.5 h-3.5 inline-block align-[-2px]" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg> Autodetectar interfaz
                         </button>
                     </div>
                 </div>
@@ -1058,11 +961,11 @@
                 <div class="grid grid-cols-2 gap-3 pt-1">
                     <div>
                         <label for="rj45CommunityInput" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Comunidad SNMP</label>
-                        <input type="text" id="rj45CommunityInput" value="public" class="w-full bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#0d1017] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-900/50 transition outline-none" placeholder="public">
+                        <input type="text" id="rj45CommunityInput" value="public" class="w-full bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-nm-surface focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-900/50 transition outline-none" placeholder="public">
                     </div>
                     <div>
                         <label for="rj45ThreadsInput" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Hilos Paralelos</label>
-                        <select id="rj45ThreadsInput" class="w-full bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#0d1017] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-900/50 transition outline-none">
+                        <select id="rj45ThreadsInput" class="w-full bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-white focus:bg-white dark:focus:bg-nm-surface focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-900/50 transition outline-none">
                             <option value="50" selected>50 hilos (Ultra Rápido)</option>
                             <option value="25">25 hilos (Moderado)</option>
                             <option value="10">10 hilos (Bajo tráfico)</option>
@@ -1076,7 +979,7 @@
                         Cancelar
                     </button>
                     <button type="button" onclick="executeLocalScan()" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
                         <span>Iniciar Rastreo</span>
                     </button>
                 </div>
@@ -1109,7 +1012,7 @@
                 </div>
 
                 {{-- Telemetry details box --}}
-                <div class="bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 text-xs text-slate-600 dark:text-slate-400 space-y-1.5 font-mono">
+                <div class="bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 text-xs text-slate-600 dark:text-slate-400 space-y-1.5 font-mono">
                     <div class="flex justify-between items-center">
                         <span class="text-slate-400">NIC Detectada:</span>
                         <span id="rj45NicName" class="font-bold text-slate-800 dark:text-white">Detectando...</span>
@@ -1134,7 +1037,7 @@
             <div id="rj45ResultState" class="hidden space-y-4 py-2">
                 <div id="rj45BannerBox" class="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 transition-colors duration-200">
                     <div id="rj45BannerIcon" class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/20">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                        <svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                     </div>
                     <div>
                         <h4 class="text-sm font-black text-emerald-900 dark:text-emerald-300" id="rj45ResultTitle">¡Subred RJ-45 Mapeada con Éxito!</h4>
@@ -1145,7 +1048,7 @@
                 {{-- Aviso de diagnóstico si no se detectaron equipos --}}
                 <div id="rj45ZeroDevicesNotice" class="hidden bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 rounded-2xl p-3.5 text-xs text-amber-800 dark:text-amber-300 space-y-1.5">
                     <div class="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-200">
-                        <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg>
                         <span>Diagnóstico del enlace físico:</span>
                     </div>
                     <ul class="list-disc list-inside space-y-1 text-[11px] text-amber-700 dark:text-amber-400 pl-1">
@@ -1158,25 +1061,25 @@
 
                 {{-- Info Grid --}}
                 <div class="grid grid-cols-2 gap-3 text-center">
-                    <div class="bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-800 rounded-2xl p-3">
-                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hosts con Respuesta</span>
+                    <div class="bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-800 rounded-2xl p-3">
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Hosts con Respuesta</span>
                         <span class="text-xl font-black text-slate-800 dark:text-white font-mono" id="rj45ResHosts">0</span>
-                        <span class="text-[10px] font-semibold text-teal-600 dark:text-teal-400 block mt-0.5">ICMP Ping /24</span>
+                        <span class="text-[11px] font-semibold text-teal-600 dark:text-teal-400 block mt-0.5">ICMP Ping /24</span>
                     </div>
-                    <div class="bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-800 rounded-2xl p-3">
-                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Equipos SNMP</span>
+                    <div class="bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-800 rounded-2xl p-3">
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Equipos SNMP</span>
                         <span class="text-xl font-black text-slate-800 dark:text-white font-mono" id="rj45ResDevices">0</span>
-                        <span class="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 block mt-0.5" id="rj45ResNewDevices">(0 nuevos)</span>
+                        <span class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 block mt-0.5" id="rj45ResNewDevices">(0 nuevos)</span>
                     </div>
-                    <div class="bg-slate-50 dark:bg-[#090b10] border border-slate-200 dark:border-slate-800 rounded-2xl p-3 col-span-2">
-                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Enlaces Físicos CDP / LLDP</span>
+                    <div class="bg-slate-50 dark:bg-nm-sunken border border-slate-200 dark:border-slate-800 rounded-2xl p-3 col-span-2">
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Enlaces Físicos CDP / LLDP</span>
                         <span class="text-xl font-black text-emerald-700 dark:text-emerald-400 font-mono" id="rj45ResLinks">0</span>
-                        <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 block mt-0.5">Conexiones puerto a puerto registradas</span>
+                        <span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 block mt-0.5">Conexiones puerto a puerto registradas</span>
                     </div>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-2">
-                    <button type="button" onclick="closeLocalRj45Modal()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700 transition shadow-md hover:scale-[1.02] active:scale-[0.98]">
+                    <button type="button" onclick="closeLocalRj45Modal()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 border border-transparent dark:border-slate-700 transition shadow-md hover:scale-[1.02] active:scale-[0.98]">
                         Ver Lienzo de Topología
                     </button>
                 </div>
@@ -1186,7 +1089,7 @@
             <div id="rj45ErrorState" class="hidden space-y-4 py-2">
                 <div class="flex items-center gap-3 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60">
                     <div class="w-10 h-10 rounded-xl bg-rose-500 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-rose-500/20">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
                     </div>
                     <div>
                         <h4 class="text-sm font-black text-rose-900 dark:text-rose-300">Error durante el Escaneo</h4>
@@ -1491,7 +1394,7 @@
                         size: 16,
                         vadjust: 38,
                         strokeWidth: 3.5,
-                        strokeColor: isDark ? '#090d16' : '#ffffff'
+                        strokeColor: isDark ? '#090e18' : '#ffffff'
                     },
                     customData: {
                         ...cData,
@@ -1552,7 +1455,7 @@
                         face: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                         vadjust: 38,
                         strokeWidth: 3.5,
-                        strokeColor: isDark ? '#090d16' : '#ffffff',
+                        strokeColor: isDark ? '#090e18' : '#ffffff',
                         align: 'center'
                     },
                     // Sombras desactivadas: se recalculan por nodo en cada cuadro y frenan el lienzo
@@ -1603,7 +1506,7 @@
 
             // Equipos finales dentro de su switch, zonas y selección (para los haces)
             aplicarAgrupacionEndpoints();
-            network.on('beforeDrawing', dibujarZonas);
+            network.on('beforeDrawing', ctx => { dibujarMapaJalisco(ctx); dibujarSitios(ctx); dibujarZonas(ctx); });
             initZonasInteraccion(container);
             network.on('selectNode', p => { nodoSeleccionado = p.nodes[0] ?? null; });
             network.on('deselectNode', () => { nodoSeleccionado = null; });
@@ -1625,7 +1528,7 @@
                 const btnPhys = document.getElementById('btnTogglePhysics');
                 const labelPhys = document.getElementById('physicsStatusLabel');
                 if (btnPhys) btnPhys.classList.remove('active');
-                if (labelPhys) labelPhys.textContent = 'Física Pausada';
+                if (labelPhys) labelPhys.textContent = 'Física';
                 setTimeout(frameInitialView, 150);
             }
 
@@ -1641,7 +1544,7 @@
                 const btnPhys = document.getElementById('btnTogglePhysics');
                 const labelPhys = document.getElementById('physicsStatusLabel');
                 if (btnPhys) btnPhys.classList.remove('active');
-                if (labelPhys) labelPhys.textContent = 'Física Pausada';
+                if (labelPhys) labelPhys.textContent = 'Física';
 
                 setTimeout(frameInitialView, 150);
             });
@@ -1949,6 +1852,9 @@
                     const edgeId = params.edges[0];
                     showLinkDetails(edgeId);
                 } else {
+                    const sitio = sitioEn(params.pointer.canvas);
+                    if (sitio) { abrirFichaSitio(sitio, params.pointer.DOM); return; }
+                    cerrarFichaSitio();
                     closeDrawer();
                 }
             });
@@ -1987,11 +1893,11 @@
             const badge = document.getElementById('drawerDeviceStatusBadge');
             badge.textContent = d.estado.toUpperCase();
             if (d.estado === 'online') {
-                badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700';
+                badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700';
             } else if (d.estado === 'warning') {
-                badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-100 text-[#f26419]';
+                badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-100 text-[#f07f12]';
             } else {
-                badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-red-100 text-red-700';
+                badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-red-100 text-red-700';
             }
 
             if (d.image) {
@@ -2044,16 +1950,16 @@
                         item.innerHTML = `
                             <div class="flex items-center gap-2">
                                 <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${esc(c.color)};"></span>
-                                <span class="font-mono font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 text-[10px] shadow-2xs">${esc(c.puerto_local)}</span>
-                                <span class="text-gray-400 dark:text-slate-500 text-[10px]">➔</span>
+                                <span class="font-mono font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 text-[11px] shadow-2xs">${esc(c.puerto_local)}</span>
+                                <span class="text-gray-400 dark:text-slate-500 text-[11px]">➔</span>
                                 <div class="truncate max-w-[130px]">
                                     <p class="font-semibold text-slate-800 dark:text-slate-100 leading-tight truncate">${esc(c.remoto_nombre)}</p>
-                                    <p class="text-[10px] text-gray-500 dark:text-slate-400 font-mono">${esc(c.remoto_ip)} • ${esc(c.puerto_remoto)}</p>
+                                    <p class="text-[11px] text-gray-500 dark:text-slate-400 font-mono">${esc(c.remoto_ip)} • ${esc(c.puerto_remoto)}</p>
                                 </div>
                             </div>
                             <div class="text-right flex-shrink-0">
-                                <span class="text-[9px] font-black px-1.5 py-0.5 rounded ${c.estado === 'UP' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : (c.estado === 'DOWN' ? 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300' : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300')}">${esc(c.estado === 'UNKNOWN' ? 'SIN DATO' : c.estado)}</span>
-                                <p class="text-[9px] text-gray-400 dark:text-slate-500 font-mono mt-0.5">${esc(c.velocidad)}</p>
+                                <span class="text-[11px] font-black px-1.5 py-0.5 rounded ${c.estado === 'UP' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : (c.estado === 'DOWN' ? 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300' : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300')}">${esc(c.estado === 'UNKNOWN' ? 'SIN DATO' : c.estado)}</span>
+                                <p class="text-[11px] text-gray-400 dark:text-slate-500 font-mono mt-0.5">${esc(c.velocidad)}</p>
                             </div>
                         `;
                         connList.appendChild(item);
@@ -2076,7 +1982,7 @@
                     
                     const pcBadge = document.getElementById('drawerPhonePcStatusBadge');
                     if (pcBadge) {
-                        pcBadge.className = 'text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300';
+                        pcBadge.className = 'text-[11px] font-black px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300';
                         pcBadge.textContent = 'CONECTADA';
                     }
                 } else if (d.pc_conectada && d.pc_conectada.status === 'standby') {
@@ -2092,7 +1998,7 @@
                     
                     const pcBadge = document.getElementById('drawerPhonePcStatusBadge');
                     if (pcBadge) {
-                        pcBadge.className = 'text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300';
+                        pcBadge.className = 'text-[11px] font-black px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300';
                         pcBadge.textContent = 'STANDBY';
                     }
                 } else {
@@ -2115,7 +2021,7 @@
         function renderTipoDrawer(d) {
             const conf = d.tipo_confianza || 'baja';
             const badge = document.getElementById('drawerTipoConfianza');
-            badge.className = 'text-[9px] font-black px-1.5 py-0.5 rounded ' + (CONF_ESTILO[conf] || CONF_ESTILO.baja);
+            badge.className = 'text-[11px] font-black px-1.5 py-0.5 rounded ' + (CONF_ESTILO[conf] || CONF_ESTILO.baja);
             badge.textContent = `${(d.tipo_equipo || '').toUpperCase()} · ${conf.toUpperCase()} · ${FUENTE_TXT[d.tipo_fuente] || d.tipo_fuente || ''}`;
             const ul = document.getElementById('drawerTipoEvidencia');
             ul.innerHTML = (d.tipo_evidencia || []).map(e => `<li>${escHtml(e)}</li>`).join('') || '<li>Sin evidencia registrada</li>';
@@ -2138,7 +2044,7 @@
                     aplicarAgrupacionEndpoints();
                 }
             } catch (e) {
-                alert('No se pudo corregir el tipo: ' + e.message);
+                nmAviso('No se pudo corregir el tipo: ' + e.message, 'error');
             }
         }
 
@@ -2163,13 +2069,13 @@
             const badge = document.getElementById('drawerLinkStatusBadge');
             badge.textContent = l.estado === 'UNKNOWN' ? 'SIN DATO' : l.estado;
             if (l.estado === 'UP') {
-                badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700';
+                badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700';
             } else if (l.estado === 'DEGRADED') {
-                badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-100 text-[#f26419]';
+                badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-100 text-[#f07f12]';
             } else if (l.estado === 'UNKNOWN') {
-                badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-gray-100 text-gray-600';
+                badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-gray-100 text-gray-600';
             } else {
-                badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-red-100 text-red-700';
+                badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-red-100 text-red-700';
             }
 
             // Vlans tags
@@ -2181,7 +2087,7 @@
             }
             vlans.forEach(v => {
                 const span = document.createElement('span');
-                span.className = 'px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded';
+                span.className = 'px-2 py-0.5 bg-gray-100 text-gray-700 text-[11px] font-bold rounded';
                 span.textContent = v.trim().toUpperCase().startsWith('VLAN') ? v.trim() : 'VLAN ' + v.trim();
                 vlansContainer.appendChild(span);
             });
@@ -2206,10 +2112,10 @@
             const label = document.getElementById('beamsStatusLabel');
             if (trafficSimulationEnabled) {
                 if (btn) btn.classList.add('active');
-                if (label) label.textContent = 'Haces Activos (Beams)';
+                if (label) label.textContent = 'Tráfico animado';
             } else {
                 if (btn) btn.classList.remove('active');
-                if (label) label.textContent = 'Haces Pausados';
+                if (label) label.textContent = 'Tráfico animado';
                 if (network) network.redraw();
             }
         }
@@ -2268,10 +2174,10 @@
             const label = document.getElementById('physicsStatusLabel');
             if (physicsEnabled) {
                 if (btn) btn.classList.add('active');
-                if (label) label.textContent = 'Física Activa';
+                if (label) label.textContent = 'Física';
             } else {
                 if (btn) btn.classList.remove('active');
-                if (label) label.textContent = 'Física Pausada';
+                if (label) label.textContent = 'Física';
             }
         }
 
@@ -2371,13 +2277,13 @@
             const op = await preguntarZonas(type === 'tree' ? 'Jerárquico' : 'Libre');
             if (!op) return;
             if (op === 'quitar') {
-                if (!confirm(`¿Borrar las ${zonas.length} zonas?`)) return;
+                if (!(await nmConfirmar(`¿Borrar las ${zonas.length} zonas?`, { titulo: 'Borrar zonas', boton: 'Borrar zonas' }))) return;
                 try {
                     await apiJson("{{ route('topologia.zonas.destroy_all') }}", 'DELETE'); // una sola petición: borra también zonas que el mapa no tenga cargadas
                     zonas = [];
                     renderZonaLista();
                 } catch (e) {
-                    alert('No se pudieron borrar todas las zonas: ' + e.message);
+                    nmAviso('No se pudieron borrar todas las zonas: ' + e.message, 'error');
                 }
                 return aplicarLayout(type);
             }
@@ -2460,7 +2366,7 @@
                     const btnPhys = document.getElementById('btnTogglePhysics');
                     const labelPhys = document.getElementById('physicsStatusLabel');
                     if (btnPhys) btnPhys.classList.remove('active');
-                    if (labelPhys) labelPhys.textContent = 'Física Pausada';
+                    if (labelPhys) labelPhys.textContent = 'Física';
                     
                     const currentPositions = network.getPositions();
                     saveNodePositionsToDatabase(currentPositions);
@@ -2472,7 +2378,7 @@
                 const btnPhys = document.getElementById('btnTogglePhysics');
                 const labelPhys = document.getElementById('physicsStatusLabel');
                 if (btnPhys) btnPhys.classList.add('active');
-                if (labelPhys) labelPhys.textContent = 'Física Activa';
+                if (labelPhys) labelPhys.textContent = 'Física';
                 // Sin stabilize() explícito el evento 'stabilizationIterationsDone' no se emite
                 network.stabilize(150);
             }
@@ -2698,7 +2604,7 @@
             const btn = document.getElementById('btnToggleEndpoints');
             const lbl = document.getElementById('endpointsStatusLabel');
             if (btn) btn.classList.toggle('active', ocultar);
-            if (lbl) lbl.textContent = ocultar ? 'Finales: agrupados' : 'Finales: visibles';
+            if (lbl) lbl.textContent = 'Agrupar finales';
         }
 
         function toggleEndpoints() {
@@ -2761,13 +2667,13 @@
                 const color = d.estado === 'online' ? '#10b981' : (d.estado === 'warning' ? '#f59e0b' : '#ef4444');
                 return `<div class="flex items-center justify-between gap-2 px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-900/70 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs" onclick="showDeviceDetails(${Number(n.id)})">
                     <span class="flex items-center gap-1.5 truncate"><i class="noc-dot" style="background:${color}"></i><span class="truncate font-semibold text-slate-700 dark:text-slate-200">${escHtml(d.nombre)}</span></span>
-                    <span class="font-mono text-[10px] text-slate-500">${escHtml(d.ip)}</span>
+                    <span class="font-mono text-[11px] text-slate-500">${escHtml(d.ip)}</span>
                 </div>`;
             }).join('');
         }
 
         // ==================== ZONAS (recuadros tipo Packet Tracer) ====================
-        const ZONA_COLORES = ['#facc15', '#22d3ee', '#22c55e', '#e879f9', '#fb923c', '#3b82f6', '#ef4444', '#64748b'];
+        const ZONA_COLORES = ['#facc15', '#22d3ee', '#22c55e', '#e879f9', '#fb923c', '#1a7afb', '#ef4444', '#64748b'];
         let zonas = (initialGrafoData.zonas || []).map(z => ({ ...z }));
         let zonaEditando = false;
         let zonaArrastre = null;
@@ -2806,6 +2712,416 @@
                 }));
             });
         }
+
+        // ==================== MAPA DE FONDO: JALISCO / ZMG ====================
+        // Contornos municipales del INEGI (Marco Geoestadístico) proyectados al lienzo. Es solo referencia
+        // visual: los equipos no están georreferenciados. Hay dos vistas en grande (estado completo o ZMG) y el
+        // recuadro muestra la otra; las rutas se precalculan como Path2D porque el lienzo se redibuja ~30 veces/s.
+        const leerPref = (clave, defecto) => { try { return localStorage.getItem(clave) ?? defecto; } catch (e) { return defecto; } };
+        const guardarPref = (clave, valor) => { try { localStorage.setItem(clave, valor); } catch (e) {} };
+        const mapaJalisco = {
+            visible: leerPref('topo_mapa_jalisco', '1') !== '0',
+            vista: leerPref('topo_mapa_vista', 'jalisco') === 'zmg' ? 'zmg' : 'jalisco',
+            datos: null, preparadoPara: null, municipios: [], zmgCaja: null, pxPorGrado: 0,
+        };
+
+        function extensionGrados(lista) {
+            let minLon = 180, maxLon = -180, minLat = 90, maxLat = -90;
+            lista.forEach(m => m.anillos.forEach(a => a.forEach(([lon, lat]) => {
+                minLon = Math.min(minLon, lon); maxLon = Math.max(maxLon, lon); minLat = Math.min(minLat, lat); maxLat = Math.max(maxLat, lat);
+            })));
+            return { minLon, maxLon, minLat, maxLat, k: Math.cos(((minLat + maxLat) / 2) * Math.PI / 180) };
+        }
+
+        function prepararMapaJalisco() {
+            if (!mapaJalisco.datos || !network || mapaJalisco.preparadoPara === mapaJalisco.vista) return;
+            const pos = Object.values(network.getPositions());
+            if (!pos.length) return;
+            // El mapa elegido cubre la extensión del acomodo actual, centrado detrás de los equipos
+            const xs = pos.map(p => p.x), ys = pos.map(p => p.y);
+            const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+            const anchoNodos = Math.max(...xs) - Math.min(...xs) + 3000, altoNodos = Math.max(...ys) - Math.min(...ys) + 3000;
+
+            const lista = mapaJalisco.datos.municipios.filter(m => mapaJalisco.vista === 'jalisco' || m.zmg);
+            const e = extensionGrados(lista);
+            const escala = Math.max(anchoNodos / ((e.maxLon - e.minLon) * e.k), altoNodos / (e.maxLat - e.minLat)) * 1.05;
+            const lon0 = (e.minLon + e.maxLon) / 2, lat0 = (e.minLat + e.maxLat) / 2;
+            const proyectar = (lon, lat) => [cx + (lon - lon0) * escala * e.k, cy - (lat - lat0) * escala];
+
+            const caja = { x1: Infinity, y1: Infinity, x2: -Infinity, y2: -Infinity };
+            mapaJalisco.municipios = lista.map(m => {
+                const ruta = new Path2D();
+                m.anillos.forEach(anillo => anillo.forEach(([lon, lat], i) => {
+                    const [x, y] = proyectar(lon, lat);
+                    i ? ruta.lineTo(x, y) : ruta.moveTo(x, y);
+                    if (m.zmg) {
+                        caja.x1 = Math.min(caja.x1, x); caja.y1 = Math.min(caja.y1, y);
+                        caja.x2 = Math.max(caja.x2, x); caja.y2 = Math.max(caja.y2, y);
+                    }
+                }));
+                const [cabX, cabY] = proyectar(m.cabecera.lon, m.cabecera.lat);
+                return { nombre: m.nombre, zmg: m.zmg, ruta, cabX, cabY };
+            });
+            mapaJalisco.zmgCaja = caja;
+            mapaJalisco.proyectar = proyectar;
+            mapaJalisco.pxPorGrado = escala;
+            mapaJalisco.preparadoPara = mapaJalisco.vista;
+        }
+
+        function dibujarMapaJalisco(ctx) {
+            if (!mapaJalisco.visible || !mapaJalisco.datos) return;
+            prepararMapaJalisco();
+            if (!mapaJalisco.municipios.length) return;
+            const oscuro = document.documentElement.classList.contains('dark');
+            const esZmg = mapaJalisco.vista === 'zmg';
+            ctx.save();
+            ctx.lineJoin = 'round';
+            mapaJalisco.municipios.forEach(m => {
+                const naranja = m.zmg && !esZmg;
+                ctx.fillStyle = naranja ? (oscuro ? 'rgba(240,127,18,0.14)' : 'rgba(240,127,18,0.10)')
+                    : (oscuro ? 'rgba(77,148,253,0.07)' : 'rgba(1,104,250,0.05)');
+                ctx.strokeStyle = naranja ? 'rgba(240,127,18,0.55)' : (oscuro ? 'rgba(128,179,255,0.32)' : 'rgba(18,49,120,0.28)');
+                ctx.lineWidth = px(esZmg ? 1.6 : 1.2);
+                ctx.fill(m.ruta);
+                ctx.stroke(m.ruta);
+            });
+
+            if (!esZmg) {
+                // Marco de la ZMG sobre el mapa estatal
+                const z = mapaJalisco.zmgCaja, margen = px(10);
+                ctx.setLineDash([px(6), px(4)]);
+                ctx.strokeStyle = 'rgba(240,127,18,0.85)';
+                ctx.lineWidth = px(1.5);
+                ctx.strokeRect(z.x1 - margen, z.y1 - margen, z.x2 - z.x1 + margen * 2, z.y2 - z.y1 + margen * 2);
+                ctx.setLineDash([]);
+                ctx.font = `700 ${px(11)}px Inter, system-ui, sans-serif`;
+                ctx.fillStyle = 'rgba(240,127,18,0.95)';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText('ZMG', z.x1 - margen, z.y1 - margen - px(3));
+            }
+
+            // Cabeceras municipales; en el estado completo el nombre aparece solo con zoom suficiente
+            const conNombre = esZmg || network.getScale() * mapaJalisco.pxPorGrado > 900;
+            ctx.textBaseline = 'middle';
+            ctx.font = `${esZmg ? 700 : 600} ${px(esZmg ? 13 : 10.5)}px Inter, system-ui, sans-serif`;
+            mapaJalisco.municipios.forEach(m => {
+                ctx.beginPath();
+                ctx.arc(m.cabX, m.cabY, px(esZmg ? 4.5 : (m.zmg ? 3.5 : 3)), 0, Math.PI * 2);
+                ctx.fillStyle = m.zmg ? '#f07f12' : (oscuro ? '#80b3ff' : '#123178');
+                ctx.fill();
+                ctx.lineWidth = px(1.2);
+                ctx.strokeStyle = oscuro ? '#0d1320' : '#ffffff';
+                ctx.stroke();
+                if (conNombre) {
+                    ctx.lineWidth = px(3);
+                    ctx.strokeStyle = oscuro ? 'rgba(13,19,32,0.85)' : 'rgba(255,255,255,0.85)';
+                    ctx.strokeText(m.nombre, m.cabX + px(7), m.cabY);
+                    ctx.fillStyle = oscuro ? 'rgba(232,237,245,0.85)' : 'rgba(28,39,60,0.78)';
+                    ctx.fillText(m.nombre, m.cabX + px(7), m.cabY);
+                }
+            });
+            ctx.restore();
+        }
+
+        // SVG del recuadro: siempre muestra la vista que NO está en grande
+        function construirRecuadroMapa() {
+            const esZmgGrande = mapaJalisco.vista === 'zmg';
+            const lista = mapaJalisco.datos.municipios.filter(m => esZmgGrande || m.zmg);
+            const e = extensionGrados(lista);
+            const W = 276, ancho = (e.maxLon - e.minLon) * e.k, alto = e.maxLat - e.minLat;
+            const s = (W - 16) / ancho, H = Math.round(alto * s) + 16;
+            const p = (lon, lat) => [8 + (lon - e.minLon) * e.k * s, 8 + (e.maxLat - lat) * s];
+            const esc = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+            const ruta = m => m.anillos.map(a => 'M' + a.map(([lon, lat]) => p(lon, lat).map(v => v.toFixed(1)).join(',')).join('L') + 'Z').join('');
+
+            let svg = `<svg viewBox="0 0 ${W} ${H}" class="w-full h-auto" role="img" aria-label="${esZmgGrande ? 'Mapa del estado de Jalisco' : 'Mapa de la Zona Metropolitana de Guadalajara'}">`;
+            lista.forEach(m => {
+                const naranja = !esZmgGrande || m.zmg;
+                svg += `<path d="${ruta(m)}" fill="${naranja ? 'rgba(240,127,18,0.14)' : 'rgba(1,104,250,0.06)'}" stroke="${naranja ? 'rgba(240,127,18,0.7)' : 'rgba(18,49,120,0.3)'}" stroke-width="${esZmgGrande ? 0.5 : 1}"><title>${esc(m.nombre)}</title></path>`;
+            });
+            if (!esZmgGrande) {
+                // Las cabeceras del centro están muy juntas: cada etiqueta tiene su lado para no encimarse
+                const LADO = { 'Guadalajara': [6, -7, 'start'], 'San Pedro Tlaquepaque': [-5, 9, 'end'], 'Tonalá': [5, -3, 'start'],
+                               'El Salto': [-5, 8, 'end'], 'Juanacatlán': [5, 9, 'start'], 'Zapopan': [-6, 0, 'end'] };
+                lista.forEach(m => {
+                    const [x, y] = p(m.cabecera.lon, m.cabecera.lat);
+                    const [dx, dy, ancla] = LADO[m.nombre] || [5, 3, 'start'];
+                    const nombre = m.nombre.replace('San Pedro ', '').replace(' de los Membrillos', '').replace(' de Zúñiga', '').replace(' de Juárez', '');
+                    svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#f07f12" stroke="#fff" stroke-width="1"/>`;
+                    svg += `<text x="${(x + dx).toFixed(1)}" y="${(y + dy).toFixed(1)}" text-anchor="${ancla}" font-size="8.5" font-weight="600" fill="currentColor" paint-order="stroke" stroke="var(--nm-sunken)" stroke-width="2.5" class="text-slate-700 dark:text-slate-200">${esc(nombre)}</text>`;
+                });
+            }
+            document.getElementById('recuadroMapaSvg').innerHTML = svg + '</svg>';
+            document.getElementById('recuadroMapaTitulo').textContent = esZmgGrande ? 'Estado de Jalisco' : 'Zona Metropolitana de Guadalajara';
+            document.getElementById('recuadroMapaDetalle').textContent = esZmgGrande ? '125 municipios · clic para verlo en grande' : '10 municipios · clic para verla en grande';
+            document.getElementById('recuadroMapaSvg').setAttribute('aria-label', esZmgGrande ? 'Ver en grande el mapa de Jalisco' : 'Ver en grande el mapa de la ZMG');
+        }
+
+        function aplicarVisibilidadMapa() {
+            const listo = mapaJalisco.visible && mapaJalisco.datos;
+            document.getElementById('btnMapaJalisco')?.classList.toggle('active', mapaJalisco.visible);
+            document.getElementById('segVistaMapa')?.classList.toggle('hidden', !mapaJalisco.visible);
+            document.querySelectorAll('#segVistaMapa [data-vista]').forEach(b => b.classList.toggle('active', b.dataset.vista === mapaJalisco.vista));
+            document.getElementById('recuadroMapa')?.classList.toggle('hidden', !listo || mapaJalisco.recuadroCerrado === true);
+            if (typeof pintarPanelSitios === 'function' && document.getElementById('panelSitios')) pintarPanelSitios();
+            if (network) network.redraw();
+        }
+
+        function toggleMapaJalisco() {
+            mapaJalisco.visible = !mapaJalisco.visible;
+            guardarPref('topo_mapa_jalisco', mapaJalisco.visible ? '1' : '0');
+            aplicarVisibilidadMapa();
+        }
+
+        function cambiarVistaMapa(vista) {
+            mapaJalisco.vista = vista === 'zmg' ? 'zmg' : 'jalisco';
+            guardarPref('topo_mapa_vista', mapaJalisco.vista);
+            mapaJalisco.preparadoPara = null;
+            if (mapaJalisco.datos) construirRecuadroMapa();
+            aplicarVisibilidadMapa();
+        }
+
+        function cerrarRecuadroMapa() {
+            mapaJalisco.recuadroCerrado = true;
+            aplicarVisibilidadMapa();
+        }
+
+        fetch(@json(asset('data/jalisco-municipios.json')))
+            .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+            .then(datos => { mapaJalisco.datos = datos; construirRecuadroMapa(); aplicarVisibilidadMapa(); })
+            .catch(e => console.warn('No se pudo cargar el mapa de Jalisco:', e));
+
+        // ==================== SITIOS DE LA ZMG (dependencias, recaudadoras, escuelas…) ====================
+        // Candidatos de OpenStreetMap guardados en la base; la asignación de equipos la hace el NOC a mano.
+        const CATEGORIAS_SITIO = {
+            recaudadora: { etiqueta: 'Recaudadoras', color: '#f07f12' },
+            gobierno: { etiqueta: 'Oficinas de gobierno', color: '#0168fa' },
+            ayuntamiento: { etiqueta: 'Ayuntamientos', color: '#123178' },
+            justicia: { etiqueta: 'Justicia', color: '#7c3aed' },
+            seguridad: { etiqueta: 'Seguridad', color: '#e11d48' },
+            salud: { etiqueta: 'Salud', color: '#10b981' },
+            educacion: { etiqueta: 'Escuelas', color: '#0891b2' },
+        };
+        const sitiosRed = {
+            lista: [], proyectadosPara: null, seleccionado: null,
+            visibles: new Set(JSON.parse(leerPref('topo_sitios_categorias', 'null')) || Object.keys(CATEGORIAS_SITIO).filter(c => c !== 'educacion')),
+        };
+
+        function proyectarSitios() {
+            if (sitiosRed.proyectadosPara === mapaJalisco.preparadoPara || !mapaJalisco.proyectar) return;
+            sitiosRed.lista.forEach(s => { [s.x, s.y] = mapaJalisco.proyectar(s.lon, s.lat); });
+            sitiosRed.proyectadosPara = mapaJalisco.preparadoPara;
+        }
+
+        const sitiosActivos = () => mapaJalisco.visible && mapaJalisco.vista === 'zmg' && sitiosRed.lista.length > 0;
+
+        function dibujarSitios(ctx) {
+            if (!sitiosActivos() || !mapaJalisco.proyectar) return;
+            proyectarSitios();
+            const oscuro = document.documentElement.classList.contains('dark');
+            const conNombre = network.getScale() * mapaJalisco.pxPorGrado > 9000;
+            ctx.save();
+            ctx.textBaseline = 'middle';
+            ctx.font = `600 ${px(10.5)}px Inter, system-ui, sans-serif`;
+            sitiosRed.lista.forEach(s => {
+                if (!sitiosRed.visibles.has(s.c)) return;
+                const color = CATEGORIAS_SITIO[s.c].color;
+                const r = px(s.c === 'recaudadora' ? 5.5 : 3.6);
+                ctx.beginPath();
+                if (s.c === 'recaudadora') { ctx.moveTo(s.x, s.y - r); ctx.lineTo(s.x + r, s.y); ctx.lineTo(s.x, s.y + r); ctx.lineTo(s.x - r, s.y); ctx.closePath(); }
+                else ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.lineWidth = px(1.2);
+                ctx.strokeStyle = oscuro ? '#0d1320' : '#ffffff';
+                ctx.stroke();
+                if (s.eq.length) {
+                    // Anillo y número de equipos asignados
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, r + px(3.5), 0, Math.PI * 2);
+                    ctx.lineWidth = px(2);
+                    ctx.strokeStyle = color;
+                    ctx.stroke();
+                    ctx.fillStyle = color;
+                    ctx.font = `800 ${px(10)}px Inter, system-ui, sans-serif`;
+                    ctx.fillText(String(s.eq.length), s.x + r + px(5), s.y - r - px(2));
+                    ctx.font = `600 ${px(10.5)}px Inter, system-ui, sans-serif`;
+                }
+                if (conNombre && (s.c !== 'educacion' || s.eq.length)) {
+                    ctx.lineWidth = px(3);
+                    ctx.strokeStyle = oscuro ? 'rgba(13,19,32,0.85)' : 'rgba(255,255,255,0.9)';
+                    ctx.strokeText(s.n, s.x + r + px(4), s.y + px(1));
+                    ctx.fillStyle = oscuro ? 'rgba(232,237,245,0.9)' : 'rgba(28,39,60,0.85)';
+                    ctx.fillText(s.n, s.x + r + px(4), s.y + px(1));
+                }
+            });
+
+            // Sitio seleccionado: realce y líneas hacia sus equipos
+            const sel = sitiosRed.seleccionado;
+            if (sel && sitiosRed.visibles.has(sel.c)) {
+                const pos = network.getPositions(sel.eq);
+                ctx.setLineDash([px(6), px(5)]);
+                ctx.lineWidth = px(1.6);
+                ctx.strokeStyle = CATEGORIAS_SITIO[sel.c].color;
+                Object.values(pos).forEach(p => { ctx.beginPath(); ctx.moveTo(sel.x, sel.y); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+                ctx.setLineDash([]);
+                ctx.beginPath();
+                ctx.arc(sel.x, sel.y, px(11), 0, Math.PI * 2);
+                ctx.lineWidth = px(2.5);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function sitioEn(punto) {
+            if (!sitiosActivos()) return null;
+            let mejor = null, distMin = px(10);
+            sitiosRed.lista.forEach(s => {
+                if (!sitiosRed.visibles.has(s.c) || s.x === undefined) return;
+                const d = Math.hypot(s.x - punto.x, s.y - punto.y);
+                if (d < distMin) { distMin = d; mejor = s; }
+            });
+            return mejor;
+        }
+
+        function nombreEquipo(id) {
+            const n = nodesDataSet?.get(id);
+            return n?.customData ? `${n.customData.nombre} (${n.customData.ip})` : `Equipo #${id}`;
+        }
+
+        function abrirFichaSitio(sitio, dom) {
+            sitiosRed.seleccionado = sitio;
+            const ficha = document.getElementById('fichaSitio');
+            const cat = CATEGORIAS_SITIO[sitio.c];
+            const chip = document.getElementById('fichaSitioCategoria');
+            chip.replaceChildren(Object.assign(document.createElement('i'), { className: 'w-2 h-2 rounded-full', style: `background:${cat.color}` }), document.createTextNode(cat.etiqueta.replace(/s$/, '')));
+            chip.style.color = cat.color;
+            document.getElementById('fichaSitioNombre').textContent = sitio.n;
+            document.getElementById('fichaSitioDireccion').textContent = [sitio.d || 'Sin dirección registrada', sitio.m, sitio.op].filter(Boolean).join(' · ');
+            document.getElementById('fichaSitioFuente').textContent = sitio.o === 'osm' ? 'Fuente: OpenStreetMap' : 'Capturado en el NOC';
+            pintarEquiposSitio();
+
+            const lista = document.getElementById('listaEquiposSitio');
+            if (lista && !lista.childElementCount) {
+                (nodesDataSet?.get({ filter: n => !!n.customData?.nombre }) || [])
+                    .sort((a, b) => a.customData.nombre.localeCompare(b.customData.nombre))
+                    .forEach(n => lista.append(Object.assign(document.createElement('option'), { value: `${n.customData.nombre} (${n.customData.ip})` })));
+            }
+
+            // Se abre junto al punto, sin salirse del lienzo
+            const lienzo = document.getElementById('networkTopologyCanvas');
+            ficha.classList.remove('hidden');
+            const x = Math.min(dom.x + 16, lienzo.clientWidth - ficha.offsetWidth - 12);
+            const y = Math.min(Math.max(dom.y - 20, 70), lienzo.clientHeight - ficha.offsetHeight - 12);
+            ficha.style.left = Math.max(12, x) + 'px';
+            ficha.style.top = y + 'px';
+            network.redraw();
+        }
+
+        function pintarEquiposSitio() {
+            const sitio = sitiosRed.seleccionado;
+            const ul = document.getElementById('fichaSitioEquipos');
+            ul.replaceChildren();
+            if (!sitio.eq.length) {
+                ul.append(Object.assign(document.createElement('li'), { className: 'text-slate-500 dark:text-slate-400', textContent: 'Ninguno todavía.' }));
+                return;
+            }
+            sitio.eq.forEach(id => {
+                const li = document.createElement('li');
+                li.className = 'flex items-center justify-between gap-2 px-2 py-1 rounded-lg bg-[var(--nm-sunken)]';
+                const btnEquipo = Object.assign(document.createElement('button'), { type: 'button', className: 'truncate text-left font-medium text-slate-800 dark:text-slate-100 hover:text-blue-600', textContent: nombreEquipo(id) });
+                btnEquipo.onclick = () => { network.focus(id, { scale: Math.max(network.getScale(), 0.12), animation: { duration: 500 } }); network.selectNodes([id]); };
+                li.append(btnEquipo);
+                if (PUEDE_EDITAR) {
+                    const quitar = Object.assign(document.createElement('button'), { type: 'button', className: 'shrink-0 w-6 h-6 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-500/10', textContent: '×' });
+                    quitar.setAttribute('aria-label', 'Quitar ' + nombreEquipo(id) + ' de este sitio');
+                    quitar.onclick = () => guardarSitioDeEquipo(id, null);
+                    li.append(quitar);
+                }
+                ul.append(li);
+            });
+        }
+
+        function avisoFicha(texto, error) {
+            const p = document.getElementById('fichaSitioAviso');
+            if (!p) return;
+            p.textContent = texto;
+            p.className = 'mt-1.5 text-[11px] ' + (error ? 'text-red-600' : 'text-emerald-600');
+            p.classList.toggle('hidden', !texto);
+        }
+
+        async function guardarSitioDeEquipo(dispositivoId, sitioId) {
+            try {
+                const r = await fetch(@json(url('/api/topologia/dispositivos')) + '/' + dispositivoId + '/sitio', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF, 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ sitio_id: sitioId }),
+                });
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                // Un equipo pertenece a un solo sitio
+                sitiosRed.lista.forEach(s => { s.eq = s.eq.filter(id => id !== dispositivoId); });
+                if (sitioId) sitiosRed.lista.find(s => s.id === sitioId)?.eq.push(dispositivoId);
+                pintarEquiposSitio();
+                network.redraw();
+                return true;
+            } catch (e) {
+                avisoFicha('No se pudo guardar: ' + e.message, true);
+                return false;
+            }
+        }
+
+        async function asignarEquipoASitio() {
+            const input = document.getElementById('fichaSitioBuscar');
+            const texto = input.value.trim().toLowerCase();
+            const nodo = (nodesDataSet?.get({ filter: n => !!n.customData?.nombre }) || []).find(n =>
+                `${n.customData.nombre} (${n.customData.ip})`.toLowerCase() === texto || n.customData.ip === texto || n.customData.nombre.toLowerCase() === texto);
+            if (!nodo) { avisoFicha('Elige un equipo de la lista.', true); return; }
+            const anterior = sitiosRed.lista.find(s => s.eq.includes(nodo.id));
+            if (await guardarSitioDeEquipo(nodo.id, sitiosRed.seleccionado.id)) {
+                input.value = '';
+                avisoFicha(anterior && anterior !== sitiosRed.seleccionado ? `Asignado; antes estaba en "${anterior.n}".` : 'Asignado.', false);
+            }
+        }
+
+        function cerrarFichaSitio() {
+            document.getElementById('fichaSitio').classList.add('hidden');
+            sitiosRed.seleccionado = null;
+            avisoFicha('');
+            network?.redraw();
+        }
+
+        function pintarPanelSitios() {
+            const panel = document.getElementById('panelSitios');
+            panel.classList.toggle('hidden', !sitiosActivos());
+            if (!sitiosActivos()) { cerrarFichaSitio(); return; }
+            const conteo = {};
+            sitiosRed.lista.forEach(s => { conteo[s.c] = (conteo[s.c] || 0) + 1; });
+            const lista = document.getElementById('panelSitiosLista');
+            lista.replaceChildren(...Object.entries(CATEGORIAS_SITIO).filter(([c]) => conteo[c]).map(([c, cat]) => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center gap-2 px-1.5 py-1 rounded-md hover:bg-slate-500/10 cursor-pointer';
+                const cb = Object.assign(document.createElement('input'), { type: 'checkbox', checked: sitiosRed.visibles.has(c), className: 'rounded' });
+                cb.style.accentColor = cat.color;
+                cb.onchange = () => {
+                    cb.checked ? sitiosRed.visibles.add(c) : sitiosRed.visibles.delete(c);
+                    guardarPref('topo_sitios_categorias', JSON.stringify([...sitiosRed.visibles]));
+                    if (sitiosRed.seleccionado && !sitiosRed.visibles.has(sitiosRed.seleccionado.c)) cerrarFichaSitio();
+                    network.redraw();
+                };
+                const punto = Object.assign(document.createElement('i'), { className: 'w-2.5 h-2.5 rounded-full shrink-0' });
+                punto.style.background = cat.color;
+                const nombre = Object.assign(document.createElement('span'), { className: 'flex-1 text-slate-700 dark:text-slate-200', textContent: cat.etiqueta });
+                const n = Object.assign(document.createElement('span'), { className: 'font-mono text-slate-500 dark:text-slate-400', textContent: conteo[c].toLocaleString('es-MX') });
+                label.append(cb, punto, nombre, n);
+                return label;
+            }));
+            document.getElementById('panelSitiosTotal').textContent = sitiosRed.lista.length.toLocaleString('es-MX') + ' sitios';
+        }
+
+        fetch(@json(route('topologia.sitios')), { headers: { 'Accept': 'application/json' } })
+            .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+            .then(j => { sitiosRed.lista = j.sitios; pintarPanelSitios(); network?.redraw(); })
+            .catch(e => console.warn('No se pudieron cargar los sitios:', e));
 
         function dibujarZonas(ctx) {
             const isDark = document.documentElement.classList.contains('dark');
@@ -2875,7 +3191,7 @@
                     // Botones ✎ y 🗑 en el extremo derecho del título (solo si caben y la zona ya existe)
                     if (z.id && z.ancho > px(110)) {
                         const b = botonesZona(z);
-                        [[b.editar, '✎', '#1d4ed8'], [b.borrar, '🗑', '#dc2626']].forEach(([r, txt, col]) => {
+                        [[b.editar, '✎', '#0153c7'], [b.borrar, '🗑', '#dc2626']].forEach(([r, txt, col]) => {
                             ctx.fillStyle = '#ffffff';
                             ctx.strokeStyle = col;
                             ctx.lineWidth = px(1.5);
@@ -3001,7 +3317,7 @@
                         }
                     }
                 } catch (e) {
-                    alert('No se pudo guardar la zona: ' + e.message);
+                    nmAviso('No se pudo guardar la zona: ' + e.message, 'error');
                 }
                 network.redraw();
             };
@@ -3062,7 +3378,7 @@
             if (!nombre) { document.getElementById('zonaEditorNombre').focus(); return; }
             const rangos = document.getElementById('zonaEditorRangos').value.trim();
             const invalidos = parseRangos(rangos).invalidos;
-            if (invalidos.length) { alert('Rangos no válidos: ' + invalidos.join(', ')); return; }
+            if (invalidos.length) { nmAviso('Rangos no válidos: ' + invalidos.join(', '), 'error'); return; }
             const z = zonaEnEditor.zona;
             const previo = { nombre: z.nombre, color: z.color, rangos_ip: z.rangos_ip };
             z.nombre = nombre;
@@ -3075,7 +3391,7 @@
                 renderZonaLista();
             } catch (e) {
                 Object.assign(z, previo);
-                alert('No se pudo guardar la zona: ' + e.message);
+                nmAviso('No se pudo guardar la zona: ' + e.message, 'error');
             }
         });
 
@@ -3084,7 +3400,7 @@
         });
 
         async function eliminarZona(z) {
-            if (!confirm(`¿Eliminar la zona "${z.nombre}"? Los equipos no se borran.`)) return;
+            if (!(await nmConfirmar(`¿Eliminar la zona "${z.nombre}"? Los equipos no se borran.`, { titulo: 'Eliminar zona', boton: 'Eliminar' }))) return;
             try {
                 await apiJson(`{{ url('api/topologia/zonas') }}/${z.id}`, 'DELETE');
                 zonas = zonas.filter(x => x !== z);
@@ -3092,7 +3408,7 @@
                 renderZonaLista();
                 network.redraw();
             } catch (e) {
-                alert('No se pudo eliminar: ' + e.message);
+                nmAviso('No se pudo eliminar: ' + e.message, 'error');
             }
         }
 
@@ -3107,10 +3423,10 @@
             cont.innerHTML = zonas.map((z, i) => `
                 <span class="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-lg bg-slate-800 border border-slate-700">
                     <i class="noc-dot" style="background:${escHtml(z.color)}"></i>
-                    <button type="button" class="font-bold hover:underline" onclick="encuadrarZona(${i})" title="${escHtml(z.rangos_ip || 'Sin rangos de IP')}">${escHtml(z.nombre)}</button>
+                    <button type="button" class="font-bold hover:underline" onclick="encuadrarZona(${i})" title="${escHtml(z.rangos_ip || 'Sin rangos de IP')}" aria-label="${escHtml(z.rangos_ip || 'Sin rangos de IP')}">${escHtml(z.nombre)}</button>
                     <span class="text-slate-400 font-mono">${equiposEnRangos(z.rangos_ip).length || ''}</span>
-                    <button type="button" class="px-1 hover:text-blue-300" onclick="abrirZonaEditor(zonas[${i}], false)" title="Editar">✎</button>
-                    <button type="button" class="px-1 hover:text-red-400" onclick="eliminarZona(zonas[${i}])" title="Borrar">🗑</button>
+                    <button type="button" class="px-1 hover:text-blue-300" onclick="abrirZonaEditor(zonas[${i}], false)" title="Editar" aria-label="Editar zona"><svg class="w-3.5 h-3.5 inline-block align-[-2px]" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /> <path d="m15 5 4 4" /></svg></button>
+                    <button type="button" class="px-1 hover:text-red-400" onclick="eliminarZona(zonas[${i}])" title="Borrar" aria-label="Borrar zona"><svg class="w-3.5 h-3.5 inline-block align-[-2px]" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /> <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /> <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /> <line x1="10" x2="10" y1="11" y2="17" /> <line x1="14" x2="14" y1="11" y2="17" /></svg></button>
                 </span>`).join('');
         }
 
@@ -3173,10 +3489,10 @@
             const el = document.getElementById('zonaEditorRangosInfo');
             if (!el) return;
             const { invalidos } = parseRangos(texto);
-            if (invalidos.length) { el.textContent = 'No válido: ' + invalidos.join(', '); el.className = 'text-[10px] text-red-500 mb-3'; return; }
+            if (invalidos.length) { el.textContent = 'No válido: ' + invalidos.join(', '); el.className = 'text-[11px] text-red-500 mb-3'; return; }
             const n = texto.trim() ? equiposEnRangos(texto).length : 0;
             el.textContent = texto.trim() ? `${n} equipos coinciden` : 'Sin rangos: la zona no se acomoda automáticamente';
-            el.className = 'text-[10px] text-slate-400 mb-3';
+            el.className = 'text-[11px] text-slate-400 mb-3';
         }
 
         // Coloca los equipos dentro de la zona en filas, según el tamaño REAL de cada uno (un switch de rack
@@ -3244,7 +3560,7 @@
         async function acomodarPorIps() {
             const conRangos = zonas.filter(z => z.id && parseRangos(z.rangos_ip).rangos.length);
             if (!conRangos.length) {
-                alert('Ninguna zona tiene rangos de IP. Edita una zona (✎) y escribe por ejemplo: 10.4.155.0/24');
+                nmAviso('Ninguna zona tiene rangos de IP. Edita una zona (✎) y escribe por ejemplo: 10.4.155.0/24', 'advertencia');
                 return;
             }
             const asignados = new Set();
@@ -3262,9 +3578,9 @@
                 for (const z of conRangos) await guardarZonaServidor(z);
                 renderZonaLista();
                 network.redraw();
-                alert('Equipos acomodados:\n' + resumen.join('\n'));
+                nmAviso('Equipos acomodados:\n' + resumen.join('\n'), 'exito');
             } catch (e) {
-                alert('No se pudo guardar el acomodo: ' + e.message);
+                nmAviso('No se pudo guardar el acomodo: ' + e.message, 'error');
             }
         }
 
@@ -3285,7 +3601,7 @@
             const msg = zonas.length
                 ? `Se crearán ${redes.length} zonas (una por subred /24) y se BORRARÁN las ${zonas.length} zonas actuales. ¿Continuar?`
                 : `Se crearán ${redes.length} zonas (una por subred /24) y se acomodarán sus equipos. ¿Continuar?`;
-            if (!confirm(msg)) return;
+            if (!(await nmConfirmar(msg, { titulo: 'Crear zonas por subred', boton: 'Crear zonas', peligro: false }))) return;
 
             try {
                 await apiJson("{{ route('topologia.zonas.destroy_all') }}", 'DELETE'); // una sola petición: borra también zonas que el mapa no tenga cargadas
@@ -3319,7 +3635,7 @@
                 renderZonaLista();
                 network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' }, padding: 60 });
             } catch (e) {
-                alert('No se pudieron crear las zonas: ' + e.message);
+                nmAviso('No se pudieron crear las zonas: ' + e.message, 'error');
                 renderZonaLista();
             }
         }
@@ -3360,8 +3676,8 @@
             lista.innerHTML = notas.map(n => `
                 <div class="p-2 rounded-lg bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40 text-xs">
                     <div class="flex items-center justify-between gap-2">
-                        <span class="font-bold text-slate-800 dark:text-slate-100 truncate">${n.es_secreto ? '🔒 ' : ''}${escHtml(n.titulo)}</span>
-                        ${puedeEditar ? `<span class="flex gap-2 shrink-0 text-[10px] font-bold">
+                        <span class="font-bold text-slate-800 dark:text-slate-100 truncate">${n.es_secreto ? '<svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>' : ''}${escHtml(n.titulo)}</span>
+                        ${puedeEditar ? `<span class="flex gap-2 shrink-0 text-[11px] font-bold">
                             <button type="button" class="text-blue-600 dark:text-blue-400 hover:underline" onclick="abrirFormNota(${n.id})">Editar</button>
                             <button type="button" class="text-red-600 hover:underline" onclick="eliminarNota(${n.id})">Borrar</button>
                         </span>` : ''}
@@ -3369,11 +3685,11 @@
                     <div class="mt-1 font-mono text-[11px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words" id="notaContenido_${n.id}">${
                         n.es_secreto ? '••••••••' : escHtml(n.contenido)
                     }</div>
-                    ${n.es_secreto && puedeEditar ? `<div class="mt-1 flex gap-2 text-[10px] font-bold">
+                    ${n.es_secreto && puedeEditar ? `<div class="mt-1 flex gap-2 text-[11px] font-bold">
                         <button type="button" class="text-indigo-600 dark:text-indigo-400 hover:underline" onclick="revelarNota(${n.id}, false)">Mostrar</button>
                         <button type="button" class="text-indigo-600 dark:text-indigo-400 hover:underline" onclick="revelarNota(${n.id}, true)">Copiar</button>
                     </div>` : ''}
-                    <p class="mt-1 text-[9px] text-slate-400">${escHtml(n.autor || '')} · ${escHtml(n.actualizado || '')}</p>
+                    <p class="mt-1 text-[11px] text-slate-400">${escHtml(n.autor || '')} · ${escHtml(n.actualizado || '')}</p>
                 </div>`).join('');
         }
 
@@ -3389,7 +3705,7 @@
                 el.textContent = r.contenido;
                 setTimeout(() => { if (el.isConnected) el.textContent = '••••••••'; }, 30000); // se vuelve a ocultar
             } catch (e) {
-                alert('No se pudo revelar: ' + e.message);
+                nmAviso('No se pudo revelar: ' + e.message, 'error');
             }
         }
 
@@ -3423,17 +3739,17 @@
                 else await apiJson(base, 'POST', body);
                 cargarNotas(notasDispositivoId);
             } catch (e) {
-                alert('No se pudo guardar la nota: ' + e.message);
+                nmAviso('No se pudo guardar la nota: ' + e.message, 'error');
             }
         }
 
         async function eliminarNota(id) {
-            if (!confirm('¿Borrar esta nota?')) return;
+            if (!(await nmConfirmar('¿Borrar esta nota?', { titulo: 'Borrar nota', boton: 'Borrar' }))) return;
             try {
                 await apiJson(`{{ url('api/dispositivos') }}/${notasDispositivoId}/notas/${id}`, 'DELETE');
                 cargarNotas(notasDispositivoId);
             } catch (e) {
-                alert('No se pudo borrar: ' + e.message);
+                nmAviso('No se pudo borrar: ' + e.message, 'error');
             }
         }
 
@@ -3563,11 +3879,11 @@
             const maxDepth = parseInt(document.getElementById('discMaxDepth').value, 10) || 3;
 
             if (discoveryMethod === 'cdp_lldp' && !seedIp) {
-                alert('Por favor introduce una dirección IP semilla válida.');
+                nmAviso('Por favor introduce una dirección IP semilla válida.', 'advertencia');
                 return;
             }
             if (discoveryMethod === 'cidr_sweep' && !cidr) {
-                alert('Por favor introduce un prefijo CIDR válido (ej. 192.168.1.0/24).');
+                nmAviso('Por favor introduce un prefijo CIDR válido (ej. 192.168.1.0/24).', 'advertencia');
                 return;
             }
 
@@ -3652,7 +3968,7 @@
                 p.className = 'text-red-400 font-bold';
                 p.textContent = `[ERROR] ${error.message}`;
                 logBox.appendChild(p);
-                alert(`Error en el auto-descubrimiento: ${error.message}`);
+                nmAviso(`Error en el auto-descubrimiento: ${error.message}`, 'error');
                 // Revertir a formulario
                 document.getElementById('discoveryScanningState').classList.add('hidden');
                 document.getElementById('discoveryFormState').classList.remove('hidden');
@@ -3881,7 +4197,7 @@
                     if (bannerBox) bannerBox.className = "flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 transition-colors duration-200";
                     if (bannerIcon) {
                         bannerIcon.className = "w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/20";
-                        bannerIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>`;
+                        bannerIcon.innerHTML = `<svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>`;
                     }
                     if (resTitle) {
                         resTitle.className = "text-sm font-black text-emerald-900";
@@ -3896,7 +4212,7 @@
                     if (bannerBox) bannerBox.className = "flex items-center gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200 transition-colors duration-200";
                     if (bannerIcon) {
                         bannerIcon.className = "w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-amber-500/20";
-                        bannerIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+                        bannerIcon.innerHTML = `<svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /></svg>`;
                     }
                     if (resTitle) {
                         resTitle.className = "text-sm font-black text-amber-900";
@@ -3931,13 +4247,7 @@
                 console.error('Error en escaneo local RJ-45:', err);
             }
         }
-        // ==========================================
-        // Live Status Badge Toggle (Online/Offline)
-        // ==========================================
-        // Enlaces a las animaciones Lottie
-        const animOnline = 'https://lottie.host/8b5830cd-4218-4247-87fb-5bd887d203d8/PomLBEIdAK.lottie';
-        const animOffline = 'https://lottie.host/5bb3a0e0-68ed-412a-9881-f8bedba1bf0f/6IVaKzhSJr.lottie';
-        
+        // Indicador "En vivo" del encabezado: conexión local y salud del sondeo
         let snmpIsWorking = true;
 
         async function checkSNMPHealth() {
@@ -3974,29 +4284,15 @@
         }
 
         function updateLiveBadgeStatus() {
-            const anim = document.getElementById('liveWifiAnim');
-            if (!anim) return;
-
-            if (!navigator.onLine) {
-                // 1. Estado OFFLINE LOCAL (Página sin conexión) -> Robot Caído (404)
-                if (anim.getAttribute('src') !== animOffline) {
-                    anim.setAttribute('src', animOffline);
-                }
-                anim.style.filter = 'none'; // El robot tiene sus propios colores
-            } else {
-                // 2. Estado ONLINE LOCAL -> Señal Wi-Fi
-                if (anim.getAttribute('src') !== animOnline) {
-                    anim.setAttribute('src', animOnline);
-                }
-                
-                if (snmpIsWorking) {
-                    // 2a. SNMP Funcionando (Azul original)
-                    anim.style.filter = 'none';
-                } else {
-                    // 2b. SNMP Fallando / Sin señal (Filtro Rojo)
-                    anim.style.filter = 'grayscale(1) sepia(1) hue-rotate(320deg) saturate(5)';
-                }
-            }
+            const badge = document.getElementById('liveStatusDot');
+            if (!badge) return;
+            const [punto, texto] = [badge.querySelector('i'), badge.querySelector('span')];
+            const estado = !navigator.onLine ? ['bg-slate-400', 'Sin conexión', 'Este equipo perdió la conexión de red']
+                : snmpIsWorking ? ['bg-emerald-500', 'En vivo', 'El sondeo de la red responde']
+                : ['bg-red-500', 'Sondeo con fallas', 'El servidor de monitoreo no está respondiendo'];
+            punto.className = 'w-2 h-2 rounded-full ' + estado[0];
+            texto.textContent = estado[1];
+            badge.title = estado[2];
         }
 
         window.addEventListener('online', () => { checkSNMPHealth(); updateLiveBadgeStatus(); });

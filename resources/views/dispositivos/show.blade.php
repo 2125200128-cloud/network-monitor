@@ -4,9 +4,9 @@
     <style>
         /* Paleta Institucional */
         :root {
-            --institucional-blue: #3b5998;
-            --institucional-slate: #5c8096;
-            --institucional-orange: #f26419;
+            --institucional-blue: var(--nm-primary);
+            --institucional-slate: var(--nm-primary-2);
+            --institucional-orange: #f07f12;
         }
 
         /* Faceplate 19" Rackmount Switch */
@@ -42,7 +42,7 @@
 
         /* Chassis Finish Variants */
         .chassis-nexus {
-            background: linear-gradient(180deg, #13171f 0%, #0d1017 45%, #05070a 100%) !important;
+            background: linear-gradient(180deg, #13171f 0%, var(--nm-ink) 45%, #05070a 100%) !important;
             border-color: #2b394b !important;
             box-shadow: inset 0 1px 2px rgba(56, 189, 248, 0.2), inset 0 -2px 6px rgba(0, 0, 0, 0.9), 0 12px 30px rgba(0, 0, 0, 0.35) !important;
         }
@@ -63,7 +63,7 @@
         }
         .chassis-phone {
             background: linear-gradient(180deg, #181d27 0%, #12151e 50%, #0a0d14 100%) !important;
-            border-color: #2563eb !important;
+            border-color: #0168fa !important;
             box-shadow: inset 0 1px 2px rgba(37, 99, 235, 0.25), inset 0 -2px 6px rgba(0, 0, 0, 0.9), 0 12px 30px rgba(0, 0, 0, 0.35) !important;
         }
         .chassis-ap {
@@ -77,7 +77,7 @@
             box-shadow: inset 0 1px 2px rgba(124, 58, 237, 0.25), inset 0 -2px 6px rgba(0, 0, 0, 0.9), 0 12px 30px rgba(0, 0, 0, 0.35) !important;
         }
         .chassis-pc {
-            background: linear-gradient(180deg, #1a202c 0%, #12161f 50%, #0a0d13 100%) !important;
+            background: linear-gradient(180deg, #1a202c 0%, var(--nm-ink) 50%, #05070a 100%) !important;
             border-color: #0891b2 !important;
             box-shadow: inset 0 1px 2px rgba(6, 182, 212, 0.25), inset 0 -2px 6px rgba(0, 0, 0, 0.9), 0 12px 30px rgba(0, 0, 0, 0.35) !important;
         }
@@ -171,13 +171,13 @@
             justify-content: center;
         }
         .rj45-socket:hover {
-            border-color: #3b5998;
+            border-color: var(--nm-primary);
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(59, 89, 152, 0.35);
             z-index: 10;
         }
         .rj45-socket.active-selected {
-            border-color: #f26419 !important;
+            border-color: #f07f12 !important;
             box-shadow: 0 0 0 2px rgba(242, 100, 25, 0.4), 0 4px 14px rgba(242, 100, 25, 0.3) !important;
         }
         .rj45-clip-notch {
@@ -217,13 +217,13 @@
             box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.6);
         }
         .sfp-cage:hover {
-            border-color: #3b5998;
+            border-color: var(--nm-primary);
             transform: translateY(-2px);
             box-shadow: 0 4px 14px rgba(59, 89, 152, 0.4);
             z-index: 10;
         }
         .sfp-cage.active-selected {
-            border-color: #f26419 !important;
+            border-color: #f07f12 !important;
             box-shadow: 0 0 0 2px rgba(242, 100, 25, 0.4), 0 4px 14px rgba(242, 100, 25, 0.3) !important;
         }
         .sfp-latch {
@@ -315,7 +315,7 @@
             transform: translateX(0);
         }
         .dark .port-drawer {
-            background: #12161f;
+            background: var(--nm-surface);
             box-shadow: -10px 0 35px rgba(0, 0, 0, 0.7);
             color: #f1f5f9;
         }
@@ -325,7 +325,7 @@
             padding: 0.85rem 1.25rem;
             font-size: 0.875rem;
             font-weight: 700;
-            color: #64748b;
+            color: var(--nm-text-muted);
             border-bottom: 3px solid transparent;
             transition: all 0.2s;
             cursor: pointer;
@@ -338,24 +338,24 @@
             border-right: none;
         }
         .nav-tab-btn:hover {
-            color: #3b5998;
+            color: var(--nm-primary);
             background: rgba(59, 89, 152, 0.04);
         }
         .nav-tab-btn.active {
-            color: #3b5998;
-            border-bottom-color: #3b5998;
+            color: var(--nm-primary);
+            border-bottom-color: var(--nm-primary);
             background: rgba(59, 89, 152, 0.06);
         }
         .dark .nav-tab-btn {
             color: #94a3b8;
         }
         .dark .nav-tab-btn:hover {
-            color: #60a5fa;
+            color: #4d94fd;
             background: rgba(96, 165, 250, 0.08);
         }
         .dark .nav-tab-btn.active {
-            color: #60a5fa;
-            border-bottom-color: #60a5fa;
+            color: #4d94fd;
+            border-bottom-color: #4d94fd;
             background: rgba(96, 165, 250, 0.12);
         }
         .tab-pane {
@@ -372,8 +372,8 @@
 
         /* Metric cards */
         .telemetry-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background: var(--nm-sunken);
+            border: 1px solid var(--nm-border);
             border-radius: 0.85rem;
             padding: 1.15rem;
         }
@@ -388,7 +388,7 @@
 <div class="max-w-7xl mx-auto space-y-6 pb-12">
 
     {{-- ==================== 1. HERO HEADER ==================== --}}
-    <div class="bg-white dark:bg-[#12161f] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+    <div class="bg-white dark:bg-nm-surface rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             {{-- Ilustración del modelo --}}
             <div class="w-44 sm:w-52 h-32 sm:h-36 rounded-2xl p-3 border border-slate-700/60 shadow-lg flex-shrink-0 flex items-center justify-center" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
@@ -432,7 +432,7 @@
             <div class="flex items-center gap-2 bg-gray-50 px-3.5 py-2 rounded-xl border border-gray-200">
                 <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm"></div>
                 <div class="text-left">
-                    <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Puertos arriba</p>
+                    <p class="text-[11px] text-gray-400 uppercase font-bold tracking-wider">Puertos arriba</p>
                     <p class="text-sm font-extrabold text-emerald-600">{{ $upPortsCount }} / {{ $totalPorts }}</p>
                 </div>
             </div>
@@ -442,7 +442,7 @@
             <div class="flex items-center gap-2 bg-red-50 px-3.5 py-2 rounded-xl border border-red-200">
                 <div class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></div>
                 <div class="text-left">
-                    <p class="text-[10px] text-red-500 uppercase font-bold tracking-wider">Err-Disabled</p>
+                    <p class="text-[11px] text-red-500 uppercase font-bold tracking-wider">Err-Disabled</p>
                     <p class="text-sm font-extrabold text-red-600">{{ $errDisabledCount }}</p>
                 </div>
             </div>
@@ -453,19 +453,19 @@
             <div class="flex items-center gap-2 bg-amber-50 px-3.5 py-2 rounded-xl border border-amber-200">
                 <div class="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm"></div>
                 <div class="text-left">
-                    <p class="text-[10px] text-amber-600 uppercase font-bold tracking-wider">PoE</p>
+                    <p class="text-[11px] text-amber-600 uppercase font-bold tracking-wider">PoE</p>
                     <p class="text-sm font-extrabold text-amber-700">{{ rtrim(rtrim(number_format($chasis->poe_used_w, 1), '0'), '.') }} / {{ rtrim(rtrim(number_format($chasis->poe_total_budget_w, 1), '0'), '.') }} W</p>
                 </div>
             </div>
             @endif
 
-            <a href="{{ route('dispositivos.pdf', $dispositivo->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#3b5998] hover:bg-[#2d4677] text-white text-xs font-bold transition shadow-sm" title="Descargar la ficha en PDF">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <a href="{{ route('dispositivos.pdf', $dispositivo->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-nm-primary hover:bg-[#1a3d8f] text-white text-xs font-bold transition shadow-sm" title="Descargar la ficha en PDF">
+                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M12 18v-6" /> <path d="m9 15 3 3 3-3" /></svg>
                 Reporte PDF
             </a>
 
             <a href="{{ url('/') }}" class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7" /> <path d="M19 12H5" /></svg>
                 Dashboard
             </a>
         </div>
@@ -501,14 +501,14 @@
             $isAP => 'bg-emerald-600',
             $isServer => 'bg-purple-600',
             $isPC => 'bg-cyan-600',
-            $isRouter => 'bg-[#f26419]',
+            $isRouter => 'bg-[#f07f12]',
             $isNexus => 'bg-indigo-600',
-            $isCatalyst => 'bg-[#3b5998]',
+            $isCatalyst => 'bg-nm-primary',
             default => 'bg-slate-700'
         };
     @endphp
 
-    <div x-data="faceplateComponent()" class="bg-white dark:bg-[#12161f] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800">
+    <div x-data="faceplateComponent()" class="bg-white dark:bg-nm-surface rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800">
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2.5">
                 <div class="px-3 py-1.5 rounded-lg {{ $badgeBg }} flex items-center justify-center text-white font-bold text-xs shadow-sm tracking-wide">
@@ -574,13 +574,13 @@
                         <span class="w-2.5 h-2.5 rounded-sm {{ $enLinea ? 'bg-emerald-400' : ($dispositivo->estado === 'warning' ? 'bg-amber-400' : 'bg-red-500') }}"></span>
                         <span class="text-xs font-black text-slate-200 tracking-wider uppercase truncate">{{ $ficha['grupos']['Identificación']['Fabricante'] ?? $deviceHardware['tipo_equipo'] }}</span>
                     </div>
-                    <p class="text-[9px] font-mono text-slate-300 uppercase tracking-tight mt-0.5 truncate" title="{{ $deviceHardware['clean_model'] }}">{{ $deviceHardware['clean_model'] }}</p>
+                    <p class="text-[11px] font-mono text-slate-300 uppercase tracking-tight mt-0.5 truncate" title="{{ $deviceHardware['clean_model'] }}">{{ $deviceHardware['clean_model'] }}</p>
                 </div>
-                <div class="text-[8px] font-mono text-slate-400 leading-tight">
+                <div class="text-[11px] font-mono text-slate-400 leading-tight">
                     <p>{{ strtoupper($deviceHardware['tipo_equipo']) }}</p>
                     <p class="{{ $colorConf }}" title="{{ implode(' · ', $deviceHardware['evidencia'] ?? []) }}">Tipo: confianza {{ $deviceHardware['confianza'] }} ({{ $deviceHardware['fuente'] }})</p>
                 </div>
-                <div class="text-[8px] font-mono {{ $enLinea ? 'text-emerald-400' : 'text-red-400' }}">{{ $enLinea ? 'EN LÍNEA' : ($dispositivo->estado === 'warning' ? 'ADVERTENCIA' : 'SIN RESPUESTA') }}</div>
+                <div class="text-[11px] font-mono {{ $enLinea ? 'text-emerald-400' : 'text-red-400' }}">{{ $enLinea ? 'EN LÍNEA' : ($dispositivo->estado === 'warning' ? 'ADVERTENCIA' : 'SIN RESPUESTA') }}</div>
             </div>
 
             {{-- ==================== CENTER: DYNAMIC HARDWARE LAYOUT ==================== --}}
@@ -588,8 +588,8 @@
             {{-- 1. TELÉFONO IP: solo sus interfaces reportadas --}}
             <template x-if="isPhone">
                 <div class="flex-1 flex items-center justify-around px-4 gap-4">
-                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-blue-900/40 shadow-inner flex flex-col items-center">
-                        <span class="text-[8px] font-mono font-bold text-blue-400 uppercase tracking-wider mb-2">Puertos de red</span>
+                    <div class="bg-nm-ink p-3 rounded-xl border border-blue-900/40 shadow-inner flex flex-col items-center">
+                        <span class="text-[11px] font-mono font-bold text-blue-400 uppercase tracking-wider mb-2">Puertos de red</span>
                         <template x-if="interfaces.length === 0">
                             <span class="text-xs text-slate-500 font-mono">Sin interfaces reportadas por SNMP</span>
                         </template>
@@ -616,7 +616,7 @@
                                             <div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div>
                                         </div>
                                     </div>
-                                    <span class="text-[8px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status === 'up' ? 'Up' : (interfaz.oper_status || 'Sin dato')"></span>
+                                    <span class="text-[11px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status === 'up' ? 'Up' : (interfaz.oper_status || 'Sin dato')"></span>
                                 </div>
                             </template>
                         </div>
@@ -628,8 +628,8 @@
             {{-- 2. ACCESS POINT / WLC --}}
             <template x-if="isAP">
                 <div class="flex-1 flex items-center justify-around px-4 gap-4">
-                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-emerald-900/40 shadow-inner flex flex-col items-center">
-                        <span class="text-[8px] font-mono font-bold text-emerald-400 uppercase tracking-wider mb-2">Puertos de red</span>
+                    <div class="bg-nm-ink p-3 rounded-xl border border-emerald-900/40 shadow-inner flex flex-col items-center">
+                        <span class="text-[11px] font-mono font-bold text-emerald-400 uppercase tracking-wider mb-2">Puertos de red</span>
                         <template x-if="interfaces.length === 0">
                             <span class="text-xs text-slate-500 font-mono">Sin interfaces reportadas por SNMP</span>
                         </template>
@@ -656,7 +656,7 @@
                                             <div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div>
                                         </div>
                                     </div>
-                                    <span class="text-[8px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status || 'Sin dato'"></span>
+                                    <span class="text-[11px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status || 'Sin dato'"></span>
                                 </div>
                             </template>
                         </div>
@@ -667,8 +667,8 @@
             {{-- 3. SERVIDOR --}}
             <template x-if="isServer">
                 <div class="flex-1 flex items-center justify-around px-4 gap-4">
-                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-purple-900/40 shadow-inner flex flex-col items-center">
-                        <span class="text-[8px] font-mono font-bold text-purple-400 uppercase tracking-wider mb-2">Interfaces de red</span>
+                    <div class="bg-nm-ink p-3 rounded-xl border border-purple-900/40 shadow-inner flex flex-col items-center">
+                        <span class="text-[11px] font-mono font-bold text-purple-400 uppercase tracking-wider mb-2">Interfaces de red</span>
                         <template x-if="interfaces.length === 0">
                             <span class="text-xs text-slate-500 font-mono">Sin interfaces reportadas por SNMP</span>
                         </template>
@@ -692,7 +692,7 @@
                                             <div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div>
                                         </div>
                                     </div>
-                                    <span class="text-[8px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status"></span>
+                                    <span class="text-[11px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status"></span>
                                 </div>
                             </template>
                         </div>
@@ -703,8 +703,8 @@
             {{-- 4. PC / IMPRESORA --}}
             <template x-if="isPC">
                 <div class="flex-1 flex items-center justify-around px-4 gap-4">
-                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-cyan-900/40 shadow-inner flex flex-col items-center">
-                        <span class="text-[8px] font-mono font-bold text-cyan-400 uppercase tracking-wider mb-2">Interfaces de red</span>
+                    <div class="bg-nm-ink p-3 rounded-xl border border-cyan-900/40 shadow-inner flex flex-col items-center">
+                        <span class="text-[11px] font-mono font-bold text-cyan-400 uppercase tracking-wider mb-2">Interfaces de red</span>
                         <template x-if="interfaces.length === 0">
                             <span class="text-xs text-slate-500 font-mono">Sin interfaces reportadas por SNMP</span>
                         </template>
@@ -728,7 +728,7 @@
                                             <div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div><div class="rj45-pin"></div>
                                         </div>
                                     </div>
-                                    <span class="text-[8px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status"></span>
+                                    <span class="text-[11px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status"></span>
                                 </div>
                             </template>
                         </div>
@@ -740,8 +740,8 @@
             <template x-if="isRouter">
                 <div class="flex-1 flex items-center justify-around px-4 gap-4">
                     {{-- Puertos Físicos Dinámicos desde la Base de Datos --}}
-                    <div class="bg-[#0a0d13] p-3 rounded-xl border border-slate-700/60 shadow-inner flex flex-col items-center">
-                        <span class="text-[8px] font-mono font-bold text-orange-400 uppercase tracking-wider mb-2">Puertos de red</span>
+                    <div class="bg-nm-ink p-3 rounded-xl border border-slate-700/60 shadow-inner flex flex-col items-center">
+                        <span class="text-[11px] font-mono font-bold text-orange-400 uppercase tracking-wider mb-2">Puertos de red</span>
                         <div class="flex items-center gap-3">
                             <template x-for="(interfaz, index) in interfaces" :key="index">
                                 <div class="port-pair-column">
@@ -786,7 +786,7 @@
                                         </div>
                                     </template>
 
-                                    <span class="text-[8px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status"></span>
+                                    <span class="text-[11px] font-mono text-slate-400 mt-1 uppercase" x-text="interfaz.oper_status"></span>
                                 </div>
                             </template>
 
@@ -881,7 +881,7 @@
                     <div class="w-[2px] bg-gradient-to-b from-transparent via-gray-600 to-transparent my-1"></div>
 
                     <div class="flex flex-col justify-center items-center px-3 py-1.5 bg-[#12161b] rounded-lg border border-gray-800 shadow-inner flex-shrink-0 ml-2">
-                        <div class="text-[9px] font-extrabold {{ $isCatalyst ? 'text-blue-400' : ($isNexus ? 'text-cyan-400' : 'text-blue-400') }} font-mono tracking-wider text-center mb-1 flex items-center gap-1">
+                        <div class="text-[11px] font-extrabold {{ $isCatalyst ? 'text-blue-400' : ($isNexus ? 'text-cyan-400' : 'text-blue-400') }} font-mono tracking-wider text-center mb-1 flex items-center gap-1">
                             <span class="w-1.5 h-1.5 rounded-full {{ $isNexus ? 'bg-cyan-400' : 'bg-blue-400' }} animate-pulse"></span>
                             <span>{{ $ficha['uplink'] }}</span>
                         </div>
@@ -941,13 +941,11 @@
 
     {{-- ==================== 2.1 PC CONECTADA AL PUERTO PC (PASS-THROUGH) ==================== --}}
     @if($isPhone && !empty($attachedPc))
-    <div class="bg-gradient-to-br from-indigo-50/70 via-white to-blue-50/50 dark:from-slate-900/90 dark:via-[#12161f] dark:to-indigo-950/30 rounded-2xl p-6 shadow-sm border border-indigo-100 dark:border-indigo-900/50">
+    <div class="bg-gradient-to-br from-indigo-50/70 via-white to-blue-50/50 dark:from-slate-900/90 dark:via-nm-surface dark:to-indigo-950/30 rounded-2xl p-6 shadow-sm border border-indigo-100 dark:border-indigo-900/50">
         <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-indigo-100/80 dark:border-slate-800">
             <div class="flex items-center gap-3.5">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-700 text-white flex items-center justify-center shadow-md shadow-indigo-600/20 flex-shrink-0">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </svg>
+                    <svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2" /> <line x1="8" x2="16" y1="21" y2="21" /> <line x1="12" x2="12" y1="17" y2="21" /></svg>
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
@@ -969,41 +967,41 @@
         @if($attachedPc['has_attached_pc'] ?? false)
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
             <div class="bg-white dark:bg-slate-900/80 p-4 rounded-xl border border-indigo-50 dark:border-slate-800 shadow-xs">
-                <span class="text-[10px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider block">Nombre de Equipo (Host)</span>
+                <span class="text-[11px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider block">Nombre de Equipo (Host)</span>
                 <div class="flex items-center gap-1.5 mt-1">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span class="text-sm font-black text-slate-800 dark:text-white">{{ $attachedPc['hostname'] ?? 'PC-HOST' }}</span>
                 </div>
-                <span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold block mt-0.5">{{ $attachedPc['vendor'] ?? 'Fabricante PC' }}</span>
+                <span class="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold block mt-0.5">{{ $attachedPc['vendor'] ?? 'Fabricante PC' }}</span>
             </div>
 
             <div class="bg-white dark:bg-slate-900/80 p-4 rounded-xl border border-indigo-50 dark:border-slate-800 shadow-xs">
-                <span class="text-[10px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider block">Dirección IP de Datos</span>
+                <span class="text-[11px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider block">Dirección IP de Datos</span>
                 <div class="flex items-center gap-1.5 mt-1">
                     <span class="text-sm font-mono font-black text-blue-600 dark:text-blue-400">{{ $attachedPc['ip'] ?? 'Sin dato' }}</span>
                 </div>
-                <span class="text-[10px] text-gray-400 block mt-0.5">{{ $attachedPc['vlan'] ?? 'VLAN Datos (Untagged)' }}</span>
+                <span class="text-[11px] text-gray-400 block mt-0.5">{{ $attachedPc['vlan'] ?? 'VLAN Datos (Untagged)' }}</span>
             </div>
 
             <div class="bg-white dark:bg-slate-900/80 p-4 rounded-xl border border-indigo-50 dark:border-slate-800 shadow-xs">
-                <span class="text-[10px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider block">Dirección MAC (CAM Table)</span>
+                <span class="text-[11px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider block">Dirección MAC (CAM Table)</span>
                 <div class="flex items-center gap-1.5 mt-1">
                     <span class="text-sm font-mono font-black text-slate-800 dark:text-slate-200">{{ $attachedPc['mac'] ?? 'XX:XX:XX:XX:XX:XX' }}</span>
                 </div>
-                <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block mt-0.5">Identificada en Switch CAM</span>
+                <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold block mt-0.5">Identificada en Switch CAM</span>
             </div>
 
             <div class="bg-white dark:bg-slate-900/80 p-4 rounded-xl border border-indigo-50 dark:border-slate-800 shadow-xs">
-                <span class="text-[10px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider block">Velocidad / Negociación</span>
+                <span class="text-[11px] font-black uppercase text-gray-400 dark:text-slate-400 tracking-wider block">Velocidad / Negociación</span>
                 <div class="flex items-center gap-1.5 mt-1">
                     <span class="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">{{ $attachedPc['speed'] ?? 'Sin dato' }}</span>
                 </div>
-                <span class="text-[10px] text-gray-400 block mt-0.5">Puerto PC 10/100/1000BASE-T</span>
+                <span class="text-[11px] text-gray-400 block mt-0.5">Puerto PC 10/100/1000BASE-T</span>
             </div>
         </div>
         @else
         <div class="flex items-center gap-3 p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40 text-xs text-amber-800 dark:text-amber-300 mt-4 font-medium">
-            <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg>
             <span>{{ $attachedPc['message'] ?? 'Puerto PC disponible (Sin computadora transmitiendo tráfico actualmente en el puerto secundario).' }}</span>
         </div>
         @endif
@@ -1011,7 +1009,7 @@
     @endif
 
     {{-- ==================== 3. LOWER TAB SYSTEM ==================== --}}
-    <div class="bg-white dark:bg-[#12161f] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+    <div class="bg-white dark:bg-nm-surface rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
         {{-- Pestañas: solo las que aplican al tipo de equipo (o si hay datos que mostrar) --}}
         @php
             $tieneTablas = !empty($tablas->mac_table) || !empty($tablas->arp_table);
@@ -1041,26 +1039,26 @@
         <div class="tab-pane active p-6" id="tab-hardware">
 
             {{-- Ficha técnica: lo que reporta el equipo (SNMP / CDP-LLDP) y lo que se deduce de su número de parte --}}
-            <div class="border border-slate-800 rounded-2xl p-6 mb-6 shadow-md" style="background: linear-gradient(90deg, #0f172a, #111827, #0f172a);">
+            <div class="rounded-2xl p-6 mb-6 shadow-lg text-white" style="background: var(--nm-metal-sheen), var(--nm-metal-navy);">
                 <div class="flex flex-col gap-5">
-                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
                         <div>
-                            <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest block">Ficha técnica</span>
+                            <span class="text-[11px] font-bold text-blue-200 uppercase tracking-widest block">Ficha técnica</span>
                             <h3 class="text-xl font-black text-white leading-tight mt-0.5">{{ $deviceHardware['clean_model'] }}</h3>
                             @if($ficha['etiqueta'])
-                                <p class="text-xs text-slate-400 mt-0.5">{{ $ficha['etiqueta'] }}</p>
+                                <p class="text-xs text-blue-100/70 mt-0.5">{{ $ficha['etiqueta'] }}</p>
                             @endif
                         </div>
-                        <span class="px-3 py-1 rounded-lg text-xs font-bold bg-blue-950/80 text-blue-300 border border-blue-800/50">{{ $deviceHardware['tipo_equipo'] }}</span>
+                        <span class="px-3 py-1 rounded-lg text-xs font-bold bg-white/10 text-white border border-white/20">{{ $deviceHardware['tipo_equipo'] }}</span>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
                         {{-- Ilustración del modelo --}}
-                        <div class="lg:col-span-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex flex-col items-center justify-center text-center">
+                        <div class="lg:col-span-4 bg-black/20 p-4 rounded-xl border border-white/10 flex flex-col items-center justify-center text-center">
                             <div class="w-full h-44 flex items-center justify-center p-2 mb-2">
                                 <img src="{{ asset($deviceHardware['image']) }}" alt="{{ $deviceHardware['clean_model'] }}" class="max-h-40 max-w-full object-contain drop-shadow-xl">
                             </div>
-                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-3 border-t border-slate-800/80 w-full justify-center text-[11px] font-mono text-slate-400">
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-3 border-t border-white/10 w-full justify-center text-[11px] font-mono text-blue-100/70">
                                 <span>IP <strong class="text-slate-200">{{ $dispositivo->ip }}</strong></span>
                                 @if($dispositivo->mac_address)
                                     <span>MAC <strong class="text-slate-200">{{ $dispositivo->mac_address }}</strong></span>
@@ -1072,19 +1070,19 @@
                         <div class="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
                             @forelse($ficha['grupos'] as $grupo => $datos)
                                 <div class="sm:col-span-2 flex items-baseline justify-between gap-2 {{ $loop->first ? '' : 'mt-2' }}">
-                                    <h5 class="text-[11px] font-bold uppercase tracking-wider text-slate-300">{{ $grupo }}</h5>
+                                    <h5 class="text-[11px] font-bold uppercase tracking-wider text-blue-100/85">{{ $grupo }}</h5>
                                     @if($grupo === 'Hardware según número de parte')
-                                        <span class="text-[10px] text-slate-500">Deducido del modelo, no medido</span>
+                                        <span class="text-[11px] text-blue-100/60">Deducido del modelo, no medido</span>
                                     @endif
                                 </div>
                                 @foreach($datos as $etiqueta => $valor)
-                                    <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/40 {{ mb_strlen($valor) > 48 ? 'sm:col-span-2' : '' }}">
-                                        <span class="text-[10px] text-blue-400 uppercase font-bold tracking-wider block">{{ $etiqueta }}</span>
+                                    <div class="bg-white/[0.06] backdrop-blur-sm p-3 rounded-xl border border-white/10 {{ mb_strlen($valor) > 48 ? 'sm:col-span-2' : '' }}">
+                                        <span class="text-[11px] text-blue-200 uppercase font-bold tracking-wider block">{{ $etiqueta }}</span>
                                         <span class="font-semibold text-slate-100 text-xs mt-1 block leading-snug break-words">{{ $valor }}</span>
                                     </div>
                                 @endforeach
                             @empty
-                                <p class="sm:col-span-2 text-xs text-slate-400">El equipo aún no ha reportado información por SNMP.</p>
+                                <p class="sm:col-span-2 text-xs text-blue-100/70">El equipo aún no ha reportado información por SNMP.</p>
                             @endforelse
                             {{-- Credencial SNMP del equipo: origen, edición y prueba (el valor nunca se envía al navegador) --}}
                             @php
@@ -1099,18 +1097,18 @@
                                 $snmpVigente = $ultimaMetrica && $ultimaMetrica->fecha_registro && \Carbon\Carbon::parse($ultimaMetrica->fecha_registro)->gt(now()->subMinutes(2));
                                 $snmpResponde = $chasis && $chasis->uptime_str && !in_array($chasis->uptime_str, ['Sin respuesta SNMP', 'Inaccesible'], true);
                             @endphp
-                            <div class="sm:col-span-2 bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/40 hover:border-slate-600 transition-colors"
+                            <div class="sm:col-span-2 bg-white/[0.06] backdrop-blur-sm p-3.5 rounded-xl border border-white/10 hover:border-white/25 transition-colors"
                                  x-data="credencialSnmp({{ $dispositivo->id }}, @js($origenSnmp), @js($etiquetasOrigen))">
                                 <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <span class="text-[10px] text-amber-400 uppercase font-bold tracking-wider font-mono">Credencial SNMP v2c (sondeo)</span>
-                                    <span class="text-[10px] font-mono {{ $snmpResponde ? 'text-emerald-400' : 'text-red-400' }}">
+                                    <span class="text-[11px] text-amber-400 uppercase font-bold tracking-wider font-mono">Credencial SNMP v2c (sondeo)</span>
+                                    <span class="text-[11px] font-mono {{ $snmpResponde ? 'text-emerald-400' : 'text-red-400' }}">
                                         {{ $snmpResponde ? 'Responde SNMP' : 'Sin respuesta SNMP' }} · {{ $ultimaMetrica?->fecha_registro ? 'último sondeo ' . \Carbon\Carbon::parse($ultimaMetrica->fecha_registro)->diffForHumans() : 'sin sondeos' }}
                                     </span>
                                 </div>
                                 <div class="flex flex-wrap items-center justify-between gap-2 mt-2">
                                     <div class="flex items-center gap-2 min-w-0">
-                                        <code class="font-mono font-bold text-amber-300 text-xs bg-slate-900/80 px-2 py-0.5 rounded border border-amber-500/20">••••••</code>
-                                        <span class="text-[11px] text-slate-300 truncate" x-text="etiquetas[origen]"></span>
+                                        <code class="font-mono font-bold text-amber-300 text-xs bg-black/25 px-2 py-0.5 rounded border border-amber-500/20">••••••</code>
+                                        <span class="text-[11px] text-blue-100/85 truncate" x-text="etiquetas[origen]"></span>
                                     </div>
                                     @if($puedeEditarSnmp)
                                         <div class="flex items-center gap-1.5" x-show="!editando">
@@ -1122,22 +1120,22 @@
 
                                 @if($puedeEditarSnmp)
                                     <div x-show="editando" x-transition style="display: none;" class="mt-3 pt-3 border-t border-slate-700/60">
-                                        <label class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Comunidad para este equipo</label>
+                                        <label class="text-[11px] text-blue-100/70 font-bold uppercase tracking-wider">Comunidad para este equipo</label>
                                         <div class="flex flex-wrap items-center gap-2 mt-1">
                                             <div class="relative flex-1 min-w-[180px]">
                                                 <input :type="ver ? 'text' : 'password'" x-model="valor" autocomplete="off" maxlength="255"
                                                        placeholder="Escribe la comunidad de lectura"
                                                        class="w-full bg-slate-950/80 border border-slate-600 rounded-lg pl-3 pr-9 py-1.5 text-xs font-mono text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/60">
-                                                <button type="button" @click="ver = !ver" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200" :title="ver ? 'Ocultar' : 'Mostrar'">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                                <button type="button" @click="ver = !ver" class="absolute right-2 top-1/2 -translate-y-1/2 text-blue-100/70 hover:text-slate-200" :title="ver ? 'Ocultar' : 'Mostrar'">
+                                                    <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /></svg>
                                                 </button>
                                             </div>
                                             <button type="button" @click="probar(true)" :disabled="probando || !valor.trim()" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-slate-700 hover:bg-slate-600 text-slate-100 transition disabled:opacity-40" x-text="probando ? 'Probando…' : 'Probar'"></button>
                                             <button type="button" @click="guardar(valor)" :disabled="guardando || !valor.trim()" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-900 transition disabled:opacity-40">Guardar</button>
-                                            <button type="button" x-show="origen === 'ficha'" @click="if (confirm('¿Quitar la comunidad de esta ficha? El equipo volverá a usar la de firewalls o la registrada.')) guardar('')" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 transition">Quitar de la ficha</button>
-                                            <button type="button" @click="editando = false; valor = ''; resultado = null" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-400 hover:text-slate-200 transition">Cancelar</button>
+                                            <button type="button" x-show="origen === 'ficha'" @click="nmConfirmar('¿Quitar la comunidad de esta ficha? El equipo volverá a usar la de firewalls o la registrada.', { titulo: 'Quitar comunidad SNMP', boton: 'Quitar' }).then(ok => ok && guardar(''))" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 transition">Quitar de la ficha</button>
+                                            <button type="button" @click="editando = false; valor = ''; resultado = null" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-blue-100/70 hover:text-slate-200 transition">Cancelar</button>
                                         </div>
-                                        <p class="text-[10px] text-slate-500 mt-1.5">Tiene prioridad sobre la comunidad de firewalls y la general. El sondeo la usa en su siguiente ciclo (≈15 s).</p>
+                                        <p class="text-[11px] text-blue-100/60 mt-1.5">Tiene prioridad sobre la comunidad de firewalls y la general. El sondeo la usa en su siguiente ciclo (≈15 s).</p>
                                     </div>
                                 @endif
 
@@ -1146,8 +1144,8 @@
                                    x-text="resultado?.texto"></p>
                             </div>
 
-                            <div class="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/40 flex flex-col justify-between hover:border-slate-600 transition-colors">
-                                <span class="text-[10px] text-sky-400 uppercase font-bold tracking-wider block font-mono">Acceso SSH (consola CLI)</span>
+                            <div class="bg-white/[0.06] backdrop-blur-sm p-3.5 rounded-xl border border-white/10 flex flex-col justify-between hover:border-white/25 transition-colors">
+                                <span class="text-[11px] text-sky-400 uppercase font-bold tracking-wider block font-mono">Acceso SSH (consola CLI)</span>
                                 <div class="flex items-center justify-between mt-1">
                                     <span class="font-mono font-bold text-sky-200 text-xs">SSH: Puerto {{ $dispositivo->ssh_port ?? 22 }}</span>
                                     
@@ -1182,10 +1180,10 @@
                 <div class="telemetry-card">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs uppercase font-extrabold text-gray-500 tracking-wider">CPU</span>
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-[#3b5998]">{{ $fmtPct($cpuVal) }}</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-nm-primary">{{ $fmtPct($cpuVal) }}</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3 overflow-hidden">
-                        <div class="bg-[#3b5998] h-2.5 rounded-full" style="width: {{ $cpuVal === null ? 0 : min(100, max(2, $cpuVal)) }}%"></div>
+                        <div class="bg-nm-primary h-2.5 rounded-full" style="width: {{ $cpuVal === null ? 0 : min(100, max(2, $cpuVal)) }}%"></div>
                     </div>
                     <div class="border-t border-gray-200 pt-2 text-[11px] text-gray-600 font-mono">
                         @if(!empty($chasis->cpu_cores) && is_array($chasis->cpu_cores))
@@ -1277,7 +1275,7 @@
                 {{-- Power Supplies (PSU 1 / PSU 2) --}}
                 <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <h3 class="text-xs uppercase tracking-wider font-extrabold text-gray-600 mb-3 flex items-center gap-1.5">
-                        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        <svg class="w-4 h-4 text-amber-500" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
                         Fuentes de poder
                     </h3>
                     <div class="space-y-3">
@@ -1304,7 +1302,7 @@
                 {{-- Cooling Fans --}}
                 <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <h3 class="text-xs uppercase tracking-wider font-extrabold text-gray-600 mb-3 flex items-center gap-1.5">
-                        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>
+                        <svg class="w-4 h-4 text-blue-500" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /> <path d="m3.3 7 8.7 5 8.7-5" /> <path d="M12 22V12" /></svg>
                         Ventiladores
                     </h3>
                     <div class="space-y-3">
@@ -1328,7 +1326,7 @@
                 {{-- Temperature Sensors --}}
                 <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <h3 class="text-xs uppercase tracking-wider font-extrabold text-gray-600 mb-3 flex items-center gap-1.5">
-                        <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        <svg class="w-4 h-4 text-red-500" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16" /> <path d="M18 17V9" /> <path d="M13 17V5" /> <path d="M8 17v-3" /></svg>
                         Sensores de temperatura
                     </h3>
                     {{-- Solo lo que reporta el equipo: nombre del sensor, valor y estado. Colores con los umbrales de la alarma térmica (55 / 65 °C). --}}
@@ -1346,7 +1344,7 @@
                                 <div class="flex items-baseline justify-between mt-1">
                                     <span class="text-lg font-extrabold font-mono" style="color: {{ $color }};">{{ $tempC }}<span class="text-xs text-gray-400"> °C</span></span>
                                     @if($estadoSensor !== '')
-                                        <span class="text-[10px] font-bold {{ $estadoSensor === 'OK' ? 'text-emerald-600' : 'text-red-600' }}">{{ $estadoSensor }}</span>
+                                        <span class="text-[11px] font-bold {{ $estadoSensor === 'OK' ? 'text-emerald-600' : 'text-red-600' }}">{{ $estadoSensor }}</span>
                                     @endif
                                 </div>
                             </div>
@@ -1374,8 +1372,8 @@
                             <p class="text-xs text-gray-400">Buscador reactivo instantáneo (acepta formato con dos puntos o punto Cisco)</p>
                         </div>
                         <div class="relative w-full sm:w-56">
-                            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                            <input type="text" id="macSearchInput" placeholder="Buscar MAC o VLAN..." class="w-full pl-9 pr-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#3b5998]/30 focus:border-[#3b5998]">
+                            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /> <path d="m21 21-4.3-4.3" /></svg>
+                            <input type="text" id="macSearchInput" placeholder="Buscar MAC o VLAN..." class="w-full pl-9 pr-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-nm-primary/30 focus:border-nm-primary">
                         </div>
                     </div>
 
@@ -1396,11 +1394,11 @@
                                     <td class="p-2.5 text-gray-800">
                                         <div class="flex flex-col">
                                             <span class="font-bold">{{ $entry['mac'] ?? 'Sin dato' }}</span>
-                                            <span class="text-[10px] text-gray-400 font-sans mt-0.5">{{ \App\Services\MacVendorResolver::resolveVendor($entry['mac'] ?? '') }}</span>
+                                            <span class="text-[11px] text-gray-400 font-sans mt-0.5">{{ \App\Services\MacVendorResolver::resolveVendor($entry['mac'] ?? '') }}</span>
                                         </div>
                                     </td>
-                                    <td class="p-2.5"><span class="px-2 py-0.5 rounded bg-blue-50 text-[#3b5998] font-bold">{{ isset($entry['vlan']) ? 'VLAN ' . $entry['vlan'] : 'VLAN ?' }}</span></td>
-                                    <td class="p-2.5 font-bold text-[#f26419]">{{ $entry['port'] ?? '-' }}</td>
+                                    <td class="p-2.5"><span class="px-2 py-0.5 rounded bg-blue-50 text-nm-primary font-bold">{{ isset($entry['vlan']) ? 'VLAN ' . $entry['vlan'] : 'VLAN ?' }}</span></td>
+                                    <td class="p-2.5 font-bold text-[#f07f12]">{{ $entry['port'] ?? '-' }}</td>
                                     <td class="p-2.5 text-gray-500 font-sans">{{ $entry['type'] ?? 'Dynamic' }}</td>
                                     <td class="p-2.5 text-right text-gray-500">{{ $entry['age_sec'] ?? '-' }}</td>
                                 </tr>
@@ -1419,7 +1417,7 @@
                             <h3 class="text-sm font-extrabold text-gray-800">Tabla ARP del Dispositivo</h3>
                             <p class="text-xs text-gray-400">Asignación IP a MAC en interfaces virtuales SVI</p>
                         </div>
-                        <span class="text-xs font-bold text-[#3b5998] bg-blue-100 px-2.5 py-0.5 rounded-full font-mono">{{ count($tablas->arp_table ?? []) }} entradas</span>
+                        <span class="text-xs font-bold text-nm-primary bg-blue-100 px-2.5 py-0.5 rounded-full font-mono">{{ count($tablas->arp_table ?? []) }} entradas</span>
                     </div>
 
                     <div class="overflow-y-auto max-h-72 border border-gray-200 rounded-lg bg-white custom-scrollbar">
@@ -1439,10 +1437,10 @@
                                     <td class="p-2.5 text-gray-600">
                                         <div class="flex flex-col">
                                             <span class="font-bold">{{ $arp['mac'] ?? '' }}</span>
-                                            <span class="text-[10px] text-gray-400 font-sans mt-0.5">{{ \App\Services\MacVendorResolver::resolveVendor($arp['mac'] ?? '') }}</span>
+                                            <span class="text-[11px] text-gray-400 font-sans mt-0.5">{{ \App\Services\MacVendorResolver::resolveVendor($arp['mac'] ?? '') }}</span>
                                         </div>
                                     </td>
-                                    <td class="p-2.5 font-bold text-[#3b5998] font-sans">{{ $arp['interface'] ?? 'VLAN 1' }}</td>
+                                    <td class="p-2.5 font-bold text-nm-primary font-sans">{{ $arp['interface'] ?? 'VLAN 1' }}</td>
                                     <td class="p-2.5 text-right text-gray-500">{{ $arp['age_min'] ?? '-' }}</td>
                                 </tr>
                                 @empty
@@ -1457,7 +1455,7 @@
             {{-- CDP / LLDP Neighbor Matrix --}}
             <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
                 <h3 class="text-sm font-extrabold text-gray-800 mb-1 flex items-center gap-1.5">
-                    <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <svg class="w-4 h-4 text-indigo-500" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0" /> <circle cx="10" cy="8" r="5" /> <path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" /></svg>
                     Matriz de Vecinos de Red (CDP / LLDP)
                 </h3>
                 <p class="text-xs text-gray-400 mb-3">Topología de dispositivos conectados detectados vía protocolos de capa 2</p>
@@ -1492,18 +1490,18 @@
                     @forelse($vecinos as $neighbor)
                     <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-2 hover:shadow-md transition-shadow">
                         <div class="flex items-center justify-between border-b border-gray-100 pb-2">
-                            <span class="text-xs font-bold text-[#3b5998] font-mono">{{ $neighbor['local_port'] }}</span>
-                            <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-purple-50 text-purple-700">{{ $neighbor['capabilities'] }}</span>
+                            <span class="text-xs font-bold text-nm-primary font-mono">{{ $neighbor['local_port'] }}</span>
+                            <span class="text-[11px] uppercase font-bold px-2 py-0.5 rounded bg-purple-50 text-purple-700">{{ $neighbor['capabilities'] }}</span>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-400 uppercase font-semibold text-[10px]">Dispositivo Remoto</p>
+                            <p class="text-xs text-gray-400 uppercase font-semibold text-[11px]">Dispositivo Remoto</p>
                             <p class="text-sm font-extrabold text-gray-900 leading-tight">{{ $neighbor['remote_chassis'] }}</p>
                             <p class="text-[11px] text-gray-500 font-mono mt-0.5">IP: {{ $neighbor['remote_ip'] }}</p>
                         </div>
                         <div class="text-xs text-gray-600 font-mono pt-1">
                             <span>Puerto Remoto:</span> <strong class="text-gray-800">{{ $neighbor['remote_port'] }}</strong>
                         </div>
-                        <div class="text-[10px] text-gray-400 truncate">
+                        <div class="text-[11px] text-gray-400 truncate">
                             {{ $neighbor['platform'] }}
                         </div>
                     </div>
@@ -1531,11 +1529,11 @@
                         @forelse($tablas->vlans_table ?? [] as $vlan)
                         <div class="p-3 hover:bg-gray-50 text-xs">
                             <div class="flex items-center justify-between mb-1">
-                                <span class="font-extrabold text-sm text-[#3b5998]">VLAN {{ $vlan['id'] }}</span>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">{{ $vlan['status'] }}</span>
+                                <span class="font-extrabold text-sm text-nm-primary">VLAN {{ $vlan['id'] }}</span>
+                                <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">{{ $vlan['status'] }}</span>
                             </div>
                             <p class="font-semibold text-gray-700 text-[11px]">{{ $vlan['name'] }}</p>
-                            <div class="text-[10px] text-gray-400 mt-1 font-mono">
+                            <div class="text-[11px] text-gray-400 mt-1 font-mono">
                                 Acceso: <span class="text-gray-600">{{ count($vlan['ports_access'] ?? []) }} puertos</span> | 
                                 Trunk: <span class="text-gray-600">{{ count($vlan['ports_trunk'] ?? []) }} puertos</span>
                             </div>
@@ -1555,27 +1553,27 @@
                             <div>
                                 <h3 class="text-sm font-extrabold text-gray-800 flex items-center gap-2">
                                     <span>Spanning Tree Protocol (STP)</span>
-                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-[#3b5998]">{{ $stp['protocol'] ?? 'Sin dato' }}</span>
+                                    <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-blue-100 text-nm-primary">{{ $stp['protocol'] ?? 'Sin dato' }}</span>
                                 </h3>
                                 <p class="text-xs text-gray-400">Prevención de bucles y topología de conmutación L2</p>
                             </div>
                             <div class="flex items-center gap-3 text-xs font-mono">
-                                <span class="text-gray-500">TCNs: <strong class="text-[#f26419]">{{ $stp['topology_changes'] ?? 'Sin dato' }}</strong></span>
+                                <span class="text-gray-500">TCNs: <strong class="text-[#f07f12]">{{ $stp['topology_changes'] ?? 'Sin dato' }}</strong></span>
                                 <span class="text-gray-500">Root Port: <strong class="text-emerald-600">{{ $stp['root_port'] ?? 'Root / Local' }}</strong></span>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4 text-xs font-mono">
                             <div class="bg-white p-2.5 rounded-lg border border-gray-200">
-                                <span class="text-gray-400 text-[10px] block font-sans uppercase">Root Bridge ID</span>
+                                <span class="text-gray-400 text-[11px] block font-sans uppercase">Root Bridge ID</span>
                                 <span class="font-bold text-gray-800 text-[11px] truncate block" title="{{ $stp['root_bridge_id'] ?? 'N/A' }}">{{ $stp['root_bridge_id'] ?? 'Detectado vía STP' }}</span>
                             </div>
                             <div class="bg-white p-2.5 rounded-lg border border-gray-200">
-                                <span class="text-gray-400 text-[10px] block font-sans uppercase">Root Path Cost</span>
+                                <span class="text-gray-400 text-[11px] block font-sans uppercase">Root Path Cost</span>
                                 <span class="font-bold text-gray-800 text-sm">{{ $stp['root_cost'] ?? 'Sin dato' }}</span>
                             </div>
                             <div class="bg-white p-2.5 rounded-lg border border-gray-200 col-span-2 md:col-span-1">
-                                <span class="text-gray-400 text-[10px] block font-sans uppercase">Último Cambio de Topología</span>
+                                <span class="text-gray-400 text-[11px] block font-sans uppercase">Último Cambio de Topología</span>
                                 <span class="font-bold text-gray-700 text-xs font-sans">{{ $stp['last_tcn'] ?? 'Reciente' }}</span>
                             </div>
                         </div>
@@ -1597,14 +1595,14 @@
                                     @foreach($stp['ports'] as $stpPort)
                                     <tr class="hover:bg-gray-50">
                                         <td class="p-2 font-bold text-gray-800">{{ $stpPort['port'] ?? 'Port' }}</td>
-                                        <td class="p-2 text-[#3b5998] font-bold">{{ $stpPort['role'] ?? '—' }}</td>
+                                        <td class="p-2 text-nm-primary font-bold">{{ $stpPort['role'] ?? '—' }}</td>
                                         <td class="p-2">
                                             @if(($stpPort['state'] ?? '') === 'Forwarding')
-                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Forwarding</span>
+                                                <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-700">Forwarding</span>
                                             @elseif(($stpPort['state'] ?? '') === 'Blocking')
-                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">Blocking</span>
+                                                <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-700">Blocking</span>
                                             @else
-                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700">{{ $stpPort['state'] ?? 'Sin dato' }}</span>
+                                                <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-gray-100 text-gray-700">{{ $stpPort['state'] ?? 'Sin dato' }}</span>
                                             @endif
                                         </td>
                                         <td class="p-2 text-gray-500">{{ $stpPort['cost'] ?? 'Sin dato' }}</td>
@@ -1630,7 +1628,7 @@
                                 <div>
                                     <div class="flex items-center gap-2">
                                         <span class="font-extrabold text-base text-gray-900">{{ $pc['channel'] ?? 'Po1' }}</span>
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">{{ $pc['status'] ?? 'In-Use' }}</span>
+                                        <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-700">{{ $pc['status'] ?? 'In-Use' }}</span>
                                     </div>
                                     <p class="text-xs text-gray-500 mt-1 font-mono">Protocolo: {{ $pc['protocol'] ?? 'Sin dato' }} · Balanceo: {{ $pc['load_balance'] ?? 'Sin dato' }}</p>
                                 </div>
@@ -1638,7 +1636,7 @@
                                     <span class="text-xs font-bold text-gray-400 block uppercase">Miembros Activos</span>
                                     <div class="flex gap-1 mt-0.5">
                                         @foreach($pc['active_members'] ?? [] as $m)
-                                            <span class="px-2 py-0.5 rounded bg-blue-50 text-[#3b5998] font-mono text-xs font-bold border border-blue-200">{{ $m }}</span>
+                                            <span class="px-2 py-0.5 rounded bg-blue-50 text-nm-primary font-mono text-xs font-bold border border-blue-200">{{ $m }}</span>
                                         @endforeach
                                     </div>
                                 </div>
@@ -1664,7 +1662,7 @@
                     {{-- Err-Disabled Ports --}}
                     <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
                         <h3 class="text-sm font-extrabold text-red-700 mb-1 flex items-center gap-1.5">
-                            <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <svg class="w-4 h-4 text-red-500" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /></svg>
                             Puertos en Estado Err-Disabled
                         </h3>
                         <p class="text-xs text-gray-400 mb-3">Puertos apagados preventivamente por el motor de seguridad</p>
@@ -1675,17 +1673,17 @@
                                 <div>
                                     <span class="font-mono font-extrabold text-sm text-red-600">{{ $ed['port'] }}</span>
                                     <p class="text-xs text-gray-600 font-medium mt-0.5">Causa: <strong class="text-red-700 font-mono">{{ $ed['reason'] }}</strong></p>
-                                    <span class="text-[10px] text-gray-400">{{ $ed['timestamp'] }}</span>
+                                    <span class="text-[11px] text-gray-400">{{ $ed['timestamp'] }}</span>
                                 </div>
                                 <div class="text-right font-mono text-xs">
                                     <span class="px-2 py-0.5 rounded bg-red-50 text-red-600 font-bold">Auto-Recovery</span>
-                                    <p class="text-[10px] text-gray-500 mt-1">{{ $ed['recovery_time_remaining_sec'] ?? 180 }}s restantes</p>
+                                    <p class="text-[11px] text-gray-500 mt-1">{{ $ed['recovery_time_remaining_sec'] ?? 180 }}s restantes</p>
                                 </div>
                             </div>
                             @empty
                             <div class="bg-emerald-50/70 p-4 rounded-xl border border-emerald-200 flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="m9 12 2 2 4-4" /></svg>
                                 </div>
                                 <div>
                                     <p class="text-xs font-extrabold text-emerald-800">Estado de Enlaces Seguro</p>
@@ -1722,7 +1720,7 @@
                                         <td class="p-2 font-sans">{{ $ps['action'] ?? 'Restrict' }}</td>
                                         <td class="p-2 {{ ($ps['violations'] ?? 0) > 0 ? 'text-red-600 font-bold' : 'text-gray-400' }}">{{ $ps['violations'] ?? 0 }}</td>
                                         <td class="p-2 font-sans">
-                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ str_contains($ps['status'] ?? '', 'shutdown') ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700' }}">
+                                            <span class="px-2 py-0.5 rounded text-[11px] font-bold {{ str_contains($ps['status'] ?? '', 'shutdown') ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700' }}">
                                                 {{ $ps['status'] ?? 'Active' }}
                                             </span>
                                         </td>
@@ -1753,10 +1751,10 @@
                             <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm text-xs">
                                 <div class="flex items-center justify-between mb-1">
                                     <span class="font-bold text-gray-800">{{ $queue['queue'] ?? 'Queue' }}</span>
-                                    <span class="text-[11px] font-mono font-bold text-[#3b5998]">{{ $queue['allocated_pct'] ?? 25 }}% BW</span>
+                                    <span class="text-[11px] font-mono font-bold text-nm-primary">{{ $queue['allocated_pct'] ?? 25 }}% BW</span>
                                 </div>
                                 <div class="w-full bg-gray-200 rounded-full h-2 mb-2 overflow-hidden">
-                                    <div class="h-2 rounded-full {{ ($queue['buffer_pct'] ?? 0) > 75 ? 'bg-red-500' : (($queue['buffer_pct'] ?? 0) > 50 ? 'bg-amber-500' : 'bg-[#3b5998]') }}" style="width: {{ $queue['buffer_pct'] ?? 0 }}%"></div>
+                                    <div class="h-2 rounded-full {{ ($queue['buffer_pct'] ?? 0) > 75 ? 'bg-red-500' : (($queue['buffer_pct'] ?? 0) > 50 ? 'bg-amber-500' : 'bg-nm-primary') }}" style="width: {{ $queue['buffer_pct'] ?? 0 }}%"></div>
                                 </div>
                                 <div class="flex justify-between text-[11px] text-gray-500 font-mono">
                                     <span>Tx: {{ number_format($queue['tx_packets'] ?? 0) }} pkts</span>
@@ -1783,14 +1781,14 @@
                             <div class="bg-white p-2.5 rounded-lg border border-gray-200 flex items-center justify-between text-xs font-mono">
                                 <div>
                                     <div class="flex items-center gap-2">
-                                        <span class="font-extrabold text-[#3b5998]">{{ $igmp['group_ip'] ?? '' }}</span>
-                                        <span class="px-1.5 py-0.2 rounded bg-blue-50 text-[10px] text-gray-600 font-sans font-bold">VLAN {{ $igmp['vlan'] ?? 1 }}</span>
+                                        <span class="font-extrabold text-nm-primary">{{ $igmp['group_ip'] ?? '' }}</span>
+                                        <span class="px-1.5 py-0.2 rounded bg-blue-50 text-[11px] text-gray-600 font-sans font-bold">VLAN {{ $igmp['vlan'] ?? 1 }}</span>
                                     </div>
                                     <p class="text-[11px] text-gray-500 font-sans mt-0.5">{{ $igmp['group_name'] ?? '' }}</p>
                                 </div>
                                 <div class="text-right">
                                     <span class="text-[11px] text-gray-600 font-bold">{{ count($igmp['members'] ?? []) }} puertos</span>
-                                    <span class="block text-[9px] text-gray-400">{{ $igmp['uptime'] ?? '' }}</span>
+                                    <span class="block text-[11px] text-gray-400">{{ $igmp['uptime'] ?? '' }}</span>
                                 </div>
                             </div>
                             @endif
@@ -1823,7 +1821,7 @@
             <p id="drawerPortAlias" class="text-xs text-gray-500 font-medium mt-0.5"></p>
         </div>
         <button onclick="closePortDrawer()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-700 transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
         </button>
     </div>
 
@@ -1843,7 +1841,7 @@
                 <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
                     <div id="drawerUtilBar" class="h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
-                <div class="flex justify-between text-[10px] text-gray-400 font-mono mt-1">
+                <div class="flex justify-between text-[11px] text-gray-400 font-mono mt-1">
                     <span>0%</span>
                     <span>70% (Alerta)</span>
                     <span>100%</span>
@@ -1853,14 +1851,14 @@
             {{-- Bytes In/Out formatted --}}
             <div class="grid grid-cols-2 gap-3 mb-3">
                 <div class="bg-blue-50/60 p-3 rounded-xl border border-blue-100">
-                    <span class="text-[10px] uppercase font-bold text-[#3b5998] block">Tráfico Entrante (In)</span>
-                    <p id="drawerInOctets" class="text-base font-extrabold text-[#3b5998] font-mono mt-0.5">0 B</p>
-                    <span id="drawerInPkts" class="text-[10px] text-gray-500 font-mono block mt-1">0 ucast</span>
+                    <span class="text-[11px] uppercase font-bold text-nm-primary block">Tráfico Entrante (In)</span>
+                    <p id="drawerInOctets" class="text-base font-extrabold text-nm-primary font-mono mt-0.5">0 B</p>
+                    <span id="drawerInPkts" class="text-[11px] text-gray-500 font-mono block mt-1">0 ucast</span>
                 </div>
                 <div class="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100">
-                    <span class="text-[10px] uppercase font-bold text-emerald-700 block">Tráfico Saliente (Out)</span>
+                    <span class="text-[11px] uppercase font-bold text-emerald-700 block">Tráfico Saliente (Out)</span>
                     <p id="drawerOutOctets" class="text-base font-extrabold text-emerald-700 font-mono mt-0.5">0 B</p>
-                    <span id="drawerOutPkts" class="text-[10px] text-gray-500 font-mono block mt-1">0 ucast</span>
+                    <span id="drawerOutPkts" class="text-[11px] text-gray-500 font-mono block mt-1">0 ucast</span>
                 </div>
             </div>
 
@@ -2149,20 +2147,20 @@
             optContainer.innerHTML = `
                 <div class="grid grid-cols-2 gap-3 text-xs font-mono">
                     <div class="bg-white p-2.5 rounded-lg border border-gray-200">
-                        <span class="text-gray-400 block text-[10px] font-sans">Potencia RX (Recepción)</span>
+                        <span class="text-gray-400 block text-[11px] font-sans">Potencia RX (Recepción)</span>
                         <strong class="text-sm font-extrabold ${data.optica_rx < -10 ? 'text-amber-600' : 'text-emerald-600'}">${data.optica_rx ?? 'N/A'} dBm</strong>
-                        <span class="text-[9px] text-gray-400 block mt-0.5">Rango normal: -1 a -12 dBm</span>
+                        <span class="text-[11px] text-gray-400 block mt-0.5">Rango normal: -1 a -12 dBm</span>
                     </div>
                     <div class="bg-white p-2.5 rounded-lg border border-gray-200">
-                        <span class="text-gray-400 block text-[10px] font-sans">Potencia TX (Emisión)</span>
+                        <span class="text-gray-400 block text-[11px] font-sans">Potencia TX (Emisión)</span>
                         <strong class="text-sm font-extrabold text-blue-600">${data.optica_tx ?? 'N/A'} dBm</strong>
-                        <span class="text-[9px] text-gray-400 block mt-0.5">Rango normal: -1 a -8 dBm</span>
+                        <span class="text-[11px] text-gray-400 block mt-0.5">Rango normal: -1 a -8 dBm</span>
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-2 text-[11px] font-mono border-t border-gray-200 pt-2">
-                    <div><span class="text-gray-400 font-sans block text-[9px]">Temp Láser</span><strong>${data.optica_temp ?? 'N/A'} °C</strong></div>
-                    <div><span class="text-gray-400 font-sans block text-[9px]">Voltaje</span><strong>${data.optica_volt ?? 'N/A'} V</strong></div>
-                    <div><span class="text-gray-400 font-sans block text-[9px]">Bias Láser</span><strong>${data.optica_bias ?? 'N/A'} mA</strong></div>
+                    <div><span class="text-gray-400 font-sans block text-[11px]">Temp Láser</span><strong>${data.optica_temp ?? 'N/A'} °C</strong></div>
+                    <div><span class="text-gray-400 font-sans block text-[11px]">Voltaje</span><strong>${data.optica_volt ?? 'N/A'} V</strong></div>
+                    <div><span class="text-gray-400 font-sans block text-[11px]">Bias Láser</span><strong>${data.optica_bias ?? 'N/A'} mA</strong></div>
                 </div>
             `;
         } else {
@@ -2183,9 +2181,9 @@
                     <div class="bg-amber-500 h-2 rounded-full" style="width: ${Math.min((data.poe_watts / (data.poe_max || 30)) * 100, 100)}%"></div>
                 </div>
                 <div class="grid grid-cols-3 gap-2 text-[11px] font-mono border-t border-gray-200 pt-2 mt-2">
-                    <div><span class="text-gray-400 font-sans block text-[9px]">Estado</span><strong class="${data.poe_status === 'Delivering' ? 'text-emerald-600' : 'text-gray-600'}">${data.poe_status}</strong></div>
-                    <div><span class="text-gray-400 font-sans block text-[9px]">Clase PoE</span><strong>${data.poe_class}</strong></div>
-                    <div><span class="text-gray-400 font-sans block text-[9px]">Voltaje</span><strong>${data.poe_volt} V</strong></div>
+                    <div><span class="text-gray-400 font-sans block text-[11px]">Estado</span><strong class="${data.poe_status === 'Delivering' ? 'text-emerald-600' : 'text-gray-600'}">${data.poe_status}</strong></div>
+                    <div><span class="text-gray-400 font-sans block text-[11px]">Clase PoE</span><strong>${data.poe_class}</strong></div>
+                    <div><span class="text-gray-400 font-sans block text-[11px]">Voltaje</span><strong>${data.poe_volt} V</strong></div>
                 </div>
             `;
         } else {
