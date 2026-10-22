@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AlertasController;
+use App\Http\Controllers\CentroDatosController;
 use App\Http\Controllers\ConsolaSeguraController;
 use App\Http\Controllers\DiscoveryController;
 use App\Http\Controllers\DispositivoController;
@@ -15,11 +17,11 @@ use App\Http\Controllers\TopologiaController;
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    Route::post('/pantalla/mantener-sesion', [PantallaController::class, 'mantener'])->middleware('throttle:30,1')->name('pantalla.mantener');
-
-    Route::get('/setup-2fa', function () {
-        return view('auth.setup-2fa');
-    })->name('setup-2fa');
+    Route::get('/alertas', [AlertasController::class, 'index'])->name('alertas.index');
+    Route::get('/alertas/exportar', [AlertasController::class, 'exportar'])->middleware('throttle:20,1')->name('alertas.exportar');
+    Route::get('/parciales/alertas',fn () => view('partials.alertas-refresco'))->name('parciales.alertas');
+    Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'index'])->name('firewalls.index');
+    Route::post('/pantalla/mantener-sesion',[PantallaController::class, 'mantener'])->middleware('throttle:30,1')->name('pantalla.mantener');
 
     // ==========================================
     // RUTAS ADMINISTRATIVAS
@@ -27,7 +29,10 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['password.confirm:password.confirm,900', 'check.admin'])->group(function () {
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
-        Route::post('/settings/telegram', [SettingController::class, 'guardarTelegram'])->name('settings.telegram');
+        Route::post('/settings/snmpv3', [SettingController::class, 'guardarSnmpv3'])->name('settings.snmpv3');
+        Route::post('/settings/snmpv3/detectar', [SettingController::class, 'detectarSnmpv3'])->middleware('throttle:10,1')->name('settings.snmpv3.detectar');
+        Route::post('/settings/snmpv3/probar',[SettingController::class, 'probarSnmpv3'])->middleware('throttle:10,1')->name('settings.snmpv3.probar');
+        Route::post('/settings/telegram',[SettingController::class, 'guardarTelegram'])->name('settings.telegram');
         Route::post('/settings/telegram/chats', [SettingController::class, 'chatsTelegram'])->middleware('throttle:20,1')->name('settings.telegram.chats');
         Route::post('/settings/telegram/probar', [SettingController::class, 'probarTelegram'])->middleware('throttle:10,1')->name('settings.telegram.probar');
         Route::post('/settings/role/{user}', [SettingController::class, 'updateRole'])->name('settings.update_role');
@@ -46,6 +51,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dispositivos/{id}/pdf', [DispositivoShowController::class, 'descargarPdf'])->whereNumber('id')->name('dispositivos.pdf');
 
     Route::get('/topologia', [TopologiaController::class, 'index'])->name('topologia.index');
+    Route::get('/topologia/centro-datos', [CentroDatosController::class, 'index'])->name('topologia.centro_datos');
+    Route::get('/api/topologia/centro-datos', [CentroDatosController::class, 'datos'])->name('topologia.centro_datos.datos');
     Route::get('/api/topologia/nodos-enlaces', [TopologiaController::class, 'datosGrafos'])->name('topologia.datos');
     Route::get('/api/topologia/sitios', [TopologiaController::class, 'sitios'])->name('topologia.sitios');
     Route::get('/api/dispositivos/{id}/notas', [NotaDispositivoController::class, 'index'])->whereNumber('id')->name('notas.index');

@@ -1,0 +1,18 @@
+[Unit]
+Description=Network Monitor - sondeo SNMP/ICMP en vivo (cada 15 s)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=@USUARIO@
+Group=@USUARIO@
+WorkingDirectory=@APP_DIR@
+Environment=PYTHONUNBUFFERED=1 PYTHONUTF8=1
+ExecStart=@APP_DIR@/.venv/bin/python -u worker/snmp_poller.py
+Restart=always
+RestartSec=10
+UMask=0002
+
+[Install]
+WantedBy=multi-user.target

@@ -29,13 +29,21 @@ class ConfiguracionGeneral extends Model
         'telegram_severidad_min',
         'telegram_resueltas',
         'telegram_imagenes',
+        'snmpv3_usuario',
+        'snmpv3_nivel',
+        'snmpv3_auth_proto',
+        'snmpv3_auth_pass',
+        'snmpv3_priv_proto',
+        'snmpv3_priv_pass',
     ];
 
-    protected $hidden = ['telegram_bot_token'];
+    protected $hidden = ['telegram_bot_token', 'snmpv3_auth_pass', 'snmpv3_priv_pass'];
 
     protected $casts = [
         'telegram_activo' => 'boolean',
         'telegram_bot_token' => 'encrypted',
+        'snmpv3_auth_pass' => 'encrypted',
+        'snmpv3_priv_pass' => 'encrypted',
         'telegram_resueltas' => 'boolean',
         'telegram_imagenes' => 'boolean',
     ];

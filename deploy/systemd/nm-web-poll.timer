@@ -1,0 +1,10 @@
+[Unit]
+Description=Network Monitor - servicios web cada 15 s
+
+[Timer]
+OnBootSec=45
+OnUnitActiveSec=15
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

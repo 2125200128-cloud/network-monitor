@@ -19,16 +19,16 @@
             border: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-        .text-institutional-blue { color: #5b7d95; }
-        .bg-institutional-blue { background-color: #5b7d95; }
-        .hover-bg-institutional-blue:hover { background-color: #5b7d95; }
-        .text-institutional-orange { color: #f07f12; }
+        .text-institutional-blue { color: #667d93; }
+        .bg-institutional-blue { background-color: #667d93; }
+        .hover-bg-institutional-blue:hover { background-color: #667d93; }
+        .text-institutional-orange { color: #ff8300; }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-900 flex items-center justify-center min-h-screen">
     
     <div class="max-w-md w-full mx-auto p-6">
-        <div class="glass-panel rounded-2xl p-8 border-t-4 border-[#f07f12]">
+        <div class="glass-panel rounded-2xl p-8 border-t-4 border-[#ff8300]">
             
             <div class="text-center mb-6">
                 <img src="{{ asset('images/logo.png') }}" alt="Logo Hacienda" class="h-20 mx-auto mb-4 dark:brightness-0 dark:invert dark:opacity-90 transition">

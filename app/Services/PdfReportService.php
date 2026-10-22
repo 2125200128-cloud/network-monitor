@@ -14,9 +14,9 @@ use Carbon\Carbon;
 class InstitutionalPdf extends FPDF
 {
     // Colores del logotipo institucional y neutros de lectura
-    const AZUL = [91, 125, 149];        // #5b7d95
-    const AZUL_OSCURO = [52, 76, 95];
-    const NARANJA = [240, 127, 18];     // #f07f12
+    const AZUL = [102, 125, 147];        // #667d93
+    const AZUL_OSCURO = [70, 80, 85];      // #465055 marino gris
+    const NARANJA = [255, 131, 0];     // #ff8300
     const TEXTO = [28, 39, 60];
     const TENUE = [99, 112, 135];
     const BORDE = [216, 222, 232];
@@ -45,53 +45,50 @@ class InstitutionalPdf extends FPDF
         return $this->GetPageWidth() - $this->lMargin - $this->rMargin;
     }
 
+    // Alto común de los dos logotipos del encabezado (mm): así comparten borde superior e inferior
+    const ALTO_LOGO = 13;
+    const ALIAS_PAGINAS = '{n}';
+
     function Header()
     {
         $w = $this->GetPageWidth();
+        $m = $this->lMargin;
 
-        // Franja superior con los dos colores del logotipo
-        $this->color('fill', self::AZUL);
-        $this->Rect(0, 0, $w, 3, 'F');
-        $this->color('fill', self::NARANJA);
-        $this->Rect(0, 0, 42, 3, 'F');
-
-        $logo = public_path('images/logo.png');
-        if (is_file($logo)) {
-            $this->Image($logo, 12, 8, 46);
+        // SHP a la izquierda y DTIF a la derecha, ambos al mismo alto y pegados a los márgenes
+        $shp = public_path('images/logo.png');
+        if (is_file($shp)) {
+            $this->Image($shp, $m, 9, 0, self::ALTO_LOGO);
+        }
+        $dtif = public_path('images/logo_dtif.png');
+        if (is_file($dtif)) {
+            [$px, $py] = getimagesize($dtif);
+            $anchoDtif = self::ALTO_LOGO * $px / $py;
+            $this->Image($dtif, $w - $this->rMargin - $anchoDtif, 9, $anchoDtif, self::ALTO_LOGO);
         }
 
-        // Dependencia (alineado a la derecha)
-        $this->SetXY(12, 8.5);
-        $this->SetFont('Helvetica', '', 7);
-        $this->color('text', self::TENUE);
-        $this->Cell(0, 4, $this->encodeText('GOBIERNO DEL ESTADO DE JALISCO'), 0, 1, 'R');
-        $this->SetFont('Helvetica', 'B', 8.5);
-        $this->color('text', self::AZUL_OSCURO);
-        $this->Cell(0, 4.5, $this->encodeText('Centro de Operaciones de Red (NOC)'), 0, 1, 'R');
-        $this->SetFont('Helvetica', '', 7);
-        $this->color('text', self::TENUE);
-        $this->Cell(0, 4, $this->encodeText('Sistema de Monitoreo de Infraestructura de Red'), 0, 1, 'R');
-
-        // Título del documento
-        $this->SetXY(12, 27);
+        // Título del documento (mismo borde izquierdo que logos, tarjetas y tablas)
+        $this->SetXY($m, 9 + self::ALTO_LOGO + 6);
         $this->SetFont('Helvetica', 'B', 14);
         $this->color('text', self::TEXTO);
+        // Cell() deja 1 mm de margen interno: se compensa para que el texto quede justo en el borde
+        $this->SetX($m - $this->cMargin);
         $this->Cell(0, 7, $this->encodeText($this->reportTitle), 0, 1, 'L');
         if ($this->reportSubtitle !== '') {
             $this->SetFont('Helvetica', '', 8.5);
             $this->color('text', self::TENUE);
+            $this->SetX($m - $this->cMargin);
             $this->Cell(0, 4.5, $this->encodeText($this->reportSubtitle), 0, 1, 'L');
         }
 
-        $y = $this->GetY() + 2;
+        $y = $this->GetY() + 2.5;
         $this->color('draw', self::BORDE);
         $this->SetLineWidth(0.3);
-        $this->Line(12, $y, $w - 12, $y);
+        $this->Line($m, $y, $w - $this->rMargin, $y);
         $this->color('draw', self::NARANJA);
         $this->SetLineWidth(0.8);
-        $this->Line(12, $y, 30, $y);
+        $this->Line($m, $y, $m + 22, $y);
         $this->SetLineWidth(0.2);
-        $this->SetY($y + 5);
+        $this->SetY($y + 6);
     }
 
     function Footer()
@@ -102,14 +99,22 @@ class InstitutionalPdf extends FPDF
         $this->SetLineWidth(0.3);
         $this->Line(12, $this->GetY(), $w - 12, $this->GetY());
 
+        // Se descuenta el margen interno de Cell para que el texto toque los mismos bordes que la línea
         $this->SetY(-12);
+        $this->SetX($this->lMargin - $this->cMargin);
+        $ancho = $this->ancho() + 2 * $this->cMargin;
         $this->SetFont('Helvetica', '', 7);
         $this->color('text', self::TENUE);
-        $pie = 'Secretaría de la Hacienda Pública · Documento de uso interno · Generado el '
+        // En hoja vertical no cabe el nombre completo de la Dirección: se usa la sigla
+        $dependencia = $this->CurOrientation === 'L'
+            ? 'Secretaría de la Hacienda Pública · Dirección de Tecnología de la Información Financiera'
+            : 'Secretaría de la Hacienda Pública · DTIF';
+        $pie = $dependencia . ' · Documento de uso interno · Generado el '
             . $this->generadoEn->format('d/m/Y H:i') . ' por ' . $this->generadoPor;
-        $this->Cell(($w - 24) * 0.8, 4, $this->encodeText($pie), 0, 0, 'L');
+        $this->Cell($ancho * 0.82, 4, $this->encodeText($this->recortar($pie, $ancho * 0.82 - 2)), 0, 0, 'L');
         $this->SetFont('Helvetica', 'B', 7);
-        $this->Cell(($w - 24) * 0.2, 4, $this->encodeText('Página ' . $this->PageNo() . ' de {nb}'), 0, 0, 'R');
+        // "{n}" mide casi lo mismo que el total real (2 dígitos), así el texto alineado a la derecha no se recorre
+        $this->Cell($ancho * 0.18, 4, $this->encodeText('Página ' . $this->PageNo() . ' de ' . self::ALIAS_PAGINAS), 0, 0, 'R');
     }
 
     // ===== Componentes =====
@@ -129,14 +134,15 @@ class InstitutionalPdf extends FPDF
         $this->asegurarEspacio(16);
         $this->Ln(2);
         $y = $this->GetY();
+        // Marca naranja en el margen; el texto arranca 3.5 mm después (descontando el margen interno de Cell)
         $this->color('fill', self::NARANJA);
-        $this->Rect(12, $y + 1, 1.2, 4.5, 'F');
-        $this->SetX(15.5);
+        $this->Rect($this->lMargin, $y + 1, 1.4, 4.5, 'F');
+        $this->SetX($this->lMargin + 3.5 - $this->cMargin);
         $this->SetFont('Helvetica', 'B', 10.5);
         $this->color('text', self::AZUL_OSCURO);
         $this->Cell(0, 6.5, $this->encodeText($titulo), 0, 1, 'L');
         if ($descripcion) {
-            $this->SetX(15.5);
+            $this->SetX($this->lMargin + 3.5 - $this->cMargin);
             $this->SetFont('Helvetica', '', 8);
             $this->color('text', self::TENUE);
             $this->MultiCell(0, 4, $this->encodeText($descripcion), 0, 'L');
@@ -177,38 +183,43 @@ class InstitutionalPdf extends FPDF
     /** Fila de tarjetas de indicadores: [etiqueta, valor, rgb del acento]. */
     public function tarjetasKpi(array $tarjetas): void
     {
-        $this->asegurarEspacio(24);
+        $this->asegurarEspacio(26);
         $sep = 4;
+        $alto = 20;
         $n = count($tarjetas);
-        $w = ($this->ancho() - $sep * ($n - 1)) / $n;
+        $w = ($this->ancho() - $sep * ($n - 1)) / $n;   // la última tarjeta termina justo en el margen derecho
         $y = $this->GetY();
         foreach (array_values($tarjetas) as $i => [$etiqueta, $valor, $acento]) {
-            $x = 12 + $i * ($w + $sep);
+            $x = $this->lMargin + $i * ($w + $sep);
             $this->color('fill', [255, 255, 255]);
             $this->color('draw', self::BORDE);
-            $this->RoundedRect($x, $y, $w, 20, 2, 'DF');
+            $this->RoundedRect($x, $y, $w, $alto, 2, 'DF');
+            // Barra de acento sobre el borde izquierdo, centrada en el alto de la tarjeta
             $this->color('fill', $acento);
-            $this->Rect($x, $y + 3, 1.2, 14, 'F');
-            $this->SetXY($x + 5, $y + 3.5);
+            $this->Rect($x, $y + 3, 1.4, $alto - 6, 'F');
+            // Etiqueta y valor comparten el mismo borde izquierdo (se descuenta el margen interno de Cell)
+            $this->SetXY($x + 5 - $this->cMargin, $y + 4);
             $this->SetFont('Helvetica', '', 7);
             $this->color('text', self::TENUE);
-            $this->Cell($w - 8, 4, $this->encodeText(mb_strtoupper($etiqueta)), 0, 2, 'L');
+            $this->Cell($w - 7, 4, $this->encodeText(mb_strtoupper($etiqueta)), 0, 2, 'L');
             $this->SetFont('Helvetica', 'B', 15);
             $this->color('text', $acento);
-            $this->Cell($w - 8, 9, $this->encodeText((string) $valor), 0, 0, 'L');
+            $this->Cell($w - 7, 9, $this->encodeText((string) $valor), 0, 0, 'L');
         }
-        $this->SetY($y + 24);
+        $this->SetY($y + $alto + 4);
     }
 
     /** Encabezado de tabla. $cols = [[titulo, ancho, alineación], ...] */
     public function encabezadoTabla(array $cols): void
     {
-        $this->SetX(12);
-        $this->SetFont('Helvetica', 'B', 7.5);
+        // La franja azul se pinta de una pieza: con un relleno por celda quedan hilos blancos entre columnas
         $this->color('fill', self::AZUL);
+        $this->Rect($this->lMargin, $this->GetY(), array_sum(array_column($cols, 1)), 7, 'F');
+        $this->SetX($this->lMargin);
+        $this->SetFont('Helvetica', 'B', 7.5);
         $this->color('text', [255, 255, 255]);
         foreach ($cols as [$titulo, $ancho, $alin]) {
-            $this->Cell($ancho, 7, $this->encodeText($titulo), 0, 0, $alin, true);
+            $this->Cell($ancho, 7, $this->encodeText($titulo), 0, 0, $alin);
         }
         $this->Ln();
     }
@@ -327,7 +338,7 @@ class PdfReportService
     private function nuevoPdf(string $orientacion, string $titulo, string $subtitulo): InstitutionalPdf
     {
         $pdf = new InstitutionalPdf($orientacion, 'mm', 'A4');
-        $pdf->AliasNbPages();
+        $pdf->AliasNbPages(InstitutionalPdf::ALIAS_PAGINAS);
         $pdf->reportTitle = $titulo;
         $pdf->reportSubtitle = $subtitulo;
         $pdf->generadoPor = auth()->user()?->name ?? 'Sistema NOC';
@@ -523,5 +534,67 @@ class PdfReportService
         }
 
         return $this->responder($pdf, 'Inventario_NOC_' . date('Ymd_His') . '.pdf');
+    }
+
+    /** Historial de incidencias (sección Alertas) con los filtros aplicados en pantalla. */
+    public function descargarReporteAlertas(array $f, array $resumen, $filas)
+    {
+        $agrupada = $f['vista'] === 'alarma';
+        $cat = \App\Services\HistorialAlertas::CATEGORIAS;
+        $dur = fn ($s) => \App\Services\HistorialAlertas::duracion($s);
+        $filtrosTexto = collect([
+            $f['severidad'] ? 'severidad ' . $f['severidad'] : null,
+            $f['categoria'] ? 'categoría ' . ($cat[$f['categoria']] ?? $f['categoria']) : null,
+            $f['estado'] ? 'estado ' . $f['estado'] : null,
+            $f['q'] !== '' ? 'búsqueda "' . $f['q'] . '"' : null,
+        ])->filter()->implode(' · ');
+
+        $pdf = $this->nuevoPdf('L', 'Historial de incidencias de red',
+            'Del ' . $f['desde']->format('d/m/Y') . ' al ' . $f['hasta']->format('d/m/Y')
+            . ($filtrosTexto ? ' · ' . $filtrosTexto : '') . ($agrupada ? ' · agrupado por alarma' : ' · cada ocurrencia'));
+
+        $pdf->tarjetasKpi([
+            ['Incidencias', number_format($resumen['total']), InstitutionalPdf::AZUL_OSCURO],
+            ['Alarmas distintas', number_format($resumen['alarmas']), InstitutionalPdf::AZUL_OSCURO],
+            ['Críticas', number_format($resumen['criticas']), InstitutionalPdf::ROJO],
+            ['Tiempo medio de reparación', $dur($resumen['mttr_s']), InstitutionalPdf::VERDE],
+            ['Intermitentes', number_format($resumen['intermitentes']), InstitutionalPdf::AMBAR],
+        ]);
+
+        if ($resumen['top_equipos']->isNotEmpty()) {
+            $w = $pdf->ancho();
+            $cols = [['Equipo con más incidencias', $w * 0.45, 'L'], ['Dirección IP', $w * 0.2, 'L'], ['Incidencias', $w * 0.15, 'C'], ['Tiempo acumulado', $w * 0.2, 'C']];
+            $pdf->seccion('Equipos con más incidencias', 'Tiempo acumulado: suma de la duración de sus alarmas (varias pueden ocurrir a la vez).');
+            $pdf->encabezadoTabla($cols);
+            foreach ($resumen['top_equipos'] as $i => $e) {
+                $pdf->filaTabla($cols, [[$e->nombre ?? '—', InstitutionalPdf::TEXTO, true], $e->ip ?? '—', number_format($e->n), $dur($e->total_s)], $i % 2 === 1);
+            }
+        }
+
+        $w = $pdf->ancho();
+        $sev = fn ($s) => $s === 'critica' ? ['Crítica', InstitutionalPdf::ROJO] : ['Advertencia', InstitutionalPdf::AMBAR];
+        $cols = $agrupada
+            ? [['Alarma', $w * 0.27, 'L'], ['Severidad', $w * 0.08, 'L'], ['Equipo', $w * 0.2, 'L'], ['Veces', $w * 0.06, 'C'],
+                ['Primera', $w * 0.12, 'C'], ['Última', $w * 0.12, 'C'], ['Tiempo acumulado', $w * 0.15, 'C']]
+            : [['Alarma', $w * 0.27, 'L'], ['Severidad', $w * 0.08, 'L'], ['Equipo', $w * 0.2, 'L'], ['Inicio', $w * 0.12, 'C'],
+                ['Resolución', $w * 0.12, 'C'], ['Duración', $w * 0.1, 'C'], ['Estado', $w * 0.11, 'L']];
+        $pdf->seccion($agrupada ? 'Alarmas del periodo' : 'Ocurrencias del periodo',
+            $filas->count() >= 20000 ? 'Se muestran las primeras 20 000 filas; acota el rango o los filtros.' : null);
+        if ($filas->isEmpty()) {
+            $pdf->aviso('No hay incidencias con estos filtros en el periodo.');
+        } else {
+            $pdf->encabezadoTabla($cols);
+            $fecha = fn ($v) => $v ? Carbon::parse($v)->format('d/m/Y H:i') : '—';
+            foreach ($filas as $i => $r) {
+                $pdf->filaTabla($cols, $agrupada
+                    ? [[$r->titulo, InstitutionalPdf::TEXTO, true], $sev($r->severidad), $r->equipo ?? '—', number_format($r->ocurrencias),
+                        $fecha($r->primera), $fecha($r->ultima), $dur($r->total_s)]
+                    : [[$r->titulo, InstitutionalPdf::TEXTO, true], $sev($r->severidad), $r->equipo ?? '—', $fecha($r->fecha_inicio),
+                        $r->fecha_resolucion ? $fecha($r->fecha_resolucion) : ['Activa', InstitutionalPdf::ROJO, true], $dur($r->duracion_s),
+                        $r->estado === 'resuelta' ? 'Resuelta' : ['Activa', InstitutionalPdf::ROJO, true]], $i % 2 === 1);
+            }
+        }
+
+        return $this->responder($pdf, 'Historial_alertas_' . $f['desde']->format('Ymd') . '_' . $f['hasta']->format('Ymd') . '.pdf');
     }
 }

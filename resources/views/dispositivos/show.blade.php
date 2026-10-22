@@ -6,7 +6,7 @@
         :root {
             --institucional-blue: var(--nm-primary);
             --institucional-slate: var(--nm-primary-2);
-            --institucional-orange: #f07f12;
+            --institucional-orange: #ff8300;
         }
 
         /* Faceplate 19" Rackmount Switch */
@@ -63,8 +63,8 @@
         }
         .chassis-phone {
             background: linear-gradient(180deg, #181d27 0%, #12151e 50%, #0a0d14 100%) !important;
-            border-color: #0168fa !important;
-            box-shadow: inset 0 1px 2px rgba(37, 99, 235, 0.25), inset 0 -2px 6px rgba(0, 0, 0, 0.9), 0 12px 30px rgba(0, 0, 0, 0.35) !important;
+            border-color: #667d93 !important;
+            box-shadow: inset 0 1px 2px rgba(102, 125, 147, 0.25), inset 0 -2px 6px rgba(0, 0, 0, 0.9), 0 12px 30px rgba(0, 0, 0, 0.35) !important;
         }
         .chassis-ap {
             background: linear-gradient(180deg, #13221b 0%, #0c1813 50%, #060e0a 100%) !important;
@@ -177,7 +177,7 @@
             z-index: 10;
         }
         .rj45-socket.active-selected {
-            border-color: #f07f12 !important;
+            border-color: #ff8300 !important;
             box-shadow: 0 0 0 2px rgba(242, 100, 25, 0.4), 0 4px 14px rgba(242, 100, 25, 0.3) !important;
         }
         .rj45-clip-notch {
@@ -223,7 +223,7 @@
             z-index: 10;
         }
         .sfp-cage.active-selected {
-            border-color: #f07f12 !important;
+            border-color: #ff8300 !important;
             box-shadow: 0 0 0 2px rgba(242, 100, 25, 0.4), 0 4px 14px rgba(242, 100, 25, 0.3) !important;
         }
         .sfp-latch {
@@ -350,12 +350,12 @@
             color: #94a3b8;
         }
         .dark .nav-tab-btn:hover {
-            color: #4d94fd;
+            color: #667d93;
             background: rgba(96, 165, 250, 0.08);
         }
         .dark .nav-tab-btn.active {
-            color: #4d94fd;
-            border-bottom-color: #4d94fd;
+            color: #667d93;
+            border-bottom-color: #667d93;
             background: rgba(96, 165, 250, 0.12);
         }
         .tab-pane {
@@ -388,7 +388,7 @@
 <div class="max-w-7xl mx-auto space-y-6 pb-12">
 
     {{-- ==================== 1. HERO HEADER ==================== --}}
-    <div class="bg-white dark:bg-nm-surface rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+    <div class="bg-white dark:bg-nm-surface rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6" data-refrescar="ficha-encabezado">
         <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             {{-- Ilustración del modelo --}}
             <div class="w-44 sm:w-52 h-32 sm:h-36 rounded-2xl p-3 border border-slate-700/60 shadow-lg flex-shrink-0 flex items-center justify-center" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
@@ -459,7 +459,7 @@
             </div>
             @endif
 
-            <a href="{{ route('dispositivos.pdf', $dispositivo->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-nm-primary hover:bg-[#1a3d8f] text-white text-xs font-bold transition shadow-sm" title="Descargar la ficha en PDF">
+            <a href="{{ route('dispositivos.pdf', $dispositivo->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-nm-primary hover:bg-[#505b61] text-white text-xs font-bold transition shadow-sm" title="Descargar la ficha en PDF">
                 <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M12 18v-6" /> <path d="m9 15 3 3 3-3" /></svg>
                 Reporte PDF
             </a>
@@ -501,7 +501,7 @@
             $isAP => 'bg-emerald-600',
             $isServer => 'bg-purple-600',
             $isPC => 'bg-cyan-600',
-            $isRouter => 'bg-[#f07f12]',
+            $isRouter => 'bg-[#ff8300]',
             $isNexus => 'bg-indigo-600',
             $isCatalyst => 'bg-nm-primary',
             default => 'bg-slate-700'
@@ -1036,7 +1036,7 @@
         @endif
 
         {{-- ==================== TAB 1: Ficha Técnica & Hardware ==================== --}}
-        <div class="tab-pane active p-6" id="tab-hardware">
+        <div class="tab-pane active p-6" id="tab-hardware" data-refrescar="ficha-hardware">
 
             {{-- Ficha técnica: lo que reporta el equipo (SNMP / CDP-LLDP) y lo que se deduce de su número de parte --}}
             <div class="rounded-2xl p-6 mb-6 shadow-lg text-white" style="background: var(--nm-metal-sheen), var(--nm-metal-navy);">
@@ -1100,7 +1100,13 @@
                             <div class="sm:col-span-2 bg-white/[0.06] backdrop-blur-sm p-3.5 rounded-xl border border-white/10 hover:border-white/25 transition-colors"
                                  x-data="credencialSnmp({{ $dispositivo->id }}, @js($origenSnmp), @js($etiquetasOrigen))">
                                 <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <span class="text-[11px] text-amber-400 uppercase font-bold tracking-wider font-mono">Credencial SNMP v2c (sondeo)</span>
+                                    <span class="text-[11px] text-amber-400 uppercase font-bold tracking-wider font-mono">
+                                        @if($dispositivo->usaSnmpv3())
+                                            Se consulta por SNMPv3 (usuario de firewalls en Configuración)
+                                        @else
+                                            Credencial SNMP v2c (sondeo)
+                                        @endif
+                                    </span>
                                     <span class="text-[11px] font-mono {{ $snmpResponde ? 'text-emerald-400' : 'text-red-400' }}">
                                         {{ $snmpResponde ? 'Responde SNMP' : 'Sin respuesta SNMP' }} · {{ $ultimaMetrica?->fecha_registro ? 'último sondeo ' . \Carbon\Carbon::parse($ultimaMetrica->fecha_registro)->diffForHumans() : 'sin sondeos' }}
                                     </span>
@@ -1361,7 +1367,7 @@
 
         @if(isset($pestanas['tab-addressing']))
         {{-- ==================== TAB 2: Direccionamiento y Descubrimiento ==================== --}}
-        <div class="tab-pane p-6" id="tab-addressing">
+        <div class="tab-pane p-6" id="tab-addressing" data-refrescar="ficha-direccionamiento">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 
                 {{-- CAM Table (Interactive MAC Search) --}}
@@ -1398,7 +1404,7 @@
                                         </div>
                                     </td>
                                     <td class="p-2.5"><span class="px-2 py-0.5 rounded bg-blue-50 text-nm-primary font-bold">{{ isset($entry['vlan']) ? 'VLAN ' . $entry['vlan'] : 'VLAN ?' }}</span></td>
-                                    <td class="p-2.5 font-bold text-[#f07f12]">{{ $entry['port'] ?? '-' }}</td>
+                                    <td class="p-2.5 font-bold text-[#ff8300]">{{ $entry['port'] ?? '-' }}</td>
                                     <td class="p-2.5 text-gray-500 font-sans">{{ $entry['type'] ?? 'Dynamic' }}</td>
                                     <td class="p-2.5 text-right text-gray-500">{{ $entry['age_sec'] ?? '-' }}</td>
                                 </tr>
@@ -1517,7 +1523,7 @@
 
         @if(isset($pestanas['tab-l2']))
         {{-- ==================== TAB 3: L2 / Switching & STP ==================== --}}
-        <div class="tab-pane p-6" id="tab-l2">
+        <div class="tab-pane p-6" id="tab-l2" data-refrescar="ficha-l2">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {{-- VLANs Table --}}
@@ -1558,7 +1564,7 @@
                                 <p class="text-xs text-gray-400">Prevención de bucles y topología de conmutación L2</p>
                             </div>
                             <div class="flex items-center gap-3 text-xs font-mono">
-                                <span class="text-gray-500">TCNs: <strong class="text-[#f07f12]">{{ $stp['topology_changes'] ?? 'Sin dato' }}</strong></span>
+                                <span class="text-gray-500">TCNs: <strong class="text-[#ff8300]">{{ $stp['topology_changes'] ?? 'Sin dato' }}</strong></span>
                                 <span class="text-gray-500">Root Port: <strong class="text-emerald-600">{{ $stp['root_port'] ?? 'Root / Local' }}</strong></span>
                             </div>
                         </div>
@@ -1653,7 +1659,7 @@
 
         @if(isset($pestanas['tab-security']))
         {{-- ==================== TAB 4: Seguridad, QoS y Multicast ==================== --}}
-        <div class="tab-pane p-6" id="tab-security">
+        <div class="tab-pane p-6" id="tab-security" data-refrescar="ficha-seguridad">
             @php $sec = $tablas->security_qos_multicast ?? []; @endphp
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
@@ -2001,6 +2007,12 @@
         };
     }
 </script>
+{{-- Datos de puertos que el refresco automático actualiza (el panel frontal los relee) --}}
+@php
+    $puertosRefresco = json_encode(['detalle' => $interfacesData, 'interfaces' => $interfacesList, 'copper' => $copperPortsList, 'sfp' => $sfpPortsList],
+        JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+@endphp
+<script type="application/json" data-refrescar="ficha-puertos">{!! $puertosRefresco !!}</script>
 <script>
     // Embedded ports telemetry data
     window.__interfaces = @json($interfacesData);
@@ -2017,6 +2029,19 @@
             isServer: {{ $isServer ? 'true' : 'false' }},
             isPC: {{ $isPC ? 'true' : 'false' }},
             selectedPortId: null,
+            init() {
+                // Refresco automático: estado de los puertos sin recargar la ficha
+                document.addEventListener('nm:refrescado', e => {
+                    if (!e.detail.claves.includes('ficha-puertos')) return;
+                    try {
+                        const d = JSON.parse(document.querySelector('[data-refrescar="ficha-puertos"]').textContent);
+                        window.__interfaces = d.detalle;
+                        this.interfaces = d.interfaces;
+                        this.copperPorts = d.copper;
+                        this.sfpPorts = d.sfp;
+                    } catch (err) { /* se conserva lo que había */ }
+                });
+            },
             select(id) {
                 this.selectedPortId = id;
                 window.selectPort(id);

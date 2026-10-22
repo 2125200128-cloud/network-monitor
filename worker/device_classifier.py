@@ -31,9 +31,9 @@ from pysnmp.hlapi.v3arch.asyncio import (
 )
 
 try:
-    from nm_common import db_config, COMUNIDAD_EFECTIVA_SQL, conectar
+    from nm_common import db_config, COMUNIDAD_EFECTIVA_SQL, conectar, credencial_snmp, auth_snmp
 except ImportError:
-    from worker.nm_common import db_config, COMUNIDAD_EFECTIVA_SQL, conectar
+    from worker.nm_common import db_config, COMUNIDAD_EFECTIVA_SQL, conectar, credencial_snmp, auth_snmp
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
@@ -148,7 +148,7 @@ async def walk(engine, auth, target, base_oid, max_rows=2000):
 
 async def gather_evidence(engine, ip, community):
     """Datos propios del equipo. Devuelve None si no responde SNMP."""
-    auth = CommunityData(community, mpModel=1)
+    auth = auth_snmp(community)
     try:
         target = await _target(ip)
         err_ind, err_stat, _, vbs = await get_cmd(
@@ -194,7 +194,7 @@ async def gather_evidence(engine, ip, community):
 
 async def gather_neighbors(engine, ip, community):
     """Vecinos CDP/LLDP vistos por este equipo, con sus capacidades anunciadas."""
-    auth = CommunityData(community, mpModel=1)
+    auth = auth_snmp(community)
     try:
         target = await _target(ip, timeout=2.5, retries=1)
     except Exception:
@@ -444,8 +444,8 @@ async def analizar_inventario(concurrency=20):
 
     async def uno(d):
         async with sem:
-            ev = await gather_evidence(engine, d['ip'], d['comunidad_snmp'] or 'public')
-            vecinos = await gather_neighbors(engine, d['ip'], d['comunidad_snmp'] or 'public') if ev else []
+            ev = await gather_evidence(engine, d['ip'], credencial_snmp(d))
+            vecinos = await gather_neighbors(engine, d['ip'], credencial_snmp(d)) if ev else []
             return d, ev, vecinos
 
     resultados = await asyncio.gather(*(uno(d) for d in devices if d['ip']))

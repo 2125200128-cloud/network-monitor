@@ -19,7 +19,11 @@ class HistoricoServicioWeb extends Model
         'codigo_http',
         'tiempo_respuesta_ms',
         'detalles_error',
-        'created_at'
+        'created_at',
+        'tiempo_dns_ms',
+        'tiempo_conexion_ms',
+        'tiempo_tls_ms',
+        'tiempo_servidor_ms',
     ];
 
     protected $casts = [

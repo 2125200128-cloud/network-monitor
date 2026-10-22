@@ -11,22 +11,85 @@ use App\Models\ConfiguracionDispositivo;
 
 class AlarmDiagnosisService
 {
+    /** Memoria de FortiGate: umbrales por defecto de FortiOS (sale de "verde" al 82 %, modo conserva al 88 %). */
+    public const FORTI_MEM_AVISO_PCT = 82;
+    public const FORTI_MEM_CONSERVA_PCT = 88;
+
     /** Umbrales del NOC para el SLA de los enlaces SD-WAN (el FortiGate no expone sus propios umbrales por SNMP). */
     public const SDWAN_PERDIDA_PCT = 5;
     public const SDWAN_LATENCIA_MS = 150;
     public const SDWAN_JITTER_MS = 30;
+
+    /** Segundos que se comparte el diagnóstico entre usuarios y pestañas (calcularlo tarda ~0.3 s). */
+    public const CACHE_DIAGNOSTICO_S = 5;
+
+    /**
+     * Diagnóstico de toda la red sin estado de usuario, compartido unos segundos para que varias pantallas
+     * refrescando a la vez no lo recalculen cada una. Una falla nueva aparece como mucho 5 s después de medirse.
+     */
+    public static function diagnosticoCompartido(): array
+    {
+        return \Illuminate\Support\Facades\Cache::remember('diagnostico_alarmas_red_fast', self::CACHE_DIAGNOSTICO_S,
+            fn () => (new self())->diagnosticarAlarmasRed(false));
+    }
 
     /**
      * Genera el diagnóstico inteligente de causa raíz para todas las fallas activas en la red.
      */
     public function diagnosticarAlarmasRed(bool $aplicarEstadoUsuario = true): array
     {
-        $alarmas = $this->compilarAlarmas();
+        $alarmas = $this->ordenarRecientesPrimero($this->compilarAlarmas());
         return $aplicarEstadoUsuario ? $this->aplicarEstadoUsuario($alarmas) : $alarmas;
     }
 
     /**
+     * La falla más reciente primero; las que no tienen hora, al final.
+     * Para las que ya están en el historial (noc:sync) se usa su hora real de inicio: varias calculan la hora con la
+     * última lectura del dato (temperatura, err-disabled, hardware) y una falla de días aparecería como "hace 5 s".
+     */
+    private function ordenarRecientesPrimero(array $alarmas): array
+    {
+        $inicios = \App\Models\AlarmaRed::whereIn('clave', array_column($alarmas, 'id'))
+            ->where('estado', '!=', 'resuelta')
+            ->pluck('fecha_inicio', 'clave');
+        foreach ($alarmas as &$a) {
+            if ($inicio = $inicios[$a['id']] ?? null) {
+                $dt = \Carbon\Carbon::parse($inicio);
+                $a['fecha_falla'] = $dt->format('d/m/Y H:i:s');
+                $a['hora_falla'] = $dt->format('h:i:s A');
+                $a['hace_cuanto'] = $dt->diffForHumans();
+                $a['tiempo'] = $a['hora_falla'] . ' (' . $a['hace_cuanto'] . ')';
+            }
+        }
+        unset($a);
+
+        $momento = function (array $a): int {
+            try {
+                return \Carbon\Carbon::createFromFormat('d/m/Y H:i:s', (string) ($a['fecha_falla'] ?? ''))->timestamp;
+            } catch (\Throwable) {
+                return 0;
+            }
+        };
+        usort($alarmas, fn ($a, $b) => $momento($b) <=> $momento($a));
+        return $alarmas;
+    }
+
+    /** Horas que dura un descarte si la falla sigue activa: después vuelve a mostrarse para no olvidarla. */
+    public const HORAS_DESCARTE = 24;
+
+    /** Minutos que vale una lectura SNMP para sostener una alarma (3 ciclos del colector de detalle). */
+    public const MINUTOS_DATO_VALIDO = 15;
+
+    private function datoReciente($fecha): bool
+    {
+        return $fecha && \Carbon\Carbon::parse($fecha)->gt(now()->subMinutes(self::MINUTOS_DATO_VALIDO));
+    }
+
+    /**
      * Marca como leídas u oculta las descartadas según la cuenta autenticada.
+     * La marca vale solo para la ocurrencia actual de la falla: si el equipo se recuperó y volvió a fallar
+     * (alarmas_red registra una ocurrencia posterior a la marca), la alarma reaparece. Un descarte además vence a
+     * las HORAS_DESCARTE horas.
      */
     public function aplicarEstadoUsuario(array $alarmas): array
     {
@@ -34,16 +97,27 @@ class AlarmDiagnosisService
             return $alarmas;
         }
         $userReadMap = \App\Models\NotificacionLeida::where('user_id', auth()->id())
+            ->whereIn('notificacion_id', array_column($alarmas, 'id'))
             ->get()
             ->keyBy('notificacion_id');
+        // Inicio de la ocurrencia abierta de cada alarma (historial que registra noc:sync)
+        $inicios = \App\Models\AlarmaRed::whereIn('clave', $userReadMap->keys())
+            ->where('estado', '!=', 'resuelta')
+            ->pluck('fecha_inicio', 'clave');
+        $limiteDescarte = now()->subHours(self::HORAS_DESCARTE);
 
         $resultado = [];
         foreach ($alarmas as $alarma) {
             $record = $userReadMap[$alarma['id']] ?? null;
-            if ($record?->estado === 'descartada') {
+            $marcadoEn = $record ? \Carbon\Carbon::parse($record->fecha_evento ?? $record->updated_at) : null;
+            $inicio = isset($inicios[$alarma['id']]) ? \Carbon\Carbon::parse($inicios[$alarma['id']]) : null;
+            // La marca es de una ocurrencia anterior: no aplica a la falla actual
+            $vigente = $marcadoEn && !($inicio && $marcadoEn->lt($inicio));
+
+            if ($vigente && $record->estado === 'descartada' && $marcadoEn->gt($limiteDescarte)) {
                 continue;
             }
-            if ($record?->estado === 'leida') {
+            if ($vigente && $record->estado === 'leida') {
                 $alarma['leida'] = true;
             }
             $resultado[] = $alarma;
@@ -109,12 +183,16 @@ class AlarmDiagnosisService
         // 2. ANÁLISIS DE PUERTOS EN ERR-DISABLED (SEGURIDAD / BUCLES)
         // -------------------------------------------------------------
         $errDisabledList = TelemetriaInterfaz::where('is_errdisabled', true)
-            ->with(['interfaz.dispositivo'])
+            ->with(['interfaz.dispositivo.telemetriaChasis'])
             ->get();
 
         foreach ($errDisabledList as $telemetria) {
             $interfaz = $telemetria->interfaz;
             $disp = $interfaz ? $interfaz->dispositivo : null;
+            // Solo con lectura reciente del colector: si el switch dejó de responder, el último valor ya no es real
+            if (!$disp || $disp->estado === 'offline' || !$this->datoReciente($disp->telemetriaChasis?->detalle_medido_en)) {
+                continue;
+            }
             $dispNombre = $disp ? $disp->nombre : 'Switch';
             $intfNombre = $interfaz ? $interfaz->nombre : 'Puerto';
             $motivo = strtoupper($telemetria->errdisabled_reason ?: 'BPDU-Guard / Loop');
@@ -268,6 +346,10 @@ class AlarmDiagnosisService
         // 4. ANÁLISIS DE ALERTAS TÉRMICAS DE HARDWARE
         // -------------------------------------------------------------
         foreach ($dispositivos as $disp) {
+            // La temperatura la lee el sondeo en cada ciclo: un valor viejo (equipo caído o sin SNMP) no es real
+            if ($disp->estado === 'offline' || !$this->datoReciente($disp->telemetriaChasis?->updated_at)) {
+                continue;
+            }
             $temp = (float)($disp->telemetriaChasis->temperatura_c ?? 0);
             if ($temp >= 55.0) {
                 $esCritica = ($temp >= 65.0);
@@ -311,6 +393,39 @@ class AlarmDiagnosisService
             $dt = ($ultimaMetrica && $ultimaMetrica->fecha_registro) ? \Carbon\Carbon::parse($ultimaMetrica->fecha_registro) : ($disp->updated_at ? \Carbon\Carbon::parse($disp->updated_at) : now());
             $fechaFalla = $dt->format('d/m/Y H:i:s');
             $horaFalla = $dt->format('h:i:s A');
+            $isForti = $disp->esFortigate();
+
+            // FortiGate: memoria con los umbrales de FortiOS (sale de "verde" a 82 % y entra en modo conserva a 88 %)
+            if ($isForti && $mem >= self::FORTI_MEM_AVISO_PCT) {
+                $conserva = $mem >= self::FORTI_MEM_CONSERVA_PCT;
+                $alarmas[] = [
+                    'id' => 'ram-' . $disp->id,
+                    'dispositivo_id' => $disp->id,
+                    'tipo' => $conserva ? 'critica' : 'advertencia',
+                    'severidad' => $conserva ? 'critica' : 'advertencia',
+                    'categoria' => 'rendimiento',
+                    'codigo_evento' => $conserva ? 'FORTI_CONSERVE_MODE' : 'FORTI_MEMORY_HIGH',
+                    'titulo' => $conserva ? "FortiGate en modo conserva por memoria ({$mem}%)" : "Memoria del FortiGate alta ({$mem}%)",
+                    'dispositivo' => $disp->nombre,
+                    'ip' => $disp->ip,
+                    'ubicacion' => $disp->ubicacion ?? '',
+                    'mensaje' => "La memoria del FortiGate está al {$mem}%"
+                        . ($conserva ? ': a partir de ' . self::FORTI_MEM_CONSERVA_PCT . '% FortiOS entra en modo conserva.'
+                                     : ' (FortiOS entra en modo conserva al ' . self::FORTI_MEM_CONSERVA_PCT . '%).'),
+                    'causa_raiz' => 'Muchas sesiones concurrentes, inspección profunda (proxy/AV/IPS/SSL), logs en memoria o una fuga de memoria del firmware.',
+                    'impacto' => $conserva
+                        ? 'En modo conserva el FortiGate deja de aceptar o de inspeccionar sesiones nuevas que requieren proxy (AV, filtrado web), según su configuración de fail-open.'
+                        : 'Si sigue subiendo, el equipo entra en modo conserva y empieza a afectar el tráfico nuevo.',
+                    'accion_sugerida' => "En la consola: 'diagnose hardware sysinfo conserve' (umbrales y estado), 'diagnose sys top-mem' (procesos que más usan) y 'get system performance status'.",
+                    'fecha_falla' => $fechaFalla,
+                    'hora_falla' => $horaFalla,
+                    'hace_cuanto' => $dt->diffForHumans(),
+                    'tiempo' => $horaFalla . " (RAM {$mem}%)",
+                    'leida' => false,
+                    'link' => route('dispositivos.show', $disp->id),
+                    'accion' => 'Ver Memoria'
+                ];
+            }
 
             if ($cpu >= $umbralCpu) {
                 $alarmas[] = [
@@ -325,9 +440,15 @@ class AlarmDiagnosisService
                     'ip' => $disp->ip,
                     'ubicacion' => $disp->ubicacion ?? '',
                     'mensaje' => "El procesador alcanzó el {$cpu}% de utilización (Umbral límite: {$umbralCpu}%).",
-                    'causa_raiz' => "Proceso de plano de control demandante. Causas comunes: Tormenta de broadcast/multicast (STP Loop), ráfaga de consultas SNMP, debugs activos en consola o ruteo intensivo.",
-                    'impacto' => "Retardo en el procesamiento de paquetes de control (CDP, LLDP, OSPF/BGP, STP) y latencia en la administración web/SSH.",
-                    'accion_sugerida' => "Ejecutar comando 'show processes cpu sorted 5sec' en la terminal SSH para identificar el proceso o hilo causante.",
+                    'causa_raiz' => $isForti
+                        ? 'Inspección intensiva (IPS, antivirus, inspección SSL), muchas sesiones nuevas por segundo o un proceso del sistema (ipsengine, wad, miglogd) consumiendo de más.'
+                        : "Proceso de plano de control demandante. Causas comunes: Tormenta de broadcast/multicast (STP Loop), ráfaga de consultas SNMP, debugs activos en consola o ruteo intensivo.",
+                    'impacto' => $isForti
+                        ? 'Lentitud en el tráfico que pasa por el firewall, en las VPN y en la administración web/SSH.'
+                        : "Retardo en el procesamiento de paquetes de control (CDP, LLDP, OSPF/BGP, STP) y latencia en la administración web/SSH.",
+                    'accion_sugerida' => $isForti
+                        ? "En la consola del FortiGate: 'diagnose sys top 5 20' (procesos que más CPU usan) y 'get system performance status'."
+                        : "Ejecutar comando 'show processes cpu sorted 5sec' en la terminal SSH para identificar el proceso o hilo causante.",
                     'fecha_falla' => $fechaFalla,
                     'hora_falla' => $horaFalla,
                     'hace_cuanto' => $dt->diffForHumans(),
@@ -338,7 +459,7 @@ class AlarmDiagnosisService
                 ];
             }
 
-            if ($mem >= 85) {
+            if (!$isForti && $mem >= 85) {
                 $alarmas[] = [
                     'id' => 'ram-' . $disp->id,
                     'dispositivo_id' => $disp->id,
@@ -365,7 +486,6 @@ class AlarmDiagnosisService
             }
 
             // 6. ANÁLISIS ESPECIAL DE FIREWALL FORTINET / FORTIGATE (SESIONES ACTIVAS Y SEGURIDAD)
-            $isForti = str_contains(strtolower($disp->nombre . ' ' . $disp->comunidad_snmp), 'forti') || str_starts_with(strtolower($disp->nombre), 'fg-') || str_starts_with(strtolower($disp->nombre), 'fw-');
             if ($isForti && $ultimaMetrica && ($ultimaMetrica->conexiones_activas > 50000)) {
                 $ses = number_format($ultimaMetrica->conexiones_activas);
                 $alarmas[] = [
@@ -473,6 +593,34 @@ class AlarmDiagnosisService
         // 8. ANÁLISIS DE DISPONIBILIDAD DE SERVICIOS Y PÁGINAS WEB
         // -------------------------------------------------------------
         try {
+            // Casi todos los sitios fallaron a la vez: una sola alarma (el problema es del monitor o de su red)
+            if ($sinRed = \App\Services\WebServicePoller::sinConectividad()) {
+                $desde = \Carbon\Carbon::parse($sinRed['desde']);
+                $alarmas[] = [
+                    'id' => 'web-monitor-sin-red',
+                    'tipo' => 'critica',
+                    'severidad' => 'critica',
+                    'categoria' => 'servicio_web',
+                    'codigo_evento' => 'WEB_MONITOR_NO_CONNECTIVITY',
+                    'titulo' => 'El monitor no alcanza los sitios web',
+                    'dispositivo' => 'Monitor de servicios web',
+                    'ip' => gethostname() ?: 'servidor NOC',
+                    'ubicacion' => 'Módulo Servicios Web',
+                    'mensaje' => "Fallaron {$sinRed['fallidos']} de {$sinRed['total']} sitios a la vez"
+                        . ($sinRed['error'] ? " ({$sinRed['error']})" : '') . '. Mientras dure, el estado de cada sitio no se modifica.',
+                    'causa_raiz' => 'Cuando casi todos los sitios fallan al mismo tiempo, lo más probable es que el servidor del NOC haya perdido su salida de red o su DNS, no que todos los sitios estén caídos.',
+                    'impacto' => 'No se puede verificar la disponibilidad de los sitios web mientras dure.',
+                    'accion_sugerida' => '1. Revisar la conexión de red y el DNS del servidor del NOC. 2. Probar desde otro equipo si los sitios abren.',
+                    'fecha_falla' => $desde->format('d/m/Y H:i:s'),
+                    'hora_falla' => $desde->format('h:i:s A'),
+                    'hace_cuanto' => $desde->diffForHumans(),
+                    'tiempo' => $desde->format('h:i:s A'),
+                    'leida' => false,
+                    'link' => route('servicios_web.index'),
+                    'accion' => 'Ver Servicios Web',
+                ];
+            }
+
             $serviciosWebCaidos = \App\Models\ServicioWeb::where('es_activo', true)
                 ->whereIn('estado', ['offline', 'warning'])
                 ->get();
@@ -496,7 +644,8 @@ class AlarmDiagnosisService
                     'dispositivo' => $web->nombre,
                     'ip' => parse_url($web->url, PHP_URL_HOST) ?? $web->url,
                     'ubicacion' => "Módulo Servicios Web [{$web->categoria}]",
-                    'mensaje' => "Página inaccesible o con error. Estado: {$codeStr}{$latenciaStr}. URL: {$web->url}",
+                    'mensaje' => ($isOffline ? 'Página inaccesible o con error' : 'Página degradada (lenta, con error de contenido o 4xx)')
+                        . ". Estado: {$codeStr}{$latenciaStr}. URL: {$web->url}",
                     'causa_raiz' => $web->detalles_error ?: ($isOffline ? 'El servidor web no respondió a la solicitud o se agotó el tiempo de espera.' : 'La página devolvió un error de cliente o latencia elevada.'),
                     'impacto' => "Interrupción en la atención a usuarios / trámites digitales en línea.",
                     'accion_sugerida' => "1. Verificar servicio Apache/IIS/Tomcat o balanceador en el servidor. 2. Probar conectividad hacia la URL: {$web->url}.",
@@ -518,7 +667,9 @@ class AlarmDiagnosisService
         // -------------------------------------------------------------
         foreach ($dispositivos as $disp) {
             $chasis = $disp->telemetriaChasis;
-            if (!$chasis || $disp->estado === 'offline') {
+            // Fuentes, ventiladores, PoE, VPN y HA los lee el colector de detalle (cada 5 min): sin lectura reciente
+            // se retira la alarma en lugar de seguir mostrando el último estado conocido
+            if (!$chasis || $disp->estado === 'offline' || !$this->datoReciente($chasis->detalle_medido_en)) {
                 continue;
             }
             $dt = $chasis->detalle_medido_en ?? $chasis->updated_at ?? now();
@@ -709,6 +860,40 @@ class AlarmDiagnosisService
                     'hora_falla' => $dt->format('h:i:s A'),
                     'hace_cuanto' => $dt->diffForHumans(),
                     'tiempo' => $dt->format('h:i:s A') . " ({$dias} días)",
+                    'leida' => false,
+                    'link' => route('servicios_web.index'),
+                    'accion' => 'Ver Servicios Web',
+                ];
+            }
+
+            // Certificado que no corresponde al dominio de la URL (los que se usan por IP o con CA interna solo
+            // se muestran en Servicios Web: es lo habitual en sistemas internos y no amerita alarma)
+            $sinDominio = \App\Models\ServicioWeb::where('es_activo', true)
+                ->where('ssl_problema', 'like', \App\Services\SslCertificateChecker::PROBLEMA_DOMINIO . '%')
+                ->get()
+                ->reject(fn ($w) => filter_var(parse_url($w->url, PHP_URL_HOST), FILTER_VALIDATE_IP) !== false);
+            foreach ($sinDominio as $web) {
+                $dt = $web->ultimo_chequeo ? \Carbon\Carbon::parse($web->ultimo_chequeo) : now();
+                $host = parse_url($web->url, PHP_URL_HOST) ?? $web->url;
+                $alarmas[] = [
+                    'id' => 'ssl-dominio-' . $web->id,
+                    'servicio_web_id' => $web->id,
+                    'tipo' => 'advertencia',
+                    'severidad' => 'advertencia',
+                    'categoria' => 'servicio_web',
+                    'codigo_evento' => 'SSL_NAME_MISMATCH',
+                    'titulo' => "Certificado SSL de otro dominio: {$web->nombre}",
+                    'dispositivo' => $web->nombre,
+                    'ip' => $host,
+                    'ubicacion' => "Módulo Servicios Web [{$web->categoria}]",
+                    'mensaje' => "El certificado que presenta {$host} no lo nombra. {$web->ssl_problema}",
+                    'causa_raiz' => 'El servidor entrega un certificado emitido para otro nombre (sitio por defecto, balanceador o certificado equivocado).',
+                    'impacto' => 'Los navegadores muestran "la conexión no es privada" y los clientes API rechazan la conexión.',
+                    'accion_sugerida' => "Instalar en el servidor de {$host} un certificado que incluya ese nombre, o revisar el enlace del sitio en IIS/Apache/balanceador.",
+                    'fecha_falla' => $dt->format('d/m/Y H:i:s'),
+                    'hora_falla' => $dt->format('h:i:s A'),
+                    'hace_cuanto' => $dt->diffForHumans(),
+                    'tiempo' => $dt->format('h:i:s A'),
                     'leida' => false,
                     'link' => route('servicios_web.index'),
                     'accion' => 'Ver Servicios Web',

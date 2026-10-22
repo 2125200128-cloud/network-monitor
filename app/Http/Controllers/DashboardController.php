@@ -150,15 +150,13 @@ class DashboardController extends Controller
 
     /**
      * Compila todas las alertas en tiempo real con análisis de CAUSA RAÍZ (desconexiones, cascada, puertos, térmicas, cpu).
-     * El diagnóstico (costoso) se cachea 15 s para todos; el estado leída/descartada se aplica por usuario.
+     * El diagnóstico se comparte unos segundos entre todos; el estado leída/descartada se aplica por usuario.
      */
     public function compilarNotificaciones($dispositivos = null): array
     {
-        $diagnosisService = new \App\Services\AlarmDiagnosisService();
-        $alarmas = \Illuminate\Support\Facades\Cache::remember('diagnostico_alarmas_red_fast', 15,
-            fn () => $diagnosisService->diagnosticarAlarmasRed(false));
+        $alarmas = \App\Services\AlarmDiagnosisService::diagnosticoCompartido();
 
-        return $diagnosisService->aplicarEstadoUsuario($alarmas);
+        return (new \App\Services\AlarmDiagnosisService())->aplicarEstadoUsuario($alarmas);
     }
 
     /**
@@ -375,7 +373,7 @@ class DashboardController extends Controller
                 ];
             }
 
-            $pythonBin = PHP_OS_FAMILY === 'Windows' ? 'python' : 'python3';
+            $pythonBin = escapeshellarg(\App\Support\Python::binario());
             $output = shell_exec("{$pythonBin} " . escapeshellarg($scriptPath) . ' 2>&1');
 
             if (empty($output)) {

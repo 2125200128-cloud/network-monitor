@@ -56,13 +56,8 @@ class DispositivoController extends Controller
         $dispositivo = Dispositivo::findOrFail($id);
         $comunidad = trim((string) ($data['comunidad'] ?? '')) ?: $dispositivo->comunidadEfectiva();
 
-        $localAppData = getenv('LOCALAPPDATA') ?: '';
-        $python = env('PYTHON_PATH', $localAppData ? $localAppData . '\\Programs\\Python\\Python312\\python.exe' : 'python');
-        if (!file_exists($python)) {
-            $python = PHP_OS_FAMILY === 'Windows' ? 'python' : 'python3';
-        }
-
-        $proceso = new \Symfony\Component\Process\Process([$python, base_path('worker/snmp_check.py'), $dispositivo->ip, $comunidad], base_path());
+        $proceso = new \Symfony\Component\Process\Process([\App\Support\Python::binario(), base_path('worker/snmp_check.py'), $dispositivo->ip, $comunidad],
+            base_path(), \App\Support\Python::entorno());
         $proceso->setTimeout(20);
         $proceso->run();
         $res = json_decode(trim($proceso->getOutput()), true)[$dispositivo->ip] ?? null;

@@ -37,7 +37,7 @@
         <!-- Main Selector -->
         <div class="glass-panel rounded-2xl p-6 mb-8">
             <label for="global_dispositivo_id" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Seleccionar Dispositivo Destino</label>
-            <select id="global_dispositivo_id" class="mt-1 block w-full py-2.5 px-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:outline-none focus:ring-[#f07f12] focus:border-[#f07f12] sm:text-sm">
+            <select id="global_dispositivo_id" class="mt-1 block w-full py-2.5 px-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:outline-none focus:ring-[#ff8300] focus:border-[#ff8300] sm:text-sm">
                 <option value="">Seleccione un dispositivo...</option>
                 @foreach($dispositivos as $dispositivo)
                     <option value="{{ $dispositivo->id }}">{{ $dispositivo->nombre }} ({{ $dispositivo->ip }})</option>
@@ -53,19 +53,19 @@
                 <form id="form-create-vlan">
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">VLAN ID (2-4094)</label>
-                        <input type="number" id="vlan_id" min="2" max="4094" required class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#f07f12] focus:border-[#f07f12] sm:text-sm p-2.5">
+                        <input type="number" id="vlan_id" min="2" max="4094" required class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#ff8300] focus:border-[#ff8300] sm:text-sm p-2.5">
                     </div>
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Nombre de la VLAN</label>
-                        <input type="text" id="vlan_name" required pattern="^[a-zA-Z0-9_-]+$" title="Sin espacios ni caracteres especiales" class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#f07f12] focus:border-[#f07f12] sm:text-sm p-2.5" placeholder="Ej. FINANZAS">
+                        <input type="text" id="vlan_name" required pattern="^[a-zA-Z0-9_-]+$" title="Sin espacios ni caracteres especiales" class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#ff8300] focus:border-[#ff8300] sm:text-sm p-2.5" placeholder="Ej. FINANZAS">
                     </div>
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">IP Address (Opcional - para interfaz SVI)</label>
-                        <input type="text" id="ip_address" class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#f07f12] focus:border-[#f07f12] sm:text-sm p-2.5" placeholder="Ej. 192.168.10.1">
+                        <input type="text" id="ip_address" class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#ff8300] focus:border-[#ff8300] sm:text-sm p-2.5" placeholder="Ej. 192.168.10.1">
                     </div>
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Máscara de Subred (Opcional)</label>
-                        <input type="text" id="subnet_mask" class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#f07f12] focus:border-[#f07f12] sm:text-sm p-2.5" placeholder="Ej. 255.255.255.0">
+                        <input type="text" id="subnet_mask" class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#ff8300] focus:border-[#ff8300] sm:text-sm p-2.5" placeholder="Ej. 255.255.255.0">
                     </div>
                     <button type="button" id="btn-create-vlan" class="fancy w-full justify-center">
                         <span class="top-key"></span>
@@ -82,18 +82,18 @@
                 <form id="form-assign-port">
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Nombre de la Interfaz</label>
-                        <input type="text" id="interface_name" required class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#f07f12] focus:border-[#f07f12] sm:text-sm p-2.5" placeholder="Ej. GigabitEthernet0/1 o gi0/1">
+                        <input type="text" id="interface_name" required class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#ff8300] focus:border-[#ff8300] sm:text-sm p-2.5" placeholder="Ej. GigabitEthernet0/1 o gi0/1">
                     </div>
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Modo de Operación</label>
-                        <select id="mode" class="mt-1 block w-full py-2.5 px-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:outline-none focus:ring-[#f07f12] focus:border-[#f07f12] sm:text-sm">
+                        <select id="mode" class="mt-1 block w-full py-2.5 px-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:outline-none focus:ring-[#ff8300] focus:border-[#ff8300] sm:text-sm">
                             <option value="access">Access</option>
                             <option value="trunk">Trunk</option>
                         </select>
                     </div>
                     <div class="mb-4" id="vlan-id-container">
                         <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">VLAN ID (solo modo access)</label>
-                        <input type="number" id="port_vlan_id" min="2" max="4094" class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#f07f12] focus:border-[#f07f12] sm:text-sm p-2.5">
+                        <input type="number" id="port_vlan_id" min="2" max="4094" class="mt-1 block w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white rounded-xl shadow-sm focus:ring-[#ff8300] focus:border-[#ff8300] sm:text-sm p-2.5">
                     </div>
                     <button type="button" id="btn-assign-port" class="fancy w-full justify-center mt-4">
                         <span class="top-key"></span>

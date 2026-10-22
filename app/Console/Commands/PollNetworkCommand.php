@@ -28,12 +28,10 @@ class PollNetworkCommand extends Command
     {
         $this->info('Iniciando sondeo de hardware en tiempo real...');
 
-        $localAppData = getenv('LOCALAPPDATA') ?: '';
-        $defaultPy = $localAppData ? $localAppData . '\\Programs\\Python\\Python312\\python.exe' : 'python';
-        $pythonBin = env('PYTHON_PATH', $defaultPy);
-        if (!file_exists($pythonBin)) $pythonBin = 'python';
+        $pythonBin = \App\Support\Python::binario();
 
-        $process = new Process([$pythonBin, '-c', 'import asyncio; from worker.snmp_poller import run_poll_cycle; asyncio.run(run_poll_cycle())'], base_path());
+        $process = new Process([$pythonBin, '-c', 'import asyncio; from worker.snmp_poller import run_poll_cycle; asyncio.run(run_poll_cycle())'],
+            base_path(), \App\Support\Python::entorno());
         $process->setTimeout(180);
         $process->run();
 

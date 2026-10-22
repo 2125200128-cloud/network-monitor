@@ -37,7 +37,7 @@ class CdpDebugCommand extends Command
         }
 
         $this->line("1. Ejecutando test_cdp.py...");
-        $pythonBin = PHP_OS_FAMILY === 'Windows' ? 'python' : 'python3';
+        $pythonBin = escapeshellarg(\App\Support\Python::binario());
         $output = shell_exec("{$pythonBin} " . escapeshellarg($scriptPath) . ' 2>&1');
 
         if (empty($output)) {

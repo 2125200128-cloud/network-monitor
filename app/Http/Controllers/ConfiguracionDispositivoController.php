@@ -50,13 +50,13 @@ class ConfiguracionDispositivoController extends Controller
         $password = Crypt::decryptString($dispositivo->ssh_password_encrypted);
 
         $process = new Process([
-            env('PYTHON_PATH', 'python'),
+            \App\Support\Python::binario(),
             base_path('worker/ssh_executor.py'),
             $dispositivo->ip,
             (string) ($dispositivo->ssh_port ?: 22),
             $dispositivo->ssh_user ?: 'admin',
             $comandoSsh
-        ], base_path(), ['NOC_SSH_PASSWORD' => $password]);
+        ], base_path(), \App\Support\Python::entorno(['NOC_SSH_PASSWORD' => $password]));
 
         $process->setTimeout(60);
 

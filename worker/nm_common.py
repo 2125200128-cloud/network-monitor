@@ -190,8 +190,90 @@ COMUNIDAD_EFECTIVA_SQL = (
     "COALESCE(NULLIF(TRIM(comunidad_snmp_manual), ''), "
     "CASE WHEN COALESCE(tipo_manual, tipo_detectado) = 'firewall' THEN "
     "NULLIF(TRIM((SELECT comunidad_snmp_firewall FROM configuraciones_generales ORDER BY id LIMIT 1)), '') END, "
-    "comunidad_snmp) AS comunidad_snmp"
+    "comunidad_snmp) AS comunidad_snmp, "
+    "(NULLIF(TRIM(comunidad_snmp_manual), '') IS NOT NULL) AS tiene_comunidad_manual, "
+    "(COALESCE(tipo_manual, tipo_detectado) = 'firewall' OR EXISTS (SELECT 1 FROM telemetria_chasis tc "
+    "WHERE tc.dispositivo_id = dispositivos.id AND UPPER(tc.model_name) LIKE 'FORTIGATE%')) AS es_firewall"
 )
+
+
+# ----------------------------------------------------------------------------
+#  SNMPv3 de firewalls (Configuraciones → Motor SNMP). Las contraseñas las cifra Laravel con APP_KEY.
+# ----------------------------------------------------------------------------
+def descifrar_laravel(texto):
+    """Descifra un valor del cast "encrypted" de Laravel (AES-256-CBC + HMAC-SHA256 con APP_KEY)."""
+    import base64
+    import hashlib
+    import hmac
+    import json
+    from cryptography.hazmat.primitives import padding
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
+    clave = load_env().get('APP_KEY', '')
+    clave = base64.b64decode(clave[7:]) if clave.startswith('base64:') else clave.encode()
+    carga = json.loads(base64.b64decode(texto))
+    mac = hmac.new(clave, (carga['iv'] + carga['value']).encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(mac, carga.get('mac', '')):
+        raise ValueError('MAC inválida: APP_KEY distinta a la que cifró el valor')
+    descifrador = Cipher(algorithms.AES(clave), modes.CBC(base64.b64decode(carga['iv']))).decryptor()
+    datos = descifrador.update(base64.b64decode(carga['value'])) + descifrador.finalize()
+    quitar = padding.PKCS7(128).unpadder()
+    return (quitar.update(datos) + quitar.finalize()).decode('utf-8')
+
+
+_V3_CACHE = {'t': 0.0, 'cred': None}
+
+
+def credencial_v3_firewall():
+    """UsmUserData de los firewalls, o None si no hay SNMPv3 configurado. Se relee de la BD cada 60 s."""
+    import time
+    if time.time() - _V3_CACHE['t'] < 60:
+        return _V3_CACHE['cred']
+    cred = None
+    try:
+        with conectar() as conn:
+            cur = conn.cursor(dictionary=True)
+            cur.execute("SELECT snmpv3_usuario, snmpv3_nivel, snmpv3_auth_proto, snmpv3_auth_pass, snmpv3_priv_proto, snmpv3_priv_pass "
+                        "FROM configuraciones_generales ORDER BY id LIMIT 1")
+            fila = cur.fetchone()
+        if fila and fila['snmpv3_usuario'] and fila['snmpv3_nivel'] == 'noAuthNoPriv':
+            # Usuario sin contraseña (p. ej. el que ya traía el FortiGate): solo lectura, sin autenticación ni cifrado
+            from pysnmp.hlapi.v3arch.asyncio import UsmUserData
+            cred = UsmUserData(fila['snmpv3_usuario'])
+        elif fila and fila['snmpv3_usuario'] and fila['snmpv3_auth_pass']:
+            from pysnmp.hlapi.v3arch.asyncio import (
+                UsmUserData, usmHMACMD5AuthProtocol, usmHMACSHAAuthProtocol, usmHMAC192SHA256AuthProtocol,
+                usmHMAC384SHA512AuthProtocol, usmDESPrivProtocol, usmAesCfb128Protocol, usmAesCfb256Protocol)
+            auth = {'MD5': usmHMACMD5AuthProtocol, 'SHA': usmHMACSHAAuthProtocol, 'SHA256': usmHMAC192SHA256AuthProtocol,
+                    'SHA512': usmHMAC384SHA512AuthProtocol}[fila['snmpv3_auth_proto'] or 'SHA']
+            priv = {'DES': usmDESPrivProtocol, 'AES': usmAesCfb128Protocol, 'AES256': usmAesCfb256Protocol}[fila['snmpv3_priv_proto'] or 'AES']
+            if fila['snmpv3_nivel'] == 'authPriv' and fila['snmpv3_priv_pass']:
+                cred = UsmUserData(fila['snmpv3_usuario'], descifrar_laravel(fila['snmpv3_auth_pass']),
+                                   descifrar_laravel(fila['snmpv3_priv_pass']), authProtocol=auth, privProtocol=priv)
+            else:
+                cred = UsmUserData(fila['snmpv3_usuario'], descifrar_laravel(fila['snmpv3_auth_pass']), authProtocol=auth)
+    except Exception as e:
+        print(f"[SNMPv3] No se pudieron cargar las credenciales de firewalls: {e}", flush=True)
+    _V3_CACHE.update(t=time.time(), cred=cred)
+    return cred
+
+
+def credencial_snmp(dev):
+    """Credencial de un equipo leído con COMUNIDAD_EFECTIVA_SQL: la comunidad de su ficha manda; si no tiene y es
+    firewall, SNMPv3 de Configuraciones (si está definido); si no, su comunidad v2c."""
+    if not dev.get('tiene_comunidad_manual') and dev.get('es_firewall'):
+        v3 = credencial_v3_firewall()
+        if v3 is not None:
+            return v3
+    return dev.get('comunidad_snmp') or 'public'
+
+
+def auth_snmp(credencial):
+    """Objeto de autenticación de pysnmp: acepta una comunidad (texto, v2c) o un UsmUserData (v3)."""
+    if isinstance(credencial, str):
+        from pysnmp.hlapi.v3arch.asyncio import CommunityData
+        return CommunityData(credencial, mpModel=1)
+    return credencial
 
 
 # ifType de IF-MIB que corresponden a puertos físicos Ethernet

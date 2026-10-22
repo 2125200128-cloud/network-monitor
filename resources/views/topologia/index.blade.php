@@ -126,6 +126,7 @@
     <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-white dark:bg-nm-surface rounded-xl px-4 py-2 shadow-sm border border-gray-100 dark:border-slate-800 flex-shrink-0">
         <div class="flex items-center gap-2.5">
             <h1 class="text-base font-bold text-gray-900 dark:text-white">Topología</h1>
+            @include('topologia.partials.pestanas', ['activa' => 'red'])
             <span id="liveStatusDot" class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400" title="Estado del monitoreo en vivo">
                 <i class="w-2 h-2 rounded-full bg-slate-400"></i><span>En vivo</span>
             </span>
@@ -162,7 +163,7 @@
             <div class="nm-toolbar nm-glass interactive-bar-island" role="toolbar" aria-label="Herramientas del mapa" style="pointer-events: auto;">
 
                 <div class="nm-seg" role="group" aria-label="Disposición del mapa">
-                    <button type="button" id="btnLayoutTree" onclick="setLayout('tree')" class="nm-tool" title="Organizar en niveles jerárquicos (núcleo a acceso)">
+                    <button type="button" id="btnLayoutTree" onclick="setLayout('tree')" class="nm-tool" title="Ordenar en árbol desde el núcleo, sin encimar equipos (se guarda para todos)">
                         <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1" /> <rect x="2" y="16" width="6" height="6" rx="1" /> <rect x="9" y="2" width="6" height="6" rx="1" /> <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" /> <path d="M12 12V8" /></svg><span>Jerárquico</span>
                     </button>
                     <button type="button" id="btnLayoutFree" onclick="setLayout('free')" class="nm-tool active" title="Disposición orgánica libre">
@@ -201,6 +202,9 @@
                 <div class="flex items-center gap-1" role="group" aria-label="Acciones">
                     <button type="button" onclick="resetZoom()" class="nm-tool" title="Centrar y encuadrar la vista completa">
                         <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2" /> <path d="M17 3h2a2 2 0 0 1 2 2v2" /> <path d="M21 17v2a2 2 0 0 1-2 2h-2" /> <path d="M7 21H5a2 2 0 0 1-2-2v-2" /></svg><span>Ver todo</span>
+                    </button>
+                    <button type="button" onclick="vistaLegible()" class="nm-tool" title="Acercar al switch core de Configuración con los equipos a tamaño legible">
+                        <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /><path d="M11 8v6M8 11h6" /></svg><span>Núcleo</span>
                     </button>
                     <button type="button" onclick="openDiscoveryModal()" class="nm-tool" title="Auto-descubrimiento por SNMP (CDP/LLDP)">
                         <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19.07 4.93A10 10 0 0 0 6.99 3.34" /> <path d="M4 6h.01" /> <path d="M2.29 9.62A10 10 0 1 0 21.31 8.35" /> <path d="M16.24 7.76A6 6 0 1 0 8.23 16.67" /> <path d="M12 18h.01" /> <path d="M17.99 11.66A6 6 0 0 1 15.77 16.67" /> <circle cx="12" cy="12" r="2" /> <path d="m13.41 10.59 5.66-5.66" /></svg><span>Descubrir</span>
@@ -359,9 +363,9 @@
                 </div>
                 <button type="button" onclick="cerrarRecuadroMapa()" class="w-7 h-7 -mr-1 -mt-1 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-500/10 text-lg leading-none" aria-label="Ocultar recuadro del mapa">&times;</button>
             </div>
-            <button type="button" id="recuadroMapaSvg" onclick="cambiarVistaMapa(mapaJalisco.vista === 'zmg' ? 'jalisco' : 'zmg')" class="block w-full rounded-lg overflow-hidden bg-[var(--nm-sunken)] border border-[var(--nm-border)] hover:border-[#f07f12] transition-colors" aria-label="Ver en grande el mapa de la ZMG"></button>
+            <button type="button" id="recuadroMapaSvg" onclick="cambiarVistaMapa(mapaJalisco.vista === 'zmg' ? 'jalisco' : 'zmg')" class="block w-full rounded-lg overflow-hidden bg-[var(--nm-sunken)] border border-[var(--nm-border)] hover:border-[#ff8300] transition-colors" aria-label="Ver en grande el mapa de la ZMG"></button>
             <div class="flex items-center justify-between mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-                <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#f07f12]"></span>Cabecera municipal</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#ff8300]"></span>Cabecera municipal</span>
                 <span>Fuente: INEGI</span>
             </div>
         </div>
@@ -613,7 +617,7 @@
 
                 {{-- Action Links --}}
                 <div class="pt-2 flex flex-col gap-2">
-                    <a id="drawerDeviceLink" href="#" class="w-full py-2.5 px-3 rounded-xl bg-nm-primary hover:bg-[#1a3d8f] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+                    <a id="drawerDeviceLink" href="#" class="w-full py-2.5 px-3 rounded-xl bg-nm-primary hover:bg-[#505b61] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
                         <span>Ver Ficha Técnica y Puertos</span>
                         <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /> <path d="m12 5 7 7-7 7" /></svg>
                     </a>
@@ -1387,25 +1391,20 @@
                     shape: esInfra ? 'image' : 'dot',
                     image: esInfra ? (imagenRuta || '/img/renders/switch_default.png') : undefined,
                     size: node.size || imgInfo.size || (esInfra ? 145 : 120),
-                    color: esInfra ? undefined : { background: '#0ea5e9', border: '#0284c7' },
-                    font: { 
-                        color: isDark ? '#f8fafc' : '#0f172a', 
-                        face: 'Inter, system-ui, sans-serif', 
-                        size: 16,
-                        vadjust: 38,
-                        strokeWidth: 3.5,
-                        strokeColor: isDark ? '#090e18' : '#ffffff'
-                    },
+                    color: esInfra ? undefined : { background: '#667d93', border: '#667d93' },
+                    font: fuenteEtiqueta(isDark),
                     customData: {
                         ...cData,
                         rol: esInfra ? (cData.rol || imgInfo.rol) : 'ENDPOINT',
                         tipo_equipo: esInfra ? (cData.tipo_equipo || imgInfo.tipo_equipo) : 'Dispositivo Final'
                     },
                     title: undefined,
-                    x: savedPositions[node.id] ? savedPositions[node.id].x : (node.x !== undefined ? node.x : undefined),
-                    y: savedPositions[node.id] ? savedPositions[node.id].y : (node.y !== undefined ? node.y : undefined)
+                    x: savedPositions[node.id] ? savedPositions[node.id].x : (node.x ?? undefined),
+                    y: savedPositions[node.id] ? savedPositions[node.id].y : (node.y ?? undefined)
                 };
             });
+            // Equipos sin posición (recién descubiertos): se colocan junto a sus vecinos al terminar de crear la red
+            const sinPosicion = mappedNodes.filter(n => n.x === undefined || n.y === undefined).map(n => n.id);
 
             // Instanciar datasets de Vis.js
             nodesDataSet = new vis.DataSet(mappedNodes);
@@ -1449,15 +1448,7 @@
                 nodes: {
                     borderWidth: 0,
                     borderWidthSelected: 0,
-                    font: {
-                        size: 16,
-                        color: isDark ? '#f8fafc' : '#0f172a',
-                        face: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                        vadjust: 38,
-                        strokeWidth: 3.5,
-                        strokeColor: isDark ? '#090e18' : '#ffffff',
-                        align: 'center'
-                    },
+                    font: { ...fuenteEtiqueta(isDark), align: 'center' },
                     // Sombras desactivadas: se recalculan por nodo en cada cuadro y frenan el lienzo
                     shadow: { enabled: false }
                 },
@@ -1469,12 +1460,14 @@
                         strokeWidth: 0,
                         align: 'horizontal'
                     },
-                    smooth: { type: 'continuous' },
+                    // Curva vertical (organigrama): con el acomodo en árbol baja de cada equipo a sus hijos sin arcos cruzados
+                    smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.45 },
                     color: { color: '#10b981', opacity: 0.5 },
                     width: 2.5
                 },
+                // Sin física al cargar: el plano guardado se respeta tal cual y lo que falta lo coloca acomodarFaltantes()
                 physics: {
-                    enabled: !hasSavedPositions,
+                    enabled: false,
                     solver: 'barnesHut',
                     barnesHut: {
                         gravitationalConstant: -55000,
@@ -1515,39 +1508,40 @@
             startTrafficAnimationLoop();
 
             // Vista general completa sin auto-zoom a nodos específicos
+            // Al abrir: la red completa (acercarse al núcleo es opcional, con el botón "Núcleo")
             function frameInitialView() {
-                if (!network) return;
-                network.fit({
-                    animation: { duration: 600, easingFunction: 'easeInOutQuad' },
-                    padding: 80
-                });
+                resetZoom();
             }
+            network.on('zoom', ajustarEtiquetas);
+            network.on('animationFinished', ajustarEtiquetas);
 
-            if (hasSavedPositions) {
-                physicsEnabled = false;
-                const btnPhys = document.getElementById('btnTogglePhysics');
-                const labelPhys = document.getElementById('physicsStatusLabel');
-                if (btnPhys) btnPhys.classList.remove('active');
-                if (labelPhys) labelPhys.textContent = 'Física';
-                setTimeout(frameInitialView, 150);
-            }
+            physicsEnabled = false;
+            const btnPhysIni = document.getElementById('btnTogglePhysics');
+            const labelPhysIni = document.getElementById('physicsStatusLabel');
+            if (btnPhysIni) btnPhysIni.classList.remove('active');
+            if (labelPhysIni) labelPhysIni.textContent = 'Física';
 
-            // Encuadre automático y CONGELACIÓN de física al estabilizar
-            network.once('stabilizationIterationsDone', function() {
-                network.storePositions();
-                network.setOptions({ physics: { enabled: false } });
-                physicsEnabled = false;
-                
-                const currentPositions = network.getPositions();
-                saveNodePositionsToDatabase(currentPositions);
-
-                const btnPhys = document.getElementById('btnTogglePhysics');
-                const labelPhys = document.getElementById('physicsStatusLabel');
-                if (btnPhys) btnPhys.classList.remove('active');
-                if (labelPhys) labelPhys.textContent = 'Física';
-
-                setTimeout(frameInitialView, 150);
-            });
+            // Las imágenes deben estar medidas antes de acomodar (el ancho real de cada panel evita encimarlos)
+            network.once('afterDrawing', () => setTimeout(() => {
+                if (!hasSavedPositions) {
+                    ordenarTopologia();                 // primera vez: árbol completo desde el núcleo
+                } else if (sinPosicion.length) {
+                    acomodarFaltantes(sinPosicion);     // solo los recién descubiertos, junto a sus vecinos
+                    frameInitialView();
+                } else {
+                    frameInitialView();
+                }
+                // Llegada desde una alerta (?foco=id): centrar y seleccionar ese equipo
+                const foco = Number(new URLSearchParams(location.search).get('foco'));
+                if (foco && nodesDataSet.get(foco)) {
+                    setTimeout(() => {
+                        network.selectNodes([foco]);
+                        network.focus(foco, { scale: Math.max(network.getScale(), 180 / medirNodo(foco).w), animation: { duration: 700, easingFunction: 'easeInOutQuad' } });
+                        nodoSeleccionado = foco;
+                        if (typeof showDeviceDetails === 'function') showDeviceDetails(foco);
+                    }, 700);
+                }
+            }, 120));
 
             // ==================== TOOLTIP OLED INTELIGENTE ====================
             
@@ -1628,20 +1622,28 @@
                         const isDown = estadoEnlace === 'DOWN';
                         const isSaturated = (parseFloat(edge.customData?.saturacion_pct) || 0) > 75;
 
-                        // Pantalla quieta: solo se animan enlaces UP/DEGRADED con carga alta o del equipo seleccionado
+                        // Se animan todos los enlaces activos; el uso define velocidad y cantidad de pulsos.
+                        // Con un equipo seleccionado, solo los suyos (para seguir su tráfico).
                         const util = parseFloat(edge.customData?.saturacion_pct) || 0;
+                        const delSeleccionado = nodoSeleccionado === null || edge.from === nodoSeleccionado || edge.to === nodoSeleccionado;
                         const animar = trafficSimulationEnabled
                             && (estadoEnlace === 'UP' || estadoEnlace === 'DEGRADED')
-                            && (util >= BEAMS_MIN_UTIL || (nodoSeleccionado !== null && (edge.from === nodoSeleccionado || edge.to === nodoSeleccionado)));
+                            && delSeleccionado;
                         if (animar) {
                             hacesDibujados++;
                             const seed = ((edge.from * 23 + edge.to * 47) % 100) / 100;
-                            const speed = 0.35;
-                            const beamSpan = 0.14; // Porcentaje del cable ocupado por la estela del haz
+                            const speed = 0.22 + Math.min(util, 100) / 100 * 0.55;
+                            // Con la red completa en pantalla (cientos de enlaces) un pulso delgado por enlace y sin
+                            // retorno; al acercarse, todos los pulsos a tamaño completo
+                            const lejos = network.getScale() < BEAMS_ESCALA_DETALLE;
+                            const pulsos = !lejos && util >= BEAMS_MIN_UTIL ? 2 : 1;
+                            const beamSpan = lejos ? 0.1 : 0.14; // Porcentaje del cable ocupado por la estela del haz
+                            // Grosor en píxeles de pantalla: se ve igual al alejar o acercar el zoom
+                            const u = px(1) * (lejos ? 0.6 : 1);
 
                             // 1. Haz Principal (Forward: Origen ➔ Destino)
-                            for (let k = 0; k < 2; k++) {
-                                const rawPhase = (trafficAnimTime * speed + seed + (k * 0.5)) % 1;
+                            for (let k = 0; k < pulsos; k++) {
+                                const rawPhase = (trafficAnimTime * speed + seed + (k / pulsos)) % 1;
                                 // Rango activo entre 0.08 y 0.92 para no tapar los chasis
                                 const tHead = 0.08 + rawPhase * 0.84;
                                 const tTail = Math.max(0.04, tHead - beamSpan);
@@ -1650,50 +1652,45 @@
                                 const tailPt = getPointOnVisEdge(visEdge, fromPos, toPos, tTail);
 
                                 ctx.save();
+                                // Saturado: ámbar; normal: cian eléctrico (contrasta con el cable verde y con el fondo claro u oscuro)
+                                const [r, g, b] = isSaturated ? [245, 158, 11] : [102, 125, 147];
                                 const grad = ctx.createLinearGradient(tailPt.x, tailPt.y, headPt.x, headPt.y);
-                                let glowColor;
-                                if (isSaturated) {
-                                    grad.addColorStop(0, 'rgba(239, 68, 68, 0)');
-                                    grad.addColorStop(0.4, 'rgba(245, 158, 11, 0.7)');
-                                    grad.addColorStop(0.9, 'rgba(251, 191, 36, 1)');
-                                    grad.addColorStop(1, '#ffffff');
-                                    glowColor = 'rgba(245, 158, 11, 0.35)';
-                                } else {
-                                    // Cyber Neon: Cyan -> Esmeralda -> Núcleo Blanco
-                                    grad.addColorStop(0, 'rgba(6, 182, 212, 0)');
-                                    grad.addColorStop(0.35, 'rgba(16, 185, 129, 0.75)');
-                                    grad.addColorStop(0.85, 'rgba(52, 211, 153, 1)');
-                                    grad.addColorStop(1, '#ffffff');
-                                    glowColor = 'rgba(16, 185, 129, 0.35)';
-                                }
-                                ctx.strokeStyle = grad;
-                                ctx.lineWidth = 3.5;
+                                grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0)`);
+                                grad.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.6)`);
+                                grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.9)`);
                                 ctx.lineCap = 'round';
+                                ctx.lineJoin = 'round';
 
-                                // Dibujar el segmento curvo muestreando puntos exactos sobre la spline del cable
-                                ctx.beginPath();
-                                const samples = 8;
+                                // Segmento curvo muestreando puntos exactos sobre la curva del cable
+                                const trazo = new Path2D();
+                                const samples = 10;
                                 for (let s = 0; s <= samples; s++) {
                                     const st = tTail + (tHead - tTail) * (s / samples);
                                     const pt = getPointOnVisEdge(visEdge, fromPos, toPos, st);
-                                    if (s === 0) ctx.moveTo(pt.x, pt.y);
-                                    else ctx.lineTo(pt.x, pt.y);
+                                    if (s === 0) trazo.moveTo(pt.x, pt.y);
+                                    else trazo.lineTo(pt.x, pt.y);
                                 }
-                                ctx.stroke();
+                                // 1) Brillo suave  2) Haz de color
+                                ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.14)`;
+                                ctx.lineWidth = 6 * u;
+                                ctx.stroke(trazo);
+                                ctx.strokeStyle = grad;
+                                ctx.lineWidth = 2.6 * u;
+                                ctx.stroke(trazo);
 
-                                // Fotón/Paquete Líder: halo translúcido en lugar de shadowBlur (mucho más barato)
+                                // Paquete líder: punto blanco con borde de color
                                 ctx.beginPath();
-                                ctx.arc(headPt.x, headPt.y, 7, 0, Math.PI * 2);
-                                ctx.fillStyle = glowColor;
-                                ctx.fill();
-                                ctx.beginPath();
-                                ctx.arc(headPt.x, headPt.y, 3.2, 0, Math.PI * 2);
+                                ctx.arc(headPt.x, headPt.y, 2.8 * u, 0, Math.PI * 2);
                                 ctx.fillStyle = '#ffffff';
                                 ctx.fill();
+                                ctx.lineWidth = 1.2 * u;
+                                ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
+                                ctx.stroke();
                                 ctx.restore();
                             }
 
-                            // 2. Haz Secundario / ACK (Retorno Full-Duplex: Destino ➔ Origen)
+                            // 2. Haz Secundario / ACK (Retorno Full-Duplex: Destino ➔ Origen), solo de cerca
+                            if (!lejos) {
                             const revRawPhase = (trafficAnimTime * (speed * 1.15) + seed * 1.7) % 1;
                             const tRevHead = 0.92 - revRawPhase * 0.84;
                             const tRevTail = Math.min(0.96, tRevHead + (beamSpan * 0.75));
@@ -1702,33 +1699,32 @@
                             const revTailPt = getPointOnVisEdge(visEdge, fromPos, toPos, tRevTail);
 
                             ctx.save();
+                            // Retorno: violeta, un poco más delgado que el de ida
                             const revGrad = ctx.createLinearGradient(revTailPt.x, revTailPt.y, revHeadPt.x, revHeadPt.y);
-                            revGrad.addColorStop(0, 'rgba(56, 189, 248, 0)');
-                            revGrad.addColorStop(0.6, 'rgba(99, 102, 241, 0.8)');
-                            revGrad.addColorStop(1, '#ffffff');
-                            ctx.strokeStyle = revGrad;
-                            ctx.lineWidth = 2.4;
+                            revGrad.addColorStop(0, 'rgba(139, 92, 246, 0)');
+                            revGrad.addColorStop(0.5, 'rgba(139, 92, 246, 0.45)');
+                            revGrad.addColorStop(1, 'rgba(139, 92, 246, 0.75)');
                             ctx.lineCap = 'round';
+                            ctx.lineJoin = 'round';
 
-                            ctx.beginPath();
-                            const revSamples = 6;
+                            const revTrazo = new Path2D();
+                            const revSamples = 8;
                             for (let s = 0; s <= revSamples; s++) {
                                 const st = tRevTail + (tRevHead - tRevTail) * (s / revSamples);
                                 const pt = getPointOnVisEdge(visEdge, fromPos, toPos, st);
-                                if (s === 0) ctx.moveTo(pt.x, pt.y);
-                                else ctx.lineTo(pt.x, pt.y);
+                                if (s === 0) revTrazo.moveTo(pt.x, pt.y);
+                                else revTrazo.lineTo(pt.x, pt.y);
                             }
-                            ctx.stroke();
+                            ctx.strokeStyle = revGrad;
+                            ctx.lineWidth = 2 * u;
+                            ctx.stroke(revTrazo);
 
                             ctx.beginPath();
-                            ctx.arc(revHeadPt.x, revHeadPt.y, 5.5, 0, Math.PI * 2);
-                            ctx.fillStyle = 'rgba(99, 102, 241, 0.3)';
-                            ctx.fill();
-                            ctx.beginPath();
-                            ctx.arc(revHeadPt.x, revHeadPt.y, 2.4, 0, Math.PI * 2);
-                            ctx.fillStyle = '#ffffff';
+                            ctx.arc(revHeadPt.x, revHeadPt.y, 2 * u, 0, Math.PI * 2);
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
                             ctx.fill();
                             ctx.restore();
+                            }
                         }
 
                         // Badges de puertos colocados exactamente en los extremos de la curva del cable
@@ -1895,7 +1891,7 @@
             if (d.estado === 'online') {
                 badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700';
             } else if (d.estado === 'warning') {
-                badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-100 text-[#f07f12]';
+                badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-100 text-[#ff8300]';
             } else {
                 badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-red-100 text-red-700';
             }
@@ -2071,7 +2067,7 @@
             if (l.estado === 'UP') {
                 badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700';
             } else if (l.estado === 'DEGRADED') {
-                badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-100 text-[#f07f12]';
+                badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-100 text-[#ff8300]';
             } else if (l.estado === 'UNKNOWN') {
                 badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-gray-100 text-gray-600';
             } else {
@@ -2123,8 +2119,9 @@
         // Redibujar el lienzo completo es caro: se limita a ~30 FPS, se pausa con la pestaña oculta
         // y cuando el zoom es tan lejano que los haces no se distinguen.
         const BEAMS_FRAME_MS = 1000 / 30;
-        const BEAMS_MIN_SCALE = 0.2;
-        const BEAMS_MIN_UTIL = 60; // % de utilización a partir del cual el enlace se anima siempre
+        const BEAMS_MIN_SCALE = 0.01;  // los haces se dibujan en píxeles de pantalla: se ven también con la red completa
+        const BEAMS_MIN_UTIL = 60;     // % de utilización a partir del cual el enlace lleva un pulso más
+        const BEAMS_ESCALA_DETALLE = 0.07; // por debajo (red completa): haces discretos; por encima: completos
         let hacesActivos = 0;
         let nodoSeleccionado = null;
 
@@ -2160,6 +2157,7 @@
                     },
                     padding: 80
                 });
+                setTimeout(ajustarEtiquetas, 850);
             }
         }
 
@@ -2307,25 +2305,10 @@
                 if (btnTree) btnTree.classList.add('active');
                 if (btnFree) btnFree.classList.remove('active');
 
-                network.setOptions({
-                    layout: {
-                        hierarchical: {
-                            enabled: true,
-                            direction: 'UD',
-                            sortMethod: 'directed',
-                            nodeSpacing: 450,
-                            levelSeparation: 480
-                        }
-                    },
-                    physics: { enabled: false }
-                });
-                
-                // Synchronous processing
-                network.storePositions();
-                network.setOptions({ layout: { hierarchical: false } });
-                
-                const currentPositions = network.getPositions();
-                saveNodePositionsToDatabase(currentPositions);
+                // Árbol propio desde el núcleo con el ancho real de cada panel (el jerárquico de vis-network
+                // separa 450 unidades fijas y los paneles miden hasta 1450: se encimaban)
+                network.setOptions({ physics: { enabled: false } });
+                ordenarTopologia({ encuadrar: false });
 
                 physicsEnabled = false;
                 const btnPhys = document.getElementById('btnTogglePhysics');
@@ -2626,7 +2609,7 @@
                 const w = ctx.measureText(texto).width + 20;
                 const x = pos.x - w / 2, y = pos.y + size * 0.55 + 46;
                 ctx.fillStyle = caidos ? '#fee2e2' : '#e0f2fe';
-                ctx.strokeStyle = caidos ? '#ef4444' : '#0284c7';
+                ctx.strokeStyle = caidos ? '#ef4444' : '#667d93';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.roundRect ? ctx.roundRect(x, y, w, 32, 16) : ctx.rect(x, y, w, 32);
@@ -2673,7 +2656,7 @@
         }
 
         // ==================== ZONAS (recuadros tipo Packet Tracer) ====================
-        const ZONA_COLORES = ['#facc15', '#22d3ee', '#22c55e', '#e879f9', '#fb923c', '#1a7afb', '#ef4444', '#64748b'];
+        const ZONA_COLORES = ['#facc15', '#22d3ee', '#22c55e', '#e879f9', '#ff8300', '#667d93', '#ef4444', '#64748b'];
         let zonas = (initialGrafoData.zonas || []).map(z => ({ ...z }));
         let zonaEditando = false;
         let zonaArrastre = null;
@@ -2768,6 +2751,14 @@
             mapaJalisco.preparadoPara = mapaJalisco.vista;
         }
 
+        // Colores del mapa: centros en azul claro y contornos marcados en azul cálido (mismos en lienzo y recuadro SVG)
+        const MAPA_COLORES = {
+            claro:  { relleno: '#d4e2f6', contorno: '#3f72c0', cabecera: '#3f72c0', borde: '#ffffff',
+                      rellenoZmg: 'rgba(255,131,0,0.10)', contornoZmg: '#ff8300' },
+            oscuro: { relleno: 'rgba(122,162,224,0.16)', contorno: '#7aa2e0', cabecera: '#7aa2e0', borde: '#0d1320',
+                      rellenoZmg: 'rgba(255,131,0,0.14)', contornoZmg: '#ff8300' },
+        };
+
         function dibujarMapaJalisco(ctx) {
             if (!mapaJalisco.visible || !mapaJalisco.datos) return;
             prepararMapaJalisco();
@@ -2776,26 +2767,29 @@
             const esZmg = mapaJalisco.vista === 'zmg';
             ctx.save();
             ctx.lineJoin = 'round';
-            mapaJalisco.municipios.forEach(m => {
-                const naranja = m.zmg && !esZmg;
-                ctx.fillStyle = naranja ? (oscuro ? 'rgba(240,127,18,0.14)' : 'rgba(240,127,18,0.10)')
-                    : (oscuro ? 'rgba(77,148,253,0.07)' : 'rgba(1,104,250,0.05)');
-                ctx.strokeStyle = naranja ? 'rgba(240,127,18,0.55)' : (oscuro ? 'rgba(128,179,255,0.32)' : 'rgba(18,49,120,0.28)');
-                ctx.lineWidth = px(esZmg ? 1.6 : 1.2);
+
+            const col = MAPA_COLORES[oscuro ? 'oscuro' : 'claro'];
+            const pintar = (lista, naranja) => lista.forEach(m => {
+                ctx.fillStyle = naranja ? col.rellenoZmg : col.relleno;
+                ctx.strokeStyle = naranja ? col.contornoZmg : col.contorno;
+                ctx.lineWidth = px(esZmg ? 2.2 : 1.6);
                 ctx.fill(m.ruta);
                 ctx.stroke(m.ruta);
             });
+            // La ZMG va al final para que su contorno naranja quede encima del azul de los vecinos
+            pintar(mapaJalisco.municipios.filter(m => !(m.zmg && !esZmg)), false);
+            pintar(mapaJalisco.municipios.filter(m => m.zmg && !esZmg), true);
 
             if (!esZmg) {
                 // Marco de la ZMG sobre el mapa estatal
                 const z = mapaJalisco.zmgCaja, margen = px(10);
                 ctx.setLineDash([px(6), px(4)]);
-                ctx.strokeStyle = 'rgba(240,127,18,0.85)';
+                ctx.strokeStyle = 'rgba(255,131,0,0.85)';
                 ctx.lineWidth = px(1.5);
                 ctx.strokeRect(z.x1 - margen, z.y1 - margen, z.x2 - z.x1 + margen * 2, z.y2 - z.y1 + margen * 2);
                 ctx.setLineDash([]);
                 ctx.font = `700 ${px(11)}px Inter, system-ui, sans-serif`;
-                ctx.fillStyle = 'rgba(240,127,18,0.95)';
+                ctx.fillStyle = 'rgba(255,131,0,0.95)';
                 ctx.textBaseline = 'bottom';
                 ctx.fillText('ZMG', z.x1 - margen, z.y1 - margen - px(3));
             }
@@ -2807,10 +2801,10 @@
             mapaJalisco.municipios.forEach(m => {
                 ctx.beginPath();
                 ctx.arc(m.cabX, m.cabY, px(esZmg ? 4.5 : (m.zmg ? 3.5 : 3)), 0, Math.PI * 2);
-                ctx.fillStyle = m.zmg ? '#f07f12' : (oscuro ? '#80b3ff' : '#123178');
+                ctx.fillStyle = m.zmg ? '#ff8300' : MAPA_COLORES[oscuro ? 'oscuro' : 'claro'].cabecera;
                 ctx.fill();
                 ctx.lineWidth = px(1.2);
-                ctx.strokeStyle = oscuro ? '#0d1320' : '#ffffff';
+                ctx.strokeStyle = MAPA_COLORES[oscuro ? 'oscuro' : 'claro'].borde;
                 ctx.stroke();
                 if (conNombre) {
                     ctx.lineWidth = px(3);
@@ -2834,10 +2828,13 @@
             const esc = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
             const ruta = m => m.anillos.map(a => 'M' + a.map(([lon, lat]) => p(lon, lat).map(v => v.toFixed(1)).join(',')).join('L') + 'Z').join('');
 
+            const col = MAPA_COLORES[document.documentElement.classList.contains('dark') ? 'oscuro' : 'claro'];
             let svg = `<svg viewBox="0 0 ${W} ${H}" class="w-full h-auto" role="img" aria-label="${esZmgGrande ? 'Mapa del estado de Jalisco' : 'Mapa de la Zona Metropolitana de Guadalajara'}">`;
-            lista.forEach(m => {
-                const naranja = !esZmgGrande || m.zmg;
-                svg += `<path d="${ruta(m)}" fill="${naranja ? 'rgba(240,127,18,0.14)' : 'rgba(1,104,250,0.06)'}" stroke="${naranja ? 'rgba(240,127,18,0.7)' : 'rgba(18,49,120,0.3)'}" stroke-width="${esZmgGrande ? 0.5 : 1}"><title>${esc(m.nombre)}</title></path>`;
+            // En el recuadro del estado la ZMG resalta en naranja (se dibuja al final para que su contorno quede encima)
+            const esNaranja = m => esZmgGrande && m.zmg;
+            [...lista.filter(m => !esNaranja(m)), ...lista.filter(esNaranja)].forEach(m => {
+                const naranja = esNaranja(m);
+                svg += `<path d="${ruta(m)}" fill="${naranja ? col.rellenoZmg : col.relleno}" stroke="${naranja ? col.contornoZmg : col.contorno}" stroke-width="${esZmgGrande ? 0.7 : 1.3}" stroke-linejoin="round"><title>${esc(m.nombre)}</title></path>`;
             });
             if (!esZmgGrande) {
                 // Las cabeceras del centro están muy juntas: cada etiqueta tiene su lado para no encimarse
@@ -2847,7 +2844,7 @@
                     const [x, y] = p(m.cabecera.lon, m.cabecera.lat);
                     const [dx, dy, ancla] = LADO[m.nombre] || [5, 3, 'start'];
                     const nombre = m.nombre.replace('San Pedro ', '').replace(' de los Membrillos', '').replace(' de Zúñiga', '').replace(' de Juárez', '');
-                    svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#f07f12" stroke="#fff" stroke-width="1"/>`;
+                    svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#ff8300" stroke="#fff" stroke-width="1"/>`;
                     svg += `<text x="${(x + dx).toFixed(1)}" y="${(y + dy).toFixed(1)}" text-anchor="${ancla}" font-size="8.5" font-weight="600" fill="currentColor" paint-order="stroke" stroke="var(--nm-sunken)" stroke-width="2.5" class="text-slate-700 dark:text-slate-200">${esc(nombre)}</text>`;
                 });
             }
@@ -2894,9 +2891,9 @@
         // ==================== SITIOS DE LA ZMG (dependencias, recaudadoras, escuelas…) ====================
         // Candidatos de OpenStreetMap guardados en la base; la asignación de equipos la hace el NOC a mano.
         const CATEGORIAS_SITIO = {
-            recaudadora: { etiqueta: 'Recaudadoras', color: '#f07f12' },
-            gobierno: { etiqueta: 'Oficinas de gobierno', color: '#0168fa' },
-            ayuntamiento: { etiqueta: 'Ayuntamientos', color: '#123178' },
+            recaudadora: { etiqueta: 'Recaudadoras', color: '#ff8300' },
+            gobierno: { etiqueta: 'Oficinas de gobierno', color: '#667d93' },
+            ayuntamiento: { etiqueta: 'Ayuntamientos', color: '#465055' },
             justicia: { etiqueta: 'Justicia', color: '#7c3aed' },
             seguridad: { etiqueta: 'Seguridad', color: '#e11d48' },
             salud: { etiqueta: 'Salud', color: '#10b981' },
@@ -3191,7 +3188,7 @@
                     // Botones ✎ y 🗑 en el extremo derecho del título (solo si caben y la zona ya existe)
                     if (z.id && z.ancho > px(110)) {
                         const b = botonesZona(z);
-                        [[b.editar, '✎', '#0153c7'], [b.borrar, '🗑', '#dc2626']].forEach(([r, txt, col]) => {
+                        [[b.editar, '✎', '#667d93'], [b.borrar, '🗑', '#dc2626']].forEach(([r, txt, col]) => {
                             ctx.fillStyle = '#ffffff';
                             ctx.strokeStyle = col;
                             ctx.lineWidth = px(1.5);
@@ -3552,6 +3549,257 @@
             });
         }
 
+        // ==================== ACOMODO AUTOMÁTICO: árbol desde el núcleo ====================
+        // Raíz: el switch core de Configuración (o el equipo con más enlaces) y su pareja si la tiene (Core
+        // primario/secundario). Cada equipo cuelga del vecino del nivel anterior con menos hijos, los hijos se
+        // ordenan por IP y, si son muchos, se reparten en varias filas. Se usa el ancho real de cada panel.
+        const IP_CORE = @json($config->ip_switch_core ?? null);
+        const ARBOL_SEP_X = 140, ARBOL_SEP_NIVEL = 240, ARBOL_SEP_GRUPO = 480;
+
+        // Botón "Núcleo": centra el switch core con el equipo típico a ~180 px de ancho (solo cuando se pide;
+        // al abrir se muestra la red completa)
+        function vistaLegible(animar = true) {
+            if (!network || !nodesDataSet) return;
+            const ids = grafoVisible().ids;
+            if (!ids.length) return;
+            network.fit({ animation: false, padding: 80 });
+            const escalaTodo = network.getScale();
+            const anchos = ids.map(id => medirNodo(id).w).sort((a, b) => a - b);
+            const escala = Math.min(1, Math.max(escalaTodo, 180 / anchos[anchos.length >> 1]));
+            if (escala <= escalaTodo * 1.05) return ajustarEtiquetas();   // todo cabe a buen tamaño
+            const core = ids.find(id => nodesDataSet.get(id)?.customData?.ip === IP_CORE);
+            const pos = network.getPositions(ids);
+            const centro = core !== undefined ? pos[core]
+                : ids.map(id => pos[id]).reduce((a, p) => ({ x: Math.min(a.x, p.x), y: Math.min(a.y, p.y) }), { x: Infinity, y: Infinity });
+            const lienzo = document.getElementById('networkTopologyCanvas');
+            // El núcleo queda arriba al centro: debajo está su árbol
+            network.moveTo({
+                position: { x: centro.x, y: centro.y + (lienzo.clientHeight * 0.32) / escala },
+                scale: escala,
+                animation: animar ? { duration: 600, easingFunction: 'easeInOutQuad' } : false,
+            });
+            if (!animar) ajustarEtiquetas();
+        }
+
+        // Estilo de los nombres de equipo: azul profundo con un halo blanco grueso, para que resalten
+        // sobre el mapa claro y las líneas de enlace sin tapar nada (el halo crece con la letra en ajustarEtiquetas)
+        function fuenteEtiqueta(oscuro) {
+            return {
+                color: oscuro ? '#ffffff' : '#0f2f63',
+                strokeColor: oscuro ? '#0b1d3a' : '#ffffff',
+                strokeWidth: 5,
+                // Sin "mod: bold": vis-network cambiaría al estilo bold propio (gris #343434) e ignoraría este color
+                face: 'Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                size: 16,
+                vadjust: 38,
+            };
+        }
+
+        // Nombres legibles a cualquier zoom: ~14 px en pantalla, sin pasar del ancho de su equipo (no se enciman)
+        let escalaEtiquetas = null, ajusteEtiquetasPendiente = false;
+        function ajustarEtiquetas() {
+            if (!network || !nodesDataSet || ajusteEtiquetasPendiente) return;
+            ajusteEtiquetasPendiente = true;
+            requestAnimationFrame(() => {
+                ajusteEtiquetasPendiente = false;
+                const escala = Math.max(network.getScale(), 0.005);
+                if (escalaEtiquetas && Math.abs(escala / escalaEtiquetas - 1) < 0.08) return;
+                escalaEtiquetas = escala;
+                const cambios = [];
+                nodesDataSet.get().forEach(n => {
+                    if (!n.font) return;
+                    const texto = String(n.label || '');
+                    const largo = Math.max(...texto.split('\n').map(l => l.length), 4);
+                    const tope = (medirNodo(n.id).w * 1.05) / (largo * 0.56);
+                    const tam = Math.round(Math.max(16, Math.min(14 / escala, tope)));
+                    if (n.font.size !== tam) cambios.push({ id: n.id, font: { ...n.font, size: tam, strokeWidth: Math.max(5, tam * 0.3) } });
+                });
+                if (cambios.length) nodesDataSet.update(cambios);
+            });
+        }
+
+        function grafoVisible() {
+            const oculto = id => endpointsAgrupados && padreDeHijo[id] !== undefined;
+            const ids = nodesDataSet.getIds().filter(id => !oculto(id));
+            const enVista = new Set(ids);
+            const ady = new Map(ids.map(id => [id, new Set()]));
+            edgesDataSet.get().forEach(e => {
+                if (e.from !== e.to && enVista.has(e.from) && enVista.has(e.to)) {
+                    ady.get(e.from).add(e.to);
+                    ady.get(e.to).add(e.from);
+                }
+            });
+            return { ids, ady, ocultos: nodesDataSet.getIds().filter(oculto) };
+        }
+
+        const ipDe = id => ipAEntero(nodesDataSet.get(id)?.customData?.ip) || 0;
+
+        function calcularArbol(ids, ady) {
+            const grado = id => ady.get(id).size;
+            const hijos = new Map(ids.map(id => [id, []]));
+            const visitados = new Set();
+            const grupos = [];
+            const orden = [...ids].sort((a, b) => grado(b) - grado(a));
+            const core = ids.find(id => nodesDataSet.get(id)?.customData?.ip === IP_CORE);
+            if (core !== undefined) {
+                orden.splice(orden.indexOf(core), 1);
+                orden.unshift(core);
+            }
+
+            for (const inicio of orden) {
+                if (visitados.has(inicio) || grado(inicio) === 0) continue;
+                // Pareja de núcleo: vecinos con al menos la mitad de enlaces que la raíz
+                const raices = [inicio, ...[...ady.get(inicio)].filter(v => !visitados.has(v) && grado(v) >= 4 && grado(v) >= grado(inicio) * 0.5)]
+                    .sort((a, b) => ipDe(a) - ipDe(b));
+                raices.forEach(r => visitados.add(r));
+                let nivel = raices;
+                while (nivel.length) {
+                    const padresPosibles = new Map();
+                    nivel.forEach(p => ady.get(p).forEach(v => {
+                        if (!visitados.has(v)) (padresPosibles.get(v) || padresPosibles.set(v, []).get(v)).push(p);
+                    }));
+                    const siguiente = [];
+                    // Primero los que solo tienen un padre posible; los demás van al padre con menos hijos (reparte entre cores)
+                    [...padresPosibles.entries()]
+                        .sort((a, b) => a[1].length - b[1].length || ipDe(a[0]) - ipDe(b[0]))
+                        .forEach(([v, padres]) => {
+                            const p = padres.reduce((m, q) => hijos.get(q).length < hijos.get(m).length ? q : m, padres[0]);
+                            hijos.get(p).push(v);
+                            visitados.add(v);
+                            siguiente.push(v);
+                        });
+                    nivel = siguiente;
+                }
+                grupos.push(raices);
+            }
+            return { hijos, grupos, aislados: ids.filter(id => !visitados.has(id)).sort((a, b) => ipDe(a) - ipDe(b)) };
+        }
+
+        // Filas de una lista de cajas: se llena cada fila hasta un ancho objetivo que deja el conjunto
+        // aproximadamente cuadrado (nunca más angosto que la caja más ancha)
+        function enFilas(lista, cajas) {
+            const area = lista.reduce((s, h) => s + (cajas[h].w + ARBOL_SEP_X) * (cajas[h].h + ARBOL_SEP_NIVEL), 0);
+            const objetivo = Math.max(...lista.map(h => cajas[h].w), Math.sqrt(area) * 1.6);
+            const filas = [];
+            let fila = null;
+            lista.forEach(h => {
+                if (!fila || fila.w + ARBOL_SEP_X + cajas[h].w > objetivo) {
+                    fila = { ids: [], w: -ARBOL_SEP_X, h: 0 };
+                    filas.push(fila);
+                }
+                fila.ids.push(h);
+                fila.w += ARBOL_SEP_X + cajas[h].w;
+                fila.h = Math.max(fila.h, cajas[h].h);
+            });
+            return filas;
+        }
+
+        function cajaArbol(id, hijos, cajas) {
+            const m = medirNodo(id);
+            const hs = (hijos.get(id) || []).sort((a, b) => ipDe(a) - ipDe(b));
+            hs.forEach(h => cajaArbol(h, hijos, cajas));
+            const filas = hs.length ? enFilas(hs, cajas) : [];
+            const anchoFilas = Math.max(0, ...filas.map(f => f.w));
+            const altoFilas = filas.reduce((s, f) => s + ARBOL_SEP_NIVEL + f.h, 0);
+            return cajas[id] = { w: Math.max(m.w, anchoFilas), h: m.h + altoFilas, m, filas };
+        }
+
+        function colocarArbol(id, x0, y0, cajas, pos) {
+            const c = cajas[id];
+            pos[id] = { x: x0 + c.w / 2, y: y0 + c.m.h / 2 };
+            let y = y0 + c.m.h;
+            c.filas.forEach(f => {
+                y += ARBOL_SEP_NIVEL;
+                let x = x0 + (c.w - f.w) / 2;
+                f.ids.forEach(h => { colocarArbol(h, x, y, cajas, pos); x += cajas[h].w + ARBOL_SEP_X; });
+                y += f.h;
+            });
+        }
+
+        function calcularAcomodo() {
+            const { ids, ady, ocultos } = grafoVisible();
+            const { hijos, grupos, aislados } = calcularArbol(ids, ady);
+            const cajas = {};
+            // Cada grupo conectado es un bloque: sus raíces lado a lado y su árbol debajo
+            const bloques = grupos.map(raices => {
+                raices.forEach(r => cajaArbol(r, hijos, cajas));
+                return { raices, w: raices.reduce((s, r) => s + cajas[r].w, 0) + ARBOL_SEP_X * (raices.length - 1), h: Math.max(...raices.map(r => cajas[r].h)) };
+            }).sort((a, b) => b.w * b.h - a.w * a.h);
+            // Equipos sin enlaces: una cuadrícula al final
+            if (aislados.length) {
+                aislados.forEach(id => cajas[id] = { w: medirNodo(id).w, h: medirNodo(id).h, m: medirNodo(id), filas: [] });
+                const filas = enFilas(aislados, cajas);
+                bloques.push({ aislados: filas, w: Math.max(...filas.map(f => f.w)), h: filas.reduce((s, f) => s + f.h + ARBOL_SEP_NIVEL, 0) });
+            }
+
+            // Bloques en filas: el más grande arriba a la izquierda
+            const areaTotal = bloques.reduce((s, b) => s + (b.w + ARBOL_SEP_GRUPO) * (b.h + ARBOL_SEP_GRUPO), 0);
+            const anchoMax = Math.max(...bloques.map(b => b.w), Math.sqrt(areaTotal * 1.6));
+            const pos = {};
+            let x = 0, y = 0, altoFila = 0;
+            bloques.forEach(b => {
+                if (x > 0 && x + b.w > anchoMax) { x = 0; y += altoFila + ARBOL_SEP_GRUPO; altoFila = 0; }
+                if (b.aislados) {
+                    let yy = y;
+                    b.aislados.forEach(f => {
+                        let xx = x;
+                        f.ids.forEach(id => { pos[id] = { x: xx + cajas[id].w / 2, y: yy + cajas[id].m.h / 2 }; xx += cajas[id].w + ARBOL_SEP_X; });
+                        yy += f.h + ARBOL_SEP_NIVEL;
+                    });
+                } else {
+                    let xr = x;
+                    b.raices.forEach(r => { colocarArbol(r, xr, y, cajas, pos); xr += cajas[r].w + ARBOL_SEP_X; });
+                }
+                x += b.w + ARBOL_SEP_GRUPO;
+                altoFila = Math.max(altoFila, b.h);
+            });
+            // Equipos finales agrupados: alrededor de su switch
+            rodearPadres(nodesDataSet.get(ocultos), pos);
+            return pos;
+        }
+
+        function ordenarTopologia({ encuadrar = true } = {}) {
+            if (!network || !nodesDataSet) return;
+            const pos = calcularAcomodo();
+            Object.entries(pos).forEach(([id, p]) => network.moveNode(isNaN(id) ? id : Number(id), p.x, p.y));
+            network.storePositions();
+            saveNodePositionsToDatabase(network.getPositions());
+            if (encuadrar) resetZoom();
+        }
+
+        // Equipos nuevos (sin posición guardada): debajo de un vecino ya colocado, sin mover a los demás.
+        // Los que no tienen vecinos colocados van en una fila debajo de todo el plano.
+        function acomodarFaltantes(ids) {
+            if (!network || !ids.length) return;
+            const faltan = new Set(ids);
+            const pos = network.getPositions();
+            const vecinos = id => network.getConnectedNodes(id);
+            const usados = {};   // vecinoId -> cuántos nuevos ya cuelgan de él
+            const colocar = (id, x, y) => { network.moveNode(id, x, y); pos[id] = { x, y }; faltan.delete(id); };
+            let avance = true;
+            while (faltan.size && avance) {
+                avance = false;
+                for (const id of [...faltan]) {
+                    const ancla = vecinos(id).find(v => !faltan.has(v) && pos[v]);
+                    if (ancla === undefined) continue;
+                    const n = usados[ancla] = (usados[ancla] || 0) + 1;
+                    const ma = medirNodo(ancla), mi = medirNodo(id);
+                    // Abanico debajo del vecino: 0, +1, -1, +2, -2…
+                    const paso = (n % 2 ? 1 : -1) * Math.floor(n / 2);
+                    colocar(id, pos[ancla].x + paso * (mi.w + ARBOL_SEP_X), pos[ancla].y + ma.h / 2 + ARBOL_SEP_NIVEL + mi.h / 2 + Math.floor((n - 1) / 7) * (mi.h + 120));
+                    avance = true;
+                }
+            }
+            if (faltan.size) {
+                const ys = Object.entries(pos).filter(([k]) => !faltan.has(isNaN(k) ? k : Number(k))).map(([, p]) => p.y);
+                let x = 0;
+                const y = (ys.length ? Math.max(...ys) : 0) + 900;
+                [...faltan].forEach(id => { const m = medirNodo(id); colocar(id, x + m.w / 2, y); x += m.w + ARBOL_SEP_X; });
+            }
+            network.storePositions();
+            saveNodePositionsToDatabase(network.getPositions());
+        }
+
         async function aplicarPosiciones(posiciones) {
             Object.entries(posiciones).forEach(([id, p]) => network.moveNode(isNaN(id) ? id : Number(id), p.x, p.y));
             await apiJson("{{ route('topologia.guardar_posiciones') }}", 'POST', { posiciones });
@@ -3787,6 +4035,14 @@
                 const data = await res.json();
                 actualizarResumen(data.resumen);
 
+                // Equipos o enlaces nuevos (descubrimiento) o retirados: se recarga el grafo conservando el acomodo
+                const mismos = (a, b) => a.length === b.length && a.every(id => b.includes(id));
+                if (!mismos((data.nodes || []).map(n => n.id), nodesDataSet.getIds())
+                    || !mismos((data.edges || []).map(e => e.id), edgesDataSet.getIds())) {
+                    if (!zonaArrastre) await reloadTopologyData();
+                    return;
+                }
+
                 const campos = ['estado', 'statusColor', 'cpu', 'memoria', 'ping', 'uptime', 'conexiones', 'notas'];
                 const nodosUpd = [];
                 (data.nodes || []).forEach(n => {
@@ -3814,7 +4070,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             pintarFrescura();
             setInterval(pintarFrescura, 1000);
-            setInterval(refrescarEstadoVivo, 30000);
+            setInterval(refrescarEstadoVivo, 10000);   // el sondeo actualiza cada equipo cada ~8 s
         });
 
         // ==================== AUTO-DISCOVERY CRAWLER LOGIC ====================
@@ -3981,30 +4237,63 @@
                 if (!res.ok) throw new Error('No se pudieron recargar los datos del grafo');
                 const data = await res.json();
 
-                // Actualizar datasets de Vis.js
-                if (nodesDataSet && edgesDataSet) {
+                // Actualizar datasets de Vis.js conservando el acomodo: cada equipo sigue donde está en el lienzo,
+                // con su imagen y rol; los nuevos se colocan junto a sus vecinos
+                if (nodesDataSet && edgesDataSet && network) {
+                    const actuales = network.getPositions();
+                    const oscuro = document.documentElement.classList.contains('dark');
+                    const nuevos = [];
+                    const nodos = (data.nodes || []).map(node => {
+                        const cData = node.customData || {};
+                        const nombre = cData.nombre || node.label || '';
+                        const imgInfo = getDeviceImageAndRole(cData.modelo, nombre, cData.sysDescr);
+                        const imagenRuta = cData.image || imgInfo.image || null;
+                        const esInfra = !!imagenRuta;
+                        const p = actuales[node.id] || (cData.posicion_guardada ? { x: node.x, y: node.y } : null);
+                        if (!p) nuevos.push(node.id);
+                        return {
+                            ...node,
+                            label: nombre || 'Desconocido',
+                            title: undefined,
+                            shape: esInfra ? 'image' : 'dot',
+                            image: esInfra ? imagenRuta : undefined,
+                            size: node.size || imgInfo.size || (esInfra ? 145 : 120),
+                            color: esInfra ? undefined : { background: '#667d93', border: '#667d93' },
+                            font: fuenteEtiqueta(oscuro),
+                            customData: { ...cData, rol: esInfra ? (cData.rol || imgInfo.rol) : 'ENDPOINT', tipo_equipo: esInfra ? (cData.tipo_equipo || imgInfo.tipo_equipo) : 'Dispositivo Final' },
+                            x: p ? p.x : undefined,
+                            y: p ? p.y : undefined,
+                        };
+                    });
+                    const roles = Object.fromEntries(nodos.map(n => [n.id, n.customData.rol]));
+                    const enlaces = (data.edges || []).map(edge => {
+                        let lbl = edge.label || '';
+                        if (lbl.includes('\n')) {
+                            const partes = lbl.split('\n');
+                            lbl = partes[1] ? partes[1].replace(/\s*\([^\)]*\)/, '') : partes[0];
+                        }
+                        const esFinal = roles[edge.to] === 'ENDPOINT' || roles[edge.from] === 'ENDPOINT';
+                        return { ...edge, label: lbl, to_is_endpoint: esFinal, length: esFinal ? 260 : 480 };
+                    });
+
                     nodesDataSet.clear();
                     edgesDataSet.clear();
-                    nodesDataSet.add(data.nodes);
-                    edgesDataSet.add(data.edges);
+                    nodesDataSet.add(nodos);
+                    edgesDataSet.add(enlaces);
 
                     // Actualizar referencia para filtros
                     initialGrafoData.nodes = data.nodes;
                     initialGrafoData.edges = data.edges;
 
-                    // Reajustar vista y física
-                    if (network) {
-                        network.fit({
-                            animation: {
-                                duration: 1000,
-                                easingFunction: 'easeInOutQuad'
-                            }
-                        });
-                    }
+                    zonas = (data.zonas || []).map(z => ({ ...z }));
+                    aplicarAgrupacionEndpoints();
+                    network.once('afterDrawing', () => setTimeout(() => {
+                        acomodarFaltantes(nuevos);
+                        network.fit({ animation: { duration: 800, easingFunction: 'easeInOutQuad' }, padding: 80 });
+                    }, 120));
+                    network.redraw();
                 }
 
-                zonas = (data.zonas || []).map(z => ({ ...z }));
-                aplicarAgrupacionEndpoints();
                 actualizarResumen(data.resumen);
 
             } catch (err) {

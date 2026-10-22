@@ -1,0 +1,12 @@
+[Unit]
+Description=Network Monitor - monitoreo de servicios web (HTTP/HTTPS)
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+User=@USUARIO@
+Group=@USUARIO@
+WorkingDirectory=@APP_DIR@
+ExecStart=/usr/bin/php @APP_DIR@/artisan web:poll
+UMask=0002
+TimeoutStartSec=60

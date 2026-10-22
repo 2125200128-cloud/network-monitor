@@ -117,12 +117,36 @@ class Dispositivo extends Model
         if ($this->comunidad_snmp) {
             return [$this->comunidad_snmp, 'equipo'];
         }
-        return [ConfiguracionGeneral::query()->value('comunidad_snmp_default') ?: env('SNMP_COMMUNITY', 'public'), 'red'];
+        return [ConfiguracionGeneral::query()->value('comunidad_snmp_default') ?: config('noc.snmp_community'), 'red'];
     }
 
     public function comunidadEfectiva(): string
     {
         return $this->comunidadConOrigen()[0];
+    }
+
+    /**
+     * Los workers lo consultan por SNMPv3 (usuario de firewalls de Configuración): es firewall o anuncia ser FortiGate,
+     * no tiene comunidad propia en la ficha y hay usuario SNMPv3 guardado. Misma regla que nm_common.credencial_snmp().
+     */
+    public function usaSnmpv3(): bool
+    {
+        if (trim((string) $this->comunidad_snmp_manual) !== '' || !ConfiguracionGeneral::query()->value('snmpv3_usuario')) {
+            return false;
+        }
+        return ($this->tipo_manual ?: $this->tipo_detectado) === 'firewall'
+            || str_starts_with(strtoupper((string) $this->telemetriaChasis?->model_name), 'FORTIGATE');
+    }
+
+    /**
+     * FortiGate por lo que el propio equipo anuncia (OID de Fortinet o modelo FortiGate), o un firewall clasificado
+     * como tal. No depende del nombre: muchos se llaman FGT-…, FW1-… o con el nombre de la sede.
+     */
+    public function esFortigate(): bool
+    {
+        return str_starts_with((string) $this->sys_object_id, '1.3.6.1.4.1.12356.')
+            || str_starts_with(strtoupper((string) $this->telemetriaChasis?->model_name), 'FORTIGATE')
+            || ($this->tipo_manual ?: $this->tipo_detectado) === 'firewall';
     }
 
     public function resolveTypeInfo(): array

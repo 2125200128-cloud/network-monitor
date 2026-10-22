@@ -292,49 +292,16 @@ class DiscoveryController extends Controller
         exec($cmd);
     }
 
-    /**
-     * Resuelve el binario ejecutable de Python disponible en el entorno.
-     */
+    /** Intérprete de Python (Windows o Linux): ver App\Support\Python. */
     private function getPythonBinary(): string
     {
-        $localAppData = getenv('LOCALAPPDATA') ?: '';
-        $specificPaths = [
-            env('PYTHON_PATH'),
-            $localAppData ? $localAppData . '\\Programs\\Python\\Python312\\python.exe' : '',
-            $localAppData ? $localAppData . '\\Programs\\Python\\Python311\\python.exe' : '',
-            $localAppData ? $localAppData . '\\Python\\pythoncore-3.14-64\\python.exe' : '',
-        ];
-        foreach ($specificPaths as $path) {
-            if ($path && file_exists($path)) {
-                return $path;
-            }
-        }
-        return 'python';
+        return \App\Support\Python::binario();
     }
 
-    /**
-     * Devuelve las variables de entorno del sistema necesarias para sockets en Windows.
-     */
+    /** Entorno del proceso hijo (en Windows, Python necesita SystemRoot para abrir sockets). */
     private function getProcessEnv(): array
     {
-        $systemRoot = getenv('SystemRoot') ?: ($_SERVER['SystemRoot'] ?? 'C:\\Windows');
-        $path = getenv('PATH') ?: ($_SERVER['PATH'] ?? '');
-        $windir = getenv('WINDIR') ?: ($_SERVER['WINDIR'] ?? $systemRoot);
-        $temp = getenv('TEMP') ?: ($_SERVER['TEMP'] ?? 'C:\\Windows\\Temp');
-        $localAppData = getenv('LOCALAPPDATA') ?: ($_SERVER['LOCALAPPDATA'] ?? '');
-        $appData = getenv('APPDATA') ?: ($_SERVER['APPDATA'] ?? '');
-        $comspec = getenv('COMSPEC') ?: ($_SERVER['COMSPEC'] ?? 'C:\\Windows\\system32\\cmd.exe');
-
-        return array_merge($_ENV, $_SERVER, [
-            'SystemRoot' => $systemRoot,
-            'SYSTEMROOT' => $systemRoot,
-            'PATH' => $path,
-            'WINDIR' => $windir,
-            'TEMP' => $temp,
-            'LOCALAPPDATA' => $localAppData,
-            'APPDATA' => $appData,
-            'COMSPEC' => $comspec,
-        ]);
+        return \App\Support\Python::entorno();
     }
 
     /**

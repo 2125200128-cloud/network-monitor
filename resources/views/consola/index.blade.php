@@ -50,7 +50,7 @@
             user-select: none;
         }
         .btn-primary-hacienda:hover {
-            background: linear-gradient(135deg, #0a1d4a 0%, var(--nm-primary) 100%) !important;
+            background: linear-gradient(135deg, #2c3336 0%, var(--nm-primary) 100%) !important;
             transform: translateY(-1px);
             box-shadow: 0 6px 18px rgba(59, 89, 152, 0.4);
         }
@@ -123,10 +123,10 @@
             border-color: #30363d;
         }
         .dark .noc-cmd-btn:hover {
-            background: #1a7afb !important;
+            background: #667d93 !important;
             color: #ffffff !important;
-            border-color: #1a7afb !important;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+            border-color: #667d93 !important;
+            box-shadow: 0 4px 12px rgba(102, 125, 147, 0.35);
         }
 
         /* Custom Terminal Chassis & Scrollbar */
@@ -688,21 +688,21 @@
                 theme: { 
                     background: '#090e18', 
                     foreground: '#f1f5f9',
-                    cursor: '#38bdf8',
-                    selection: 'rgba(59, 130, 246, 0.35)',
+                    cursor: '#667d93',
+                    selection: 'rgba(102, 125, 147, 0.35)',
                     black: '#0f172a',
                     red: '#f87171',
                     green: '#34d399',
                     yellow: '#fbbf24',
-                    blue: '#4d94fd',
+                    blue: '#667d93',
                     magenta: '#c084fc',
-                    cyan: '#38bdf8',
+                    cyan: '#667d93',
                     white: '#ffffff',
                     brightBlack: '#475569',
                     brightRed: '#fca5a5',
                     brightGreen: '#6ee7b7',
                     brightYellow: '#fde047',
-                    brightBlue: '#80b3ff',
+                    brightBlue: '#667d93',
                     brightMagenta: '#d8b4fe',
                     brightCyan: '#67e8f9',
                     brightWhite: '#ffffff'

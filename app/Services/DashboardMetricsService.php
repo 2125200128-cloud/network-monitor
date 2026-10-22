@@ -537,6 +537,8 @@ class DashboardMetricsService
             'wifi_top' => $aps->sortByDesc('clientes')->take(5)->values()->all(),
             'firewalls_sin_snmp' => (int) ($sinSnmp['firewall'] ?? 0),
             'wlc_sin_snmp' => (int) ($sinSnmp['wlc'] ?? 0),
+            // FortiGate que sí entregan datos de su MIB: con esto un panel vacío se explica como "no lo tienen configurado"
+            'firewalls_leidos' => $chasis->filter(fn ($c) => $c->forti_sistema || $c->forti_sensores || $c->forti_seguridad || $c->ha_estado)->count(),
 
             // FortiGate
             'sdwan' => $sdwan->take(12)->all(),

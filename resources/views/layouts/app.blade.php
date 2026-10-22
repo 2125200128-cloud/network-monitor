@@ -3,29 +3,38 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{-- Segundos entre refrescos de las zonas marcadas con data-refrescar (cada vista puede cambiarlo) --}}
+    <meta name="nm-refresco" content="@yield('refresco', 30)">
     <title>@yield('title', 'Network Dashboard')</title>
     <!-- Tailwind CSS (via CDN & Vite) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Escalas del sistema de diseño (partials/design-tokens): "blue" = azul real, "indigo" = marino.
+        // Escalas del sistema de diseño (partials/design-tokens): "blue" y "sky" = azul principal #667D93
+        // (un solo tono en 300–800),
+        // "indigo" = marino gris #465055, "orange" = naranja NOC #FF8300.
         // Se redefinen para que las clases existentes de las vistas adopten la paleta.
-        const nmAzure = { 50: '#eef5ff', 100: '#d9e8ff', 200: '#b3d1ff', 300: '#80b3ff', 400: '#4d94fd', 500: '#1a7afb', 600: '#0168fa', 700: '#0153c7', 800: '#023f99', 900: '#03306f', 950: '#031d45' };
-        const nmNavy = { 50: '#eef2fb', 100: '#d6e0f5', 200: '#aebfe9', 300: '#7e97d6', 400: '#4f6fc0', 500: '#2c4fa6', 600: '#1a3d8f', 700: '#123178', 800: '#0d2660', 900: '#0a1d4a', 950: '#060f2b' };
+        const nmAzure = { 50: '#f3f5f7', 100: '#e4e8ec', 200: '#cad2da', 300: '#667d93', 400: '#667d93', 500: '#667d93', 600: '#667d93', 700: '#667d93', 800: '#667d93', 900: '#2d3741', 950: '#1b2127' };
+        const nmNavy = { 50: '#f1f2f3', 100: '#dde0e2', 200: '#bbc1c3', 300: '#98a1a5', 400: '#778288', 500: '#5e6a70', 600: '#505b61', 700: '#465055', 800: '#384044', 900: '#2c3336', 950: '#1b1f21' };
+        // Naranja: un solo tono (#FF8300) para texto, iconos y bordes; 50–200 son fondos tenues
+        // y 900–950 fondos del modo oscuro
+        const nmOrange = { 50: '#fff6f1', 100: '#ffece0', 200: '#ffd5ba', 300: '#ff8300', 400: '#ff8300', 500: '#ff8300', 600: '#ff8300', 700: '#ff8300', 800: '#ff8300', 900: '#723802', 950: '#3d1a00' };
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        'hacienda-blue': '#123178',
-                        'hacienda-orange': '#f07f12',
-                        'inst-azul': '#5b7d95',
-                        'inst-naranja': '#f07f12',
+                        'hacienda-blue': '#465055',
+                        'hacienda-orange': '#ff8300',
+                        'inst-azul': '#667d93',
+                        'inst-naranja': '#ff8300',
                         'nm-primary': 'rgb(var(--nm-primary-rgb) / <alpha-value>)',
                         'nm-surface': 'rgb(var(--nm-surface-rgb) / <alpha-value>)',
                         'nm-sunken': 'rgb(var(--nm-sunken-rgb) / <alpha-value>)',
                         'nm-ink': 'rgb(var(--nm-ink-rgb) / <alpha-value>)',
                         blue: nmAzure,
                         indigo: nmNavy,
+                        sky: nmAzure,
+                        orange: nmOrange,
                     },
                     // Esquinas más sobrias (referencia Azia): tarjetas 12px, controles 8–10px
                     borderRadius: { xl: '0.625rem', '2xl': '0.75rem', '3xl': '0.875rem' },
@@ -119,20 +128,96 @@
             animation-play-state: paused;
         }
 
-        /* Botón secundario (.fancy): borde fino y superficie; se ocultan las rayitas decorativas heredadas */
+        /* ======================== BOTÓN FANCY (Uiverse) con colores institucionales ========================
+           Marco azul #667D93 con guion naranja #FF8300; al pasar el mouse se rellena de azul y las "llaves"
+           (cortes del marco) se recogen. Las llaves toman el color de la superficie de atrás (--fancy-fondo):
+           blanco sobre tarjetas; en zonas sobre el fondo gris de la página se pasa style="--fancy-fondo: var(--nm-bg)". */
         .fancy {
-            display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; margin: 0;
-            padding: 0.55rem 1rem; font-size: 12.5px; font-weight: 600; line-height: 1.2; letter-spacing: 0.01em;
-            text-transform: none; text-decoration: none; white-space: nowrap; user-select: none; position: relative;
-            color: var(--nm-text); background: var(--nm-surface); border: 1px solid var(--nm-border-strong);
-            border-radius: var(--nm-btn-radius); box-shadow: var(--nm-shadow-sm); cursor: pointer;
-            transition: background-color var(--nm-dur-fast) ease, border-color var(--nm-dur-fast) ease, color var(--nm-dur-fast) ease;
+            --fancy-color: var(--nm-azure-600);
+            --fancy-acento: var(--nm-orange-500);
+            --fancy-fondo: var(--nm-surface);
+            background-color: transparent;
+            border: 2px solid var(--fancy-color);
+            border-radius: 0;
+            box-sizing: border-box;
+            color: var(--fancy-color);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            margin: 0;
+            outline: none;
+            overflow: visible;
+            padding: 0.65em 1.4em;
+            position: relative;
+            text-align: center;
+            text-decoration: none;
+            text-transform: uppercase;
+            white-space: nowrap;
+            transition: all 0.3s ease-in-out;
+            user-select: none;
+            font-size: 12px;
+            line-height: 1.2;
+            vertical-align: middle;
         }
-        .fancy::before, .fancy .top-key, .fancy .bottom-key-1, .fancy .bottom-key-2 { display: none; }
-        .fancy .text { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0; color: inherit; text-transform: none; font-size: inherit; }
-        .fancy:hover { color: var(--nm-azure-700); background: var(--nm-azure-50); border-color: var(--nm-azure-300); }
-        .dark .fancy:hover { color: var(--nm-azure-200); background: rgb(var(--nm-primary-rgb) / 0.14); border-color: rgb(var(--nm-primary-rgb) / 0.45); }
-        .fancy-sm { padding: 0.35rem 0.7rem; font-size: 11.5px; }
+        .fancy::before {
+            content: " ";
+            width: 1.3rem;
+            height: 2px;
+            background: var(--fancy-acento);
+            top: 50%;
+            left: 1.1em;
+            position: absolute;
+            transform: translateY(-50%);
+            transform-origin: center;
+            transition: background 0.3s linear, width 0.3s linear;
+        }
+        .fancy .text {
+            font-size: 1.05em;
+            line-height: 1.33333em;
+            padding-left: 1.6em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            text-align: left;
+            transition: all 0.3s ease-in-out;
+            text-transform: uppercase;
+            text-decoration: none;
+            color: var(--fancy-color);
+        }
+        .fancy .top-key {
+            height: 2px; width: 1.5625rem; top: -2px; left: 0.625rem; position: absolute;
+            background: var(--fancy-fondo);
+            transition: width 0.5s ease-out, left 0.3s ease-out;
+        }
+        .fancy .bottom-key-1 {
+            height: 2px; width: 1.5625rem; right: 1.875rem; bottom: -2px; position: absolute;
+            background: var(--fancy-fondo);
+            transition: width 0.5s ease-out, right 0.3s ease-out;
+        }
+        .fancy .bottom-key-2 {
+            height: 2px; width: 0.625rem; right: 0.625rem; bottom: -2px; position: absolute;
+            background: var(--fancy-fondo);
+            transition: width 0.5s ease-out, right 0.3s ease-out;
+        }
+        .fancy:hover { color: #ffffff; background: var(--fancy-color); }
+        .fancy:hover::before { width: 0.8rem; background: #ffffff; }
+        .fancy:hover .text { color: #ffffff; padding-left: 1.25em; }
+        .fancy:hover .top-key { left: -2px; width: 0; }
+        .fancy:hover .bottom-key-1, .fancy:hover .bottom-key-2 { right: 0; width: 0; }
+        .fancy:focus-visible { outline: 2px solid var(--nm-ring); outline-offset: 3px; }
+        .fancy:disabled { opacity: 0.55; cursor: not-allowed; }
+        .fancy:disabled:hover { background: transparent; }
+        .fancy:disabled:hover .text { color: var(--fancy-color); }
+
+        /* Variante compacta */
+        .fancy-sm { padding: 0.4em 0.85em; font-size: 11px; }
+        .fancy-sm::before { left: 0.65em; width: 0.9rem; }
+        .fancy-sm .text { padding-left: 1.2em; font-size: 0.95em; gap: 0.3rem; }
+        .fancy-sm:hover .text { padding-left: 0.95em; }
+        .fancy-sm:hover::before { width: 0.55rem; }
     </style>
     {{-- Modo TV: se decide antes de pintar para no mostrar y luego esconder la barra lateral --}}
     <script>
@@ -176,11 +261,25 @@
                 'svg'    => '<rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path stroke-linecap="round" stroke-linejoin="round" d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3M12 12V8"></path>',
             ],
             [
+                'href'   => route('alertas.index'),
+                'active' => request()->is('alertas*'),
+                'title'  => 'Alertas: incidencias activas e historial',
+                'label'  => 'Alertas',
+                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M10.27 21a2 2 0 0 0 3.46 0M3.26 15.33A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.67C19.41 13.96 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.41 5.96-2.74 7.33"></path>',
+            ],
+            [
                 'href'   => route('servicios_web.index'),
                 'active' => request()->is('servicios-web*'),
                 'title'  => 'Monitoreo de Servicios Web y HTTP',
                 'label'  => 'Webs',
                 'svg'    => '<circle cx="12" cy="12" r="9.5"></circle><path stroke-linecap="round" stroke-linejoin="round" d="M12 2.5a14 14 0 0 0 0 19 14 14 0 0 0 0-19M2.5 12h19"></path>',
+            ],
+            [
+                'href'   => route('firewalls.index'),
+                'active' => request()->is('firewalls*'),
+                'title'  => 'Firewalls FortiGate: HA, túneles, SD-WAN y seguridad',
+                'label'  => 'Firewalls',
+                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path stroke-linecap="round" stroke-linejoin="round" d="m9 12 2 2 4-4"></path>',
             ],
             [
                 'href'   => route('consola.index'),
@@ -205,7 +304,7 @@
         <header id="navMovilSuperior" class="flex md:hidden items-center justify-between nm-sidebar text-white p-3 px-4 rounded-2xl shadow-lg shrink-0 z-40">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 flex items-center justify-center p-1 bg-white/10 rounded-xl overflow-hidden shadow-xs">
-                    <img src="{{ asset('images/logo_swoop.png') }}" alt="Logo" class="w-full h-full object-contain dark:brightness-0 dark:invert" onerror="this.src='https://ui-avatars.com/api/?name=NM&background=fff&color=3b5998'">
+                    <img src="{{ asset('images/logo_shp.png') }}" alt="Secretaría de la Hacienda Pública" width="50" height="50" class="w-full h-full object-contain">
                 </div>
                 <div>
                     <h1 class="text-sm font-black tracking-tight leading-none text-white">Network Monitor</h1>
@@ -227,17 +326,16 @@
         <!-- ==================== DESKTOP SIDEBAR ==================== -->
         <aside id="navLateral" class="w-24 nm-sidebar rounded-2xl flex flex-col items-center py-8 shadow-2xl flex-shrink-0 z-30 relative hidden md:flex transition-colors duration-200">
             <!-- Logo/Brand -->
+            {{-- Logo SHP a su tamaño original (50 × 50): árbol blanco y arco naranja sobre la barra azul --}}
             <div class="mb-12">
-                <div class="w-14 h-14 flex items-center justify-center p-2 overflow-hidden">
-                    <img src="{{ asset('images/logo_swoop.png') }}" alt="Logo" class="w-full h-full object-contain dark:brightness-0 dark:invert dark:opacity-90 transition" onerror="this.src='https://ui-avatars.com/api/?name=NM&background=fff&color=3b5998'">
-                </div>
+                <img src="{{ asset('images/logo_shp.png') }}" alt="Secretaría de la Hacienda Pública" width="50" height="50" class="w-[50px] h-[50px] object-contain">
             </div>
 
             <!-- Nav Icons (generados desde $navItems) -->
             <nav class="flex-1 flex flex-col gap-6 items-center w-full">
                 @foreach($navItems as $item)
                 <a href="{{ $item['href'] }}"
-                   class="nm-nav-item w-12 h-12 {{ $item['active'] ? 'bg-white dark:bg-slate-800/90 text-hacienda-blue dark:text-blue-300 shadow-md dark:shadow-none border border-transparent dark:border-slate-700/50' : 'text-blue-100/75 hover:bg-white/10 dark:hover:bg-slate-800/50 hover:text-white dark:hover:text-slate-200' }} rounded-xl flex items-center justify-center"
+                   class="nm-nav-item w-12 h-12 {{ $item['active'] ? 'bg-white dark:bg-slate-800/90 text-hacienda-blue dark:text-blue-300 shadow-md dark:shadow-none border border-transparent dark:border-slate-700/50' : 'text-white/85 hover:bg-white/15 dark:hover:bg-slate-800/50 hover:text-white dark:hover:text-slate-200' }} rounded-xl flex items-center justify-center"
                    title="{{ $item['title'] }}" aria-label="{{ $item['title'] }}" @if($item['active']) aria-current="page" @endif>
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75" aria-hidden="true">{!! $item['svg'] !!}</svg>
                 </a>
@@ -247,7 +345,7 @@
             <!-- Pantallas NOC: ventanas para otras TV, pantalla completa y modo TV -->
             <div class="relative mt-6" x-data="pantallasNoc()" @keydown.escape.window="abierto = false">
                 <button type="button" @click="abrirPanel()" title="Pantallas: abrir vistas en otras TV" aria-label="Pantallas"
-                        class="nm-nav-item w-12 h-12 rounded-xl flex items-center justify-center text-blue-100/75 hover:bg-white/10 dark:hover:bg-slate-800/50 hover:text-white"
+                        class="nm-nav-item w-12 h-12 rounded-xl flex items-center justify-center text-white/85 hover:bg-white/15 dark:hover:bg-slate-800/50 hover:text-white"
                         :class="abierto ? 'bg-white/10 text-white' : ''">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75" aria-hidden="true"><rect x="2" y="4" width="13" height="9" rx="1.5"></rect><path stroke-linecap="round" stroke-linejoin="round" d="M6 17h5M8.5 13v4"></path><rect x="13" y="9" width="9" height="7" rx="1.2"></rect><path stroke-linecap="round" d="M16 19.5h3M17.5 16v3.5"></path></svg>
                 </button>
@@ -290,6 +388,18 @@
                         <button type="button" @click="pantallaCompleta()" class="px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-left">Pantalla completa (F11)</button>
                         <button type="button" @click="activarModoTV()" class="px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-left">Modo TV: ocultar menú y mantener sesión</button>
                     </div>
+
+                    <div class="text-[11px] font-black uppercase tracking-wider text-slate-400 mt-3 mb-1.5">Sonido de incidencias</div>
+                    <div class="flex gap-1.5">
+                        <button type="button" @click="sonido = nocSonido.alternar()" class="flex-1 px-2.5 py-2 rounded-xl border text-xs font-bold text-left flex items-center gap-2"
+                                :class="sonido ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300' : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'"
+                                :aria-pressed="sonido.toString()">
+                            <svg x-show="sonido" class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></svg>
+                            <svg x-show="!sonido" class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M17 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 .258-1.742" /><path d="m2 2 20 20" /><path d="M8.668 3.01A6 6 0 0 1 18 8c0 2.687.77 4.653 1.707 6.05" /></svg>
+                            <span x-text="sonido ? 'Alerta sonora activa' : 'Alerta sonora desactivada'"></span>
+                        </button>
+                        <button type="button" @click="nocSonido.probar('critica')" class="px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold" title="Escuchar el aviso de una incidencia crítica">Probar</button>
+                    </div>
                     <p class="text-[11px] mt-2" :class="error ? 'text-rose-600' : 'text-slate-500'" x-show="aviso" x-text="aviso"></p>
                 </div>
             </div>
@@ -297,7 +407,9 @@
 
         <!-- ==================== MAIN CONTENT ==================== -->
         <main id="contenidoPrincipal" class="flex-1 flex flex-col h-full overflow-y-auto custom-scrollbar pr-0 md:pr-2 pb-24 md:pb-0 relative">
-            @include('partials.alert_banner')
+            <div data-refrescar="alertas" data-refrescar-cada="5" data-refrescar-url="{{ route('parciales.alertas') }}">
+                @include('partials.alert_banner')
+            </div>
             @yield('content')
         </main>
 
@@ -324,6 +436,12 @@
     <!-- Controles del Modo TV: aparecen al mover el ratón -->
     <div id="controlesTV" class="fixed bottom-4 left-4 z-[60] hidden items-center gap-2 bg-black/80 text-white rounded-2xl p-2 shadow-2xl backdrop-blur">
         <button type="button" onclick="window.nocPantallas.pantallaCompleta()" class="px-3 py-2 rounded-xl hover:bg-white/15 text-xs font-bold">Pantalla completa</button>
+        <button type="button" id="tvBotonSonido" onclick="window.nocSonido.pintarBotonTV(window.nocSonido.alternar())" class="px-3 py-2 rounded-xl hover:bg-white/15 text-xs font-bold flex items-center gap-2"
+                title="Activar o silenciar la alerta sonora de incidencias nuevas">
+            <svg data-sonido="activo" class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></svg>
+            <svg data-sonido="inactivo" class="w-4 h-4 hidden" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M17 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 .258-1.742" /><path d="m2 2 20 20" /><path d="M8.668 3.01A6 6 0 0 1 18 8c0 2.687.77 4.653 1.707 6.05" /></svg>
+            <span data-sonido="texto">Alerta sonora</span>
+        </button>
         <button type="button" onclick="window.nocPantallas.salirModoTV()" class="px-3 py-2 rounded-xl hover:bg-white/15 text-xs font-bold">Salir de Modo TV</button>
         <span id="estadoSesionTV" class="text-[11px] text-slate-300 px-2"></span>
     </div>
@@ -424,15 +542,19 @@
 
         function pantallasNoc() {
             return {
-                abierto: false, aviso: '', error: false, pantallas: [],
+                abierto: false, aviso: '', error: false, pantallas: [], sonido: window.nocSonido ? window.nocSonido.activo() : true,
                 soportaPantallas: 'getScreenDetails' in window,
                 vistas: [
                     { nombre: 'Dashboard', url: @json(route('dashboard')) },
                     { nombre: 'Topología', url: @json(route('topologia.index')) },
+                    { nombre: 'Centro de datos', url: @json(route('topologia.centro_datos')) },
                     { nombre: 'Servicios web', url: @json(route('servicios_web.index')) },
                     { nombre: 'Esta página', url: location.pathname + location.search },
                 ],
                 abrirPanel() { this.abierto = !this.abierto; this.aviso = ''; },
+                // Las acciones de la ventana viven en window.nocPantallas (también las usan los controles del Modo TV)
+                pantallaCompleta() { this.abierto = false; window.nocPantallas.pantallaCompleta(); },
+                activarModoTV() { window.nocPantallas.activarModoTV(); },
                 abrirVentana(url) {
                     const w = window.nocPantallas.abrirVentana(url);
                     this.error = !w;
@@ -469,6 +591,212 @@
                 },
             };
         }
+    </script>
+
+    <script>
+        // ==================== CINTA DE ALERTAS ====================
+        // Velocidad constante y legible sin importar cuántas alertas haya
+        window.nocAjustarMarquesina = function () {
+            const track = document.getElementById('nocMarqueeTrack');
+            const lane = track?.querySelector('.noc-marquee-lane');
+            if (!lane) return;
+            track.style.setProperty('--noc-marquee-duration', Math.max(20, lane.offsetWidth / 40).toFixed(1) + 's');
+        };
+        document.addEventListener('DOMContentLoaded', () => {
+            window.nocAjustarMarquesina();
+            document.fonts?.ready?.then(window.nocAjustarMarquesina);
+        });
+        let nocMarquesinaT;
+        window.addEventListener('resize', () => { clearTimeout(nocMarquesinaT); nocMarquesinaT = setTimeout(window.nocAjustarMarquesina, 200); });
+
+        // "Ver Alertas" de la cinta: la sección Alertas con todas las incidencias activas
+        window.handleBannerNotifClick = function () {
+            window.location.href = @json(route('alertas.index'));
+        };
+
+        // ==================== AVISO SONORO DE INCIDENCIAS ====================
+        // Suena cuando la cinta de alertas (refrescada cada 10 s) trae un id que no estaba: tres pitidos agudos si
+        // hay alguna crítica, uno suave si solo son advertencias. Las alertas que ya existían al abrir no suenan, y
+        // varias pestañas del mismo navegador suenan una sola vez por incidencia. El sonido se genera con Web Audio
+        // (sin archivos); el navegador lo permite solo después de un clic en la página.
+        window.nocSonido = (function () {
+            const PREF = 'nocSonidoAlertas', SONADAS = 'nocAlertasSonadas';
+            const leer = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch (e) { return d; } };
+            const escribir = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+            let ctx = null, conocidas = new Set();
+
+            const activo = () => leer(PREF, '1') !== '0';
+            const contexto = () => {
+                if (!ctx) {
+                    const C = window.AudioContext || window.webkitAudioContext;
+                    ctx = C ? new C() : null;
+                }
+                return ctx;
+            };
+            const alertasActuales = () => {
+                try { return JSON.parse(document.getElementById('nocAlertasIds')?.innerHTML || '[]'); } catch (e) { return []; }
+            };
+
+            function tono(frecuencia, inicio, duracion, volumen) {
+                const c = ctx, t = c.currentTime + inicio;
+                const o = c.createOscillator(), g = c.createGain();
+                o.type = 'sine';
+                o.frequency.value = frecuencia;
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.exponentialRampToValueAtTime(volumen, t + 0.02);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + duracion);
+                o.connect(g).connect(c.destination);
+                o.start(t);
+                o.stop(t + duracion + 0.05);
+            }
+
+            function pitar(tipo) {
+                const c = contexto();
+                if (!c) return;
+                if (c.state !== 'running') { avisoDesbloqueo(true); return; }
+                if (tipo === 'critica') [0, 0.24, 0.48].forEach(t => tono(988, t, 0.17, 0.35));
+                else tono(660, 0, 0.3, 0.22);
+            }
+
+            // Botón flotante mientras el navegador no deje sonar (falta un clic en la página)
+            function avisoDesbloqueo(mostrar) {
+                let b = document.getElementById('nocActivarSonido');
+                if (!mostrar) { b?.remove(); return; }
+                if (b || !activo()) return;
+                b = document.createElement('button');
+                b.id = 'nocActivarSonido';
+                b.type = 'button';
+                b.className = 'fixed bottom-4 right-4 z-[70] px-4 py-2.5 rounded-xl text-sm font-bold text-white shadow-2xl flex items-center gap-2';
+                b.style.background = 'var(--nm-metal-sheen), var(--nm-metal-azure)';
+                b.innerHTML = '<svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></svg><span>Habilitar alerta sonora</span>';
+                b.title = 'El navegador necesita un clic para permitir el sonido';
+                b.onclick = () => contexto()?.resume().then(() => { avisoDesbloqueo(false); pitar('advertencia'); });
+                document.body.appendChild(b);
+            }
+
+            // Botón del Modo TV: alterna el ícono de campana / campana tachada y el texto
+            function pintarBotonTV(encendido) {
+                const b = document.getElementById('tvBotonSonido');
+                if (!b) return;
+                b.querySelector('[data-sonido="activo"]').classList.toggle('hidden', !encendido);
+                b.querySelector('[data-sonido="inactivo"]').classList.toggle('hidden', encendido);
+                b.querySelector('[data-sonido="texto"]').textContent = encendido ? 'Alerta sonora' : 'Alerta sonora silenciada';
+            }
+
+            function revisar() {
+                const actuales = alertasActuales();
+                const nuevas = actuales.filter(a => a.id && !conocidas.has(a.id));
+                conocidas = new Set(actuales.map(a => a.id));
+                if (!nuevas.length || !activo()) return;
+                // Una sola pestaña suena por incidencia (las demás la ven ya anotada)
+                let sonadas = {};
+                try { sonadas = JSON.parse(leer(SONADAS, '{}')) || {}; } catch (e) {}
+                const ahora = Date.now();
+                Object.keys(sonadas).forEach(id => { if (ahora - sonadas[id] > 6 * 3600e3) delete sonadas[id]; });
+                const porSonar = nuevas.filter(a => !sonadas[a.id]);
+                if (!porSonar.length) return;
+                porSonar.forEach(a => { sonadas[a.id] = ahora; });
+                escribir(SONADAS, JSON.stringify(sonadas));
+                pitar(porSonar.some(a => a.tipo === 'critica') ? 'critica' : 'advertencia');
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                conocidas = new Set(alertasActuales().map(a => a.id));   // lo que ya había al abrir no suena
+                const botonTV = document.getElementById('tvBotonSonido');
+                if (botonTV) pintarBotonTV(activo());
+                contexto();
+                // En una TV nadie hace clic: se ofrece el botón desde el inicio. En una PC basta cualquier clic.
+                if (document.documentElement.classList.contains('modo-tv') && activo() && ctx && ctx.state !== 'running') avisoDesbloqueo(true);
+            });
+            // Cualquier clic o tecla habilita el sonido para el resto de la sesión
+            ['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, () => {
+                const c = contexto();
+                if (c && c.state !== 'running') c.resume().then(() => avisoDesbloqueo(false)).catch(() => {});
+            }, { passive: true }));
+            document.addEventListener('nm:refrescado', e => { if (e.detail.claves.includes('alertas')) revisar(); });
+
+            return {
+                activo,
+                pintarBotonTV,
+                alternar() {
+                    escribir(PREF, activo() ? '0' : '1');
+                    if (!activo()) avisoDesbloqueo(false);
+                    return activo();
+                },
+                probar(tipo = 'critica') { contexto()?.resume().then(() => { avisoDesbloqueo(false); pitar(tipo); }); },
+            };
+        })();
+
+        // ==================== REFRESCO AUTOMÁTICO DE ZONAS ====================
+        // Cada zona con data-refrescar="clave" se vuelve a pedir en segundo plano (la página actual o su
+        // data-refrescar-url) y se reemplaza su contenido solo si cambió. No recarga la página: se conservan el
+        // scroll, el zoom y el estado de Alpine del elemento marcado (p. ej. los filtros de una tabla).
+        // Se salta una zona mientras el ratón está encima o el foco está dentro (alguien la está usando).
+        // data-refrescar-cada="10" da a una zona su propio intervalo en segundos (las alertas van más rápido
+        // que el resto); sin él, la zona usa el de la página (meta nm-refresco).
+        window.nocRefresco = (function () {
+            const segundos = Math.max(10, parseInt(document.querySelector('meta[name="nm-refresco"]')?.content || '30', 10));
+            const TICK_S = 5;
+            const ultimoHtml = new WeakMap();
+            const ultimaVez = new WeakMap();
+            let enCurso = false;
+
+            const intervaloDe = (zona) => Math.max(TICK_S, parseInt(zona.dataset.refrescarCada || segundos, 10) || segundos);
+            const toca = (zona, ahora) => ahora - (ultimaVez.get(zona) || 0) >= intervaloDe(zona) * 1000 - 500;
+
+            // data-refrescar-pausa="selector": la zona espera mientras exista eso (p. ej. un menú abierto)
+            const enUso = (zona) => zona.matches(':hover')
+                || (document.activeElement && document.activeElement !== document.body && zona.contains(document.activeElement))
+                || (zona.dataset.refrescarPausa && zona.querySelector(zona.dataset.refrescarPausa));
+
+            async function ciclo(todas = false) {
+                if (enCurso || document.hidden) return;
+                const ahora = Date.now();
+                const zonas = [...document.querySelectorAll('[data-refrescar]')].filter(z => todas === true || toca(z, ahora));
+                if (!zonas.length) return;
+                zonas.forEach(z => ultimaVez.set(z, ahora));
+                enCurso = true;
+                try {
+                    const porUrl = {};
+                    zonas.forEach(z => (porUrl[z.dataset.refrescarUrl || location.href] ??= []).push(z));
+                    for (const [url, lista] of Object.entries(porUrl)) {
+                        let doc;
+                        try {
+                            const r = await fetch(url, { credentials: 'same-origin', redirect: 'manual',
+                                headers: { 'Accept': 'text/html', 'X-Refresco-Suave': '1', 'X-Requested-With': 'XMLHttpRequest' } });
+                            if (!r.ok) continue;   // sesión vencida o error: se reintenta en el siguiente ciclo
+                            doc = new DOMParser().parseFromString(await r.text(), 'text/html');
+                        } catch (e) { continue; }
+                        const cambiadas = [];
+                        lista.forEach(zona => {
+                            const clave = zona.dataset.refrescar;
+                            const nueva = doc.querySelector(`[data-refrescar="${CSS.escape(clave)}"]`);
+                            if (!nueva || enUso(zona)) return;
+                            const html = nueva.innerHTML;
+                            if (ultimoHtml.get(zona) === html) return;
+                            ultimoHtml.set(zona, html);
+                            zona.innerHTML = html;   // Alpine inicializa lo nuevo con el estado del elemento marcado
+                            cambiadas.push(clave);
+                        });
+                        if (cambiadas.length) {
+                            if (cambiadas.includes('alertas')) window.nocAjustarMarquesina();
+                            document.dispatchEvent(new CustomEvent('nm:refrescado', { detail: { claves: cambiadas } }));
+                        }
+                    }
+                } finally {
+                    enCurso = false;
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                // Lo recién cargado cuenta como actualizado: el primer pedido de cada zona llega a su intervalo
+                document.querySelectorAll('[data-refrescar]').forEach(z => ultimaVez.set(z, Date.now()));
+                setInterval(ciclo, TICK_S * 1000);
+                // Al volver a la pestaña se actualiza todo enseguida
+                document.addEventListener('visibilitychange', () => { if (!document.hidden) ciclo(true); });
+            });
+            return { ahora: () => ciclo(true), segundos };
+        })();
     </script>
 
     <!-- Global Theme Management Helper -->
@@ -600,7 +928,7 @@
                 Chart.defaults.font.family = "'Inter', sans-serif";
                 Chart.defaults.color = oscuro ? '#9aa8bf' : '#637087';
                 Chart.defaults.borderColor = oscuro ? 'rgba(71, 85, 105, 0.42)' : '#e3e7ed';
-                Chart.defaults.plugins.tooltip.backgroundColor = oscuro ? '#111a2b' : '#0a1d4a';
+                Chart.defaults.plugins.tooltip.backgroundColor = oscuro ? '#111a2b' : '#2c3336';
                 Chart.defaults.plugins.tooltip.cornerRadius = 8;
                 Chart.defaults.plugins.tooltip.padding = 10;
                 Chart.defaults.animation.duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 500;

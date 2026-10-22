@@ -1,0 +1,10 @@
+[Unit]
+Description=Network Monitor - noc:sync cada 10 s
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=10
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

@@ -33,9 +33,9 @@ from pysnmp.hlapi.v3arch.asyncio import (
 )
 
 try:
-    from nm_common import db_config, normalize_iface, COMUNIDAD_EFECTIVA_SQL, conectar, upsert, contador
+    from nm_common import db_config, normalize_iface, COMUNIDAD_EFECTIVA_SQL, conectar, upsert, contador, credencial_snmp, auth_snmp
 except ImportError:
-    from worker.nm_common import db_config, normalize_iface, COMUNIDAD_EFECTIVA_SQL, conectar, upsert, contador
+    from worker.nm_common import db_config, normalize_iface, COMUNIDAD_EFECTIVA_SQL, conectar, upsert, contador, credencial_snmp, auth_snmp
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
@@ -78,7 +78,8 @@ OID_CISCO_ENT_SENSOR = '1.3.6.1.4.1.9.9.91.1.1.1.1'    # .1 tipo .2 escala .3 pr
 OID_FG_VPN = '1.3.6.1.4.1.12356.101.12.2.2.1'          # fgVpnTunEntry: .2 fase1 .3 fase2 .4 gw remoto .18/.19 octetos in/out .20 estado
 OID_FG_HA_MODE = '1.3.6.1.4.1.12356.101.13.1.1.0'      # fgHaSystemMode
 OID_FG_HA_STATS = '1.3.6.1.4.1.12356.101.13.2.1.1'     # fgHaStatsEntry: .3 CPU .4 RAM .6 sesiones .11 hostname .12 sincronía
-OID_FG_SYS = '1.3.6.1.4.1.12356.101.4.1'               # .6 disco usado (MB) .7 disco total (MB) .11 sesiones nuevas/s (1 min) .15 sesiones IPv6
+OID_FG_SYS = '1.3.6.1.4.1.12356.101.4.1'               # .1 versión FortiOS .6 disco usado (MB) .7 disco total (MB) .11 sesiones nuevas/s (1 min) .15 sesiones IPv6
+OID_FN_SERIE = '1.3.6.1.4.1.12356.100.1.1.1.0'         # fnSysSerial (FORTINET-CORE-MIB)
 OID_FG_HW_SENSOR = '1.3.6.1.4.1.12356.101.4.3.2.1'     # fgHwSensorEntry: .2 nombre .3 valor .4 alarma
 OID_FG_SDWAN = '1.3.6.1.4.1.12356.101.4.9.2.1'         # fgVWLHealthCheckLinkEntry: .2 nombre .4 estado .5 latencia .6 jitter
                                                        #   .7 enviados .8 recibidos .9 pérdida .14 interfaz (FortiOS 6.4+)
@@ -244,6 +245,27 @@ async def get_scalars(engine, auth, target, oids):
     return out
 
 
+async def get_textos(engine, auth, target, oids):
+    """GET de varios escalares de texto. Devuelve [str | None] en el mismo orden."""
+    try:
+        err_ind, err_stat, _, vbs = await get_cmd(engine, auth, target, ContextData(),
+                                                  *[ObjectType(ObjectIdentity(o)) for o in oids])
+    except Exception:
+        return [None] * len(oids)
+    if err_ind or err_stat or not vbs:
+        return [None] * len(oids)
+    return [None if v.__class__.__name__ in ('NoSuchObject', 'NoSuchInstance', 'EndOfMibView', 'Null')
+            else (snmp_text(v) or None) for _, v in vbs]
+
+
+def version_fortios(texto):
+    """'v7.2.8,build1639,240313 (GA.F)' -> '7.2.8 (build 1639)'. Si no tiene ese formato, el texto tal cual."""
+    if not texto:
+        return None
+    m = re.match(r'v?(\d+\.\d+\.\d+),build(\d+)', texto)
+    return f'{m.group(1)} (build {m.group(2)})' if m else texto[:40]
+
+
 async def collect_port_counters(engine, auth, target):
     """EtherLike-MIB e IF-MIB: CRC/FCS, alineación, dúplex y contadores broadcast/multicast por ifIndex."""
     async def ints(oid):
@@ -375,11 +397,13 @@ async def collect_fortigate(engine, auth, target):
                               for i, h in sorted(cols[11].items())]
         forti['ha'] = ha
 
-    # ---- Sistema: disco, tasa de sesiones nuevas, sesiones IPv6 ----
+    # ---- Sistema: versión, serie, disco, tasa de sesiones nuevas, sesiones IPv6 ----
     disco_usado, disco_total, ses_rate, ses6 = await get_scalars(
         engine, auth, target, [f'{OID_FG_SYS}.6.0', f'{OID_FG_SYS}.7.0', f'{OID_FG_SYS}.11.0', f'{OID_FG_SYS}.15.0'])
-    if any(v is not None for v in (disco_usado, disco_total, ses_rate, ses6)):
+    version, serie = await get_textos(engine, auth, target, [f'{OID_FG_SYS}.1.0', OID_FN_SERIE])
+    if any(v is not None for v in (disco_usado, disco_total, ses_rate, ses6, version)):
         forti['sistema'] = {
+            'version': version_fortios(version), 'serie': serie,
             'disco_usado_mb': disco_usado, 'disco_total_mb': disco_total,
             'disco_pct': round(disco_usado / disco_total * 100, 1) if disco_usado is not None and disco_total else None,
             'sesiones_nuevas_seg': ses_rate, 'sesiones_ipv6': ses6,
@@ -482,7 +506,7 @@ async def collect_wlc(engine, auth, target):
 
 
 async def collect(engine, ip, community, sys_object_id=None, tipo=None):
-    auth = CommunityData(community, mpModel=1)
+    auth = auth_snmp(community)
     try:
         target = await UdpTransportTarget.create((ip, 161), timeout=2.0, retries=1)
         err_ind, err_stat, _, vbs = await get_cmd(engine, auth, target, ContextData(),
@@ -676,7 +700,7 @@ def sync_port_details(cur, dev_id, data):
 
 async def process_device(engine, sem, dev):
     async with sem:
-        data = await collect(engine, dev['ip'], dev['comunidad_snmp'] or 'public',
+        data = await collect(engine, dev['ip'], credencial_snmp(dev),
                              dev.get('sys_object_id'), dev.get('tipo_detectado'))
     if not data:
         print(f"[{dev['ip']}] {dev['nombre']}: sin respuesta SNMP, inventario sin cambios.", flush=True)

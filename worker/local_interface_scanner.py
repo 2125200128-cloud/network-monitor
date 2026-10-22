@@ -45,11 +45,58 @@ def log(msg, log_list=None):
     if log_list is not None:
         log_list.append(formatted)
 
+# ---------------------------------------------------------------------------
+#  Linux (servidor Ubuntu): interfaces y vecinos con el comando `ip` (iproute2)
+# ---------------------------------------------------------------------------
+_VIRTUALES_LINUX = ('lo', 'docker', 'br-', 'veth', 'virbr', 'vmnet', 'vboxnet', 'tun', 'tap', 'wg', 'zt', 'tailscale')
+
+
+def _ip_json(*args):
+    try:
+        res = subprocess.run(['ip', '-j', *args], capture_output=True, text=True, timeout=5)
+        return json.loads(res.stdout or '[]')
+    except Exception:
+        return []
+
+
+def _adaptadores_linux():
+    puertas = {r.get('dev'): r.get('gateway') for r in _ip_json('-4', 'route', 'show', 'default') if r.get('dev')}
+    salida = []
+    for itf in _ip_json('-4', 'addr', 'show'):
+        nombre = itf.get('ifname', '')
+        if nombre.startswith(_VIRTUALES_LINUX) or 'UP' not in itf.get('flags', []):
+            continue
+        for a in itf.get('addr_info', []):
+            ip = a.get('local')
+            if not ip or ip.startswith(('127.', '169.254.')):
+                continue
+            red = ipaddress.IPv4Network(f"{ip}/{a.get('prefixlen', 24)}", strict=False)
+            inalambrica = nombre.startswith(('wl', 'wlan'))
+            salida.append({
+                'name': nombre, 'type': 'Wi-Fi' if inalambrica else 'Ethernet', 'ip': ip,
+                'mask': str(red.netmask), 'gateway': puertas.get(nombre), 'cidr': str(red),
+                'connected': True, 'has_gateway': bool(puertas.get(nombre)),
+            })
+    return salida
+
+
+def _ethernet_linux():
+    candidatos = [a for a in _adaptadores_linux() if a['type'] == 'Ethernet']
+    if not candidatos:
+        return None
+    candidatos.sort(key=lambda a: a['has_gateway'], reverse=True)
+    a = candidatos[0]
+    return {k: a[k] for k in ('name', 'ip', 'mask', 'gateway', 'cidr', 'connected')}
+
+
 def detect_local_ethernet():
     """
     Detecta la interfaz de red física Ethernet por cable RJ-45 priorizando
     aquella con Gateway asignado y excluyendo adaptadores virtuales.
     """
+    if sys.platform != 'win32':
+        return _ethernet_linux() or {"name": "Ethernet (sin interfaz cableada activa)", "ip": None, "mask": None,
+                                     "gateway": None, "cidr": None, "connected": False}
     try:
         res = subprocess.run(['ipconfig', '/all'], capture_output=True, text=True)
         sections = re.split(r'\n(?=[A-Za-z0-9])', res.stdout)
@@ -124,6 +171,8 @@ def detect_all_network_adapters():
     Retorna todos los adaptadores físicos o inalámbricos activos,
     excluyendo interfaces virtuales (VirtualBox, VMware, WSL, loopback).
     """
+    if sys.platform != 'win32':
+        return _adaptadores_linux()
     adapters = []
     try:
         res = subprocess.run(['ipconfig', '/all'], capture_output=True, text=True)
@@ -170,8 +219,14 @@ def detect_all_network_adapters():
     return adapters
 
 def get_arp_table_ips(interface_ip=None):
-    """Extrae IPs de la tabla ARP local (arp -a)."""
+    """Extrae IPs de la tabla ARP local (arp -a en Windows, ip neigh en Linux)."""
     ips = []
+    if sys.platform != 'win32':
+        for v in _ip_json('-4', 'neigh', 'show'):
+            ip = v.get('dst', '')
+            if ip and v.get('lladdr') and 'FAILED' not in v.get('state', []) and not ip.startswith(('224.', '239.')):
+                ips.append(ip)
+        return list(dict.fromkeys(ips))
     try:
         res = subprocess.run(["arp", "-a"], capture_output=True, text=True)
         lines = res.stdout.splitlines()
