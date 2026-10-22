@@ -42,7 +42,7 @@ class SyncCdpCommand extends Command
                                        ->get();
 
         $this->info("Se escanearán " . $dispositivosBase->count() . " equipos.");
-        $pythonBin = PHP_OS_FAMILY === 'Windows' ? 'python' : 'python3';
+        $pythonBin = escapeshellarg(\App\Support\Python::binario());
 
         foreach ($dispositivosBase as $origen) {
             $this->line("Consultando IP: {$origen->ip} ({$origen->nombre})...");

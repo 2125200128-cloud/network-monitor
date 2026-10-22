@@ -267,14 +267,6 @@ class TopologiaController extends Controller
         $notasPorDispositivo = NotaDispositivo::selectRaw('dispositivo_id, COUNT(*) n')
             ->groupBy('dispositivo_id')->pluck('n', 'dispositivo_id');
 
-        // Coordenadas predeterminadas tipo Blueprint para un layout limpio inicial
-        $coordenadas = [
-            1 => ['x' => 0, 'y' => 200],       // Switch Core abajo en el centro
-            2 => ['x' => -360, 'y' => -180],   // Router Edge arriba a la izquierda
-            3 => ['x' => 360, 'y' => -180],    // Switch Access arriba a la derecha
-            4 => ['x' => 0, 'y' => -180],      // Cisco SG200 Lab arriba en el centro
-        ];
-
         // Función de ayuda para abreviar nombres largos de interfaces Cisco
         $abrev = function ($name) {
             if (!$name) return 'Port';
@@ -361,14 +353,12 @@ class TopologiaController extends Controller
                 $statusColor = '#ef4444';
             }
 
-            if (isset($userPosiciones[$disp->id]) && isset($userPosiciones[$disp->id]['x']) && isset($userPosiciones[$disp->id]['y'])) {
-                $pos = [
-                    'x' => (float)$userPosiciones[$disp->id]['x'],
-                    'y' => (float)$userPosiciones[$disp->id]['y'],
-                ];
-            } else {
-                $pos = $coordenadas[$disp->id] ?? ['x' => rand(-200, 200), 'y' => rand(-200, 200)];
-            }
+            // Sin posición guardada (equipo recién descubierto) no se inventa una: el navegador lo coloca
+            // junto a sus vecinos con el acomodo automático
+            $posicionGuardada = isset($userPosiciones[$disp->id]['x'], $userPosiciones[$disp->id]['y']);
+            $pos = $posicionGuardada
+                ? ['x' => (float) $userPosiciones[$disp->id]['x'], 'y' => (float) $userPosiciones[$disp->id]['y']]
+                : ['x' => null, 'y' => null];
 
             $imageUrl = $imagePath ? asset($imagePath) : null;
 
@@ -394,6 +384,7 @@ class TopologiaController extends Controller
                 ],
                 'customData' => [
                     'id' => $disp->id,
+                    'posicion_guardada' => $posicionGuardada,
                     'nombre' => $disp->nombre,
                     'ip' => $disp->ip,
                     'ubicacion' => $disp->ubicacion,
@@ -480,7 +471,7 @@ class TopologiaController extends Controller
                 ],
                 'color' => [
                     'color' => $color,
-                    'highlight' => '#2563eb',
+                    'highlight' => '#667d93',
                     'hover' => '#3b5998',
                     'opacity' => $opacity
                 ],

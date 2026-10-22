@@ -8,7 +8,8 @@
 @source '../**/*.js';
 
 /* Mismas escalas que partials/design-tokens y el tailwind.config del layout:
-   blue = azul real, indigo = marino, radios sobrios. */
+   blue = azul principal #667D93, indigo = marino gris #465055,
+   orange = naranja NOC #FF8300, radios sobrios. */
 @theme {
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
@@ -17,36 +18,62 @@
     --radius-2xl: 0.75rem;
     --radius-3xl: 0.875rem;
 
-    --color-hacienda-blue: #123178;
-    --color-hacienda-orange: #f07f12;
-    --color-inst-azul: #5b7d95;
-    --color-inst-naranja: #f07f12;
+    --color-hacienda-blue: #465055;
+    --color-hacienda-orange: #ff8300;
+    --color-inst-azul: #667d93;
+    --color-inst-naranja: #ff8300;
     --color-nm-primary: rgb(var(--nm-primary-rgb));
     --color-nm-surface: rgb(var(--nm-surface-rgb));
     --color-nm-sunken: rgb(var(--nm-sunken-rgb));
     --color-nm-ink: rgb(var(--nm-ink-rgb));
 
-    --color-blue-50: #eef5ff;
-    --color-blue-100: #d9e8ff;
-    --color-blue-200: #b3d1ff;
-    --color-blue-300: #80b3ff;
-    --color-blue-400: #4d94fd;
-    --color-blue-500: #1a7afb;
-    --color-blue-600: #0168fa;
-    --color-blue-700: #0153c7;
-    --color-blue-800: #023f99;
-    --color-blue-900: #03306f;
-    --color-blue-950: #031d45;
+    /* Azul: un solo tono #667D93 para texto, iconos y bordes (300–800); sky usa la misma escala */
+    --color-blue-50: #f3f5f7;
+    --color-blue-100: #e4e8ec;
+    --color-blue-200: #cad2da;
+    --color-blue-300: #667d93;
+    --color-blue-400: #667d93;
+    --color-blue-500: #667d93;
+    --color-blue-600: #667d93;
+    --color-blue-700: #667d93;
+    --color-blue-800: #667d93;
+    --color-blue-900: #2d3741;
+    --color-blue-950: #1b2127;
 
-    --color-indigo-50: #eef2fb;
-    --color-indigo-100: #d6e0f5;
-    --color-indigo-200: #aebfe9;
-    --color-indigo-300: #7e97d6;
-    --color-indigo-400: #4f6fc0;
-    --color-indigo-500: #2c4fa6;
-    --color-indigo-600: #1a3d8f;
-    --color-indigo-700: #123178;
-    --color-indigo-800: #0d2660;
-    --color-indigo-900: #0a1d4a;
-    --color-indigo-950: #060f2b;
+    --color-sky-50: #f3f5f7;
+    --color-sky-100: #e4e8ec;
+    --color-sky-200: #cad2da;
+    --color-sky-300: #667d93;
+    --color-sky-400: #667d93;
+    --color-sky-500: #667d93;
+    --color-sky-600: #667d93;
+    --color-sky-700: #667d93;
+    --color-sky-800: #667d93;
+    --color-sky-900: #2d3741;
+    --color-sky-950: #1b2127;
+
+    --color-indigo-50: #f1f2f3;
+    --color-indigo-100: #dde0e2;
+    --color-indigo-200: #bbc1c3;
+    --color-indigo-300: #98a1a5;
+    --color-indigo-400: #778288;
+    --color-indigo-500: #5e6a70;
+    --color-indigo-600: #505b61;
+    --color-indigo-700: #465055;
+    --color-indigo-800: #384044;
+    --color-indigo-900: #2c3336;
+    --color-indigo-950: #1b1f21;
+
+    --color-orange-50: #fff6f1;
+    --color-orange-100: #ffece0;
+    --color-orange-200: #ffd5ba;
+    /* Naranja: un solo tono para texto, iconos y bordes (300–800) */
+    --color-orange-300: #ff8300;
+    --color-orange-400: #ff8300;
+    --color-orange-500: #ff8300;
+    --color-orange-600: #ff8300;
+    --color-orange-700: #ff8300;
+    --color-orange-800: #ff8300;
+    --color-orange-900: #723802;
+    --color-orange-950: #3d1a00;
 }

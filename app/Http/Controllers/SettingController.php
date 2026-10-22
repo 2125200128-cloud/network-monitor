@@ -20,7 +20,7 @@ class SettingController extends Controller
         $settings = ConfiguracionGeneral::firstOrCreate([], [
             'intervalo_sondeo_segundos' => 60,
             'comunidad_snmp_default' => 'public',
-            'ip_switch_core' => env('IP_SWITCH_CORE', '10.4.254.3'),
+            'ip_switch_core' => config('noc.ip_switch_core'),
             'umbral_cpu_warning' => 85,
             'umbral_loss_warning' => 5,
         ]);
@@ -35,7 +35,17 @@ class SettingController extends Controller
             'notificadas_24h' => \App\Models\AlarmaRed::where('notificada_telegram_at', '>=', now()->subDay())->count(),
         ];
 
-        return view('settings.index', compact('settings', 'users', 'section', 'retencion', 'telegram'));
+        $snmpv3 = [
+            'configurado' => (bool) $settings->snmpv3_usuario,
+            // Solo si hay valor guardado; nunca se envían al navegador
+            'auth_guardada' => $settings->getRawOriginal('snmpv3_auth_pass') !== null,
+            'priv_guardada' => $settings->getRawOriginal('snmpv3_priv_pass') !== null,
+            // El FortiGate del centro de datos (inventario), si no, cualquier firewall monitoreado
+            'ip_prueba' => \App\Models\InventarioCentroDatos::where('capa', 'perimetro')->value('ip')
+                ?? \App\Models\Dispositivo::where('tipo_detectado', 'firewall')->value('ip') ?? '',
+        ];
+
+        return view('settings.index', compact('settings', 'users', 'section', 'retencion', 'telegram', 'snmpv3'));
     }
 
     /** Filas para la sección de retención: días efectivos, rango permitido y lo que hay guardado hoy. */
@@ -70,7 +80,6 @@ class SettingController extends Controller
         $request->validate([
             'intervalo_sondeo_segundos' => 'required|integer|min:10',
             'comunidad_snmp_default' => 'required|string|max:255',
-            'comunidad_snmp_firewall' => 'nullable|string|max:255',
             'ip_switch_core' => 'required|ip',
             'umbral_cpu_warning' => 'required|integer|min:1|max:100',
             'umbral_loss_warning' => 'required|integer|min:1|max:100',
@@ -90,13 +99,103 @@ class SettingController extends Controller
 
         $settings = ConfiguracionGeneral::first();
         if ($settings) {
-            // Vacía = los firewalls siguen usando su comunidad individual
-            $settings->update(['comunidad_snmp_firewall' => trim((string) $request->input('comunidad_snmp_firewall')) ?: null] + $request->all());
+            // Solo los campos de este formulario: Telegram y SNMPv3 (secretos) tienen su propio guardado.
+            // Los FortiGate se consultan con el usuario y contraseña de SNMPv3, no con una comunidad aparte.
+            $campos = array_merge(['intervalo_sondeo_segundos', 'comunidad_snmp_default', 'ip_switch_core', 'umbral_cpu_warning', 'umbral_loss_warning'],
+                array_column(ConfiguracionGeneral::RETENCION, 0));
+            $settings->update($request->only($campos));
             // La próxima ejecución de noc:sync aplica la retención nueva sin esperar la hora
             Cache::forget('noc_retencion_hecha');
         }
 
         return redirect()->route('settings.index', ['section' => 'general'])->with('success', 'Configuraciones guardadas exitosamente.');
+    }
+
+    /** Credenciales SNMPv3 de los firewalls. Contraseña vacía = se conserva la guardada (nunca se muestran). */
+    public function guardarSnmpv3(Request $request)
+    {
+        $request->validate([
+            'snmpv3_usuario' => 'nullable|string|max:64',
+            'snmpv3_nivel' => 'required|in:authPriv,authNoPriv,noAuthNoPriv',
+            'snmpv3_auth_proto' => 'required|in:MD5,SHA,SHA256,SHA512',
+            'snmpv3_priv_proto' => 'required|in:DES,AES,AES256',
+            'snmpv3_auth_pass' => 'nullable|string|min:8|max:128',
+            'snmpv3_priv_pass' => 'nullable|string|min:8|max:128',
+        ], [
+            'snmpv3_auth_pass.min' => 'La contraseña de autenticación SNMPv3 debe tener al menos 8 caracteres.',
+            'snmpv3_priv_pass.min' => 'La contraseña de cifrado SNMPv3 debe tener al menos 8 caracteres.',
+        ]);
+
+        $cfg = ConfiguracionGeneral::firstOrFail();
+        $datos = [
+            'snmpv3_usuario' => trim((string) $request->input('snmpv3_usuario')) ?: null,
+            'snmpv3_nivel' => $request->input('snmpv3_nivel'),
+            'snmpv3_auth_proto' => $request->input('snmpv3_auth_proto'),
+            'snmpv3_priv_proto' => $request->input('snmpv3_priv_proto'),
+        ];
+        foreach (['snmpv3_auth_pass', 'snmpv3_priv_pass'] as $campo) {
+            if ($request->filled($campo)) {
+                $datos[$campo] = $request->input($campo);
+            }
+        }
+        // Lo habitual: una sola contraseña para autenticación y cifrado
+        if ($request->boolean('snmpv3_misma_contrasena') && $request->filled('snmpv3_auth_pass')) {
+            $datos['snmpv3_priv_pass'] = $request->input('snmpv3_auth_pass');
+        }
+        if ($request->boolean('snmpv3_borrar') || !$datos['snmpv3_usuario']) {
+            $datos = array_merge($datos, ['snmpv3_usuario' => null, 'snmpv3_auth_pass' => null, 'snmpv3_priv_pass' => null]);
+        }
+
+        $tieneAuth = array_key_exists('snmpv3_auth_pass', $datos) ? $datos['snmpv3_auth_pass'] !== null : $cfg->snmpv3_auth_pass !== null;
+        $tienePriv = array_key_exists('snmpv3_priv_pass', $datos) ? $datos['snmpv3_priv_pass'] !== null : $cfg->snmpv3_priv_pass !== null;
+        // noAuthNoPriv: solo el nombre de usuario, sin contraseñas (las guardadas se conservan por si se vuelve a un nivel con contraseña)
+        $sinContrasena = $datos['snmpv3_nivel'] === 'noAuthNoPriv';
+        if ($datos['snmpv3_usuario'] && !$sinContrasena && (!$tieneAuth || ($datos['snmpv3_nivel'] === 'authPriv' && !$tienePriv))) {
+            return redirect()->route('settings.index', ['section' => 'general'])
+                ->with('error', 'Faltan contraseñas SNMPv3: la de autenticación' . ($datos['snmpv3_nivel'] === 'authPriv' ? ' y la de cifrado (nivel authPriv)' : '') . '.');
+        }
+
+        $cfg->update($datos);
+        return redirect()->route('settings.index', ['section' => 'general'])->with('success',
+            $datos['snmpv3_usuario'] ? 'Credenciales SNMPv3 de firewalls guardadas. Los workers las usan desde su siguiente ciclo.' : 'Credenciales SNMPv3 eliminadas: los firewalls vuelven a usar comunidad v2c.');
+    }
+
+    /** Prueba las credenciales SNMPv3 guardadas contra un firewall (sysName/sysDescr). */
+    public function probarSnmpv3(Request $request)
+    {
+        $request->validate(['ip' => 'required|ipv4']);
+        return $this->ejecutarSnmpCheck(['--v3-firewall', $request->input('ip')]);
+    }
+
+    /**
+     * Con solo usuario y contraseña, prueba las combinaciones habituales de protocolo contra un firewall.
+     * Si la contraseña viene vacía se usa la guardada. Las credenciales viajan por variables de entorno.
+     */
+    public function detectarSnmpv3(Request $request)
+    {
+        $request->validate(['ip' => 'required|ipv4', 'usuario' => 'required|string|max:64', 'contrasena' => 'nullable|string|max:128']);
+        // Sin contraseña (ni escrita ni guardada) solo se prueba el nivel noAuthNoPriv
+        $clave = $request->input('contrasena') ?: (string) ConfiguracionGeneral::firstOrFail()->snmpv3_auth_pass;
+        return $this->ejecutarSnmpCheck(['--v3-detectar', $request->input('ip')], 60,
+            ['NM_V3_USUARIO' => $request->input('usuario'), 'NM_V3_CONTRASENA' => $clave]);
+    }
+
+    private function ejecutarSnmpCheck(array $argumentos, int $limite = 20, array $entorno = [])
+    {
+        $proceso = new \Symfony\Component\Process\Process([\App\Support\Python::binario(), base_path('worker/snmp_check.py'), ...$argumentos],
+            base_path(), \App\Support\Python::entorno($entorno));
+        $proceso->setTimeout($limite);
+        try {
+            $proceso->run();
+        } catch (\Throwable) {
+            return response()->json(['ok' => false, 'mensaje' => 'Tiempo de espera agotado.'], 422);
+        }
+        $lineas = array_filter(array_map('trim', explode("\n", $proceso->getOutput())));
+        $r = json_decode((string) end($lineas), true);
+        if (!is_array($r)) {
+            return response()->json(['ok' => false, 'mensaje' => 'Salida inválida: ' . \Illuminate\Support\Str::limit(trim($proceso->getErrorOutput() ?: $proceso->getOutput()), 200)], 422);
+        }
+        return response()->json($r, $r['ok'] ? 200 : 422);
     }
 
     public function guardarTelegram(Request $request)

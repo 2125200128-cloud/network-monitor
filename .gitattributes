@@ -9,3 +9,17 @@
 /.github export-ignore
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
+
+# Scripts y configuraciones del servidor Linux: siempre LF (con CRLF bash y systemd fallan)
+*.sh text eol=lf
+deploy/** text eol=lf
+
+# Scripts de Windows
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.pdf binary
+*.dump binary

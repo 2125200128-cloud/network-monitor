@@ -102,14 +102,6 @@
         .role-operador { background: rgb(var(--nm-primary-rgb) / 0.12); color: var(--nm-primary); border: 1px solid rgb(var(--nm-primary-rgb) / 0.3); }
         .role-auditor { background: var(--nm-sunken); color: var(--nm-text-muted); border: 1px solid var(--nm-border-strong); }
 
-        /* Botón principal */
-        .btn-black-executive {
-            display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.65rem 1.4rem;
-            font-size: 0.875rem; font-weight: 700; color: #fff; border: 1px solid transparent; border-radius: var(--nm-btn-radius);
-            background: var(--nm-metal-sheen), var(--nm-metal-azure); box-shadow: 0 2px 8px -2px rgb(var(--nm-primary-rgb) / 0.55);
-            transition: filter var(--nm-dur-fast) ease, box-shadow var(--nm-dur-fast) ease; cursor: pointer;
-        }
-        .btn-black-executive:hover { filter: brightness(1.08); box-shadow: 0 4px 14px -3px rgb(var(--nm-primary-rgb) / 0.6); }
 
         @media (max-width: 1024px) {
             .settings-container { flex-direction: column; height: auto; min-height: auto; }
@@ -269,7 +261,7 @@
                     <svg class="w-6 h-6" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /> <path d="m21 21-4.3-4.3" /></svg>
                 </div>
                 <h3 class="text-sm font-bold text-slate-800 dark:text-white">No se encontraron ajustes</h3>
-                <p class="text-xs text-slate-400 mt-1">Intenta con otros términos como "SNMP", "CPU", "2FA", "Tema", o "Contraseña".</p>
+                <p class="text-xs text-slate-400 mt-1">Intenta con otros términos como "SNMP", "CPU", "Sesión", "Tema", o "Contraseña".</p>
             </div>
 
             {{-- ========== SECTION: General / Motor SNMP ========== --}}
@@ -324,20 +316,6 @@
                                     </div>
                                 </div>
                                 <input type="text" name="comunidad_snmp_default" value="{{ $settings->comunidad_snmp_default }}" class="settings-input font-mono font-bold" style="width: 200px;">
-                            </div>
-
-                            {{-- Row: Comunidad SNMP de firewalls --}}
-                            <div class="settings-row">
-                                <div class="flex items-center gap-4">
-                                    <div class="icon-black-pill anim-wiggle-hover">
-                                        <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></svg>
-                                    </div>
-                                    <div>
-                                        <div class="settings-row-label">Comunidad SNMP Firewalls (FortiGate)</div>
-                                        <div class="settings-row-desc">Para equipos tipo Firewall, salvo que su ficha tenga una propia</div>
-                                    </div>
-                                </div>
-                                <input type="text" name="comunidad_snmp_firewall" value="{{ $settings->comunidad_snmp_firewall }}" placeholder="Igual que la red" autocomplete="off" class="settings-input font-mono font-bold" style="width: 200px;">
                             </div>
 
                             {{-- Row: IP Switch Core --}}
@@ -434,12 +412,142 @@
                     </div>
 
                     <div class="flex justify-end mt-6">
-                        <button type="submit" class="btn-black-executive flex items-center gap-2.5">
-                            <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                            <span>Guardar Parámetros</span>
+                        <button type="submit" class="fancy">
+                            <span class="top-key"></span>
+                            <span class="text">
+                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                                Guardar Parámetros
+                            </span>
+                            <span class="bottom-key-1"></span>
+                            <span class="bottom-key-2"></span>
                         </button>
                     </div>
                 </form>
+
+                {{-- SNMPv3 de firewalls: formulario propio (las contraseñas no viajan con el resto de parámetros) --}}
+                <form action="{{ route('settings.snmpv3') }}" method="POST" class="settings-group mt-6 mb-0" x-data="snmpv3Ajustes()" autocomplete="off">
+                    @csrf
+                    <h4 class="settings-group-title">
+                        <svg class="w-4 h-4 text-black dark:text-white" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                        SNMPv3 de firewalls (FortiGate)
+                        @if($snmpv3['configurado'])
+                            <span class="ml-auto text-[11px] font-black px-3 py-0.5 rounded-full bg-black text-white dark:bg-white dark:text-black normal-case tracking-normal">Activo</span>
+                        @endif
+                    </h4>
+                    <p class="settings-row-desc mb-2">
+                        Si hay usuario SNMPv3, los equipos tipo Firewall se consultan con él en lugar de la comunidad v2c, salvo que su ficha técnica tenga una comunidad propia.
+                        Las contraseñas se guardan cifradas y no se vuelven a mostrar: deja el campo vacío para conservar la guardada.
+                    </p>
+
+                    <div class="settings-row">
+                        <div><div class="settings-row-label">Usuario</div><div class="settings-row-desc">Usuario SNMPv3 configurado en el FortiGate</div></div>
+                        <input type="text" name="snmpv3_usuario" x-model="usuario" placeholder="Sin SNMPv3" autocomplete="off" class="settings-input font-mono font-bold" style="width: 260px;">
+                    </div>
+                    <div class="settings-row" x-show="nivel !== 'noAuthNoPriv'">
+                        <div>
+                            <div class="settings-row-label">Contraseña</div>
+                            <div class="settings-row-desc">
+                                @if($snmpv3['auth_guardada']) <b>Guardada</b> · déjala vacía para conservarla. @else La que te dieron junto con el usuario. @endif
+                            </div>
+                        </div>
+                        <input type="password" name="snmpv3_auth_pass" x-model="contrasena" autocomplete="new-password" placeholder="{{ $snmpv3['auth_guardada'] ? 'Sin cambios' : 'Contraseña' }}" class="settings-input font-mono" style="width: 260px;">
+                    </div>
+
+                    {{-- Protocolos: "Detectar" los llena solo; se pueden ajustar a mano si se conocen --}}
+                    <details class="settings-row block" @if($errors->has('snmpv3_priv_pass')) open @endif>
+                        <summary class="text-xs font-bold text-slate-500 select-none">Opciones avanzadas: protocolos <span class="font-mono font-semibold" x-text="'(' + (nivel === 'noAuthNoPriv' ? 'sin contraseña' : (nivel === 'authPriv' ? auth + ' + ' + priv : auth + ' sin cifrado')) + ')'"></span></summary>
+                        <div class="grid sm:grid-cols-2 gap-3 mt-3">
+                            <label class="text-xs font-semibold text-slate-500">Nivel de seguridad
+                                <select name="snmpv3_nivel" x-model="nivel" class="settings-input font-bold mt-1 w-full">
+                                    <option value="authPriv">Autenticación y cifrado (authPriv)</option>
+                                    <option value="authNoPriv">Solo autenticación (authNoPriv)</option>
+                                    <option value="noAuthNoPriv">Sin contraseña (noAuthNoPriv)</option>
+                                </select>
+                            </label>
+                            <p x-show="nivel === 'noAuthNoPriv'" class="sm:col-span-2 text-xs text-amber-700 dark:text-amber-400">
+                                Sin contraseña ni cifrado: basta con conocer el nombre del usuario para leer el equipo. Úsalo solo si el FortiGate ya trae ese usuario y no se puede crear uno con contraseña.
+                            </p>
+                            <label class="text-xs font-semibold text-slate-500" x-show="nivel !== 'noAuthNoPriv'">Autenticación
+                                <select name="snmpv3_auth_proto" x-model="auth" class="settings-input font-bold mt-1 w-full">
+                                    @foreach(['SHA', 'SHA256', 'SHA512', 'MD5'] as $p)<option value="{{ $p }}">{{ $p }}</option>@endforeach
+                                </select>
+                            </label>
+                            <label class="text-xs font-semibold text-slate-500" x-show="nivel === 'authPriv'">Cifrado
+                                <select name="snmpv3_priv_proto" x-model="priv" class="settings-input font-bold mt-1 w-full">
+                                    @foreach(['AES', 'AES256', 'DES'] as $p)<option value="{{ $p }}">{{ $p }}</option>@endforeach
+                                </select>
+                            </label>
+                            <div x-show="nivel === 'authPriv'" class="text-xs font-semibold text-slate-500">
+                                <label class="flex items-center gap-2 mt-5"><input type="checkbox" name="snmpv3_misma_contrasena" value="1" x-model="misma"> Misma contraseña para el cifrado (lo habitual)</label>
+                                <input x-show="!misma" type="password" name="snmpv3_priv_pass" autocomplete="new-password" placeholder="{{ $snmpv3['priv_guardada'] ? 'Sin cambios' : 'Contraseña de cifrado' }}" class="settings-input font-mono mt-2 w-full">
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="flex flex-wrap items-center justify-end gap-3 mt-5">
+                        <span class="text-xs font-semibold mr-auto max-w-xl" :class="ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'" x-text="aviso"></span>
+                        @if($snmpv3['configurado'])
+                            <label class="text-xs text-slate-500 flex items-center gap-1.5"><input type="checkbox" name="snmpv3_borrar" value="1"> Borrar SNMPv3</label>
+                        @endif
+                        <input type="text" x-model="ipPrueba" placeholder="IP del firewall" class="settings-input font-mono" style="width: 150px;" aria-label="IP del firewall para la prueba">
+                        <button type="button" @click="detectar()" :disabled="cargando" class="text-sm font-bold px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
+                                title="Prueba los protocolos habituales con este usuario y contraseña contra la IP indicada">Detectar</button>
+                        @if($snmpv3['configurado'])
+                            <button type="button" @click="probar()" :disabled="cargando" class="text-sm font-bold px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
+                                    title="Prueba la configuración ya guardada contra esta IP">Probar guardada</button>
+                        @endif
+                        <button type="submit" class="fancy">
+                            <span class="top-key"></span>
+                            <span class="text">
+                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                                Guardar SNMPv3
+                            </span>
+                            <span class="bottom-key-1"></span>
+                            <span class="bottom-key-2"></span>
+                        </button>
+                    </div>
+                </form>
+                <script>
+                    function snmpv3Ajustes() {
+                        const llamar = async (url, datos) => {
+                            const r = await fetch(url, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token()) },
+                                body: JSON.stringify(datos),
+                            });
+                            const j = await r.json().catch(() => ({ ok: false, mensaje: 'Respuesta inválida (HTTP ' + r.status + ').' }));
+                            if (r.status === 429) j.mensaje = 'Demasiados intentos, espera un minuto.';
+                            if (!j.mensaje && j.errors) j.mensaje = Object.values(j.errors).flat().join(' ');
+                            return j;
+                        };
+                        return {
+                            usuario: @json(old('snmpv3_usuario', $settings->snmpv3_usuario) ?? ''), contrasena: '',
+                            nivel: @json(old('snmpv3_nivel', $settings->snmpv3_nivel ?? 'authPriv')),
+                            auth: @json(old('snmpv3_auth_proto', $settings->snmpv3_auth_proto ?? 'SHA')),
+                            priv: @json(old('snmpv3_priv_proto', $settings->snmpv3_priv_proto ?? 'AES')),
+                            misma: true,
+                            ipPrueba: @json($snmpv3['ip_prueba']), aviso: '', ok: true, cargando: false,
+                            async detectar() {
+                                this.cargando = true; this.ok = true;
+                                this.aviso = 'Probando protocolos con ' + this.ipPrueba + ' (puede tardar hasta 20 s)…';
+                                try {
+                                    const j = await llamar(@json(route('settings.snmpv3.detectar')), { ip: this.ipPrueba, usuario: this.usuario, contrasena: this.contrasena });
+                                    this.ok = !!j.ok; this.aviso = j.mensaje || 'Error';
+                                    if (j.ok) { this.nivel = j.nivel; this.auth = j.auth; this.priv = j.priv; this.misma = true; }
+                                } catch (e) { this.ok = false; this.aviso = 'Sin conexión con el servidor.'; }
+                                this.cargando = false;
+                            },
+                            async probar() {
+                                this.cargando = true; this.ok = true; this.aviso = 'Consultando ' + this.ipPrueba + '…';
+                                try {
+                                    const j = await llamar(@json(route('settings.snmpv3.probar')), { ip: this.ipPrueba });
+                                    this.ok = !!j.ok; this.aviso = j.mensaje || 'Error';
+                                } catch (e) { this.ok = false; this.aviso = 'Sin conexión con el servidor.'; }
+                                this.cargando = false;
+                            },
+                        };
+                    }
+                </script>
             </div>
 
             {{-- ========== SECTION: Cuentas ========== --}}
@@ -576,9 +684,14 @@
                         </div>
 
                         <div class="flex justify-end">
-                            <button type="submit" class="btn-black-executive flex items-center gap-2">
-                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /> <circle cx="9" cy="7" r="4" /> <line x1="19" x2="19" y1="8" y2="14" /> <line x1="22" x2="16" y1="11" y2="11" /></svg>
-                                <span>Crear Cuenta</span>
+                            <button type="submit" class="fancy">
+                                <span class="top-key"></span>
+                                <span class="text">
+                                    <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /> <circle cx="9" cy="7" r="4" /> <line x1="19" x2="19" y1="8" y2="14" /> <line x1="22" x2="16" y1="11" y2="11" /></svg>
+                                    Crear Cuenta
+                                </span>
+                                <span class="bottom-key-1"></span>
+                                <span class="bottom-key-2"></span>
                             </button>
                         </div>
                     </form>
@@ -827,9 +940,14 @@
                             {{-- Footer --}}
                             <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
                                 <button type="button" onclick="closeEditModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm font-bold text-slate-600 dark:text-slate-300 transition">Cancelar</button>
-                                <button type="submit" class="btn-black-executive flex items-center gap-2">
-                                    <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                                    <span>Guardar Cambios</span>
+                                <button type="submit" class="fancy fancy-sm">
+                                    <span class="top-key"></span>
+                                    <span class="text">
+                                        <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                                        Guardar Cambios
+                                    </span>
+                                    <span class="bottom-key-1"></span>
+                                    <span class="bottom-key-2"></span>
                                 </button>
                             </div>
                         </form>
@@ -845,7 +963,7 @@
                     </div>
                     <div>
                         <h1 class="settings-section-title mb-0">Seguridad y Control de Acceso</h1>
-                        <p class="settings-section-subtitle mb-0">Configuraciones de autenticación de dos factores, sesiones y roles de usuario.</p>
+                        <p class="settings-section-subtitle mb-0">Configuraciones de sesiones y roles de usuario.</p>
                     </div>
                 </div>
 
@@ -856,23 +974,6 @@
                             Autenticación y Sesión
                         </h4>
                         
-                        {{-- Row: 2FA --}}
-                        <div class="settings-row">
-                            <div class="flex items-center gap-4">
-                                <div class="icon-black-pill anim-wiggle-hover">
-                                    <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" /></svg>
-                                </div>
-                                <div>
-                                    <div class="settings-row-label">Autenticación de Dos Factores (2FA)</div>
-                                    <div class="settings-row-desc">Protege tu cuenta requiriendo un código TOTP (Google Authenticator)</div>
-                                </div>
-                            </div>
-                            <a href="{{ route('setup-2fa') }}" class="btn-black-executive" style="padding: 0.55rem 1.25rem; font-size: 0.775rem;">
-                                <span>Configurar</span>
-                                <svg class="w-3.5 h-3.5 ml-1.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
-                            </a>
-                        </div>
-
                         {{-- Row: Session Timeout --}}
                         <div class="settings-row">
                             <div class="flex items-center gap-4">
@@ -1107,9 +1208,14 @@
                         <span class="text-xs font-semibold mr-auto" :class="ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'" x-text="aviso"></span>
                         <button type="button" @click="probar()" :disabled="cargando" class="text-sm font-bold px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
                                 title="Envía un mensaje de prueba con la configuración guardada" aria-label="Envía un mensaje de prueba con la configuración guardada">Enviar prueba</button>
-                        <button type="submit" class="btn-black-executive flex items-center gap-2.5">
-                            <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                            <span>Guardar Telegram</span>
+                        <button type="submit" class="fancy">
+                            <span class="top-key"></span>
+                            <span class="text">
+                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                                Guardar Telegram
+                            </span>
+                            <span class="bottom-key-1"></span>
+                            <span class="bottom-key-2"></span>
                         </button>
                     </div>
                 </form>
@@ -1370,25 +1476,25 @@
                         <div class="p-4 rounded-xl bg-white dark:bg-nm-sunken border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                             <div>
                                 <div class="text-xs font-bold text-slate-800 dark:text-slate-200">Azul real (principal)</div>
-                                <div class="text-[11px] text-slate-400 font-mono mt-0.5">#0168fa</div>
+                                <div class="text-[11px] text-slate-400 font-mono mt-0.5">#667d93</div>
                             </div>
-                            <div class="w-8 h-8 rounded-lg shadow-inner border border-slate-300 dark:border-slate-700" style="background: #0168fa;"></div>
+                            <div class="w-8 h-8 rounded-lg shadow-inner border border-slate-300 dark:border-slate-700" style="background: #667d93;"></div>
                         </div>
 
                         <div class="p-4 rounded-xl bg-white dark:bg-nm-sunken border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                             <div>
                                 <div class="text-xs font-bold text-slate-800 dark:text-slate-200">Marino</div>
-                                <div class="text-[11px] text-slate-400 font-mono mt-0.5">#1a3d8f</div>
+                                <div class="text-[11px] text-slate-400 font-mono mt-0.5">#505b61</div>
                             </div>
-                            <div class="w-8 h-8 rounded-lg shadow-inner border border-slate-300 dark:border-slate-700" style="background: #1a3d8f;"></div>
+                            <div class="w-8 h-8 rounded-lg shadow-inner border border-slate-300 dark:border-slate-700" style="background: #505b61;"></div>
                         </div>
 
                         <div class="p-4 rounded-xl bg-white dark:bg-nm-sunken border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                             <div>
                                 <div class="text-xs font-bold text-slate-800 dark:text-slate-200">Naranja NOC</div>
-                                <div class="text-[11px] text-slate-400 font-mono mt-0.5">#f07f12</div>
+                                <div class="text-[11px] text-slate-400 font-mono mt-0.5">#ff8300</div>
                             </div>
-                            <div class="w-8 h-8 rounded-lg shadow-inner border border-slate-300 dark:border-slate-700" style="background: #f07f12;"></div>
+                            <div class="w-8 h-8 rounded-lg shadow-inner border border-slate-300 dark:border-slate-700" style="background: #ff8300;"></div>
                         </div>
 
                         <div class="p-4 rounded-xl bg-white dark:bg-nm-sunken border border-slate-200 dark:border-slate-800 flex items-center justify-between">
@@ -1481,7 +1587,7 @@
                             Tecnologías Integradas
                         </h4>
                         <div class="flex flex-wrap gap-2.5 mt-2">
-                            @foreach(['Laravel 12', 'Tailwind CSS', 'Alpine.js', 'xterm.js', 'PySNMP', 'Paramiko SSH', 'MySQL', 'Vite'] as $tech)
+                            @foreach(['Laravel 12', 'Tailwind CSS', 'Alpine.js', 'xterm.js', 'PySNMP', 'Paramiko SSH', 'PostgreSQL', 'Vite'] as $tech)
                                 <span class="px-3.5 py-2 rounded-xl bg-white dark:bg-nm-sunken border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-xs flex items-center gap-2">
                                     <span class="w-2 h-2 rounded-full bg-black dark:bg-white"></span>
                                     {{ $tech }}

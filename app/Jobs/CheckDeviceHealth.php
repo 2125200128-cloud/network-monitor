@@ -28,7 +28,7 @@ class CheckDeviceHealth implements ShouldQueue
         $umbralCpu = $config ? $config->umbral_cpu_warning : 85;
 
         $pythonScript = base_path('worker/check_health.py');
-        $pythonExe = env('PYTHON_PATH', 'python');
+        $pythonExe = \App\Support\Python::binario();
         $comunidad = $this->dispositivo->comunidadEfectiva();
 
         $process = new Process([$pythonExe, $pythonScript, $this->dispositivo->ip, $comunidad]);

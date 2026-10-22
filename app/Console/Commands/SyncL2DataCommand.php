@@ -38,14 +38,15 @@ class SyncL2DataCommand extends Command
         }
 
         $scriptPath = base_path('worker/get_switch_l2_data.py');
-        $pythonExecutable = 'python';
+        $pythonExecutable = \App\Support\Python::binario();
 
         foreach ($dispositivos as $dispositivo) {
             $this->info("Consultando L2/ARP para {$dispositivo->nombre} ({$dispositivo->ip})...");
-            
+
             $comunidad = $dispositivo->comunidadEfectiva();
-            
-            $command = escapeshellcmd("$pythonExecutable $scriptPath {$dispositivo->ip} $comunidad");
+
+            // Cada argumento escapado por separado (la comunidad puede traer caracteres especiales)
+            $command = implode(' ', array_map('escapeshellarg', [$pythonExecutable, $scriptPath, $dispositivo->ip, $comunidad]));
             $output = shell_exec($command);
             
             if (!$output) {

@@ -30,7 +30,7 @@
     ];
 @endphp
 
-<div class="floating-card p-6 mb-6" id="diagnosticoRed"
+<div class="floating-card p-6 mb-6" id="diagnosticoRed" data-refrescar="diagnostico"
      x-data="{ tab: 'puertos' }"
      @diag-tab.window="tab = $event.detail"
      x-init="try { const t = localStorage.getItem('dashDiagTab'); if (t) tab = t; } catch (e) {} $watch('tab', v => { try { localStorage.setItem('dashDiagTab', v) } catch (e) {} })">
@@ -49,7 +49,7 @@
                         class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
                     {{ $label }}
                     @if($count > 0)
-                        <span class="min-w-[18px] h-[18px] px-1 rounded-full bg-[#f07f12] text-white text-[11px] font-black flex items-center justify-center">{{ $count }}</span>
+                        <span class="min-w-[18px] h-[18px] px-1 rounded-full bg-[#ff8300] text-white text-[11px] font-black flex items-center justify-center">{{ $count }}</span>
                     @endif
                 </button>
             @endforeach
@@ -218,7 +218,7 @@
             'cols' => [$colDisp,
                 ['label' => 'Disponibilidad', 'align' => 'text-right', 'class' => 'font-mono font-bold', 'fmt' => fn ($r) => $pct($r['pct'])],
                 ['label' => 'Muestras', 'align' => 'text-right', 'class' => 'font-mono', 'fmt' => fn ($r) => $n($r['muestras'])]],
-            'nota' => 'Porcentaje de muestras del sondeo (cada 15 s) en las que el equipo respondió ICMP o SNMP. Los periodos sin sondeo no cuentan.',
+            'nota' => 'Porcentaje de muestras del sondeo (cada 10 s) en las que el equipo respondió ICMP o SNMP. Los periodos sin sondeo no cuentan.',
         ])
     </div>
 
@@ -289,11 +289,17 @@
         @if($seg['firewalls_sin_snmp'] || $seg['wlc_sin_snmp'])
             <div class="mb-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-xs text-amber-800 dark:text-amber-300">
                 <strong>{{ $seg['firewalls_sin_snmp'] }} firewall(s) y {{ $seg['wlc_sin_snmp'] }} WLC en línea no responden SNMP.</strong>
-                Sin SNMP no hay datos de sesiones, túneles VPN, SD-WAN, HA, sensores, IPS ni clientes Wi-Fi. Habilitar SNMP v2c (comunidad configurada en el equipo) y permitir consultas desde este servidor.
+                Sin SNMP no hay datos de sesiones, túneles VPN, SD-WAN, HA, sensores, IPS ni clientes Wi-Fi. En cada FortiGate: permitir SNMP en la interfaz por la que llega el NOC
+                y tener el usuario SNMPv3 de Ajustes → SNMPv3; en los WLC, habilitar SNMP v2c con la comunidad de Ajustes.
             </div>
         @endif
         @php
-            $sinDatoForti = 'Sin datos de FORTINET-FORTIGATE-MIB';
+            // Un panel vacío significa cosas distintas: ningún FortiGate responde, o los que responden no tienen esa función
+            $leidos = $seg['firewalls_leidos'] ?? 0;
+            $deLosLeidos = $leidos === 1 ? 'El FortiGate que responde SNMP no tiene' : "Ninguno de los {$leidos} FortiGate que responden SNMP tiene";
+            $sinDatoForti = $leidos ? "{$deLosLeidos} esto configurado" : 'Ningún FortiGate responde SNMP todavía';
+            $sinSdwan = $leidos ? "{$deLosLeidos} SD-WAN configurado" : $sinDatoForti;
+            $sinTuneles = $leidos ? "{$deLosLeidos} túneles IPsec configurados" : $sinDatoForti;
             $mbps = fn ($v) => $v === null ? '—' : ($v >= 1000 ? number_format($v / 1000, 2) . ' Gbps' : number_format($v, 2) . ' Mbps');
             $ms = fn ($v) => $v === null ? '—' : number_format($v, 1) . ' ms';
             // HA: una fila por miembro (o una por equipo standalone)
@@ -313,7 +319,7 @@
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             @include('dashboard.partials._lista', [
-                'titulo' => 'SLA de SD-WAN por enlace', 'items' => $seg['sdwan'], 'vacio' => $sinDatoForti,
+                'titulo' => 'SLA de SD-WAN por enlace', 'items' => $seg['sdwan'], 'vacio' => $sinSdwan,
                 'cols' => [$colDisp, ['label' => 'Health-check', 'fmt' => fn ($r) => $r['nombre'] . (!empty($r['interfaz']) ? ' · ' . $r['interfaz'] : '')],
                     ['label' => 'Estado', 'fmt' => fn ($r) => ($r['estado'] ?? null) === 'dead' ? 'CAÍDO' : (($r['estado'] ?? null) === 'alive' ? 'OK' : '—'), 'class' => 'font-bold'],
                     ['label' => 'Latencia', 'align' => 'text-right', 'class' => 'font-mono', 'fmt' => fn ($r) => $ms($r['latencia_ms'] ?? null)],
@@ -323,11 +329,11 @@
                     . '%, latencia ≥ ' . \App\Services\AlarmDiagnosisService::SDWAN_LATENCIA_MS . ' ms o jitter ≥ ' . \App\Services\AlarmDiagnosisService::SDWAN_JITTER_MS . ' ms.',
             ])
             @include('dashboard.partials._lista', [
-                'titulo' => 'Túneles IPsec caídos', 'items' => $seg['vpn_caidos'], 'vacio' => $seg['vpn_total'] ? 'Todos los túneles arriba' : $sinDatoForti,
+                'titulo' => 'Túneles IPsec caídos', 'items' => $seg['vpn_caidos'], 'vacio' => $seg['vpn_total'] ? 'Todos los túneles arriba' : $sinTuneles,
                 'cols' => [$colDisp, ['key' => 'fase1', 'label' => 'Túnel'], ['key' => 'remoto', 'label' => 'Gateway remoto', 'class' => 'font-mono']],
             ])
             @include('dashboard.partials._lista', [
-                'titulo' => 'Túneles IPsec con más tráfico', 'items' => $seg['tuneles_trafico'], 'vacio' => $seg['vpn_total'] ? 'Requiere dos ciclos del colector (5 min)' : $sinDatoForti,
+                'titulo' => 'Túneles IPsec con más tráfico', 'items' => $seg['tuneles_trafico'], 'vacio' => $seg['vpn_total'] ? 'Requiere dos ciclos del colector (5 min)' : $sinTuneles,
                 'cols' => [$colDisp, ['key' => 'fase1', 'label' => 'Túnel'],
                     ['label' => '↓ Entrada', 'align' => 'text-right', 'class' => 'font-mono', 'fmt' => fn ($r) => $mbps($r['mbps_in'] ?? null)],
                     ['label' => '↑ Salida', 'align' => 'text-right', 'class' => 'font-mono', 'fmt' => fn ($r) => $mbps($r['mbps_out'] ?? null)]],

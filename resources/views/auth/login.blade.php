@@ -1,214 +1,90 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Acceso Institucional - NOC</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
-    <style>
-        body {
-            background-color: #f3f4f6;
-            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        .text-institutional-blue { color: #5b7d95; }
-        .bg-institutional-blue { background-color: #5b7d95; }
-        .hover-bg-institutional-blue:hover { background-color: #5b7d95; }
-        .text-institutional-orange { color: #f07f12; }
-        .bg-institutional-orange { background-color: #f07f12; }
+@extends('layouts.auth')
 
-        /* From Uiverse.io by cssbuttons-io */ 
-        .fancy {
-            background-color: transparent;
-            border: 2px solid #000;
-            border-radius: 0;
-            box-sizing: border-box;
-            color: #000;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            margin: 0;
-            outline: none;
-            overflow: visible;
-            padding: 0.85em 2em;
-            position: relative;
-            text-align: center;
-            text-decoration: none;
-            text-transform: uppercase;
-            transition: all 0.3s ease-in-out;
-            user-select: none;
-            font-size: 13px;
-        }
+@section('titulo', 'Acceso Institucional')
+@section('mensaje_carga', 'Verificando credenciales...')
 
-        .fancy::before {
-            content: " ";
-            width: 1.5625rem;
-            height: 2px;
-            background: black;
-            top: 50%;
-            left: 1.5em;
-            position: absolute;
-            transform: translateY(-50%);
-            transform-origin: center;
-            transition: background 0.3s linear, width 0.3s linear;
-        }
+@section('contenido')
+    @php
+        // Segundos de bloqueo por exceso de intentos (lo envían bootstrap/app.php y FortifyServiceProvider)
+        $segundosBloqueo = (int) session('login_bloqueado', 0);
+        $credencialesInvalidas = ! $segundosBloqueo && $errors->any();
+    @endphp
 
-        .fancy .text {
-            font-size: 1.05em;
-            line-height: 1.33333em;
-            padding-left: 2em;
-            display: block;
-            text-align: left;
-            transition: all 0.3s ease-in-out;
-            text-transform: uppercase;
-            text-decoration: none;
-            color: black;
-        }
-
-        .fancy .top-key {
-            height: 2px;
-            width: 1.5625rem;
-            top: -2px;
-            left: 0.625rem;
-            position: absolute;
-            background: #ffffff;
-            transition: width 0.5s ease-out, left 0.3s ease-out;
-        }
-
-        .fancy .bottom-key-1 {
-            height: 2px;
-            width: 1.5625rem;
-            right: 1.875rem;
-            bottom: -2px;
-            position: absolute;
-            background: #ffffff;
-            transition: width 0.5s ease-out, right 0.3s ease-out;
-        }
-
-        .fancy .bottom-key-2 {
-            height: 2px;
-            width: 0.625rem;
-            right: 0.625rem;
-            bottom: -2px;
-            position: absolute;
-            background: #ffffff;
-            transition: width 0.5s ease-out, right 0.3s ease-out;
-        }
-
-        .fancy:hover {
-            color: white;
-            background: black;
-        }
-
-        .fancy:hover::before {
-            width: 0.9375rem;
-            background: white;
-        }
-
-        .fancy:hover .text {
-            color: white;
-            padding-left: 1.5em;
-        }
-
-        .fancy:hover .top-key {
-            left: -2px;
-            width: 0px;
-        }
-
-        .fancy:hover .bottom-key-1,
-        .fancy:hover .bottom-key-2 {
-            right: 0;
-            width: 0;
-        }
-    </style>
-</head>
-<body class="font-sans antialiased text-gray-900 flex items-center justify-center min-h-screen">
-    
-    <div class="max-w-md w-full mx-auto p-6">
-        <div class="glass-panel rounded-2xl p-8">
-            <div class="text-center mb-8">
-                <img src="{{ asset('images/logo.png') }}" alt="Logo Hacienda" class="h-20 mx-auto mb-4 dark:brightness-0 dark:invert dark:opacity-90 transition">
-                <h1 class="text-3xl font-extrabold text-institutional-blue mb-2">NOC Institucional</h1>
-                <p class="text-sm text-gray-500">Acceso Seguro al Centro de Operaciones</p>
-            </div>
-
-            @if ($errors->any())
-                <div class="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-red-500" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="m15 9-6 6" /> <path d="m9 9 6 6" /></svg>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm text-red-700">
-                                Las credenciales proporcionadas no son válidas.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            <form method="POST" action="{{ route('login') }}" onsubmit="document.getElementById('loadingOverlay').classList.remove('hidden')">
-                @csrf
-
-                <div class="mb-5">
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Correo Institucional</label>
-                    <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-institutional-blue focus:border-institutional-blue sm:text-sm">
-                </div>
-
-                <div class="mb-6">
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                    <input id="password" type="password" name="password" required autocomplete="current-password" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-institutional-blue focus:border-institutional-blue sm:text-sm">
-                </div>
-
-                <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center">
-                        <input id="remember_me" type="checkbox" name="remember" class="h-4 w-4 text-institutional-blue focus:ring-institutional-blue border-gray-300 rounded">
-                        <label for="remember_me" class="ml-2 block text-sm text-gray-900">
-                            Recordar dispositivo
-                        </label>
-                    </div>
-                </div>
-
-                <div>
-                    <button type="submit" class="fancy w-full justify-center">
-                        <span class="top-key"></span>
-                        <span class="text">Ingresar de Forma Segura</span>
-                        <span class="bottom-key-1"></span>
-                        <span class="bottom-key-2"></span>
-                    </button>
-                </div>
-            </form>
-            
-            <div class="mt-6 border-t border-gray-200 pt-4 text-center">
-                <p class="text-xs text-gray-400">Todo intento de acceso es registrado y auditado.</p>
-            </div>
-        </div>
+    <div class="text-center mb-8">
+        <h1 class="text-2xl font-extrabold text-institutional-blue mb-1">NOC Institucional</h1>
+        <p class="text-sm text-gray-500">Acceso Seguro al Centro de Operaciones</p>
     </div>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm transition-opacity">
-        <div class="flex flex-col items-center">
-            <dotlottie-player 
-                src="https://lottie.host/79855975-9878-4ae8-be92-6eae04c2e477/JLYlsyf43X.lottie" 
-                background="transparent" 
-                speed="1" 
-                style="width: 250px; height: 250px;" 
-                loop 
-                autoplay>
-            </dotlottie-player>
-            <h2 class="text-xl font-bold text-institutional-blue -mt-4 animate-pulse">Verificando credenciales...</h2>
+    @if ($segundosBloqueo)
+        <div id="avisoBloqueo" class="mb-5 bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md" role="alert">
+            <p class="text-sm font-semibold text-amber-800">Demasiados intentos de acceso</p>
+            <p class="text-sm text-amber-700 mt-0.5">
+                Por seguridad, espera <strong><span id="segundosBloqueo">{{ $segundosBloqueo }}</span> s</strong> antes de volver a intentarlo.
+            </p>
         </div>
+    @elseif ($credencialesInvalidas)
+        <div class="mb-5 bg-red-50 border-l-4 border-red-500 p-4 rounded-md" role="alert">
+            <div class="flex items-center">
+                <svg class="h-5 w-5 text-red-500 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="m15 9-6 6" /> <path d="m9 9 6 6" /></svg>
+                <p class="ml-3 text-sm text-red-700">El correo o la contraseña no son correctos.</p>
+            </div>
+        </div>
+    @endif
+
+    <form method="POST" action="{{ route('login') }}" data-con-carga novalidate-off>
+        @csrf
+
+        <div class="mb-5">
+            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Correo Institucional</label>
+            <input id="email" type="email" name="email" value="{{ old('email') }}" required autocomplete="username"
+                   @if(! old('email')) autofocus @endif
+                   @if($credencialesInvalidas) aria-invalid="true" @endif
+                   class="login-input">
+        </div>
+
+        <div class="mb-6">
+            @include('auth.partials.campo-clave', [
+                'id' => 'password',
+                'etiqueta' => 'Contraseña',
+                'autofocus' => (bool) old('email'),
+            ])
+        </div>
+
+        <div class="flex items-center mb-6">
+            <input id="remember_me" type="checkbox" name="remember" class="h-4 w-4 accent-[#667d93] border-gray-300 rounded">
+            <label for="remember_me" class="ml-2 block text-sm text-gray-900">Recordar dispositivo</label>
+        </div>
+
+        <button type="submit" id="btnIngresar" class="fancy w-full justify-center" @if($segundosBloqueo) disabled @endif>
+            <span class="top-key"></span>
+            <span class="text">Ingresar de Forma Segura</span>
+            <span class="bottom-key-1"></span>
+            <span class="bottom-key-2"></span>
+        </button>
+    </form>
+
+    <div class="mt-6 border-t border-gray-200 pt-4 text-center">
+        <p class="text-xs text-gray-400">Todo intento de acceso es registrado y auditado.</p>
     </div>
-</body>
-</html>
+
+    @if ($segundosBloqueo)
+        <script>
+            (function () {
+                var restante = {{ $segundosBloqueo }};
+                var span = document.getElementById('segundosBloqueo');
+                var boton = document.getElementById('btnIngresar');
+                var aviso = document.getElementById('avisoBloqueo');
+                var reloj = setInterval(function () {
+                    restante--;
+                    if (restante <= 0) {
+                        clearInterval(reloj);
+                        boton.disabled = false;
+                        aviso.classList.add('hidden');
+                        return;
+                    }
+                    span.textContent = restante;
+                }, 1000);
+            })();
+        </script>
+    @endif
+@endsection

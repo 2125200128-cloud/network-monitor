@@ -1,16 +1,22 @@
 """
-worker/snmp_poller.py — Sondeo en vivo (cada 15 s) de todos los dispositivos.
+worker/snmp_poller.py — Sondeo en vivo (cada 10 s) de todos los dispositivos.
 
 Principio: solo se guarda lo que el equipo realmente reporta. Si un dato no se pudo
 obtener (OID no soportado, SNMP sin respuesta, primer ciclo sin delta de contadores),
 se guarda NULL y la interfaz lo muestra como "Sin datos", nunca un valor inventado.
+
+Decodificar SNMP en Python consume CPU de un solo núcleo; por eso los equipos se reparten
+entre varios procesos (SHARDS), cada uno con su propio ciclo asíncrono. Un equipo siempre
+cae en el mismo proceso (id % SHARDS) para conservar sus contadores y calcular tasas.
 """
+import os
 import sys
 import re
 import time
 import json
 import asyncio
 import subprocess
+import multiprocessing
 
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -21,15 +27,18 @@ from pysnmp.hlapi.v3arch.asyncio import (
 )
 
 try:
-    from nm_common import db_config, PHYSICAL_IF_TYPES, COMUNIDAD_EFECTIVA_SQL, conectar, upsert, contador
+    from nm_common import db_config, PHYSICAL_IF_TYPES, COMUNIDAD_EFECTIVA_SQL, conectar, upsert, contador, credencial_snmp, auth_snmp
 except ImportError:  # importado como paquete desde la raíz (monitor:poll)
-    from worker.nm_common import db_config, PHYSICAL_IF_TYPES, COMUNIDAD_EFECTIVA_SQL, conectar, upsert, contador
+    from worker.nm_common import db_config, PHYSICAL_IF_TYPES, COMUNIDAD_EFECTIVA_SQL, conectar, upsert, contador, credencial_snmp, auth_snmp
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
 
 DB_CONFIG = db_config()
-POLL_INTERVAL = 15
+POLL_INTERVAL = 5       # mínimo entre ciclos: en la práctica un ciclo empieza en cuanto termina el anterior (~6-8 s)
+SHARDS = max(1, min(8, (os.cpu_count() or 2) // 2))   # procesos de sondeo (deja núcleos libres para web y BD)
+CONCURRENCY = 24        # equipos a la vez por proceso (ping y SNMP de cada uno van en paralelo)
+LIMITE_SHARD_S = 120    # si un proceso no termina su parte en este tiempo, se reinicia
 PING_COUNT = 3
 SATURATION_PCT = 80.0
 MAX_RATE_FACTOR = 1.1   # tolerancia sobre ifHighSpeed antes de descartar una tasa por imposible
@@ -39,6 +48,14 @@ PING_TIME_RE = re.compile(r'(?:time|tiempo)\s*([=<])\s*([\d.,]+)')
 # Estado entre ciclos para calcular tasas reales a partir de contadores:
 # { dev_id: { if_index: {'in', 'out', 'err', 'ts', 'hc'} } }
 _prev_counters = {}
+
+# Equipos que no contestan SNMP (la mayoría solo responde ICMP): { dev_id: (fallos_seguidos, reintentar_desde) }.
+# Tras FALLOS_SNMP_PARA_PAUSA fallos seguidos, su SNMP se vuelve a probar cada REINTENTO_SNMP_S en vez de en
+# cada ciclo, para no esperar su tiempo de espera cada 10 s. Una credencial nueva se detecta en ese plazo.
+_sin_snmp = {}
+_sin_ping = set()       # equipos que no respondieron ping en su último sondeo
+FALLOS_SNMP_PARA_PAUSA = 2
+REINTENTO_SNMP_S = 60
 
 OID_UPTIME = '1.3.6.1.2.1.1.3.0'
 OID_DESCR = '1.3.6.1.2.1.1.1.0'
@@ -109,12 +126,70 @@ def load_thresholds():
 # ----------------------------------------------------------------------------
 #  ICMP
 # ----------------------------------------------------------------------------
+if sys.platform == 'win32':
+    import ctypes
+    import socket
+
+    # API nativa de Windows (la misma que usa ping.exe): no abre un proceso por equipo ni espera 1 s entre
+    # paquetes, y no requiere permisos de administrador.
+    _iphlpapi = ctypes.WinDLL('iphlpapi')
+    _iphlpapi.IcmpCreateFile.restype = ctypes.c_void_p
+    _iphlpapi.IcmpCloseHandle.argtypes = [ctypes.c_void_p]
+    _iphlpapi.IcmpSendEcho.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.c_void_p, ctypes.c_ushort,
+                                       ctypes.c_void_p, ctypes.c_void_p, ctypes.c_ulong, ctypes.c_ulong]
+    _iphlpapi.IcmpSendEcho.restype = ctypes.c_ulong
+    _ICMP_DATOS = b'NOC-monitor-ping'
+    ICMP_TIMEOUT_MS = 1000
+    ICMP_PAUSA_S = 0.2
+
+
+def _icmp_windows(host, count):
+    """Ping con IcmpSendEcho. Solo cuenta respuestas IP_SUCCESS (igual que las líneas con TTL de ping.exe).
+    La latencia es la medida con reloj de alta resolución, no el valor redondeado a ms de Windows."""
+    try:
+        destino = int.from_bytes(socket.inet_aton(socket.gethostbyname(host)), 'little')
+    except OSError as e:
+        print(f"[PING] Dirección inválida {host}: {e}", flush=True)
+        return count, 0, None
+    manejador = _iphlpapi.IcmpCreateFile()
+    if not manejador or manejador == ctypes.c_void_p(-1).value:
+        return count, 0, None
+    datos = ctypes.create_string_buffer(_ICMP_DATOS, len(_ICMP_DATOS))
+    respuesta = ctypes.create_string_buffer(256)   # ICMP_ECHO_REPLY + datos + margen
+    received, times = 0, []
+    try:
+        for i in range(count):
+            if i:
+                # 200 ms entre paquetes (como "ping -i 0.2" en Linux): una pausa breve del equipo
+                # no se lleva los tres paquetes y no se reporta como caída
+                time.sleep(ICMP_PAUSA_S)
+            inicio = time.perf_counter()
+            n = _iphlpapi.IcmpSendEcho(manejador, destino, datos, len(_ICMP_DATOS), None,
+                                       respuesta, ctypes.sizeof(respuesta), ICMP_TIMEOUT_MS)
+            transcurrido_ms = (time.perf_counter() - inicio) * 1000
+            if n == 0:
+                continue
+            # ICMP_ECHO_REPLY empieza con Address, Status y RoundTripTime (ULONG cada uno)
+            status = int.from_bytes(respuesta.raw[4:8], 'little')
+            if status != 0:
+                continue
+            received += 1
+            # RoundTripTime de Windows viene en milisegundos enteros (0 = "<1 ms"): se usa el tiempo medido
+            # aquí con un reloj de alta resolución, que es el viaje real del paquete (más ~0.05 ms de la llamada)
+            times.append(round(transcurrido_ms, 3))
+    finally:
+        _iphlpapi.IcmpCloseHandle(manejador)
+    avg = round(sum(times) / len(times), 2) if times else None
+    return count, received, avg
+
+
 def icmp_probe(host, count=PING_COUNT):
     """Ping real. Devuelve (enviados, recibidos, latencia_promedio_ms | None)."""
     if sys.platform == 'win32':
-        cmd = ['ping', '-n', str(count), '-w', '1000', host]
+        return _icmp_windows(host, count)
     else:
-        cmd = ['ping', '-c', str(count), '-W', '1', host]
+        # -i 0.2: los 3 pings en ~0.5 s (mínimo permitido sin privilegios)
+        cmd = ['ping', '-c', str(count), '-i', '0.2', '-W', '1', host]
     try:
         out = subprocess.run(cmd, capture_output=True, text=True, timeout=count * 2 + 3)
     except Exception as e:
@@ -128,9 +203,9 @@ def icmp_probe(host, count=PING_COUNT):
             continue
         received += 1
         m = PING_TIME_RE.search(line)
-        if m:
-            val = float(m.group(2).replace(',', '.'))
-            times.append(val if m.group(1) == '=' else val / 2)  # "<1ms" -> 0.5
+        # Solo tiempos exactos ("time=0.41 ms"); "<1ms" no es una medición y no se convierte en un número
+        if m and m.group(1) == '=':
+            times.append(float(m.group(2).replace(',', '.')))
     avg = round(sum(times) / len(times), 2) if times else None
     return count, min(received, count), avg
 
@@ -221,7 +296,7 @@ async def entity_temperature_sensors(engine, auth, target):
 
 async def collect_snmp(engine, ip, community):
     """Consulta SNMP real. Devuelve None si el equipo no responde SNMP."""
-    auth = CommunityData(community, mpModel=1)
+    auth = auth_snmp(community)
     try:
         target = await UdpTransportTarget.create((ip, 161), timeout=1.5, retries=1)
         err_ind, err_stat, _, vbs = await get_cmd(
@@ -271,12 +346,21 @@ async def collect_snmp(engine, ip, community):
 
     data['sessions'] = _int(vals[11])
 
+    # Las consultas de tabla van en paralelo (antes una tras otra: era lo que alargaba el ciclo)
+    (temps, if_type, oper, speed, hc_in, hc_out, in_err, out_err, in_disc, out_disc) = await asyncio.gather(
+        snmp_walk(engine, auth, target, TEMP_VALUE),
+        snmp_walk(engine, auth, target, IF_TYPE), snmp_walk(engine, auth, target, IF_OPER),
+        snmp_walk(engine, auth, target, IF_HIGH_SPEED),
+        snmp_walk(engine, auth, target, IF_HC_IN), snmp_walk(engine, auth, target, IF_HC_OUT),
+        snmp_walk(engine, auth, target, IF_IN_ERR), snmp_walk(engine, auth, target, IF_OUT_ERR),
+        snmp_walk(engine, auth, target, IF_IN_DISC), snmp_walk(engine, auth, target, IF_OUT_DISC),
+    )
+
     # Temperatura (CISCO-ENVMON-MIB). Sin sensores -> sin dato.
-    temps = await snmp_walk(engine, auth, target, TEMP_VALUE)
     sensores = []
     if temps:
-        states = await snmp_walk(engine, auth, target, TEMP_STATE)
-        descrs = await snmp_walk_text(engine, auth, target, TEMP_DESCR)
+        states, descrs = await asyncio.gather(snmp_walk(engine, auth, target, TEMP_STATE),
+                                              snmp_walk_text(engine, auth, target, TEMP_DESCR))
         for idx, tv in temps.items():
             sv = states.get(idx)
             st = {1: 'OK', 2: 'WARNING', 3: 'CRITICAL', 4: 'SHUTDOWN', 5: 'NOT PRESENT', 6: 'NOT FUNCTIONING'}.get(sv, 'DESCONOCIDO')
@@ -287,22 +371,17 @@ async def collect_snmp(engine, ip, community):
     data['temp_c'] = max(s['temp_c'] for s in sensores) if sensores else None
 
     # Interfaces
-    data['if_type'] = await snmp_walk(engine, auth, target, IF_TYPE)
-    data['oper'] = await snmp_walk(engine, auth, target, IF_OPER)
-    data['speed'] = await snmp_walk(engine, auth, target, IF_HIGH_SPEED)
-    hc_in = await snmp_walk(engine, auth, target, IF_HC_IN)
+    data['if_type'], data['oper'], data['speed'] = if_type, oper, speed
     if hc_in:
         data['hc'] = True
-        data['in'] = hc_in
-        data['out'] = await snmp_walk(engine, auth, target, IF_HC_OUT)
+        data['in'], data['out'] = hc_in, hc_out
     else:
+        # Equipos sin contadores de 64 bits
         data['hc'] = False
-        data['in'] = await snmp_walk(engine, auth, target, IF_IN)
-        data['out'] = await snmp_walk(engine, auth, target, IF_OUT)
-    data['in_err'] = await snmp_walk(engine, auth, target, IF_IN_ERR)
-    data['out_err'] = await snmp_walk(engine, auth, target, IF_OUT_ERR)
-    data['in_disc'] = await snmp_walk(engine, auth, target, IF_IN_DISC)
-    data['out_disc'] = await snmp_walk(engine, auth, target, IF_OUT_DISC)
+        data['in'], data['out'] = await asyncio.gather(snmp_walk(engine, auth, target, IF_IN),
+                                                       snmp_walk(engine, auth, target, IF_OUT))
+    data['in_err'], data['out_err'] = in_err, out_err
+    data['in_disc'], data['out_disc'] = in_disc, out_disc
     return data
 
 
@@ -347,17 +426,72 @@ def mark_device_offline(cursor, dev_id):
     """, (dev_id,))
 
 
-async def poll_device(dev, engine, sem, thresholds):
+# ----------------------------------------------------------------------------
+#  Ping en un proceso aparte
+# ----------------------------------------------------------------------------
+# El proceso de sondeo está ocupado decodificando SNMP: si el ping corriera ahí, el reloj contaría también
+# lo que Python tarda en atender cada respuesta y la latencia saldría inflada. Un proceso que solo hace ping
+# (sus hilos esperan en Windows/ping sin trabajo de Python) mide únicamente el viaje del paquete.
+_pool_ping = None
+
+
+def ping_lote(ips):
+    """Corre en el proceso de ping: todos los equipos a la vez. {ip: (enviados, recibidos, latencia_ms)}."""
+    from concurrent.futures import ThreadPoolExecutor
+    if not ips:
+        return {}
+    with ThreadPoolExecutor(max_workers=min(64, len(ips))) as ex:
+        return dict(zip(ips, ex.map(icmp_probe, ips)))
+
+
+def _proceso_ping():
+    global _pool_ping
+    from concurrent.futures import ProcessPoolExecutor
+    if _pool_ping is None or getattr(_pool_ping, '_broken', False):
+        _pool_ping = ProcessPoolExecutor(max_workers=1)
+    return _pool_ping
+
+
+async def _ping_de(pings, ip):
+    """Resultado del ping de un equipo dentro del lote del ciclo (se lanzó al empezar el ciclo)."""
+    try:
+        return (await asyncio.shield(pings)).get(ip, (PING_COUNT, 0, None))
+    except Exception as e:
+        print(f"[PING] Error en el proceso de ping: {e}", flush=True)
+        return PING_COUNT, 0, None
+
+
+async def poll_device(dev, engine, sem, thresholds, pings):
     async with sem:
         dev_id = dev['id']
         ip = dev['ip']
         name = dev['nombre']
-        comm = dev['comunidad_snmp'] or 'public'
+        comm = credencial_snmp(dev)
         cpu_warn, loss_warn = thresholds
 
-        loop = asyncio.get_running_loop()
-        sent, received, ping_ms = await loop.run_in_executor(None, icmp_probe, ip)
-        snmp = await collect_snmp(engine, ip, comm)
+        fallos_snmp, reintento = _sin_snmp.get(dev_id, (0, 0))
+        # Si en el ciclo anterior tampoco respondió ping, ping y SNMP van juntos (no uno tras otro)
+        if fallos_snmp >= FALLOS_SNMP_PARA_PAUSA and time.time() < reintento and dev_id not in _sin_ping:
+            # Equipo que no contesta SNMP (solo ICMP): basta el ping. Si tampoco responde ping,
+            # se confirma por SNMP antes de darlo por caído (puede tener ICMP filtrado).
+            sent, received, ping_ms = await _ping_de(pings, ip)
+            snmp = await collect_snmp(engine, ip, comm) if received == 0 else None
+            if snmp is not None:
+                _sin_snmp.pop(dev_id, None)
+        else:
+            # Ping y SNMP al mismo tiempo: un equipo caído ya no suma los dos tiempos de espera
+            (sent, received, ping_ms), snmp = await asyncio.gather(
+                _ping_de(pings, ip),
+                collect_snmp(engine, ip, comm))
+            if snmp is None:
+                fallos_snmp += 1
+                _sin_snmp[dev_id] = (fallos_snmp, time.time() + REINTENTO_SNMP_S)
+            else:
+                _sin_snmp.pop(dev_id, None)
+        if received == 0:
+            _sin_ping.add(dev_id)
+        else:
+            _sin_ping.discard(dev_id)
 
         conn = get_db_connection()
         if not conn:
@@ -535,32 +669,85 @@ def save_global_metrics(results):
         conn.close()
 
 
-async def run_poll_cycle():
+async def run_poll_cycle(shard=None):
+    """Sondea los equipos (todos, o solo los de shard=(k, n): id % n == k).
+    Sin shard guarda también las métricas globales; con shard devuelve los resultados al proceso principal."""
     conn = get_db_connection()
     if not conn:
-        return
+        return []
     cursor = conn.cursor(dictionary=True)
-    cursor.execute(f"SELECT id, nombre, ip, {COMUNIDAD_EFECTIVA_SQL} FROM dispositivos WHERE ip IS NOT NULL AND ip <> '0.0.0.0'")
+    sql = f"SELECT id, nombre, ip, {COMUNIDAD_EFECTIVA_SQL} FROM dispositivos WHERE ip IS NOT NULL AND ip <> '0.0.0.0'"
+    if shard:
+        sql += f" AND MOD(id, {int(shard[1])}) = {int(shard[0])}"
+    cursor.execute(sql)
     devices = cursor.fetchall()
     conn.close()
 
     thresholds = load_thresholds()
     engine = SnmpEngine()
-    sem = asyncio.Semaphore(25)
-    start_t = time.time()
-    results = await asyncio.gather(*[poll_device(d, engine, sem, thresholds) for d in devices],
+    concurrencia = CONCURRENCY if shard else CONCURRENCY * SHARDS
+    sem = asyncio.Semaphore(concurrencia)
+    # Todos los pings del ciclo salen ya, en el proceso de ping, mientras aquí se consulta SNMP
+    pings = asyncio.get_running_loop().run_in_executor(_proceso_ping(), ping_lote, [d['ip'] for d in devices])
+    results = await asyncio.gather(*[poll_device(d, engine, sem, thresholds, pings) for d in devices],
                                    return_exceptions=True)
     results = [r for r in results if isinstance(r, dict)]
-    print(f"\n[CYCLE] {len(devices)} dispositivos procesados en {round(time.time() - start_t, 2)}s", flush=True)
-    save_global_metrics(results)
+    if not shard:
+        save_global_metrics(results)
+    return results
+
+
+def _proceso_shard(k, n, canal):
+    """Proceso hijo: espera la orden de cada ciclo, sondea su parte y devuelve los resultados.
+    Vive mientras el principal, así conserva los contadores de sus equipos entre ciclos.
+    Si el principal termina, recv() lanza EOFError y este proceso (con su proceso de ping) termina también."""
+    while True:
+        orden = canal.recv()
+        if orden is None:
+            return
+        try:
+            resultados = asyncio.run(run_poll_cycle(shard=(k, n)))
+        except Exception as e:
+            print(f"[SHARD {k}] Error en ciclo: {e}", flush=True)
+            resultados = []
+        canal.send(resultados)
+
+
+def _iniciar_shard(k):
+    principal, hijo = multiprocessing.Pipe()
+    # No daemon: un proceso daemon no puede crear su propio proceso de ping
+    p = multiprocessing.Process(target=_proceso_shard, args=(k, SHARDS, hijo), daemon=False, name=f'poller-{k}')
+    p.start()
+    return p, principal
 
 
 def main():
-    print("=== MOTOR DE MONITOREO SNMP/ICMP (solo datos reales) ===", flush=True)
+    print(f"=== MOTOR DE MONITOREO SNMP/ICMP (solo datos reales) · {SHARDS} procesos · ciclo {POLL_INTERVAL}s ===", flush=True)
+    shards = [_iniciar_shard(k) for k in range(SHARDS)]
     while True:
         started = time.time()
+        resultados = []
+        for k, (proceso, canal) in enumerate(shards):
+            if not proceso.is_alive():
+                print(f"[SHARD {k}] El proceso terminó; se reinicia", flush=True)
+                shards[k] = _iniciar_shard(k)
+            shards[k][1].send('ciclo')
+        for k, (proceso, canal) in enumerate(shards):
+            try:
+                # Un proceso trabado no detiene a los demás: pasado el límite se reemplaza
+                if canal.poll(max(5, LIMITE_SHARD_S - (time.time() - started))):
+                    resultados.extend(canal.recv())
+                else:
+                    print(f"[SHARD {k}] Excedió {LIMITE_SHARD_S}s; se reinicia", flush=True)
+                    proceso.terminate()
+                    shards[k] = _iniciar_shard(k)
+            except (EOFError, OSError) as e:
+                print(f"[SHARD {k}] Sin respuesta del proceso: {e}", flush=True)
+                shards[k] = _iniciar_shard(k)
+        print(f"\n[CYCLE] {len(resultados)} dispositivos procesados en {round(time.time() - started, 2)}s "
+              f"({SHARDS} procesos)", flush=True)
         try:
-            asyncio.run(run_poll_cycle())
+            save_global_metrics(resultados)
         except Exception as e:
             print(f"[ERROR EN CICLO]: {e}", flush=True)
         time.sleep(max(1, POLL_INTERVAL - (time.time() - started)))

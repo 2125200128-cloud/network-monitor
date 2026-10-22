@@ -196,18 +196,11 @@ class ConsolaSeguraController extends Controller
      */
     private function ejecutarSsh(Dispositivo $dispositivo, string $user, int $port, string $password, string $comando): array
     {
-        $env = [
-            'SYSTEMROOT' => getenv('SystemRoot') ?: 'C:\\Windows',
-            'WINDIR' => getenv('WINDIR') ?: 'C:\\Windows',
-            'PATH' => getenv('PATH') ?: 'C:\\Windows\\system32;C:\\Windows',
-            'TEMP' => getenv('TEMP') ?: 'C:\\Windows\\Temp',
-            'TMP' => getenv('TMP') ?: 'C:\\Windows\\Temp',
-            // La contraseña viaja por entorno, no en la línea de comandos (visible en la lista de procesos)
-            'NOC_SSH_PASSWORD' => $password,
-        ];
+        // La contraseña viaja por entorno, no en la línea de comandos (visible en la lista de procesos)
+        $env = \App\Support\Python::entorno(['NOC_SSH_PASSWORD' => $password]);
 
         $process = new Process([
-            env('PYTHON_PATH', 'python'),
+            \App\Support\Python::binario(),
             base_path('worker/ssh_executor.py'),
             $dispositivo->ip,
             (string) $port,

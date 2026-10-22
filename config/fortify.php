@@ -116,7 +116,6 @@ return [
 
     'limiters' => [
         'login' => 'login',
-        'two-factor' => 'two-factor',
         'passkeys' => 'passkeys',
     ],
 
@@ -168,11 +167,7 @@ return [
         // Features::emailVerification(),
         Features::updateProfileInformation(),
         Features::updatePasswords(),
-        Features::twoFactorAuthentication([
-            'confirm' => true,
-            'confirmPassword' => true,
-            // 'window' => 0,
-        ]),
+        // Sin autenticación de dos factores: el acceso es solo con correo y contraseña.
         Features::passkeys([
             'confirmPassword' => true,
         ]),

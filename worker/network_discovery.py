@@ -151,8 +151,30 @@ def parse_ip_value(val):
         return None
 
 
+def ip_gestion_valida(ip):
+    """Descarta las IP que algunos equipos anuncian sin tener gestión (0.0.0.0, loopback, link-local)."""
+    try:
+        a = ipaddress.IPv4Address(ip)
+    except Exception:
+        return None
+    return None if a.is_unspecified or a.is_loopback or a.is_link_local or a.is_multicast or str(a) == '255.255.255.255' else str(a)
+
+
 def looks_like_iface(s):
     return bool(s) and bool(re.search(r'[A-Za-z]', s)) and bool(re.search(r'\d', s)) and ':' not in s
+
+
+# Nombres que comparten muchos equipos distintos (valor de fábrica): no sirven para identificar un equipo
+GENERIC_IDENTITIES = {'switch', 'router', 'huawei', 'cisco', 'default', 'unknown', 'not advertised', 'localhost',
+                      'fortigate', 'hp', 'aruba', 'mikrotik', 'ruijie', 'tp-link', 'dlink', 'd-link', 'ubnt'}
+
+
+def is_specific_identity(ident):
+    return bool(ident) and len(ident) >= 3 and ident not in GENERIC_IDENTITIES
+
+
+# Nombres de puerto sin resolver: ifIndex crudo (GigabitEthernet437276672) o marcador del crawler
+PUERTO_SIN_NOMBRE = re.compile(r'^((GigabitEthernet|ifIndex|Port)\d{6,}|Desconocido)$')
 
 
 NON_INFRA_PLATFORM = ('IP PHONE', 'PHONE', 'UNIFIED IP', 'VOIP', 'VMWARE', 'ESX', 'LINUX',
@@ -466,17 +488,32 @@ class Store:
             if r['ip']:
                 self.by_ip[r['ip']] = r
             ident = norm_identity(r['nombre'])
-            if ident:
+            if is_specific_identity(ident):
                 self.by_identity.setdefault(ident, r)
         cur.close()
+        # IP de gestión por hostname según el inventario del centro de datos (para vecinos LLDP que no la anuncian,
+        # como FortiGate). La tabla puede no existir en instalaciones anteriores.
+        self.inventario = {}
+        try:
+            cur = self.conn.cursor(dictionary=True)
+            cur.execute('SELECT hostname, ip FROM inventario_centro_datos WHERE hostname IS NOT NULL AND ip IS NOT NULL')
+            for r in cur.fetchall():
+                self.inventario[norm_identity(r['hostname'])] = r['ip']
+            cur.close()
+        except Exception:
+            pass
 
     def lookup(self, ip=None, name=None):
-        ident = norm_identity(name) if name else ''
-        if ident and ident in self.by_identity:
-            return self.by_identity[ident]
+        """La IP de gestión identifica al equipo; el nombre solo si es específico (evita fundir varios "Switch")."""
         if ip and ip in self.by_ip:
             return self.by_ip[ip]
+        ident = norm_identity(name) if name else ''
+        if is_specific_identity(ident) and ident in self.by_identity:
+            return self.by_identity[ident]
         return None
+
+    def ip_inventario(self, name):
+        return self.inventario.get(norm_identity(name)) if name else None
 
     def upsert_device(self, ip, name, model, online=True):
         row = self.lookup(ip, name)
@@ -502,7 +539,8 @@ class Store:
         cur.close()
         row = {'id': dev_id, 'nombre': hostname, 'ip': ip}
         self.by_ip[ip] = row
-        self.by_identity[norm_identity(hostname)] = row
+        if is_specific_identity(norm_identity(hostname)):
+            self.by_identity[norm_identity(hostname)] = row
         return dev_id, True, ip
 
     def _load_ifaces(self, dev_id):
@@ -556,16 +594,31 @@ class Store:
         cache['by_idx'][if_index] = (iid, name)
         return iid
 
-    def upsert_link(self, d1, i1, d2, i2, speed):
+    def upsert_link(self, d1, i1, d2, i2, speed, remoto_conocido=True):
+        """Un enlace por par de puertos: dos equipos pueden tener varios enlaces entre sí (uplinks, port-channel).
+        Un enlace guardado con puertos sin resolver se corrige con los puertos reales en lugar de duplicarse."""
         cur = self.conn.cursor()
         cur.execute(
-            """SELECT id FROM enlaces_red WHERE (origen_dispositivo_id=%s AND destino_dispositivo_id=%s)
-               OR (origen_dispositivo_id=%s AND destino_dispositivo_id=%s) LIMIT 1""", (d1, d2, d2, d1))
-        row = cur.fetchone()
-        if row:
-            cur.execute("UPDATE enlaces_red SET estado='up', updated_at=NOW() WHERE id=%s", (row[0],))
+            """SELECT e.id, e.origen_dispositivo_id, e.origen_interfaz_id, e.destino_interfaz_id, io.nombre, idst.nombre
+               FROM enlaces_red e
+               LEFT JOIN interfaces_red io ON io.id = e.origen_interfaz_id
+               LEFT JOIN interfaces_red idst ON idst.id = e.destino_interfaz_id
+               WHERE (e.origen_dispositivo_id=%s AND e.destino_dispositivo_id=%s)
+                  OR (e.origen_dispositivo_id=%s AND e.destino_dispositivo_id=%s)""", (d1, d2, d2, d1))
+        # Cada fila orientada desde d1: (id, puerto en d1, puerto en d2, nombre en d1, nombre en d2, ¿origen es d1?)
+        filas = [(lid, oi, di, on, dn, True) if orig == d1 else (lid, di, oi, dn, on, False)
+                 for lid, orig, oi, di, on, dn in cur.fetchall()]
+        sin_nombre = lambda n: not n or bool(PUERTO_SIN_NOMBRE.match(n))
+        elegida = next((f for f in filas if f[1] == i1 or (remoto_conocido and f[2] == i2)), None) \
+            or next((f for f in filas if sin_nombre(f[3])), None)
+        if elegida:
+            lid, mi, ti, _, tn, desde_d1 = elegida
+            nuevo_ti = i2 if remoto_conocido or sin_nombre(tn) else ti
+            o_if, d_if = (i1, nuevo_ti) if desde_d1 else (nuevo_ti, i1)
+            cur.execute("""UPDATE enlaces_red SET origen_interfaz_id=%s, destino_interfaz_id=%s, estado='up', updated_at=NOW()
+                           WHERE id=%s""", (o_if, d_if, lid))
             cur.close()
-            return row[0], False
+            return lid, False
         from nm_common import insertar_con_id
         lid = insertar_con_id(cur,
             """INSERT INTO enlaces_red (origen_dispositivo_id, origen_interfaz_id, destino_dispositivo_id, destino_interfaz_id,
@@ -672,9 +725,15 @@ class Discovery:
             if not self.args.include_endpoints and not is_infrastructure(name, platform):
                 skipped += 1
                 continue
-            known = self.store.lookup(n.get('ip'), name)
-            # Preferir la IP de gestión ya conocida sobre la IP del enlace punto a punto
-            rem_ip = (known or {}).get('ip') or n.get('ip')
+            anunciada = ip_gestion_valida(n.get('ip'))
+            known = self.store.lookup(anunciada, name)
+            # IP de gestión: la del equipo ya conocido, luego la del inventario y al final la anunciada
+            # (la anunciada puede ser la de un enlace punto a punto)
+            inventario = self.store.ip_inventario(name)
+            rem_ip = ip_gestion_valida((known or {}).get('ip')) or inventario or anunciada
+            if not known and inventario and inventario != anunciada:
+                detalle = f"anuncia {anunciada}" if anunciada else f"no anuncia IP por {n['protocol']}"
+                self.rep.log(f"  · {clean_hostname(name)}: se usa {inventario} del inventario del centro de datos ({detalle}).", 'muted')
             if not rem_ip:
                 self.rep.log(f"  · {clean_hostname(name) or '?'} en {n['local_port']} no anuncia IP de gestión ({n['protocol']}).", 'muted')
                 continue
@@ -687,7 +746,8 @@ class Discovery:
             low = (n['local_port'] or '').lower()
             speed = 100000 if low.startswith('hundred') else 40000 if low.startswith('forty') else \
                 25000 if low.startswith('twentyfive') else 10000 if low.startswith('tengig') else 1000
-            lid, lnew = self.store.upsert_link(dev_id, li, rem_id, ri, speed)
+            lid, lnew = self.store.upsert_link(dev_id, li, rem_id, ri, speed,
+                                               remoto_conocido=bool(n['remote_port']) and not PUERTO_SIN_NOMBRE.match(n['remote_port']))
             if lid not in self.link_ids:
                 self.link_ids[lid] = lnew
                 self.rep.log(f"  ⇄ {n['local_port']} ↔ {clean_hostname(name)} {n['remote_port']} [{rem_ip}] "

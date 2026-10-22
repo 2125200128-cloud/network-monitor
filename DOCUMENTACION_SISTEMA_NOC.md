@@ -21,7 +21,7 @@
 * **Visibilidad de Extremo a Extremo:** Monitorear conmutadores Core, routers de borde WAN, switches de acceso y distribución, firewalls perimetrales, telefonía IP (VoIP), access points inalámbricos y servidores.
 * **Reducción del MTTR (Mean Time to Repair):** Detección instantánea de enlaces caídos, saturación de interfaces, errores CRC/descartes, degradación de latencia o pérdida de paquetes mediante un motor de diagnóstico inteligente con análisis de causa raíz.
 * **Vigilancia de Servicios Críticos:** Supervisión constante de portales ciudadanos, plataformas de recaudación, pasarelas bancarias y servicios HTTP/HTTPS internos con sondeos concurrentes y alertas por degradación de tiempo de respuesta.
-* **Gobierno y Seguridad:** Acceso restringido por roles (RBAC), autenticación en dos factores (2FA), passkeys, cifrado de credenciales SSH mediante AES-256 y auditoría forense de comandos de solo lectura ejecutados en consola.
+* **Gobierno y Seguridad:** Acceso restringido por roles (RBAC), passkeys, cifrado de credenciales SSH mediante AES-256 y auditoría forense de comandos de solo lectura ejecutados en consola.
 
 ---
 
@@ -53,7 +53,7 @@ flowchart TB
 
     subgraph CoreApp ["APLICACIÓN WEB CENTRAL (LARAVEL 12 & PHP 8.3)"]
         Controllers["Controladores & Servicios<br/>(Dashboard, Topología, Consola, Alarmas)"]
-        Crypto["Motor de Seguridad & Cifrado<br/>(AES-256-CBC, 2FA, RBAC)"]
+        Crypto["Motor de Seguridad & Cifrado<br/>(AES-256-CBC, RBAC)"]
         Reporting["Generador de Reportes PDF<br/>(FPDF Institucional)"]
     end
 
@@ -84,7 +84,7 @@ flowchart TB
 
 | Capa | Tecnologías | Rol y Responsabilidad |
 | :--- | :--- | :--- |
-| **Backend Web** | PHP 8.3+, Laravel 12.x, Eloquent ORM, Fortify | Lógica de negocio, APIs REST/JSON, autenticación 2FA, gestión de roles y renderizado de vistas. |
+| **Backend Web** | PHP 8.3+, Laravel 12.x, Eloquent ORM, Fortify | Lógica de negocio, APIs REST/JSON, autenticación, gestión de roles y renderizado de vistas. |
 | **Workers de Red** | Python 3.12+, AsyncIO, PySNMP, Ping3 | Sondeo de telemetría de ultra baja latencia, recolección de chasis, barrido de tablas ARP/CAM y descubrimiento. |
 | **Frontend** | HTML5 semántico, Tailwind CSS, Alpine.js | Interfaz de operador NOC con soporte para tema Claro y Oscuro de alto contraste, animaciones Lottie y marquee continuo. |
 | **Visualización** | Vis.js Network Engine, Chart.js, xterm.js | Renderizado del mapa de topología con física de resortes, gráficas de telemetría en tiempo real y terminal CLI. |
@@ -217,8 +217,8 @@ La plataforma implementa tres niveles de privilegios estrictamente controlados m
 * Las contraseñas de acceso SSH de los dispositivos de red se almacenan en la columna `ssh_password_encrypted` mediante la fachada `Crypt::encryptString()` de Laravel, utilizando el algoritmo estándar **AES-256-CBC** respaldado por la llave maestra `APP_KEY` del archivo `.env`.
 * Las contraseñas de usuario se almacenan con el algoritmo de hash seguro **Bcrypt** con factor de costo 12.
 
-### 5.3 Autenticación de Dos Factores (2FA) y Passkeys
-* La plataforma integra autenticación multifactor basada en tiempo (TOTP) compatible con aplicaciones estándar de la industria (Google Authenticator, Microsoft Authenticator, Authy).
+### 5.3 Acceso y Confirmación de Contraseña
+* El acceso es con correo institucional y contraseña (sin autenticación de dos factores). Los intentos de inicio de sesión se limitan a 5 por minuto por cuenta e IP.
 * Protección con contraseña reforzada para áreas críticas como el módulo de Ajustes Generales.
 
 ---
@@ -324,7 +324,6 @@ Hacer doble clic en `iniciar_monitor.bat` o configurar los comandos como Servici
 1. Abrir un navegador moderno (Google Chrome, Microsoft Edge, Mozilla Firefox).
 2. Ingresar a la URL asignada del servidor: `http://<IP_DEL_SERVIDOR>:8000`.
 3. Iniciar sesión con las credenciales asignadas por el Administrador.
-4. Si tiene 2FA configurado, ingresar el código de 6 dígitos generado en su aplicación de autenticación.
 
 ### 8.2 ¿Cómo Monitorear un Nuevo Switch o Router?
 1. En el menú lateral izquierdo, hacer clic en el botón **Agregar** (icono de círculo con el símbolo `+`).

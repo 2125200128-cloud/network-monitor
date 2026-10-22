@@ -1,4 +1,9 @@
-mysql-connector-python
-pysnmp
-ping3
-python-dotenv
+# Dependencias de los workers (Python 3.12). Probadas con estas versiones.
+pysnmp==7.1.30            # SNMP v2c/v3 (asyncio)
+psycopg[binary]==3.3.6    # PostgreSQL
+cryptography==50.0.2      # SNMPv3 (AES) y descifrado de credenciales guardadas por Laravel
+paramiko==5.0.0           # Consola SSH y respaldos de configuración
+ping3==5.1.5              # deep_discovery
+python-dotenv==1.2.3
+# Solo si DB_CONNECTION=mysql:
+# mysql-connector-python==26.7.0

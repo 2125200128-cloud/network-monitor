@@ -1,5 +1,8 @@
 @extends('layouts.app')
 
+{{-- Tarjetas, salud e inventario cada 15 s (la página completa es la consulta más pesada: no bajar de aquí) --}}
+@section('refresco', '15')
+
 @section('styles')
 <style>
     /* ==================== NOC DYNAMIC DUAL TRAFFIC GAUGES ==================== */
@@ -83,9 +86,10 @@
         fill: none;
         transition: stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+    /* La aguja la mueve el bucle de animación del script (sin transición CSS) */
     .st-needle-wedge {
         transform-origin: 160px 160px;
-        transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        will-change: transform;
     }
 
     /* Listas del diagnóstico de red (clases compartidas para no repetirlas en cada celda) */
@@ -96,7 +100,7 @@
     .dark .dash-lista th { color: #64748b; }
     .dark .dash-lista td { color: #cbd5e1; border-top-color: rgba(30, 41, 59, 0.5); }
     .dark .dash-lista .dash-disp { color: #e2e8f0; }
-    .dark .dash-lista .dash-disp:hover { color: #4d94fd; }
+    .dark .dash-lista .dash-disp:hover { color: #667d93; }
 
     /* Selector de rango/métrica de la gráfica de tendencias */
     .trend-btn { color: var(--nm-text-muted); }
@@ -104,32 +108,29 @@
     .trend-btn-active { background: var(--nm-surface); color: var(--nm-primary); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
     .dark .trend-btn { color: #94a3b8; }
     .dark .trend-btn:hover { color: #e2e8f0; }
-    .dark .trend-btn-active { background: #1e293b; color: #4d94fd; box-shadow: none; }
+    .dark .trend-btn-active { background: #1e293b; color: #667d93; box-shadow: none; }
 </style>
 @endsection
 
 @section('content')
             <!-- Top Bar -->
             <div class="flex justify-end items-center gap-3 mb-4 sm:mb-6">
-                    <a href="{{ route('reportes.inventario_pdf') }}" target="_blank" class="fancy fancy-sm hidden sm:inline-flex" title="Descargar Reporte Ejecutivo de Inventario en PDF" aria-label="Descargar Reporte Ejecutivo de Inventario en PDF">
+                    <a href="{{ route('reportes.inventario_pdf') }}" target="_blank" class="fancy fancy-sm hidden sm:inline-flex" style="--fancy-fondo: var(--nm-bg)" title="Descargar Reporte Ejecutivo de Inventario en PDF" aria-label="Descargar Reporte Ejecutivo de Inventario en PDF">
                         <span class="top-key"></span>
                         <span class="text">
-                            <svg class="w-3.5 h-3.5 text-nm-primary" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M12 18v-6" /> <path d="m9 15 3 3 3-3" /></svg>
+                            <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M12 18v-6" /> <path d="m9 15 3 3 3-3" /></svg>
                             Reporte PDF
                         </span>
                         <span class="bottom-key-1"></span>
                         <span class="bottom-key-2"></span>
                     </a>
-                    <a href="{{ route('setup-2fa') }}" class="w-10 h-10 bg-white dark:bg-nm-surface rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400 hover:text-hacienda-blue dark:hover:text-blue-400 shadow-sm dark:shadow-none border border-gray-100 dark:border-slate-800/60 transition" title="Configurar 2FA" aria-label="Configurar 2FA">
-                        <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                    </a>
                     {{-- Notification Bell and Dropdown Center --}}
-                    <div class="relative" id="notifDropdownContainer">
+                    <div class="relative" id="notifDropdownContainer" data-refrescar="notificaciones" data-refrescar-pausa="#notifDropdownMenu:not(.hidden)">
                         <button id="notifBellBtn" type="button" onclick="toggleNotifDropdown(event)" class="w-10 h-10 bg-white dark:bg-nm-surface rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400 hover:text-hacienda-orange shadow-sm dark:shadow-none border border-gray-100 dark:border-slate-800/60 transition relative focus:outline-none focus:ring-2 focus:ring-nm-primary/30" title="Centro de Notificaciones y Alertas" aria-label="Centro de Notificaciones y Alertas">
                             @if($unreadNotificaciones > 0)
-                                <span id="notifPulseRing" class="absolute top-2 right-2 w-2.5 h-2.5 bg-[#f07f12] rounded-full animate-ping"></span>
-                                <span id="notifPulseDot" class="absolute top-2 right-2 w-2.5 h-2.5 bg-[#f07f12] rounded-full ring-2 ring-white"></span>
-                                <span id="notifCountBadge" class="absolute -top-1 -right-1 min-w-[19px] h-[19px] px-1 bg-[#f07f12] text-white text-[11px] font-black rounded-full flex items-center justify-center ring-2 ring-white shadow">
+                                <span id="notifPulseRing" class="absolute top-2 right-2 w-2.5 h-2.5 bg-[#ff8300] rounded-full animate-ping"></span>
+                                <span id="notifPulseDot" class="absolute top-2 right-2 w-2.5 h-2.5 bg-[#ff8300] rounded-full ring-2 ring-white"></span>
+                                <span id="notifCountBadge" class="absolute -top-1 -right-1 min-w-[19px] h-[19px] px-1 bg-[#ff8300] text-white text-[11px] font-black rounded-full flex items-center justify-center ring-2 ring-white shadow">
                                     {{ $unreadNotificaciones }}
                                 </span>
                             @endif
@@ -156,7 +157,7 @@
                                     <button type="button" onclick="markAllNotificationsAsRead()" class="text-[11px] text-gray-500 dark:text-slate-400 hover:text-nm-primary dark:hover:text-blue-400 font-bold transition px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" title="Marcar todas como leídas" aria-label="Marcar todas como leídas">
                                         Marcar Leídas
                                     </button>
-                                    <button type="button" onclick="clearAllNotifications()" class="text-[11px] text-gray-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-bold transition px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40" title="Descartar y limpiar todas las alertas" aria-label="Descartar y limpiar todas las alertas">
+                                    <button type="button" onclick="clearAllNotifications()" class="text-[11px] text-gray-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-bold transition px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40" title="Ocultar todas las alertas actuales: reaparecen si la falla vuelve a ocurrir o sigue activa después de 24 h" aria-label="Ocultar todas las alertas actuales">
                                         Limpiar Todas
                                     </button>
                                 </div>
@@ -172,7 +173,7 @@
                                     Críticas
                                 </button>
                                 <button type="button" onclick="filterNotifs('advertencia', this)" class="notif-tab-btn px-2.5 py-1 rounded-lg font-semibold text-xs text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-100 transition flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-[#f07f12]"></span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-[#ff8300]"></span>
                                     Advertencias
                                 </button>
                                 <button type="button" onclick="filterNotifs('sistema', this)" class="notif-tab-btn px-2.5 py-1 rounded-lg font-semibold text-xs text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-100 transition flex items-center gap-1">
@@ -195,7 +196,7 @@
                                                 <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /></svg>
                                             </div>
                                         @elseif($n['tipo'] === 'advertencia')
-                                            <div class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-[#f07f12] flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs border border-transparent dark:border-amber-900/40">
+                                            <div class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-[#ff8300] flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs border border-transparent dark:border-amber-900/40">
                                                 <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg>
                                             </div>
                                         @else
@@ -248,7 +249,7 @@
                                             <div class="flex items-center justify-between pt-1">
                                                 <div class="flex items-center gap-1.5 flex-wrap">
                                                     <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-transparent dark:border-slate-700">
-                                                        <span class="w-1.5 h-1.5 rounded-full {{ $n['tipo'] === 'critica' ? 'bg-red-500' : ($n['tipo'] === 'advertencia' ? 'bg-[#f07f12]' : 'bg-blue-500') }}"></span>
+                                                        <span class="w-1.5 h-1.5 rounded-full {{ $n['tipo'] === 'critica' ? 'bg-red-500' : ($n['tipo'] === 'advertencia' ? 'bg-[#ff8300]' : 'bg-blue-500') }}"></span>
                                                         {{ $n['dispositivo'] }}
                                                     </span>
                                                     @if(!empty($n['ubicacion']) && $n['ubicacion'] !== 'No especificada')
@@ -259,7 +260,7 @@
                                                 </div>
 
                                                 @if(isset($n['link']))
-                                                    <a href="{{ $n['link'] }}" class="text-[11px] font-bold text-nm-primary dark:text-blue-400 hover:text-[#f07f12] dark:hover:text-cyan-400 transition flex items-center gap-0.5 group">
+                                                    <a href="{{ $n['link'] }}" class="text-[11px] font-bold text-nm-primary dark:text-blue-400 hover:text-[#ff8300] dark:hover:text-cyan-400 transition flex items-center gap-0.5 group">
                                                         <span>{{ $n['accion'] }}</span>
                                                         <svg class="w-3 h-3 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
                                                     </a>
@@ -270,9 +271,9 @@
                                         {{-- Unread Dot & Dismiss --}}
                                         <div class="flex flex-col items-center gap-2">
                                             @if(!$n['leida'])
-                                                <span class="notif-unread-dot w-2 h-2 rounded-full bg-[#f07f12]"></span>
+                                                <span class="notif-unread-dot w-2 h-2 rounded-full bg-[#ff8300]"></span>
                                             @endif
-                                            <button type="button" onclick="dismissNotification('{{ $n['id'] }}', event)" class="text-gray-300 dark:text-slate-600 hover:text-gray-500 dark:hover:text-slate-400 p-0.5 rounded transition" title="Descartar" aria-label="Descartar">
+                                            <button type="button" onclick="dismissNotification('{{ $n['id'] }}', event)" class="text-gray-300 dark:text-slate-600 hover:text-gray-500 dark:hover:text-slate-400 p-0.5 rounded transition" title="Ocultar esta alerta (reaparece si vuelve a ocurrir o sigue activa después de 24 h)" aria-label="Ocultar esta alerta">
                                                 <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
                                             </button>
                                         </div>
@@ -301,11 +302,16 @@
                             <div class="p-3 bg-gray-50 dark:bg-nm-sunken border-t border-gray-100 dark:border-slate-800/60 flex items-center justify-between text-xs">
                                 <div class="flex items-center gap-1.5 text-gray-500 dark:text-slate-400 text-[11px]">
                                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                    <span>Sondeo SNMP/ICMP cada 15 s</span>
+                                    <span>Sondeo SNMP/ICMP cada ~8 s</span>
                                 </div>
-                                <a href="{{ route('settings.index', ['section' => 'notificaciones']) }}" class="text-[11px] font-bold text-nm-primary dark:text-blue-400 hover:text-[#f07f12] transition">
-                                    Configurar Alertas →
-                                </a>
+                                <div class="flex items-center gap-3">
+                                    <a href="{{ route('settings.index', ['section' => 'notificaciones']) }}" class="text-[11px] font-bold text-gray-500 dark:text-slate-400 hover:text-[#ff8300] transition">
+                                        Configurar
+                                    </a>
+                                    <a href="{{ route('alertas.index') }}" class="text-[11px] font-bold text-nm-primary dark:text-blue-400 hover:text-[#ff8300] transition">
+                                        Ver todas →
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -313,10 +319,11 @@
 
 
             <!-- Hero Banner -->
-            <div class="bg-white dark:bg-nm-surface border border-gray-100 dark:border-slate-800/40 rounded-2xl p-6 lg:p-8 text-gray-800 dark:text-slate-100 mb-8 relative overflow-hidden shadow-sm dark:shadow-none flex flex-col md:flex-row md:items-center justify-between gap-4 lg:gap-6 min-h-min">
+            {{-- shrink-0: el contenedor principal es flex en columna; con overflow-hidden se encogería a 0 px --}}
+            <div class="bg-white dark:bg-nm-surface border border-gray-100 dark:border-slate-800/40 rounded-2xl p-6 lg:p-8 text-gray-800 dark:text-slate-100 mb-8 relative overflow-hidden shrink-0 shadow-sm dark:shadow-none flex flex-col md:flex-row md:items-center justify-between gap-4 lg:gap-6 min-h-min">
                 <!-- Background pattern (simulated) -->
                 <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(circle at 2px 2px, var(--nm-primary) 1px, transparent 0); background-size: 32px 32px; z-index: 0;"></div>
-                
+
                 <div class="relative z-10 w-full md:flex-1">
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 mb-3 md:mb-4 border border-transparent dark:border-blue-900/40">
                         <svg class="w-4 h-4 mr-1" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4" /> <path d="M16 2v4" /> <rect width="18" height="18" x="3" y="4" rx="2" /> <path d="M3 10h18" /></svg>
@@ -336,7 +343,7 @@
                         $nombreCompleto = $prefijo ? $prefijo . ' ' . $nombreUsuario : $nombreUsuario;
                     @endphp
                     <h2 class="text-2xl lg:text-4xl font-bold mb-2 text-gray-900 dark:text-white leading-tight">{{ $saludo }}, {{ $nombreCompleto }}!</h2>
-                    <p class="text-gray-500 dark:text-slate-400 text-sm lg:text-lg max-w-2xl">
+                    <p class="text-gray-500 dark:text-slate-400 text-sm lg:text-lg max-w-2xl" data-refrescar="resumen">
                         <span class="font-bold text-hacienda-blue dark:text-blue-400">{{ $dispositivosOnline }}</span> de {{ $totalDispositivos }} dispositivos responden al sondeo.
                         @if($dispositivosOffline > 0)
                             <span class="font-bold text-red-600">{{ $dispositivosOffline }} sin respuesta</span>.
@@ -349,11 +356,14 @@
                 
                 <!-- Illustration Placeholder -->
                 <div class="relative z-10 flex-shrink-0 mt-4 md:mt-0 md:w-1/3 flex justify-start md:justify-end">
-                    <img src="{{ asset('images/logo.png') }}" class="h-16 lg:h-24 w-auto object-contain drop-shadow-md dark:drop-shadow-none dark:brightness-0 dark:invert dark:opacity-90 transition" alt="Logo">
+                    {{-- Logo DTIF a su tamaño original (320 × 85); en pantallas angostas se reduce proporcionalmente --}}
+                    <img src="{{ asset('images/logo_dtif.png') }}?v=320x85" width="320" height="85" class="w-[320px] max-w-full h-auto object-contain dark:brightness-0 dark:invert dark:opacity-90 transition" alt="Dirección de Tecnología de la Información Financiera">
                 </div>
             </div>
 
-            @include('dashboard.partials.salud')
+            <div data-refrescar="salud">
+                @include('dashboard.partials.salud')
+            </div>
 
             <!-- Mini Stat Cards (NOC Time Series) -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -438,7 +448,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
                     {{-- Gauge 1: DESCARGA (DOWN) --}}
                     <div class="traffic-gauge-box relative flex flex-col items-center justify-center p-5 sm:p-6 rounded-2xl transition">
-                        <div class="flex items-center gap-2 text-xs font-black text-nm-primary dark:text-[#4d94fd] tracking-widest uppercase mb-3">
+                        <div class="flex items-center gap-2 text-xs font-black text-nm-primary dark:text-[#8a9cad] tracking-widest uppercase mb-3">
                             <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" /> <path d="m19 12-7 7-7-7" /></svg>
                             <span>TRÁFICO DE DESCARGA (DOWN)</span>
                         </div>
@@ -446,14 +456,14 @@
                             <svg viewBox="0 0 320 320" class="w-full h-full overflow-visible">
                                 <defs>
                                     <linearGradient id="stDownGradDark" x1="0%" y1="100%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#0168fa" />
-                                        <stop offset="50%" stop-color="#4d94fd" />
+                                        <stop offset="0%" stop-color="#667d93" />
+                                        <stop offset="50%" stop-color="#8a9cad" />
                                         <stop offset="100%" stop-color="#00b8c4" />
                                     </linearGradient>
                                     <linearGradient id="stDownGradLight" x1="0%" y1="100%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#023f99" />
-                                        <stop offset="50%" stop-color="#0168fa" />
-                                        <stop offset="100%" stop-color="#4d94fd" />
+                                        <stop offset="0%" stop-color="#3d4b59" />
+                                        <stop offset="50%" stop-color="#667d93" />
+                                        <stop offset="100%" stop-color="#8a9cad" />
                                     </linearGradient>
                                     <filter id="stDownGlow" x="-20%" y="-20%" width="140%" height="140%">
                                         <feGaussianBlur stdDeviation="5" result="blur" />
@@ -481,13 +491,13 @@
                                 <g id="stDownNeedleWedge" class="st-needle-wedge" style="transform: rotate(-135deg);">
                                     <polygon points="156,160 164,160 161.5,42 158.5,42" class="st-needle-pointer drop-shadow-md" />
                                     <circle cx="160" cy="160" r="13" class="st-needle-cap-bg" stroke-width="2.5" />
-                                    <circle cx="160" cy="160" r="5" fill="#0168fa" class="dark:fill-[#4d94fd]" />
+                                    <circle cx="160" cy="160" r="5" fill="#667d93" class="dark:fill-[#8a9cad]" />
                                 </g>
                             </svg>
 
                             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center pt-14">
                                 <span id="stDownMainValue" class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-gray-900 dark:text-white drop-shadow-xs">{{ $trafficInNow !== null ? number_format($trafficInNow, 2) : '—' }}</span>
-                                <div class="flex items-center gap-1 text-xs font-bold text-nm-primary dark:text-[#4d94fd] tracking-widest uppercase mt-0.5">
+                                <div class="flex items-center gap-1 text-xs font-bold text-nm-primary dark:text-[#8a9cad] tracking-widest uppercase mt-0.5">
                                     <span id="stDownUnit">↓ Mbps</span>
                                 </div>
                             </div>
@@ -496,7 +506,7 @@
 
                     {{-- Gauge 2: SUBIDA (UP) --}}
                     <div class="traffic-gauge-box relative flex flex-col items-center justify-center p-5 sm:p-6 rounded-2xl transition">
-                        <div class="flex items-center gap-2 text-xs font-black text-[#f07f12] dark:text-pink-400 tracking-widest uppercase mb-3">
+                        <div class="flex items-center gap-2 text-xs font-black text-[#ff8300] dark:text-pink-400 tracking-widest uppercase mb-3">
                             <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7" /> <path d="M12 19V5" /></svg>
                             <span>TRÁFICO DE SUBIDA (UP)</span>
                         </div>
@@ -509,7 +519,7 @@
                                         <stop offset="100%" stop-color="#00b8c4" />
                                     </linearGradient>
                                     <linearGradient id="stUpGradLight" x1="0%" y1="100%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#f07f12" />
+                                        <stop offset="0%" stop-color="#ff8300" />
                                         <stop offset="50%" stop-color="#ea580c" />
                                         <stop offset="100%" stop-color="#c2410c" />
                                     </linearGradient>
@@ -539,13 +549,13 @@
                                 <g id="stUpNeedleWedge" class="st-needle-wedge" style="transform: rotate(-135deg);">
                                     <polygon points="156,160 164,160 161.5,42 158.5,42" class="st-needle-pointer drop-shadow-md" />
                                     <circle cx="160" cy="160" r="13" class="st-needle-cap-bg" stroke-width="2.5" />
-                                    <circle cx="160" cy="160" r="5" fill="#f07f12" class="dark:fill-[#00b8c4]" />
+                                    <circle cx="160" cy="160" r="5" fill="#ff8300" class="dark:fill-[#00b8c4]" />
                                 </g>
                             </svg>
 
                             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center pt-14">
                                 <span id="stUpMainValue" class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-gray-900 dark:text-white drop-shadow-xs">{{ $trafficOutNow !== null ? number_format($trafficOutNow, 2) : '—' }}</span>
-                                <div class="flex items-center gap-1 text-xs font-bold text-[#f07f12] dark:text-pink-400 tracking-widest uppercase mt-0.5">
+                                <div class="flex items-center gap-1 text-xs font-bold text-[#ff8300] dark:text-pink-400 tracking-widest uppercase mt-0.5">
                                     <span id="stUpUnit">↑ Mbps</span>
                                 </div>
                             </div>
@@ -566,7 +576,7 @@
                     </div>
 
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-xl bg-[#f07f12]/10 dark:bg-white/10 flex items-center justify-center text-[#f07f12] dark:text-slate-300 shrink-0">
+                        <div class="w-8 h-8 rounded-xl bg-[#ff8300]/10 dark:bg-white/10 flex items-center justify-center text-[#ff8300] dark:text-slate-300 shrink-0">
                             <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /> <rect width="20" height="8" x="2" y="14" rx="2" ry="2" /> <line x1="6" x2="6.01" y1="6" y2="6" /> <line x1="6" x2="6.01" y1="18" y2="18" /></svg>
                         </div>
                         <div>
@@ -643,7 +653,7 @@
                 </div>
 
                 <!-- Progress Bars -->
-                <div class="floating-card p-6">
+                <div class="floating-card p-6" data-refrescar="operacion">
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Detalles de Operación</h3>
                         <span class="text-xs bg-gray-50 dark:bg-slate-800/60 text-gray-600 dark:text-slate-300 font-semibold px-3 py-1 rounded-full border border-transparent dark:border-slate-700/50">Global</span>
@@ -719,7 +729,7 @@
                         </div>
 
                         <div class="mt-8 pt-4 border-t border-dashed border-gray-200 dark:border-slate-800/40">
-                            <a href="{{ route('reportes.inventario_pdf') }}" target="_blank" class="w-full py-2 text-sm font-semibold text-hacienda-blue dark:text-blue-400 hover:text-[#5b7d95] dark:hover:text-blue-300 transition flex items-center justify-center">
+                            <a href="{{ route('reportes.inventario_pdf') }}" target="_blank" class="w-full py-2 text-sm font-semibold text-hacienda-blue dark:text-blue-400 hover:text-[#667d93] dark:hover:text-blue-300 transition flex items-center justify-center">
                                 Generar reporte PDF de inventario +
                             </a>
                         </div>
@@ -731,7 +741,7 @@
             @include('dashboard.partials.diagnostico')
 
             <!-- ==================== TABLA DE INVENTARIO DE DISPOSITIVOS (NOC) ==================== -->
-            <div class="floating-card p-6 mb-6" x-data="{
+            <div class="floating-card p-6 mb-6" data-refrescar="inventario" x-data="{
                 filtroBusqueda: '',
                 filtroEstado: 'todos',
                 filtroTipo: 'todos',
@@ -966,7 +976,7 @@
                                                     <span class="text-[11px] font-bold text-gray-400 w-6">{{ $etiqueta }}</span>
                                                     <div class="w-12 bg-gray-100 dark:bg-slate-800/80 rounded-full h-1.5 overflow-hidden flex-shrink-0">
                                                         @if($valor !== null)
-                                                            <div class="h-1.5 rounded-full {{ $valor > 75 ? 'bg-red-500' : ($valor > 40 ? 'bg-[#f07f12]' : 'bg-nm-primary') }}" style="width: {{ min(100, max(4, $valor)) }}%"></div>
+                                                            <div class="h-1.5 rounded-full {{ $valor > 75 ? 'bg-red-500' : ($valor > 40 ? 'bg-[#ff8300]' : 'bg-nm-primary') }}" style="width: {{ min(100, max(4, $valor)) }}%"></div>
                                                         @endif
                                                     </div>
                                                     <span class="font-mono font-bold text-gray-800 dark:text-slate-200 text-[11px] w-6 text-right">{{ $valor !== null ? $valor . '%' : '—' }}</span>
@@ -1201,14 +1211,14 @@
                 return chart;
             }
 
-            // 1. Tráfico: azul real (#0168fa)
-            initNocTimeSeries('sparkTraffic', 'TRAFFIC', trafficData, '1, 104, 250', 'Mbps');
+            // 1. Tráfico: azul real (#667d93)
+            initNocTimeSeries('sparkTraffic', 'TRAFFIC', trafficData, '102, 125, 147', 'Mbps');
 
             // 2. Latencia: turquesa (#00b8c4)
             initNocTimeSeries('sparkPing', 'LATENCY', pingData, '0, 184, 196', 'ms');
 
-            // 3. Pérdida: Naranja Institucional (#f07f12 -> 242, 100, 25)
-            initNocTimeSeries('sparkLoss', 'LOSS', lossData, '240, 127, 18', '%');
+            // 3. Pérdida: Naranja Institucional (#ff8300 -> 242, 100, 25)
+            initNocTimeSeries('sparkLoss', 'LOSS', lossData, '255, 131, 0', '%');
 
             // 4. Concentric Dual-Gauge Donut (Health CPU / RAM)
             const doughnutCanvas = document.getElementById('mainDoughnut');
@@ -1222,7 +1232,7 @@
                             {
                                 label: 'CPU',
                                 data: [avgCpu, Math.max(0, 100 - avgCpu)],
-                                backgroundColor: [isDarkTheme() ? '#4d94fd' : '#0168fa', emptyTrackColor],
+                                backgroundColor: [isDarkTheme() ? '#667d93' : '#667d93', emptyTrackColor],
                                 borderWidth: 0,
                                 borderRadius: [4, 0],
                                 hoverOffset: 3,
@@ -1315,6 +1325,10 @@
         // CENTRO DE NOTIFICACIONES & ALERTAS NOC
         // ==========================================
         let unreadNotifCount = {{ $unreadNotificaciones }};
+        // Tras el refresco automático de la campana, el contador se toma de lo que llegó
+        document.addEventListener('nm:refrescado', e => {
+            if (e.detail.claves.includes('notificaciones')) unreadNotifCount = document.querySelectorAll('.notif-item[data-leida="0"]').length;
+        });
 
         function toggleNotifDropdown(event) {
             if (event) {
@@ -1447,7 +1461,12 @@
             }).catch(err => console.error('Error al descartar notificación:', err));
         }
 
-        function markAllNotificationsAsRead() {
+        async function markAllNotificationsAsRead() {
+            const total = document.querySelectorAll('.notif-item[data-leida="0"]').length;
+            if (!total) return;
+            if (typeof nmConfirmar === 'function' && !(await nmConfirmar(
+                `Se marcarán ${total} alertas como leídas y saldrán de la cinta de alertas. Siguen en esta lista y reaparecen si la falla vuelve a ocurrir.`,
+                { titulo: 'Marcar todas como leídas', boton: 'Marcar leídas', peligro: false }))) return;
             unreadNotifCount = 0;
             
             // Remove unread dots and highlights
@@ -1493,7 +1512,11 @@
             }).catch(err => console.error('Error al marcar notificaciones leídas:', err));
         }
 
-        function clearAllNotifications() {
+        async function clearAllNotifications() {
+            const total = document.querySelectorAll('.notif-item').length;
+            if (typeof nmConfirmar === 'function' && !(await nmConfirmar(
+                `Se ocultarán ${total} alertas para tu cuenta. Cada una reaparece si la falla vuelve a ocurrir o si sigue activa después de 24 h.`,
+                { titulo: 'Ocultar todas las alertas', boton: 'Ocultar todas' }))) return;
             unreadNotifCount = 0;
 
             const items = document.querySelectorAll('.notif-item');
@@ -1631,7 +1654,6 @@
             // Down Gauge
             const downRatio = speedtestValueToRatio(downVal);
             const downArc = document.getElementById('stDownProgressArc');
-            const downNeedle = document.getElementById('stDownNeedleWedge');
             const downText = document.getElementById('stDownMainValue');
             const topDownText = document.getElementById('stTopDownVal');
 
@@ -1647,12 +1669,11 @@
                 downArc.style.strokeDashoffset = (541.92 * (1 - downRatio)).toFixed(2);
                 downArc.setAttribute('stroke', isDark ? 'url(#stDownGradDark)' : 'url(#stDownGradLight)');
             }
-            if (downNeedle) downNeedle.style.transform = `rotate(${-135 + downRatio * 270}deg)`;
+            stAgujas.down.objetivo = downRatio;
 
             // Up Gauge
             const upRatio = speedtestValueToRatio(upVal);
             const upArc = document.getElementById('stUpProgressArc');
-            const upNeedle = document.getElementById('stUpNeedleWedge');
             const upText = document.getElementById('stUpMainValue');
             const topUpText = document.getElementById('stTopUpVal');
 
@@ -1662,8 +1683,58 @@
                 upArc.style.strokeDashoffset = (541.92 * (1 - upRatio)).toFixed(2);
                 upArc.setAttribute('stroke', isDark ? 'url(#stUpGradDark)' : 'url(#stUpGradLight)');
             }
-            if (upNeedle) upNeedle.style.transform = `rotate(${-135 + upRatio * 270}deg)`;
+            stAgujas.up.objetivo = upRatio;
         }
+
+        // Agujas "vivas": un resorte las lleva hacia el valor real medido y encima
+        // oscilan un poco, como un medidor analógico. Solo se mueve la aguja; el
+        // número y el arco siempre muestran el dato real.
+        const stAgujas = (function () {
+            const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const crear = (id, fase) => ({ el: document.getElementById(id), objetivo: 0, pos: 0, vel: 0, fase, vivo: true });
+            const agujas = {
+                down: crear('stDownNeedleWedge', 0),
+                up:   crear('stUpNeedleWedge', 2.1),
+            };
+            const RIGIDEZ = 60, AMORTIGUACION = 11;
+            let previo = null;
+
+            function cuadro(ahora) {
+                // En pestaña oculta el navegador detiene el bucle; al volver no se "salta"
+                const dt = previo === null ? 0 : Math.min((ahora - previo) / 1000, 0.05);
+                previo = ahora;
+                const t = ahora / 1000;
+
+                for (const a of Object.values(agujas)) {
+                    if (!a.el) continue;
+                    if (reducido) {
+                        a.pos = a.objetivo;
+                    } else {
+                        a.vel += ((a.objetivo - a.pos) * RIGIDEZ - a.vel * AMORTIGUACION) * dt;
+                        a.pos += a.vel * dt;
+                    }
+
+                    // Temblor: suma de senos de periodos distintos (no se ve repetitivo),
+                    // ~±1.5° en reposo y algo más con tráfico alto
+                    let temblor = 0;
+                    if (a.vivo && !reducido) {
+                        const amp = 0.004 + a.objetivo * 0.006;
+                        temblor = amp * (Math.sin(t * 1.7 + a.fase) + 0.6 * Math.sin(t * 4.3 + a.fase * 2) + 0.3 * Math.sin(t * 9.1 + a.fase * 3));
+                    }
+                    const ratio = Math.min(1.01, Math.max(0, a.pos + temblor));
+                    a.el.style.transform = `rotate(${(-135 + ratio * 270).toFixed(2)}deg)`;
+                }
+                requestAnimationFrame(cuadro);
+            }
+
+            requestAnimationFrame(cuadro);
+
+            return {
+                ...agujas,
+                // Sin datos la aguja se queda quieta en cero: no simular actividad
+                vivas(si) { agujas.down.vivo = agujas.up.vivo = si; },
+            };
+        })();
 
         window.addEventListener('theme-changed', function() {
             updateDualSpeedtestGauges(latestDownMbps, latestUpMbps);
@@ -1701,11 +1772,13 @@
                         latestUpMbps   = parseFloat(data.out_mbps);
 
                         updateDualSpeedtestGauges(latestDownMbps, latestUpMbps);
+                        stAgujas.vivas(true);
                         setStatus(true, data.fuente === 'core' ? 'Switch core · SNMP' : 'Suma global · SNMP');
                         if (elDevice) elDevice.textContent = data.ip ? `${data.dispositivo} (${data.ip})` : data.dispositivo;
                         if (elMeasured) elMeasured.textContent = `Medido: ${data.medido_en}`;
                     } else {
                         updateDualSpeedtestGauges(0, 0);
+                        stAgujas.vivas(false);
                         ['stDownMainValue', 'stUpMainValue', 'stTopDownVal', 'stTopUpVal'].forEach(id => {
                             const el = document.getElementById(id);
                             if (el) el.textContent = '—';
@@ -1732,7 +1805,7 @@
     <script>
         (function () {
             const KPI_ENDPOINT = '{{ route("kpi.live") }}';
-            const KPI_INTERVAL = 15000; // ms
+            const KPI_INTERVAL = 8000; // ms (al ritmo del sondeo)
 
             async function fetchKPIs() {
                 try {
@@ -1771,7 +1844,7 @@
                             } else if (bellBtn) {
                                 const newBadge = document.createElement('span');
                                 newBadge.id = 'notifCountBadge';
-                                newBadge.className = 'absolute -top-1 -right-1 min-w-[19px] h-[19px] px-1 bg-[#f07f12] text-white text-[11px] font-black rounded-full flex items-center justify-center ring-2 ring-white shadow';
+                                newBadge.className = 'absolute -top-1 -right-1 min-w-[19px] h-[19px] px-1 bg-[#ff8300] text-white text-[11px] font-black rounded-full flex items-center justify-center ring-2 ring-white shadow';
                                 newBadge.textContent = data.unread_notif_count;
                                 bellBtn.appendChild(newBadge);
                             }
@@ -1987,7 +2060,7 @@
   left: 0;
   width: 10px;
   height: 10px;
-  background: #f07f12; /* Naranja Institucional */
+  background: #ff8300; /* Naranja Institucional */
   border-radius: 50%;
   animation: ball624 4s infinite;
   transition: background 0.3s ease;

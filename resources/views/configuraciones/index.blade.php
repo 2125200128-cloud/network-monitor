@@ -4,8 +4,8 @@
     <style>
         .text-hacienda-blue { color: var(--nm-primary-2); }
         .bg-hacienda-blue { background-color: var(--nm-primary-2); }
-        .text-hacienda-orange { color: #f07f12; }
-        .bg-hacienda-orange { background-color: #f07f12; }
+        .text-hacienda-orange { color: #ff8300; }
+        .bg-hacienda-orange { background-color: #ff8300; }
         .terminal-panel {
             background-color: #111827;
             color: #d1d5db;
@@ -66,7 +66,7 @@
                         
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Tipo de Configuración</label>
-                            <select name="tipo" class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white shadow-sm p-2.5 focus:border-[#f07f12] focus:ring focus:ring-[#f07f12] focus:ring-opacity-50 text-sm font-medium">
+                            <select name="tipo" class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-nm-sunken text-gray-900 dark:text-white shadow-sm p-2.5 focus:border-[#ff8300] focus:ring focus:ring-[#ff8300] focus:ring-opacity-50 text-sm font-medium">
                                 <option value="running">Running-Config</option>
                                 <option value="startup">Startup-Config</option>
                             </select>
@@ -146,7 +146,7 @@
                                     <svg class="w-4 h-4 mr-1" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <polyline points="7 10 12 15 17 10" /> <line x1="12" x2="12" y1="15" y2="3" /></svg>
                                     Descargar
                                 </a>
-                                <a href="{{ route('configuraciones.pdf', $ultimaConfig->id) }}" target="_blank" class="bg-nm-primary hover:bg-[#1a3d8f] text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center text-xs shadow-sm">
+                                <a href="{{ route('configuraciones.pdf', $ultimaConfig->id) }}" target="_blank" class="bg-nm-primary hover:bg-[#505b61] text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center text-xs shadow-sm">
                                     <svg class="w-4 h-4 mr-1.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M12 18v-6" /> <path d="m9 15 3 3 3-3" /></svg>
                                     Reporte PDF
                                 </a>

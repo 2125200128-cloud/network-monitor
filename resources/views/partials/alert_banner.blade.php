@@ -118,35 +118,11 @@
             </button>
         </div>
     </div>
-
-    <script>
-        // Velocidad constante y legible sin importar cuántas alertas haya
-        (function () {
-            const PX_POR_SEGUNDO = 40;
-            const track = document.getElementById('nocMarqueeTrack');
-            if (!track) return;
-            const ajustar = () => {
-                const lane = track.querySelector('.noc-marquee-lane');
-                if (!lane) return;
-                const segundos = Math.max(20, lane.offsetWidth / PX_POR_SEGUNDO);
-                track.style.setProperty('--noc-marquee-duration', segundos.toFixed(1) + 's');
-            };
-            ajustar();
-            if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustar);
-            let t;
-            window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(ajustar, 200); });
-        })();
-
-        // El centro de alertas vive en el dashboard: ahí se abre; desde otras páginas se va al dashboard y se abre al cargar
-        if (typeof window.handleBannerNotifClick !== 'function') {
-            window.handleBannerNotifClick = function(e) {
-                if (typeof window.toggleNotifDropdown === 'function' && document.getElementById('notifDropdownMenu')) {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    window.toggleNotifDropdown(e);
-                } else {
-                    window.location.href = "{{ route('dashboard') }}#alertas";
-                }
-            };
-        }
-    </script>
+    {{-- La velocidad de la cinta y "Ver Alertas" están en layouts/app: siguen funcionando cuando la cinta se refresca --}}
 @endif
+{{-- Incidencias sin leer (id y severidad) para el aviso sonoro de layouts/app: suena cuando aparece un id nuevo --}}
+@php
+    $idsAlertas = collect($notificaciones ?? [])->reject(fn ($n) => !empty($n['leida']))
+        ->map(fn ($n) => ['id' => (string) ($n['id'] ?? ''), 'tipo' => $n['tipo'] ?? ''])->values();
+@endphp
+<template id="nocAlertasIds">{!! json_encode($idsAlertas, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) !!}</template>

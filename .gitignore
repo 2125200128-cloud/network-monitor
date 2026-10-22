@@ -27,3 +27,7 @@ Thumbs.db
 /scratch/
 
 .env.respaldo*
+
+# Entorno de Python de los workers y respaldos de la base (contienen datos de la red)
+/.venv/
+*.dump
