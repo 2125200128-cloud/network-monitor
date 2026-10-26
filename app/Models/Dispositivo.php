@@ -40,9 +40,17 @@ class Dispositivo extends Model
         return $this->hasMany(MetricaRed::class);
     }
 
+    /**
+     * La medición más reciente de cada equipo. No usa latestOfMany(): esa consulta agrupa TODA la tabla
+     * metricas_red (millones de filas, ~1.5 s); aquí cada equipo es una búsqueda en el índice
+     * (dispositivo_id, fecha_registro) con LIMIT 1 (milisegundos).
+     */
     public function ultimaMetrica()
     {
-        return $this->hasOne(MetricaRed::class, 'dispositivo_id')->latestOfMany('fecha_registro');
+        return $this->hasOne(MetricaRed::class, 'dispositivo_id')
+            ->whereIn('metricas_red.id', fn ($q) => $q->from('dispositivos as d_ultima')->selectRaw(
+                '(SELECT m.id FROM metricas_red m WHERE m.dispositivo_id = d_ultima.id ORDER BY m.fecha_registro DESC, m.id DESC LIMIT 1)'
+            ));
     }
 
     public function auditoriaComandos()

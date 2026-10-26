@@ -227,11 +227,19 @@
         @if(($web['total'] ?? 0) === 0)
             <p class="text-sm text-gray-400 text-center py-6">No hay servicios web activos. <a href="{{ route('servicios_web.index') }}" class="text-hacienda-blue hover:underline">Agregar servicios</a></p>
         @else
+            {{-- Se lee en vivo (no del caché de paneles): sin red en el monitor, nada de esto está verificado --}}
+            @php $sinRedWeb = \App\Services\WebServicePoller::sinConectividad(); @endphp
+            @if($sinRedWeb)
+                <div class="mb-3 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-xs text-red-800 dark:text-red-300">
+                    <strong>El monitor no alcanza los sitios web desde las {{ \Carbon\Carbon::parse($sinRedWeb['desde'])->format('H:i') }}</strong>
+                    (fallaron {{ $sinRedWeb['fallidos'] }} de {{ $sinRedWeb['total'] }} a la vez). El estado de los sitios no está verificado hasta que regrese la red.
+                </div>
+            @endif
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
-                @include('dashboard.partials._stat', ['label' => 'En línea', 'valor' => $web['online'] . ' / ' . $web['total'], 'tono' => 'ok'])
-                @include('dashboard.partials._stat', ['label' => 'Degradados', 'valor' => $web['warning'], 'tono' => $web['warning'] ? 'warn' : 'ok'])
-                @include('dashboard.partials._stat', ['label' => 'Caídos', 'valor' => $web['offline'], 'tono' => $web['offline'] ? 'crit' : 'ok'])
-                @include('dashboard.partials._stat', ['label' => 'Respuesta prom.', 'valor' => $web['latencia_prom'] === null ? 'Sin dato' : $web['latencia_prom'] . ' ms'])
+                @include('dashboard.partials._stat', ['label' => 'En línea', 'valor' => $sinRedWeb ? 'Sin verificar' : $web['online'] . ' / ' . $web['total'], 'tono' => $sinRedWeb ? null : 'ok'])
+                @include('dashboard.partials._stat', ['label' => 'Degradados', 'valor' => $sinRedWeb ? '—' : $web['warning'], 'tono' => $sinRedWeb ? null : ($web['warning'] ? 'warn' : 'ok')])
+                @include('dashboard.partials._stat', ['label' => 'Caídos', 'valor' => $sinRedWeb ? '—' : $web['offline'], 'tono' => $sinRedWeb ? null : ($web['offline'] ? 'crit' : 'ok')])
+                @include('dashboard.partials._stat', ['label' => 'Respuesta prom.', 'valor' => $sinRedWeb ? '—' : ($web['latencia_prom'] === null ? 'Sin dato' : $web['latencia_prom'] . ' ms')])
                 @include('dashboard.partials._stat', ['label' => 'Disponibilidad 24 h', 'valor' => $pct($web['disponibilidad_24h']), 'title' => 'Chequeos con respuesta (en línea o degradado) / chequeos totales'])
                 @include('dashboard.partials._stat', ['label' => 'SSL por vencer', 'valor' => count($web['ssl_por_vencer']), 'tono' => count($web['ssl_por_vencer']) ? 'warn' : 'ok', 'title' => $web['ssl_medidos'] . ' certificados medidos'])
             </div>

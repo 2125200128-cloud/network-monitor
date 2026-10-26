@@ -507,6 +507,143 @@
                         </button>
                     </div>
                 </form>
+                {{-- vCenter: conexión de solo lectura para la sección Virtualización --}}
+                <form action="{{ route('settings.vcenter') }}" method="POST" class="settings-group mt-6 mb-0" x-data="vcenterAjustes()" autocomplete="off">
+                    @csrf
+                    <h4 class="settings-group-title">
+                        <svg class="w-4 h-4 text-black dark:text-white" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" /><rect width="20" height="8" x="2" y="14" rx="2" /><path d="M6 6h.01" /><path d="M6 18h.01" /></svg>
+                        vCenter (Virtualización)
+                        @if($vcenter['configurado'])
+                            <span class="ml-auto text-[11px] font-black px-3 py-0.5 rounded-full bg-black text-white dark:bg-white dark:text-black normal-case tracking-normal">Conectado</span>
+                        @endif
+                    </h4>
+                    <p class="settings-row-desc mb-2">
+                        Usuario del vCenter con rol <b>Read-Only</b> (solo lectura). Con él la sección Virtualización muestra hosts, VMs, datastores y clústeres.
+                        La contraseña se guarda cifrada y no se vuelve a mostrar: deja el campo vacío para conservar la guardada.
+                    </p>
+                    <div class="settings-row">
+                        <div><div class="settings-row-label">Host del vCenter</div><div class="settings-row-desc">IP o nombre, sin https://</div></div>
+                        <input type="text" name="vcenter_host" x-model="host" placeholder="10.4.249.31" class="settings-input font-mono font-bold" style="width: 260px;">
+                    </div>
+                    <div class="settings-row">
+                        <div><div class="settings-row-label">Usuario</div><div class="settings-row-desc">Ej. monitor@vsphere.local</div></div>
+                        <input type="text" name="vcenter_usuario" x-model="usuario" placeholder="Sin vCenter" autocomplete="off" class="settings-input font-mono font-bold" style="width: 260px;">
+                    </div>
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Contraseña</div>
+                            <div class="settings-row-desc">@if($vcenter['clave_guardada']) <b>Guardada</b> · déjala vacía para conservarla. @else La del usuario de solo lectura. @endif</div>
+                        </div>
+                        <input type="password" name="vcenter_password" x-model="contrasena" autocomplete="new-password" placeholder="{{ $vcenter['clave_guardada'] ? 'Sin cambios' : 'Contraseña' }}" class="settings-input font-mono" style="width: 260px;">
+                    </div>
+                    <div class="flex flex-wrap items-center justify-end gap-3 mt-5">
+                        <span class="text-xs font-semibold mr-auto max-w-xl" :class="ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'" x-text="aviso"></span>
+                        @if($vcenter['configurado'])
+                            <label class="text-xs text-slate-500 flex items-center gap-1.5"><input type="checkbox" name="vcenter_borrar" value="1"> Borrar conexión</label>
+                        @endif
+                        <button type="button" @click="probar()" :disabled="cargando" class="text-sm font-bold px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
+                                title="Inicia sesión en el vCenter con estos datos y cuenta lo que el usuario puede ver">Probar conexión</button>
+                        <button type="submit" class="fancy">
+                            <span class="top-key"></span>
+                            <span class="text">
+                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                                Guardar vCenter
+                            </span>
+                            <span class="bottom-key-1"></span>
+                            <span class="bottom-key-2"></span>
+                        </button>
+                    </div>
+                </form>
+                {{-- ESXi: credenciales para leer cada host directo (worker/esxi_collector.py) --}}
+                <form action="{{ route('settings.esxi') }}" method="POST" class="settings-group mt-6 mb-0" x-data="esxiAjustes()" autocomplete="off">
+                    @csrf
+                    <h4 class="settings-group-title">
+                        <svg class="w-4 h-4 text-black dark:text-white" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2" /><rect width="6" height="6" x="9" y="9" rx="1" /><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2" /></svg>
+                        Hosts ESXi (Virtualización)
+                        @if($esxi['configurado'])
+                            <span class="ml-auto text-[11px] font-black px-3 py-0.5 rounded-full bg-black text-white dark:bg-white dark:text-black normal-case tracking-normal">Activo</span>
+                        @endif
+                    </h4>
+                    <p class="settings-row-desc mb-2">
+                        Usuario y contraseña con que el NOC lee cada host ESXi (CPU, memoria, sensores, alarmas, VMs y datastores). Solo se hacen lecturas.
+                        La contraseña se guarda cifrada y no se vuelve a mostrar: deja el campo vacío para conservar la guardada.
+                    </p>
+                    <div class="settings-row">
+                        <div><div class="settings-row-label">Usuario</div><div class="settings-row-desc">El mismo en todos los hosts</div></div>
+                        <input type="text" name="esxi_usuario" x-model="usuario" placeholder="Sin ESXi" autocomplete="off" class="settings-input font-mono font-bold" style="width: 260px;">
+                    </div>
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Contraseña</div>
+                            <div class="settings-row-desc">@if($esxi['clave_guardada']) <b>Guardada</b> · déjala vacía para conservarla. @else La del usuario de los hosts. @endif</div>
+                        </div>
+                        <input type="password" name="esxi_password" x-model="contrasena" autocomplete="new-password" placeholder="{{ $esxi['clave_guardada'] ? 'Sin cambios' : 'Contraseña' }}" class="settings-input font-mono" style="width: 260px;">
+                    </div>
+                    <div class="flex flex-wrap items-center justify-end gap-3 mt-5">
+                        <span class="text-xs font-semibold mr-auto max-w-xl" :class="ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'" x-text="aviso"></span>
+                        @if($esxi['configurado'])
+                            <label class="text-xs text-slate-500 flex items-center gap-1.5"><input type="checkbox" name="esxi_borrar" value="1"> Borrar credenciales</label>
+                        @endif
+                        <input type="text" x-model="ipPrueba" placeholder="IP de un host" class="settings-input font-mono" style="width: 150px;" aria-label="IP de un host ESXi para la prueba">
+                        <button type="button" @click="probar()" :disabled="cargando" class="text-sm font-bold px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
+                                title="Lee ese host con estos datos (o los guardados)">Probar</button>
+                        <button type="submit" class="fancy">
+                            <span class="top-key"></span>
+                            <span class="text">
+                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                                Guardar ESXi
+                            </span>
+                            <span class="bottom-key-1"></span>
+                            <span class="bottom-key-2"></span>
+                        </button>
+                    </div>
+                </form>
+                <script>
+                    function esxiAjustes() {
+                        return {
+                            usuario: @json(old('esxi_usuario', $settings->esxi_usuario) ?? ''), contrasena: '',
+                            ipPrueba: @json($esxi['ip_prueba']), aviso: '', ok: true, cargando: false,
+                            async probar() {
+                                this.cargando = true; this.ok = true; this.aviso = 'Leyendo ' + this.ipPrueba + ' (puede tardar hasta 30 s)…';
+                                try {
+                                    const r = await fetch(@json(route('settings.esxi.probar')), {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token()) },
+                                        body: JSON.stringify({ ip: this.ipPrueba, usuario: this.usuario, contrasena: this.contrasena }),
+                                    });
+                                    const j = await r.json().catch(() => ({ ok: false, mensaje: 'Respuesta inválida (HTTP ' + r.status + ').' }));
+                                    if (r.status === 429) j.mensaje = 'Demasiados intentos, espera un minuto.';
+                                    if (!j.mensaje && j.errors) j.mensaje = Object.values(j.errors).flat().join(' ');
+                                    this.ok = !!j.ok; this.aviso = j.mensaje || 'Error';
+                                } catch (e) { this.ok = false; this.aviso = 'Sin conexión con el servidor.'; }
+                                this.cargando = false;
+                            },
+                        };
+                    }
+                </script>
+                <script>
+                    function vcenterAjustes() {
+                        return {
+                            host: @json(old('vcenter_host', $settings->vcenter_host) ?? ''),
+                            usuario: @json(old('vcenter_usuario', $settings->vcenter_usuario) ?? ''),
+                            contrasena: '', aviso: '', ok: true, cargando: false,
+                            async probar() {
+                                this.cargando = true; this.ok = true; this.aviso = 'Conectando con ' + (this.host || 'el vCenter') + '…';
+                                try {
+                                    const r = await fetch(@json(route('settings.vcenter.probar')), {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token()) },
+                                        body: JSON.stringify({ host: this.host, usuario: this.usuario, contrasena: this.contrasena }),
+                                    });
+                                    const j = await r.json().catch(() => ({ ok: false, mensaje: 'Respuesta inválida (HTTP ' + r.status + ').' }));
+                                    if (r.status === 429) j.mensaje = 'Demasiados intentos, espera un minuto.';
+                                    this.ok = !!j.ok; this.aviso = j.mensaje || 'Error';
+                                } catch (e) { this.ok = false; this.aviso = 'Sin conexión con el servidor.'; }
+                                this.cargando = false;
+                            },
+                        };
+                    }
+                </script>
                 <script>
                     function snmpv3Ajustes() {
                         const llamar = async (url, datos) => {
@@ -576,14 +713,6 @@
                             <p class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">{{ auth()->user()->email }} · <span class="text-emerald-600 dark:text-emerald-400 font-bold">● Sesión Activa</span></p>
                         </div>
                     </div>
-
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 text-xs font-bold transition border border-red-200 dark:border-red-800/40 shadow-xs">
-                            <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /> <polyline points="16 17 21 12 16 7" /> <line x1="21" x2="9" y1="12" y2="12" /></svg>
-                            Cerrar Sesión
-                        </button>
-                    </form>
                 </div>
 
                 {{-- Register New Account Card --}}

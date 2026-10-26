@@ -6,6 +6,7 @@
     <meta name="description" content="@yield('descripcion', 'Acceso al Centro de Operaciones de Red de la Secretaría de la Hacienda Pública.')">
     <meta name="robots" content="noindex, nofollow">
     <title>@yield('titulo', 'Acceso Institucional') - NOC</title>
+    @include('partials.favicon')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         body {
@@ -154,7 +155,7 @@
         .fancy.fancy-naranja:hover, .fancy.fancy-naranja:focus-visible { background: #ff8300; }
         .fancy.fancy-naranja:hover .text, .fancy.fancy-naranja:focus-visible .text { color: white; }
 
-        /* Cargador local con los colores institucionales (reemplaza al reproductor Lottie externo) */
+        /* Respaldo de la huella animada: solo se ve si el reproductor Lottie no carga */
         .cargador {
             position: relative;
             width: 76px; height: 76px;
@@ -224,13 +225,19 @@
         </div>
     </main>
 
-    {{-- Pantalla de espera al enviar el formulario --}}
-    <div id="loadingOverlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm" role="status" aria-live="polite">
-        <div class="flex flex-col items-center gap-6">
-            <div class="cargador" aria-hidden="true"></div>
-            <p class="text-xl font-bold @yield('color_carga', 'text-institutional-blue') animate-pulse">@yield('mensaje_carga', 'Verificando credenciales...')</p>
+    {{-- Pantalla de espera al enviar el formulario: huella digital animada (Lottie, servida desde el propio
+         proyecto: public/vendor/dotlottie-player y public/animaciones). Si el reproductor no carga, se ve el
+         cargador CSS que va dentro (una vez cargado, el reproductor lo oculta). --}}
+    <div id="loadingOverlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm transition-opacity" role="status" aria-live="polite">
+        <div class="flex flex-col items-center">
+            <dotlottie-player src="{{ asset('animaciones/huella.lottie') }}" background="transparent" speed="1"
+                              style="width: 250px; height: 250px; display: flex; align-items: center; justify-content: center" loop autoplay aria-hidden="true">
+                <div class="cargador"></div>
+            </dotlottie-player>
+            <h2 class="text-xl font-bold @yield('color_carga', 'text-institutional-blue') -mt-4 animate-pulse">@yield('mensaje_carga', 'Verificando credenciales...')</h2>
         </div>
     </div>
+    <script src="{{ asset('vendor/dotlottie-player/dotlottie-player.mjs') }}" type="module"></script>
 
     <script>
         (function () {

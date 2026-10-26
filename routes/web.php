@@ -21,6 +21,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/alertas/exportar', [AlertasController::class, 'exportar'])->middleware('throttle:20,1')->name('alertas.exportar');
     Route::get('/parciales/alertas',fn () => view('partials.alertas-refresco'))->name('parciales.alertas');
     Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'index'])->name('firewalls.index');
+    Route::get('/virtualizacion', [\App\Http\Controllers\VirtualizacionController::class, 'index'])->name('virtualizacion.index');
     Route::post('/pantalla/mantener-sesion',[PantallaController::class, 'mantener'])->middleware('throttle:30,1')->name('pantalla.mantener');
 
     // ==========================================
@@ -32,6 +33,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/settings/snmpv3', [SettingController::class, 'guardarSnmpv3'])->name('settings.snmpv3');
         Route::post('/settings/snmpv3/detectar', [SettingController::class, 'detectarSnmpv3'])->middleware('throttle:10,1')->name('settings.snmpv3.detectar');
         Route::post('/settings/snmpv3/probar',[SettingController::class, 'probarSnmpv3'])->middleware('throttle:10,1')->name('settings.snmpv3.probar');
+        Route::post('/settings/vcenter', [SettingController::class, 'guardarVcenter'])->name('settings.vcenter');
+        Route::post('/settings/vcenter/probar', [SettingController::class, 'probarVcenter'])->middleware('throttle:10,1')->name('settings.vcenter.probar');
+        Route::post('/settings/esxi', [SettingController::class, 'guardarEsxi'])->name('settings.esxi');
+        Route::post('/settings/esxi/probar', [SettingController::class, 'probarEsxi'])->middleware('throttle:10,1')->name('settings.esxi.probar');
         Route::post('/settings/telegram',[SettingController::class, 'guardarTelegram'])->name('settings.telegram');
         Route::post('/settings/telegram/chats', [SettingController::class, 'chatsTelegram'])->middleware('throttle:20,1')->name('settings.telegram.chats');
         Route::post('/settings/telegram/probar', [SettingController::class, 'probarTelegram'])->middleware('throttle:10,1')->name('settings.telegram.probar');

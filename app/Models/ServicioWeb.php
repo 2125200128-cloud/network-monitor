@@ -34,6 +34,8 @@ class ServicioWeb extends Model
         'tiempo_tls_ms',
         'tiempo_servidor_ms',
         'ssl_problema',
+        'ip_servidor',
+        'vms_manual',
     ];
 
     protected $casts = [
@@ -51,6 +53,7 @@ class ServicioWeb extends Model
         'tiempo_conexion_ms' => 'float',
         'tiempo_tls_ms' => 'float',
         'tiempo_servidor_ms' => 'float',
+        'vms_manual' => 'array',
     ];
 
     /**

@@ -93,7 +93,7 @@ class FirewallsService
      * Promedio por bloque de 5 min de las últimas horas, por equipo:
      * [id => [['t' => epoch, 'cpu', 'ram', 'sesiones', 'mbps_in', 'mbps_out', 'ping'], ...]]
      */
-    private function historia(array $ids): array
+    public function historia(array $ids): array
     {
         if (!$ids) {
             return [];
@@ -123,7 +123,7 @@ class FirewallsService
     }
 
     /** % de sondeos de las últimas 24 h en que el equipo respondió (ping o SNMP), por equipo. */
-    private function disponibilidad24h(array $ids): array
+    public function disponibilidad24h(array $ids): array
     {
         if (!$ids) {
             return [];

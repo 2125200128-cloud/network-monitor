@@ -10,7 +10,7 @@ set -euo pipefail
 ARCHIVO="${1:?Indica el archivo .dump exportado del servidor anterior}"
 APP_DIR="${APP_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 USUARIO="${USUARIO:-www-data}"
-SERVICIOS="nm-poller.service nm-detalle.service nm-clasificador.service nm-noc-sync.timer nm-web-poll.timer"
+SERVICIOS="nm-poller.service nm-detalle.service nm-clasificador.service nm-esxi.service nm-noc-sync.timer nm-web-poll.timer"
 
 [[ $EUID -eq 0 ]] || { echo "Ejecuta con sudo"; exit 1; }
 [[ -f "$ARCHIVO" ]] || { echo "No existe $ARCHIVO"; exit 1; }

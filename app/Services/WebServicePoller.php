@@ -295,6 +295,8 @@ class WebServicePoller
             'conexion' => $conn !== null && $dns !== null ? $ms($conn - $dns) : null,
             'tls' => $tlsFin !== null && $conn !== null ? $ms($tlsFin - $conn) : null,
             'servidor' => $primerByte !== null && $pre !== null ? $ms($primerByte - $pre) : null,
+            // IP a la que realmente se conectó (sirve para saber en qué VM está el sitio)
+            'ip' => filter_var($info['primary_ip'] ?? '', FILTER_VALIDATE_IP) ?: null,
         ];
     }
 
@@ -381,7 +383,7 @@ class WebServicePoller
             'ultimo_chequeo' => now(),
             'fallos_consecutivos' => min($fallos, 1000),
             'lentos_consecutivos' => min($lentos, 1000),
-        ];
+        ] + (!empty($eval['ip']) ? ['ip_servidor' => $eval['ip']] : []);
         ServicioWeb::whereKey($servicio->getKey())->update($actualizacion);
         $servicio->forceFill($actualizacion)->syncOriginal();
 

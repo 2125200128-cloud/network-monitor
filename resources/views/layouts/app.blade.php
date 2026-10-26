@@ -6,6 +6,7 @@
     {{-- Segundos entre refrescos de las zonas marcadas con data-refrescar (cada vista puede cambiarlo) --}}
     <meta name="nm-refresco" content="@yield('refresco', 30)">
     <title>@yield('title', 'Network Dashboard')</title>
+    @include('partials.favicon')
     <!-- Tailwind CSS (via CDN & Vite) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -53,11 +54,11 @@
     @endif
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- Chart.js (Optional, but included globally as before) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {{-- Versiones fijas: el navegador las guarda en caché un año (sin versión, la URL se resuelve en cada visita) --}}
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.17.5/dist/cdn.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.6.1/dist/chart.umd.min.js"></script>
     <!-- Anti-FOUC Theme Initializer -->
-    <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
     <script>
         (function() {
             try {
@@ -280,6 +281,13 @@
                 'title'  => 'Firewalls FortiGate: HA, túneles, SD-WAN y seguridad',
                 'label'  => 'Firewalls',
                 'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path stroke-linecap="round" stroke-linejoin="round" d="m9 12 2 2 4-4"></path>',
+            ],
+            [
+                'href'   => route('virtualizacion.index'),
+                'active' => request()->is('virtualizacion*'),
+                'title'  => 'Virtualización VMware: hosts ESXi, VMs y datastores',
+                'label'  => 'Virtualización',
+                'svg'    => '<rect width="20" height="8" x="2" y="2" rx="2"></rect><rect width="20" height="8" x="2" y="14" rx="2"></rect><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.01M6 18h.01"></path>',
             ],
             [
                 'href'   => route('consola.index'),

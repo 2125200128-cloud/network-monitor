@@ -16,6 +16,7 @@ class HistorialAlertas
     public const CATEGORIAS = [
         'dispositivo' => 'Equipos', 'enlace' => 'Enlaces', 'hardware' => 'Hardware', 'rendimiento' => 'Rendimiento',
         'seguridad' => 'Seguridad / puertos', 'servicio_web' => 'Servicios web', 'ncm' => 'Respaldos',
+        'virtualizacion' => 'Virtualización', 'sistema' => 'Sistema NOC',
     ];
 
     /** Ocurrencias de la misma alarma en el rango a partir de las cuales se considera intermitente. */
