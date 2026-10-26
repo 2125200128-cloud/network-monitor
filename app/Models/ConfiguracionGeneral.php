@@ -35,15 +35,22 @@ class ConfiguracionGeneral extends Model
         'snmpv3_auth_pass',
         'snmpv3_priv_proto',
         'snmpv3_priv_pass',
+        'vcenter_host',
+        'vcenter_usuario',
+        'vcenter_password',
+        'esxi_usuario',
+        'esxi_password',
     ];
 
-    protected $hidden = ['telegram_bot_token', 'snmpv3_auth_pass', 'snmpv3_priv_pass'];
+    protected $hidden = ['telegram_bot_token', 'snmpv3_auth_pass', 'snmpv3_priv_pass', 'vcenter_password', 'esxi_password'];
 
     protected $casts = [
         'telegram_activo' => 'boolean',
         'telegram_bot_token' => 'encrypted',
         'snmpv3_auth_pass' => 'encrypted',
         'snmpv3_priv_pass' => 'encrypted',
+        'vcenter_password' => 'encrypted',
+        'esxi_password' => 'encrypted',
         'telegram_resueltas' => 'boolean',
         'telegram_imagenes' => 'boolean',
     ];

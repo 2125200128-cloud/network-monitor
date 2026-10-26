@@ -4,8 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Autorización Requerida - NOC</title>
+    @include('partials.favicon')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+    <script src="{{ asset('vendor/dotlottie-player/dotlottie-player.mjs') }}" type="module"></script>
     <style>
         body {
             background-color: #f3f4f6;
@@ -70,7 +71,7 @@
     <div id="loadingOverlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm transition-opacity">
         <div class="flex flex-col items-center">
             <dotlottie-player 
-                src="https://lottie.host/79855975-9878-4ae8-be92-6eae04c2e477/JLYlsyf43X.lottie" 
+                src="{{ asset('animaciones/huella.lottie') }}"
                 background="transparent" 
                 speed="1" 
                 style="width: 250px; height: 250px;" 

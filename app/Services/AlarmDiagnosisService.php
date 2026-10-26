@@ -632,6 +632,11 @@ class AlarmDiagnosisService
                 $isOffline = ($web->estado === 'offline');
                 $codeStr = $web->codigo_http ? "HTTP {$web->codigo_http}" : "SIN RESPUESTA";
                 $latenciaStr = $web->tiempo_respuesta_ms ? " ({$web->tiempo_respuesta_ms} ms)" : "";
+                // VM(s) que atienden el sitio (leídas de los ESXi): dónde corre y si la VM o su host tienen un problema
+                $vmsWeb = \App\Services\VmsServiciosWeb::para($web);
+                $servidorStr = $vmsWeb ? ' Servidor: ' . implode(', ', array_map(fn ($vm) => $vm['nombre']
+                    . (!empty($vm['host']) ? " (host {$vm['host']})" : '') . ($vm['aviso'] ? " — {$vm['aviso']}" : ''), $vmsWeb)) . '.' : '';
+                $avisosVm = array_values(array_filter(array_column($vmsWeb, 'aviso')));
 
                 $alarmas[] = [
                     'id' => ($isOffline ? 'web-off-' : 'web-warn-') . $web->id,
@@ -645,10 +650,14 @@ class AlarmDiagnosisService
                     'ip' => parse_url($web->url, PHP_URL_HOST) ?? $web->url,
                     'ubicacion' => "Módulo Servicios Web [{$web->categoria}]",
                     'mensaje' => ($isOffline ? 'Página inaccesible o con error' : 'Página degradada (lenta, con error de contenido o 4xx)')
-                        . ". Estado: {$codeStr}{$latenciaStr}. URL: {$web->url}",
-                    'causa_raiz' => $web->detalles_error ?: ($isOffline ? 'El servidor web no respondió a la solicitud o se agotó el tiempo de espera.' : 'La página devolvió un error de cliente o latencia elevada.'),
+                        . ". Estado: {$codeStr}{$latenciaStr}. URL: {$web->url}.{$servidorStr}",
+                    'causa_raiz' => ($web->detalles_error ?: ($isOffline ? 'El servidor web no respondió a la solicitud o se agotó el tiempo de espera.' : 'La página devolvió un error de cliente o latencia elevada.'))
+                        . ($avisosVm ? ' En su servidor: ' . implode('; ', $avisosVm) . '.' : ''),
                     'impacto' => "Interrupción en la atención a usuarios / trámites digitales en línea.",
-                    'accion_sugerida' => "1. Verificar servicio Apache/IIS/Tomcat o balanceador en el servidor. 2. Probar conectividad hacia la URL: {$web->url}.",
+                    'accion_sugerida' => ($avisosVm
+                        ? '1. Revisar la VM en Virtualización / vCenter (' . implode('; ', $avisosVm) . '). 2. '
+                        : '1. Verificar servicio Apache/IIS/Tomcat o balanceador en el servidor. 2. ')
+                        . "Probar conectividad hacia la URL: {$web->url}.",
                     'fecha_falla' => $fechaFalla,
                     'hora_falla' => $horaFalla,
                     'hace_cuanto' => $dt->diffForHumans(),
@@ -656,6 +665,78 @@ class AlarmDiagnosisService
                     'leida' => false,
                     'link' => route('servicios_web.index'),
                     'accion' => 'Ver Servicios Web'
+                ];
+            }
+
+            // El colector de ESXi (worker/esxi_collector.py) dejó de leer: sin él no hay datos de las VMs ni de los hosts
+            $esxiConfigurado = (bool) \App\Models\ConfiguracionGeneral::query()->value('esxi_usuario');
+            $ultimaEsxi = $esxiConfigurado ? \Illuminate\Support\Facades\DB::table('esxi_estado')->max('leido_en') : null;
+            if ($esxiConfigurado && (!$ultimaEsxi || \Carbon\Carbon::parse($ultimaEsxi)->lt(now()->subMinutes(5)))) {
+                $desde = $ultimaEsxi ? \Carbon\Carbon::parse($ultimaEsxi) : null;
+                $alarmas[] = [
+                    'id' => 'esxi-colector-detenido',
+                    'tipo' => 'advertencia',
+                    'severidad' => 'advertencia',
+                    'categoria' => 'sistema',
+                    'codigo_evento' => 'ESXI_COLECTOR_DETENIDO',
+                    'titulo' => 'El colector de VMware (ESXi) no está leyendo',
+                    'dispositivo' => 'Colector ESXi',
+                    'ip' => '—',
+                    'ubicacion' => 'Servidor del NOC',
+                    'mensaje' => 'Sin lecturas de los hosts ESXi ' . ($desde ? 'desde ' . $desde->format('H:i') . " ({$desde->locale('es')->diffForHumans()})" : 'todavía') . '.',
+                    'causa_raiz' => 'El proceso worker/esxi_collector.py está detenido o no logra conectarse a los hosts.',
+                    'impacto' => 'Virtualización y la relación de los sitios web con sus VMs muestran datos viejos; no se detectan discos llenos ni VMs apagadas.',
+                    'accion_sugerida' => 'Revisar la ventana "NOC - ESXi" (o el servicio nm-esxi en Ubuntu) y reiniciarla.',
+                    'fecha_falla' => ($desde ?? now())->format('d/m/Y H:i:s'),
+                    'hora_falla' => ($desde ?? now())->format('h:i:s A'),
+                    'hace_cuanto' => $desde ? $desde->locale('es')->diffForHumans() : 'ahora',
+                    'tiempo' => ($desde ?? now())->format('h:i:s A'),
+                    'leida' => false,
+                    'link' => route('virtualizacion.index'),
+                    'accion' => 'Ver Virtualización',
+                ];
+            }
+
+            // Preventivo: la VM que atiende un sitio tiene un problema (disco, SO sin latido, memoria a disco,
+            // reinicio, CPU) aunque el sitio todavía responda. Una alarma por VM con los sitios que dependen de ella.
+            // Lo que ya tumba al sitio (VM apagada, host caído) lo informa la alarma del sitio.
+            $porVm = [];
+            foreach (\App\Models\ServicioWeb::where('es_activo', true)->get() as $web) {
+                foreach (\App\Services\VmsServiciosWeb::para($web) as $vm) {
+                    $avisos = array_filter($vm['avisos'] ?? [], fn ($a) => !preg_match('/apagada|suspendida|no responde$|desconectado|Sin lectura/', $a['texto']));
+                    if (!$avisos) {
+                        continue;
+                    }
+                    $porVm[$vm['nombre']] ??= ['vm' => $vm, 'avisos' => array_values($avisos), 'sitios' => []];
+                    $porVm[$vm['nombre']]['sitios'][] = $web->nombre;
+                }
+            }
+            foreach ($porVm as $nombreVm => $x) {
+                $critica = collect($x['avisos'])->contains('nivel', 'crit');
+                $textos = array_column($x['avisos'], 'texto');
+                $alarmas[] = [
+                    'id' => 'web-vm-' . substr(md5($nombreVm), 0, 12),
+                    'tipo' => $critica ? 'critica' : 'advertencia',
+                    'severidad' => $critica ? 'critica' : 'advertencia',
+                    'categoria' => 'servicio_web',
+                    'codigo_evento' => 'WEB_VM_RIESGO',
+                    'titulo' => "Servidor de sitios web en riesgo: {$nombreVm}",
+                    'dispositivo' => $nombreVm,
+                    'ip' => implode(', ', array_slice($x['vm']['ips'] ?? [], 0, 2)),
+                    'ubicacion' => 'VM en host ' . ($x['vm']['host'] ?? '—'),
+                    'mensaje' => implode('; ', $textos) . '. Sitios que atiende: ' . implode(', ', array_unique($x['sitios'])) . '.',
+                    'causa_raiz' => implode('; ', $textos) . ' (leído del host ESXi).',
+                    'impacto' => 'Los sitios siguen respondiendo, pero pueden caer si el problema avanza.',
+                    'accion_sugerida' => str_contains(implode(' ', $textos), 'Disco')
+                        ? '1. Liberar espacio en la partición indicada (logs, temporales, despliegues viejos). 2. Si crece rápido, ampliar el disco de la VM.'
+                        : '1. Revisar la VM en Virtualización / vCenter. 2. Revisar el servicio web dentro de la VM.',
+                    'fecha_falla' => now()->format('d/m/Y H:i:s'),
+                    'hora_falla' => now()->format('h:i:s A'),
+                    'hace_cuanto' => 'ahora',
+                    'tiempo' => now()->format('h:i:s A'),
+                    'leida' => false,
+                    'link' => route('servicios_web.index'),
+                    'accion' => 'Ver Servicios Web',
                 ];
             }
         } catch (\Throwable $e) {
@@ -903,6 +984,12 @@ class AlarmDiagnosisService
             // Silencioso si la tabla aún se está migrando
         }
 
+        try {
+            $alarmas = array_merge($alarmas, $this->alarmasVirtualizacion());
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Alarmas de virtualización: ' . $e->getMessage());
+        }
+
         // Ordenar por severidad (crítica -> advertencia -> informativa)
         usort($alarmas, function ($a, $b) {
             $peso = ['critica' => 1, 'advertencia' => 2, 'sistema' => 3, 'informativa' => 3];
@@ -911,6 +998,139 @@ class AlarmDiagnosisService
             return $pA <=> $pB;
         });
 
+        return $alarmas;
+    }
+
+    /** Umbrales de los hosts ESXi y datastores (los mismos que muestra la sección Virtualización). */
+    private const ESXI_CPU_AVISO = 80, ESXI_CPU_CRITICO = 90, ESXI_RAM_AVISO = 85, ESXI_RAM_CRITICO = 95;
+    private const DATASTORE_AVISO = 80, DATASTORE_CRITICO = 90;
+
+    /**
+     * Hosts ESXi y datastores, con lo que leyó worker/esxi_collector.py (tabla esxi_estado). Se usa la última
+     * lectura de cada host aunque sea vieja, aclarándolo: si se dejaran de informar los problemas por falta de
+     * lectura, las alarmas se darían por resueltas sin que nada haya cambiado (eso lo avisa ESXI_COLECTOR_DETENIDO).
+     */
+    private function alarmasVirtualizacion(): array
+    {
+        $hosts = \Illuminate\Support\Facades\DB::table('esxi_estado as e')->join('dispositivos as d', 'd.id', '=', 'e.dispositivo_id')
+            ->whereNotNull('e.leido_en')
+            ->get(['d.id', 'd.nombre', 'd.ip', 'e.conexion', 'e.mantenimiento', 'e.cpu_pct', 'e.ram_pct', 'e.sensores', 'e.alarmas', 'e.datastores', 'e.leido_en']);
+        $alarmas = [];
+        $datastores = [];
+        $link = route('virtualizacion.index');
+
+        foreach ($hosts as $h) {
+            $leido = \Carbon\Carbon::parse($h->leido_en);
+            $viejo = $leido->lt(now()->subMinutes(5)) ? ' (última lectura del ESXi ' . $leido->locale('es')->diffForHumans() . ')' : '';
+            $corto = strtok($h->nombre, '.');
+            $nueva = function (string $id, string $sev, string $categoria, string $codigo, string $titulo, string $mensaje, string $causa, string $impacto, string $accion)
+                use (&$alarmas, $h, $leido, $viejo, $link) {
+                $alarmas[] = [
+                    'id' => $id, 'dispositivo_id' => $h->id, 'tipo' => $sev, 'severidad' => $sev, 'categoria' => $categoria,
+                    'codigo_evento' => $codigo, 'titulo' => $titulo, 'dispositivo' => $h->nombre, 'ip' => $h->ip,
+                    'ubicacion' => 'Centro de datos · Virtualización', 'mensaje' => $mensaje . $viejo, 'causa_raiz' => $causa,
+                    'impacto' => $impacto, 'accion_sugerida' => $accion,
+                    'fecha_falla' => $leido->format('d/m/Y H:i:s'), 'hora_falla' => $leido->format('h:i:s A'),
+                    'hace_cuanto' => $leido->diffForHumans(), 'tiempo' => $leido->format('h:i:s A'),
+                    'leida' => false, 'link' => $link, 'accion' => 'Ver Virtualización',
+                ];
+            };
+
+            if ($h->conexion && $h->conexion !== 'connected') {
+                $nueva("esxi-conexion-{$h->id}", 'critica', 'virtualizacion', 'ESXI_HOST_DISCONNECTED',
+                    "Host ESXi {$corto} " . ($h->conexion === 'notResponding' ? 'sin respuesta' : 'desconectado') . ' del vCenter',
+                    "Estado de conexión: {$h->conexion}.", 'El host perdió la comunicación con su administración (vCenter).',
+                    'Sus VMs pueden seguir corriendo pero ya no se administran ni se protegen con HA.',
+                    '1. Revisar la red de administración del host. 2. Reconectar el host en el vCenter.');
+            }
+            if ($h->mantenimiento) {
+                $nueva("esxi-mantenimiento-{$h->id}", 'advertencia', 'virtualizacion', 'ESXI_HOST_MAINTENANCE',
+                    "Host ESXi {$corto} en modo mantenimiento", 'El host está en modo mantenimiento.',
+                    'Alguien lo puso en mantenimiento (actualización o reparación).', 'No acepta VMs nuevas; menos capacidad en el clúster.',
+                    'Confirmar que es un mantenimiento programado y sacarlo del modo al terminar.');
+            }
+            if ($h->cpu_pct !== null && $h->cpu_pct >= self::ESXI_CPU_AVISO) {
+                $crit = $h->cpu_pct >= self::ESXI_CPU_CRITICO;
+                $nueva("esxi-cpu-{$h->id}", $crit ? 'critica' : 'advertencia', 'virtualizacion', 'ESXI_HOST_CPU_HIGH',
+                    "CPU del host ESXi {$corto} al {$h->cpu_pct}%", "Uso de CPU del host: {$h->cpu_pct}%.",
+                    'Las VMs del host están pidiendo más procesador del que conviene.', 'Las VMs del host se vuelven lentas.',
+                    '1. Ver en Virtualización qué VMs usan más CPU. 2. Mover VMs a hosts con menos carga.');
+            }
+            if ($h->ram_pct !== null && $h->ram_pct >= self::ESXI_RAM_AVISO) {
+                $crit = $h->ram_pct >= self::ESXI_RAM_CRITICO;
+                $nueva("esxi-ram-{$h->id}", $crit ? 'critica' : 'advertencia', 'virtualizacion', 'ESXI_HOST_MEMORY_HIGH',
+                    "Memoria del host ESXi {$corto} al {$h->ram_pct}%", "Uso de memoria del host: {$h->ram_pct}%.",
+                    'Las VMs del host tienen asignada y en uso casi toda la memoria física.',
+                    'El host empieza a reclamar memoria a las VMs (balloon/swap) y se vuelven lentas.',
+                    '1. Mover VMs a otro host. 2. Revisar VMs con memoria asignada de más.');
+            }
+            $malos = collect(json_decode($h->sensores ?? '[]', true) ?: [])->whereIn('estado', ['yellow', 'red'])->values();
+            if ($malos->isNotEmpty()) {
+                $rojo = $malos->contains('estado', 'red');
+                $nueva("esxi-sensores-{$h->id}", $rojo ? 'critica' : 'advertencia', 'virtualizacion', 'ESXI_HARDWARE_SENSOR',
+                    "Hardware del host ESXi {$corto}: " . $malos->count() . ' sensor(es) ' . ($rojo ? 'en rojo' : 'en amarillo'),
+                    'Sensores con problema: ' . $malos->map(fn ($s) => "{$s['nombre']} ({$s['tipo']}" . ($s['valor'] !== null ? ", {$s['valor']} {$s['unidad']}" : '') . ')')->implode('; ') . '.',
+                    'El servidor físico reporta una pieza fuera de lo normal (disco, memoria, fuente, ventilador o temperatura).',
+                    'Si la pieza falla, el host y todas sus VMs pueden caer.',
+                    '1. Revisar el hardware del servidor en su consola (iDRAC/OpenManage). 2. Abrir caso con el fabricante si la pieza está dañada.');
+            }
+            foreach (json_decode($h->alarmas ?? '[]', true) ?: [] as $al) {
+                $nueva("esxi-alarma-{$h->id}-" . substr(md5($al['nombre'] ?? ''), 0, 10), ($al['estado'] ?? '') === 'red' ? 'critica' : 'advertencia',
+                    'virtualizacion', 'ESXI_VMWARE_ALARM', "Alarma de VMware en {$corto}: " . ($al['nombre'] ?? 'sin nombre'),
+                    'VMware disparó la alarma «' . ($al['nombre'] ?? '') . '».', 'Alarma definida en VMware.', 'Según la alarma.',
+                    'Revisar la alarma en el vCenter.');
+            }
+            foreach (json_decode($h->datastores ?? '[]', true) ?: [] as $ds) {
+                $clave = $ds['url'] ?? ($h->id . '|' . ($ds['nombre'] ?? ''));
+                $datastores[$clave] ??= $ds + ['hosts' => [], 'libres' => [], 'host_id' => $h->id, 'viejo' => $viejo, 'leido' => $leido];
+                $datastores[$clave]['hosts'][] = $corto;
+                if (($ds['libre'] ?? null) !== null) {
+                    $datastores[$clave]['libres'][] = $ds['libre'];
+                }
+            }
+        }
+
+        foreach ($datastores as $clave => $ds) {
+            $tb = fn ($b) => round($b / 1024 ** 4, 2) . ' TB';
+            $hostsTxt = implode(', ', array_unique($ds['hosts']));
+            $base = [
+                'dispositivo_id' => $ds['host_id'], 'categoria' => 'virtualizacion', 'dispositivo' => "Datastore {$ds['nombre']}",
+                'ip' => '—', 'ubicacion' => 'Centro de datos · Virtualización',
+                'fecha_falla' => $ds['leido']->format('d/m/Y H:i:s'), 'hora_falla' => $ds['leido']->format('h:i:s A'),
+                'hace_cuanto' => $ds['leido']->diffForHumans(), 'tiempo' => $ds['leido']->format('h:i:s A'),
+                'leida' => false, 'link' => $link, 'accion' => 'Ver Virtualización',
+            ];
+            if (($ds['accesible'] ?? true) === false) {
+                $alarmas[] = $base + [
+                    'id' => 'esxi-ds-inaccesible-' . substr(md5($clave), 0, 12), 'tipo' => 'critica', 'severidad' => 'critica',
+                    'codigo_evento' => 'ESXI_DATASTORE_INACCESSIBLE', 'titulo' => "Datastore inaccesible: {$ds['nombre']}",
+                    'mensaje' => "Los hosts no pueden acceder al datastore {$ds['nombre']} (hosts: {$hostsTxt}).{$ds['viejo']}",
+                    'causa_raiz' => 'Se perdió el acceso al almacenamiento (LUN desconectada, ruta de almacenamiento caída o volumen retirado).',
+                    'impacto' => 'Las VMs con discos en ese datastore no pueden leer ni escribir.',
+                    'accion_sugerida' => '1. Revisar el arreglo de almacenamiento y sus rutas (iSCSI/FC). 2. Si el volumen se retiró a propósito, desmontarlo de los hosts.',
+                ];
+                continue;
+            }
+            $libre = $ds['libres'] ? min($ds['libres']) : null;
+            if (!$ds['capacidad'] || $libre === null) {
+                continue;
+            }
+            $usado = round(($ds['capacidad'] - $libre) / $ds['capacidad'] * 100, 1);
+            if ($usado >= self::DATASTORE_AVISO) {
+                $crit = $usado >= self::DATASTORE_CRITICO;
+                $max = max($ds['libres']);
+                $alarmas[] = $base + [
+                    'id' => 'esxi-ds-lleno-' . substr(md5($clave), 0, 12), 'tipo' => $crit ? 'critica' : 'advertencia', 'severidad' => $crit ? 'critica' : 'advertencia',
+                    'codigo_evento' => 'ESXI_DATASTORE_FULL', 'titulo' => "Datastore {$ds['nombre']} al {$usado}%",
+                    'mensaje' => "Libres {$tb($libre)} de {$tb($ds['capacidad'])}"
+                        . ($max - $libre > $ds['capacidad'] * 0.01 ? " (el menor que reportan los hosts; otros reportan hasta {$tb($max)})" : '')
+                        . ". Hosts: {$hostsTxt}.{$ds['viejo']}",
+                    'causa_raiz' => 'El almacenamiento de las VMs se está llenando (discos que crecen, snapshots o VMs nuevas).',
+                    'impacto' => 'Si se llena, las VMs con discos ahí se pausan y no se pueden crear snapshots ni respaldos.',
+                    'accion_sugerida' => '1. Borrar snapshots viejos y VMs que ya no se usan. 2. Mover VMs a otro datastore o ampliar el volumen.',
+                ];
+            }
+        }
         return $alarmas;
     }
 

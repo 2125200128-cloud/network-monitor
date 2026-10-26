@@ -37,6 +37,7 @@ for f in deploy/systemd/*; do
     sed -e "s#@APP_DIR@#${APP_DIR}#g" -e "s#@USUARIO@#${USUARIO}#g" "$f" > "/etc/systemd/system/$(basename "$f")"
 done
 systemctl daemon-reload
-systemctl restart "php${PHP_V}-fpm" nm-poller.service nm-detalle.service nm-clasificador.service
+systemctl enable nm-esxi.service
+systemctl restart "php${PHP_V}-fpm" nm-poller.service nm-detalle.service nm-clasificador.service nm-esxi.service
 systemctl reload nginx
 echo "Listo: $(git log -1 --format='%h %s')"

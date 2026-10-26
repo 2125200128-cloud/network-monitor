@@ -852,8 +852,9 @@
             <div id="discoveryScanningState" class="hidden space-y-4 py-3">
                 <div class="flex flex-col items-center justify-center text-center space-y-3">
                     <div class="relative w-40 h-40 flex items-center justify-center -my-4">
-                        <dotlottie-player 
-                            src="https://lottie.host/a753aa47-08da-4e30-844d-0149a474c3a2/lGtqv6zxYe.lottie" 
+                        <script src="{{ asset('vendor/dotlottie-player/dotlottie-player.mjs') }}" type="module"></script>
+                        <dotlottie-player
+                            src="{{ asset('animaciones/topologia-carga.lottie') }}"
                             background="transparent" 
                             speed="1" 
                             style="width: 100%; height: 100%;" 

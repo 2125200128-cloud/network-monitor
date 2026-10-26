@@ -45,7 +45,9 @@ class ServicioWebController extends Controller
         $notificaciones = (new \App\Http\Controllers\DashboardController)->compilarNotificaciones();
         $unreadNotificaciones = count(array_filter($notificaciones, fn($n) => !$n['leida']));
 
-        return view('servicios_web.index', compact('servicios', 'stats', 'categorias', 'notificaciones', 'unreadNotificaciones', 'sinConectividad'));
+        $vmsDisponibles = \App\Services\VmsServiciosWeb::opciones();
+
+        return view('servicios_web.index', compact('servicios', 'stats', 'categorias', 'notificaciones', 'unreadNotificaciones', 'sinConectividad', 'vmsDisponibles'));
     }
 
     /** Reglas comunes de alta y edición. El umbral vacío = automático; el texto esperado vacío = sin revisar. */
@@ -58,14 +60,18 @@ class ServicioWebController extends Controller
             'metodo' => 'nullable|string|in:GET,POST,HEAD',
             'latencia_umbral_ms' => 'nullable|integer|min:200|max:7000',
             'texto_esperado' => 'nullable|string|max:255',
+            'vms_manual' => 'nullable|array|max:20',
+            'vms_manual.*' => 'string|max:255',
         ];
     }
 
     private function opcionesMonitoreo(array $validated): array
     {
+        $vms = array_values(array_unique(array_filter($validated['vms_manual'] ?? [])));
         return [
             'latencia_umbral_ms' => $validated['latencia_umbral_ms'] ?? null,
             'texto_esperado' => trim((string) ($validated['texto_esperado'] ?? '')) ?: null,
+            'vms_manual' => $vms ?: null,
         ];
     }
 
@@ -204,7 +210,7 @@ class ServicioWebController extends Controller
             'estado' => $s->estado,
             'codigo_http' => $s->codigo_http,
             'tiempo_respuesta_ms' => $r($s->tiempo_respuesta_ms),
-            'ultimo_chequeo_humano' => $s->ultimo_chequeo ? $s->ultimo_chequeo->diffForHumans() : 'Pendiente',
+            'ultimo_chequeo_humano' => $s->ultimo_chequeo ? $s->ultimo_chequeo->locale('es')->diffForHumans() : 'Pendiente',
             'detalles_error' => $s->detalles_error,
             'umbral_ms' => $s->umbralLatenciaMs(),
             'umbral_manual' => $s->latencia_umbral_ms,
@@ -218,6 +224,9 @@ class ServicioWebController extends Controller
             ],
             'ssl_dias' => $s->ssl_dias_expiracion,
             'ssl_problema' => $s->ssl_problema,
+            'ip_servidor' => $s->ip_servidor,
+            'vms_manual' => $s->vms_manual ?? [],
+            'servidores' => \App\Services\VmsServiciosWeb::para($s),
         ];
     }
 }

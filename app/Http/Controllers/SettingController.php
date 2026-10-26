@@ -45,7 +45,18 @@ class SettingController extends Controller
                 ?? \App\Models\Dispositivo::where('tipo_detectado', 'firewall')->value('ip') ?? '',
         ];
 
-        return view('settings.index', compact('settings', 'users', 'section', 'retencion', 'telegram', 'snmpv3'));
+        $vcenter = [
+            'configurado' => \App\Services\VcenterService::configurado(),
+            'clave_guardada' => $settings->getRawOriginal('vcenter_password') !== null,
+        ];
+        $esxi = [
+            'configurado' => $settings->esxi_usuario && $settings->getRawOriginal('esxi_password') !== null,
+            'clave_guardada' => $settings->getRawOriginal('esxi_password') !== null,
+            'ip_prueba' => \App\Models\Dispositivo::where('ubicacion', \App\Http\Controllers\VirtualizacionController::UBICACION)
+                ->where('nombre', 'not like', '%vCenter%')->orderBy('nombre')->value('ip'),
+        ];
+
+        return view('settings.index', compact('settings', 'users', 'section', 'retencion', 'telegram', 'snmpv3', 'vcenter', 'esxi'));
     }
 
     /** Filas para la sección de retención: días efectivos, rango permitido y lo que hay guardado hoy. */
@@ -158,6 +169,78 @@ class SettingController extends Controller
         $cfg->update($datos);
         return redirect()->route('settings.index', ['section' => 'general'])->with('success',
             $datos['snmpv3_usuario'] ? 'Credenciales SNMPv3 de firewalls guardadas. Los workers las usan desde su siguiente ciclo.' : 'Credenciales SNMPv3 eliminadas: los firewalls vuelven a usar comunidad v2c.');
+    }
+
+    /** Conexión de solo lectura al vCenter. Contraseña vacía = se conserva la guardada (nunca se muestra). */
+    public function guardarVcenter(Request $request)
+    {
+        $request->validate([
+            'vcenter_host' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9.\-:]+$/'],
+            'vcenter_usuario' => 'nullable|string|max:128',
+            'vcenter_password' => 'nullable|string|max:255',
+        ], ['vcenter_host.regex' => 'El host del vCenter debe ser una IP o un nombre (sin https://).']);
+
+        $datos = [
+            'vcenter_host' => trim((string) $request->input('vcenter_host')) ?: null,
+            'vcenter_usuario' => trim((string) $request->input('vcenter_usuario')) ?: null,
+        ];
+        if ($request->filled('vcenter_password')) {
+            $datos['vcenter_password'] = $request->input('vcenter_password');
+        }
+        if ($request->boolean('vcenter_borrar') || !$datos['vcenter_usuario']) {
+            $datos = array_merge($datos, ['vcenter_usuario' => null, 'vcenter_password' => null]);
+        }
+        ConfiguracionGeneral::firstOrFail()->update($datos);
+        \Illuminate\Support\Facades\Cache::forget('vcenter_resumen');
+
+        return redirect()->route('settings.index', ['section' => 'general'])->with('success',
+            $datos['vcenter_usuario'] ? 'Conexión al vCenter guardada. La sección Virtualización la usa desde ya.' : 'Conexión al vCenter eliminada.');
+    }
+
+    /** Credenciales de los hosts ESXi (las usa worker/esxi_collector.py). Contraseña vacía = se conserva la guardada. */
+    public function guardarEsxi(Request $request)
+    {
+        $request->validate(['esxi_usuario' => 'nullable|string|max:128', 'esxi_password' => 'nullable|string|max:255']);
+        $datos = ['esxi_usuario' => trim((string) $request->input('esxi_usuario')) ?: null];
+        if ($request->filled('esxi_password')) {
+            $datos['esxi_password'] = $request->input('esxi_password');
+        }
+        if ($request->boolean('esxi_borrar') || !$datos['esxi_usuario']) {
+            $datos = ['esxi_usuario' => null, 'esxi_password' => null];
+        }
+        ConfiguracionGeneral::firstOrFail()->update($datos);
+
+        return redirect()->route('settings.index', ['section' => 'general'])->with('success',
+            $datos['esxi_usuario'] ? 'Credenciales de ESXi guardadas. El colector las usa en su siguiente lectura (1 min).' : 'Credenciales de ESXi eliminadas.');
+    }
+
+    /** Lee un host con lo escrito (o lo guardado). Las credenciales viajan por variables de entorno, no por la línea de comandos. */
+    public function probarEsxi(Request $request)
+    {
+        $request->validate(['ip' => 'required|ipv4', 'usuario' => 'nullable|string|max:128', 'contrasena' => 'nullable|string|max:255']);
+        $entorno = array_filter(['NM_ESXI_USUARIO' => $request->input('usuario'), 'NM_ESXI_CLAVE' => $request->input('contrasena')]);
+        $proceso = new \Symfony\Component\Process\Process([\App\Support\Python::binario(), base_path('worker/esxi_collector.py'), '--probar', $request->input('ip')],
+            base_path(), \App\Support\Python::entorno($entorno));
+        $proceso->setTimeout(45);
+        try {
+            $proceso->run();
+        } catch (\Throwable) {
+            return response()->json(['ok' => false, 'mensaje' => 'Tiempo de espera agotado.'], 422);
+        }
+        $lineas = array_filter(array_map('trim', explode("\n", $proceso->getOutput())));
+        $r = json_decode((string) end($lineas), true);
+        if (!is_array($r)) {
+            return response()->json(['ok' => false, 'mensaje' => 'Salida inválida: ' . \Illuminate\Support\Str::limit(trim($proceso->getErrorOutput() ?: $proceso->getOutput()), 200)], 422);
+        }
+        return response()->json($r, $r['ok'] ? 200 : 422);
+    }
+
+    /** Prueba la conexión con lo escrito en el formulario (o lo guardado si va vacío). */
+    public function probarVcenter(Request $request, \App\Services\VcenterService $vcenter)
+    {
+        $request->validate(['host' => 'nullable|string|max:255', 'usuario' => 'nullable|string|max:128', 'contrasena' => 'nullable|string|max:255']);
+        $r = $vcenter->probar($request->input('host'), $request->input('usuario'), $request->input('contrasena'));
+        return response()->json($r, $r['ok'] ? 200 : 422);
     }
 
     /** Prueba las credenciales SNMPv3 guardadas contra un firewall (sysName/sysDescr). */

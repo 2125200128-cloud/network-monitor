@@ -11,6 +11,7 @@ Guía para instalar la aplicación en **Ubuntu Server 24.04 LTS** y traer los da
 | `nm-poller` | Sondeo ICMP/SNMP continuo de todos los equipos (~8 s por vuelta; repartido en varios procesos, uno por cada 2 núcleos, máx. 8) |
 | `nm-detalle` | Colector SNMP de detalle cada 5 min (puertos, hardware, PoE, FortiGate) |
 | `nm-clasificador` | Clasifica los equipos por evidencia SNMP/CDP/LLDP cada hora |
+| `nm-esxi` | Lee cada host ESXi por su API cada minuto (CPU, memoria, sensores, VMs, datastores). Usuario y contraseña en Ajustes → Hosts ESXi |
 | `nm-noc-sync.timer` | Cada 10 s: alarmas, Telegram, consolidado horario, certificados SSL y limpieza |
 | `nm-web-poll.timer` | Cada 15 s: monitoreo de servicios web |
 | `nm-respaldo.timer` | Respaldo de la base todos los días a las 02:30 (se guardan 14 días) |

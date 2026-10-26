@@ -136,6 +136,7 @@
             <div>
                 <p class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">En Línea</p>
                 <p id="kpiOnline" class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{{ $stats['online'] }}</p>
+                <p id="kpiNotaSinRed" class="hidden text-[10.5px] font-bold text-red-600 dark:text-red-400 mt-0.5"></p>
             </div>
             <div class="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/60 dark:border-emerald-800/60">
                 <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
@@ -251,6 +252,8 @@
                                         </a>
                                         {{-- Certificado y texto esperado (los llena updateTableRow) --}}
                                         <div class="cell-extra flex flex-wrap items-center gap-1 mt-1"></div>
+                                        {{-- VM(s) que atienden el sitio, leídas de los ESXi (las llena updateTableRow) --}}
+                                        <div class="cell-servidor mt-1 space-y-0.5"></div>
                                     </div>
                                 </div>
                             </td>
@@ -407,6 +410,21 @@
                     <input type="text" name="texto_esperado" maxlength="255" value="{{ old('texto_esperado') }}" placeholder="Ej. Reimpresión de recibos" class="w-full text-xs bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-nm-primary outline-none">
                     <p class="text-[11px] text-gray-500 dark:text-slate-400 mt-1">Si la página responde pero no muestra este texto, el sitio se marca caído. Sin distinguir mayúsculas.</p>
                 </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1">Máquinas virtuales que lo atienden <span class="font-normal text-gray-400">· opcional</span></label>
+                    @if($vmsDisponibles)
+                        <input type="search" id="filtroVmsSitio" placeholder="Buscar VM…" oninput="filtrarVmsSitio(this.value)" class="w-full text-xs bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 px-3 py-1.5 rounded-t-lg border border-b-0 border-slate-200 dark:border-slate-700 outline-none">
+                        <select name="vms_manual[]" multiple size="6" onchange="resumenVmsSitio()" class="w-full text-xs bg-slate-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 px-2 py-1 rounded-b-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-nm-primary outline-none">
+                            @foreach($vmsDisponibles as $vm)
+                                <option value="{{ $vm['nombre'] }}" @selected(in_array($vm['nombre'], old('vms_manual', []), true))>{{ $vm['nombre'] }} · {{ $vm['host'] }}</option>
+                            @endforeach
+                        </select>
+                        <p id="resumenVmsSitio" class="text-[11px] font-bold text-nm-primary mt-1"></p>
+                        <p class="text-[11px] text-gray-500 dark:text-slate-400 mt-1">Si la IP del sitio es la de una VM, se detecta solo. Elige aquí las VMs cuando el sitio está detrás de un balanceador o IP virtual (Ctrl + clic para varias).</p>
+                    @else
+                        <p class="text-[11px] text-gray-500 dark:text-slate-400">Sin lectura de los hosts ESXi (Virtualización); en cuanto se lean, aquí aparecerán sus VMs.</p>
+                    @endif
+                </div>
             </div>
 
             <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 mt-2">
@@ -437,7 +455,21 @@
     // Datos de cada sitio (los mismos que entrega la API en vivo): para pintar la tabla y llenar "Editar"
     const serviciosPorId = {};
     const SERVICIOS_INICIALES = {!! json_encode($servicios->map(fn ($s) => \App\Http\Controllers\ServicioWebController::datosFila($s))->values(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!};
+    // Mientras el monitor no tiene red, ningún estado está verificado: no se muestra "En línea" sino "Sin verificar"
+    let sinRedActual = @json($sinConectividad);
+    const horaLocal = iso => new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    function marcarKpisSinRed(sinRed) {
+        const nota = document.getElementById('kpiNotaSinRed');
+        nota.classList.toggle('hidden', !sinRed);
+        if (!sinRed) return;
+        nota.textContent = `Sin verificar desde las ${horaLocal(sinRed.desde)}`;
+        ['kpiOnline', 'kpiWarning', 'kpiOffline'].forEach(id => { document.getElementById(id).textContent = '—'; });
+        document.getElementById('kpiLatency').innerHTML = '— <span class="text-sm font-semibold text-gray-500">ms</span>';
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+        marcarKpisSinRed(sinRedActual);
         SERVICIOS_INICIALES.forEach(updateTableRow);
         @if($errors->any())
             // Al volver con errores se reabre el formulario como estaba (alta o edición)
@@ -499,6 +531,25 @@
             form.reset();
             document.getElementById('ayudaUmbral').textContent = 'Vacío = automático: el doble de su tiempo normal de la última semana (entre 1.5 y 7 s).';
         }
+        filtrarVmsSitio('');
+        resumenVmsSitio();
+    }
+
+    // Selector de VMs del formulario: filtro por texto y resumen de las elegidas
+    function filtrarVmsSitio(texto) {
+        const sel = document.querySelector('#formSitio [name="vms_manual[]"]');
+        const filtro = document.getElementById('filtroVmsSitio');
+        if (!sel) return;
+        if (filtro && filtro.value !== texto) filtro.value = texto;
+        const q = texto.toLowerCase();
+        [...sel.options].forEach(o => { o.hidden = !!q && !o.selected && !o.textContent.toLowerCase().includes(q); });
+    }
+    function resumenVmsSitio() {
+        const sel = document.querySelector('#formSitio [name="vms_manual[]"]');
+        const resumen = document.getElementById('resumenVmsSitio');
+        if (!sel || !resumen) return;
+        const elegidas = [...sel.selectedOptions].map(o => o.value);
+        resumen.textContent = elegidas.length ? 'Elegidas: ' + elegidas.join(', ') : '';
     }
 
     function abrirEdicion(id, conservarDatos = false) {
@@ -512,6 +563,12 @@
         form.metodo.value = s.metodo || 'GET';
         form.latencia_umbral_ms.value = s.umbral_manual ?? '';
         form.texto_esperado.value = s.texto_esperado ?? '';
+        const selVms = form.querySelector('[name="vms_manual[]"]');
+        if (selVms) {
+            [...selVms.options].forEach(o => { o.selected = (s.vms_manual || []).includes(o.value); });
+            filtrarVmsSitio('');
+            resumenVmsSitio();
+        }
         document.getElementById('ayudaUmbral').textContent = s.base_ms
             ? `Vacío = automático. Su tiempo normal (p95 de 7 días) es ${Math.round(s.base_ms)} ms, así que el umbral automático es ${s.umbral_manual ? '—' : (s.umbral_ms / 1000).toFixed(1) + ' s'}.`
             : 'Vacío = automático (aún sin historial suficiente: se usa 3.5 s).';
@@ -600,7 +657,18 @@
 
         // 2. Status Badge Cell
         const statusCell = row.querySelector('.cell-status');
-        if (statusCell) {
+        if (statusCell && sinRedActual) {
+            // Sin red en el monitor: se dice que no se pudo verificar y cuál fue el último estado real
+            const ultimo = { online: 'En línea', warning: 'Advertencia', offline: 'Caído' }[s.estado] || 'Pendiente';
+            statusCell.innerHTML = `
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold whitespace-nowrap bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600">
+                    <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                    Sin verificar
+                </span>
+                <p class="mt-1 text-[10.5px] text-gray-500 dark:text-slate-400">Último dato real: ${escHtml(ultimo)} (${escHtml(s.ultimo_chequeo_humano || '—')})</p>`;
+            const iconBox = row.querySelector('.web-icon-box');
+            if (iconBox) iconBox.className = 'web-icon-box w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border-slate-200/60 dark:border-slate-700/60';
+        } else if (statusCell) {
             const err = escHtml(s.detalles_error);
             const code = s.codigo_http ? 'HTTP ' + escHtml(s.codigo_http) : null;
             if (s.estado === 'online') {
@@ -694,6 +762,35 @@
             extra.innerHTML = chips.join('');
         }
 
+        // Servidor: VM y host que atienden el sitio (estado, CPU y memoria activa que reporta el ESXi)
+        const celdaServidor = row.querySelector('.cell-servidor');
+        if (celdaServidor) {
+            celdaServidor.innerHTML = (s.servidores || []).map(vm => {
+                const avisos = vm.avisos || [];
+                const critico = avisos.some(a => a.nivel === 'crit');
+                const punto = vm.sin_lectura || vm.desactualizada ? '#94a3b8' : (critico ? '#dc2626' : (avisos.length ? '#d97706' : '#10b981'));
+                // Partición más llena vista desde el SO (la que suele tumbar la aplicación)
+                const disco = (vm.discos || []).filter(d => d.usado_pct !== null).sort((a, b) => b.usado_pct - a.usado_pct)[0];
+                const datos = vm.sin_lectura ? '' : vm.desactualizada ? escHtml(vm.host || '') : [
+                    vm.host ? escHtml(vm.host) : '',
+                    vm.cpu_pct !== null && vm.cpu_pct !== undefined ? 'CPU ' + vm.cpu_pct + '%' : '',
+                    vm.ram_pct !== null && vm.ram_pct !== undefined ? 'mem. activa ' + vm.ram_pct + '%' : '',
+                    disco ? `disco ${escHtml(disco.ruta)} ${disco.usado_pct}%` : '',
+                    vm.latido === 'green' ? 'SO responde' : '',
+                ].filter(Boolean).join(' · ');
+                const discosTitulo = (vm.discos || []).map(d => `${d.ruta}: ${d.usado_pct}% usado, ${(d.libre / 1073741824).toFixed(1)} GB libres`).join('\n');
+                const origen = vm.origen === 'ip' ? `detectada por IP ${vm.ip}` : 'asignada a mano';
+                return `
+                    <p class="flex items-center gap-1.5 text-[10.5px] text-gray-500 dark:text-slate-400 truncate" title="VM ${escHtml(vm.nombre)} (${escHtml(origen)})${discosTitulo ? '\n' + escHtml(discosTitulo) : ''}">
+                        <svg class="w-3 h-3 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" /><rect width="20" height="8" x="2" y="14" rx="2" /><path d="M6 6h.01" /><path d="M6 18h.01" /></svg>
+                        <i class="w-1.5 h-1.5 rounded-full shrink-0" style="background:${punto}"></i>
+                        <span class="font-bold text-gray-700 dark:text-slate-200">${escHtml(vm.nombre)}</span>
+                        ${datos ? `<span>${datos}</span>` : ''}
+                    </p>
+                    ${avisos.map(a => `<p class="pl-[18px] text-[10.5px] font-bold ${a.nivel === 'crit' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}">${escHtml(a.texto)}</p>`).join('')}`;
+            }).join('');
+        }
+
         // 4. Last Check Cell
         const lastCheckCell = row.querySelector('.cell-last-check');
         if (lastCheckCell) {
@@ -710,6 +807,8 @@
             const data = await resp.json();
 
             if (data.success) {
+                sinRedActual = data.sin_conectividad || null;
+
                 // Update KPI Cards
                 if (data.stats) {
                     const elTotal = document.getElementById('kpiTotal');
@@ -724,6 +823,7 @@
                     if (elOffline) elOffline.textContent = data.stats.offline;
                     if (elLatency) elLatency.innerHTML = `${escHtml(data.stats.avg_latency)} <span class="text-sm font-semibold text-gray-500">ms</span>`;
                 }
+                marcarKpisSinRed(sinRedActual);
 
                 // Update Individual Table Rows
                 if (Array.isArray(data.servicios)) {

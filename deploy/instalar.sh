@@ -165,9 +165,9 @@ mkdir -p /var/backups/network-monitor
 chown postgres:postgres /var/backups/network-monitor
 chmod 750 /var/backups/network-monitor
 systemctl daemon-reload
-systemctl enable --now nm-poller.service nm-detalle.service nm-clasificador.service \
+systemctl enable --now nm-poller.service nm-detalle.service nm-clasificador.service nm-esxi.service \
     nm-noc-sync.timer nm-web-poll.timer nm-respaldo.timer
-systemctl restart nm-poller.service nm-detalle.service nm-clasificador.service
+systemctl restart nm-poller.service nm-detalle.service nm-clasificador.service nm-esxi.service
 
 if command -v ufw >/dev/null && ufw status | grep -q "Status: active"; then
     paso "Firewall (ufw)"
