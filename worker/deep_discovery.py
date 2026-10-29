@@ -6,7 +6,7 @@ import concurrent.futures
 from dotenv import load_dotenv
 from nm_common import conectar, insertar_con_id, upsert, hace
 
-Error = Exception  # errores de cualquiera de los dos drivers
+Error = Exception  # errores del driver de PostgreSQL
 from ping3 import ping
 from pysnmp.hlapi.v3arch.asyncio import *
 import asyncio
@@ -43,13 +43,13 @@ DISCOVERY_SUBNETS = [s.strip() for s in os.getenv('DISCOVERY_SUBNETS', '10.4.254
 
 # ==================== CONEXIÓN A BASE DE DATOS ====================
 def connect_db():
-    """Establece conexión con la base de datos MySQL de Laravel."""
+    """Establece conexión con la base de datos PostgreSQL de Laravel."""
     try:
         connection = conectar()
         logger.info("Conexión exitosa a la base de datos.")
         return connection
     except Error as e:
-        logger.error(f"Error al conectar a MySQL: {e}")
+        logger.error(f"Error al conectar a PostgreSQL: {e}")
         return None
 
 # ==================== BARRIDO ICMP (PING SWEEP) ====================
@@ -197,7 +197,7 @@ def inferir_marca(sys_descr):
     return 'Dispositivo SNMP'
 
 def guardar_dispositivo(db_conn, nodo):
-    """Guarda o actualiza el dispositivo en la base de datos MySQL (Upsert)."""
+    """Guarda o actualiza el dispositivo en la base de datos (Upsert)."""
     if not db_conn:
         logger.error(f"[{nodo['ip']}] Fallo al guardar: Sin conexión a base de datos.")
         return

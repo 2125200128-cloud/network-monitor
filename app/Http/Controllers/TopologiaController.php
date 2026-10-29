@@ -15,7 +15,7 @@ class TopologiaController extends Controller
     private const CACHE_GRAFO = 'topologia_datos_grafos_fast';
 
     /**
-     * El grafo serializado (~1 MB) supera max_allowed_packet de MySQL: se cachea en archivo.
+     * El grafo serializado (~1 MB) se cachea en archivo, no en la tabla cache de la BD.
      */
     public static function cacheGrafo(): \Illuminate\Contracts\Cache\Repository
     {

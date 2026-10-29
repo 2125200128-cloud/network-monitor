@@ -1,0 +1,4 @@
+# El monitor se sirve con artisan serve (puerto 8000) o con nginx apuntando a public/ (Ubuntu).
+# Si un Apache sirve la carpeta padre (MAMP en el puerto 80), aquí nada debe ser accesible:
+# .env, .git, storage/logs y los respaldos quedarían descargables por cualquiera de la red.
+Require all denied

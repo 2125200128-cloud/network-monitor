@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Envía a Telegram las alarmas nuevas y resueltas que registra noc:sync.
+ *  - Por sector: las de red al chat principal y las de servidores, virtualización y sitios web al chat de
+ *    servidores (si no se configuró, todo va al principal). Las reglas siguientes se aplican por chat.
  *  - Hasta MAX_INDIVIDUALES alarmas nuevas: un mensaje por alarma (con gráfica del equipo si se pidió).
  *  - Más que eso (p.ej. una caída masiva): un solo resumen, para no saturar el chat.
  *  - Una alarma que reaparece poco después de resolverse (equipo intermitente) solo se vuelve a avisar
@@ -62,8 +64,44 @@ class AlertasTelegram
                 return false;
             }
         };
-        $chat = (string) $cfg->telegram_chat_id;
 
+        // Cada grupo recibe solo las alarmas de su sector (el resumen de caída masiva también se arma por grupo)
+        foreach ($this->destinos($cfg) as $chat => $sectores) {
+            $deEste = fn (AlarmaRed $a) => in_array(self::sector($a), $sectores, true);
+            $this->enviarAChat($bot, $cfg, (string) $chat, $nuevas->filter($deEste)->values(), $resueltas->filter($deEste)->values(), $enviar);
+        }
+
+        if ($res['enviados'] && !$res['errores']) {
+            Cache::forget('telegram_ultimo_error');
+        }
+        return $res;
+    }
+
+    /** Sector de la alarma: 'servidores' (servidores, virtualización y sitios web) o 'redes' (todo lo demás). */
+    public static function sector(AlarmaRed $a): string
+    {
+        if (in_array($a->categoria, ['servicio_web', 'virtualizacion', 'sistema'], true)) {
+            return 'servidores';
+        }
+        $d = $a->dispositivo;
+        return $d && ($d->tipo_manual ?: $d->tipo_detectado) === 'servidor' ? 'servidores' : 'redes';
+    }
+
+    /**
+     * chat_id => sectores que recibe. Sin chat de servidores (o si es el mismo), todo va al chat principal.
+     * @return array<string, string[]>
+     */
+    private function destinos(ConfiguracionGeneral $cfg): array
+    {
+        $redes = (string) $cfg->telegram_chat_id;
+        $servidores = trim((string) $cfg->telegram_chat_id_servidores) ?: $redes;
+        return $servidores === $redes
+            ? [$redes => ['redes', 'servidores']]
+            : [$redes => ['redes'], $servidores => ['servidores']];
+    }
+
+    private function enviarAChat(TelegramBot $bot, ConfiguracionGeneral $cfg, string $chat, Collection $nuevas, Collection $resueltas, callable $enviar): void
+    {
         if ($nuevas->count() > self::MAX_INDIVIDUALES) {
             if ($enviar(fn () => $bot->enviarMensaje($chat, $this->resumenNuevas($nuevas)))) {
                 $this->marcarNotificadas($nuevas);
@@ -101,32 +139,34 @@ class AlertasTelegram
         if ($resueltas->isNotEmpty()) {
             $enviar(fn () => $bot->enviarMensaje($chat, $this->mensajeResueltas($resueltas)));
         }
-
-        if ($res['enviados'] && !$res['errores']) {
-            Cache::forget('telegram_ultimo_error');
-        }
-        return $res;
     }
 
-    /** Mensaje de prueba con una gráfica real (del switch core o del primer equipo con métricas). */
+    /** Mensaje de prueba a cada grupo, con una gráfica real (del switch core o del primer equipo con métricas). */
     public function probar(ConfiguracionGeneral $cfg, TelegramBot $bot): array
     {
-        $chat = (string) $cfg->telegram_chat_id;
-        $bot->enviarMensaje($chat, "✅ <b>NOC Network Monitor</b>\nLas alertas de Telegram están configuradas correctamente.\n"
-            . 'Se enviarán: ' . ($cfg->telegram_severidad_min === 'advertencia' ? 'críticas y advertencias' : 'solo críticas')
-            . ($cfg->telegram_resueltas ? ', y avisos de resolución.' : '.'));
-
-        $conImagen = false;
+        $png = null;
         if ($cfg->telegram_imagenes) {
             $id = \Illuminate\Support\Facades\DB::table('dispositivos')->where('ip', $cfg->ip_switch_core)->value('id')
                 ?? \Illuminate\Support\Facades\DB::table('metricas_red')->where('fecha_registro', '>=', now()->subMinutes(10))->value('dispositivo_id');
             $png = $id ? $this->grafica->png((int) $id) : null;
+        }
+
+        $destinos = $this->destinos($cfg);
+        foreach ($destinos as $chat => $sectores) {
+            $recibe = match (true) {
+                count($sectores) > 1 => 'todas las alarmas (redes, servidores y sitios web)',
+                $sectores[0] === 'redes' => 'las alarmas de redes (switches, firewalls, routers, APs, teléfonos)',
+                default => 'las alarmas de servidores, virtualización (ESXi) y sitios web',
+            };
+            $bot->enviarMensaje((string) $chat, "✅ <b>NOC Network Monitor</b>\nLas alertas de Telegram están configuradas correctamente.\n"
+                . "Este chat recibe {$recibe}.\n"
+                . 'Se enviarán: ' . ($cfg->telegram_severidad_min === 'advertencia' ? 'críticas y advertencias' : 'solo críticas')
+                . ($cfg->telegram_resueltas ? ', y avisos de resolución.' : '.'));
             if ($png) {
-                $bot->enviarFoto($chat, $png, 'Ejemplo de la gráfica que acompaña a cada alerta.');
-                $conImagen = true;
+                $bot->enviarFoto((string) $chat, $png, 'Ejemplo de la gráfica que acompaña a cada alerta.');
             }
         }
-        return ['imagen' => $conImagen];
+        return ['imagen' => (bool) $png, 'chats' => count($destinos)];
     }
 
     /** La misma alarma ya se avisó y se resolvió poco antes de que esta apareciera (equipo intermitente). */

@@ -129,6 +129,62 @@
             animation-play-state: paused;
         }
 
+        /* Cinta de alertas: carmesí que se difumina hacia el azul institucional (#667D93, oscurecido al final para que
+           el texto blanco tenga contraste). Los tonos intermedios son malvas apagados para que la transición no ensucie. */
+        .nm-cinta {
+            background:
+                linear-gradient(180deg, rgb(255 255 255 / 0.10) 0%, rgb(255 255 255 / 0) 55%),
+                radial-gradient(90% 220% at 0% 50%, rgb(248 113 113 / 0.38) 0%, rgb(248 113 113 / 0) 60%),
+                linear-gradient(90deg, #9b1c2c 0%, #8b2638 18%, #75384f 38%, #654e67 58%, #5c6279 78%, #57708a 100%);
+            border: 1px solid rgb(255 255 255 / 0.12);
+            box-shadow: 0 12px 30px -14px rgb(155 28 44 / 0.65), 0 8px 24px -16px rgb(70 80 85 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.14);
+        }
+        /* ==================== Escenas animadas de las tarjetas KPI (components/kpi-escena) ====================
+           Decorativas: líneas finas, opacidad baja y desvanecidas hacia el texto para no competir con los datos. */
+        .kpi-escena {
+            position: absolute; top: 0; right: 0; bottom: 0; width: 62%;
+            pointer-events: none; color: var(--escena-color, rgb(var(--nm-primary-rgb)));
+            opacity: .22;
+            -webkit-mask-image: linear-gradient(to left, #000 45%, transparent 100%);
+            mask-image: linear-gradient(to left, #000 45%, transparent 100%);
+        }
+        /* En las tarjetas con mini gráfica a la derecha, la escena va en el hueco entre el valor y la gráfica */
+        .kpi-escena.kpi-escena-centro {
+            right: 112px; width: 44%;
+            -webkit-mask-image: linear-gradient(to left, transparent 0, #000 22%, #000 58%, transparent 100%);
+            mask-image: linear-gradient(to left, transparent 0, #000 22%, #000 58%, transparent 100%);
+        }
+        .dark .kpi-escena { opacity: .32; }
+        .kpi-escena.kpi-escena-clara { opacity: .26; }
+        .kpi-escena svg { width: 100%; height: 100%; display: block; }
+        .kpi-escena .t { fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+        .kpi-escena circle:not(.t) { fill: currentColor; }
+        @keyframes kpiParpadeo { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+        @keyframes kpiFlujo { to { stroke-dashoffset: -40; } }
+        @keyframes kpiGira { to { transform: rotate(360deg); } }
+        @keyframes kpiCae { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(26px); opacity: 0; } }
+        @keyframes kpiOnda { from { transform: scale(.35); opacity: .9; } to { transform: scale(1.5); opacity: 0; } }
+        @keyframes kpiBarrido { 0% { transform: translateY(0); opacity: 0; } 20%, 80% { opacity: 1; } 100% { transform: translateY(66px); opacity: 0; } }
+        @keyframes kpiDesliza { to { transform: translateX(-80px); } }
+        @keyframes kpiNodo { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+        .kpi-led { animation: kpiParpadeo 2.6s ease-in-out infinite; }
+        .kpi-flujo { stroke-dasharray: 3 7; animation: kpiFlujo 3s linear infinite; }
+        .kpi-gira { transform-box: fill-box; transform-origin: center; animation: kpiGira 30s linear infinite; }
+        .kpi-arena { animation: kpiCae 2.1s linear infinite; }
+        .kpi-onda { transform-box: fill-box; transform-origin: center; animation: kpiOnda 3.2s ease-out infinite; }
+        .kpi-barrido { animation: kpiBarrido 3.6s ease-in-out infinite; }
+        .kpi-desliza { animation: kpiDesliza 7s linear infinite; }
+        .kpi-nodo { animation: kpiNodo 3s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) {
+            .kpi-escena * { animation: none !important; }
+        }
+
+        /* Los extremos del texto en movimiento se desvanecen sobre cualquier fondo (sin bloques de color encima) */
+        .nm-cinta-pista {
+            -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
+        }
+
         /* ======================== BOTÓN FANCY (Uiverse) con colores institucionales ========================
            Marco azul #667D93 con guion naranja #FF8300; al pasar el mouse se rellena de azul y las "llaves"
            (cortes del marco) se recogen. Las llaves toman el color de la superficie de atrás (--fancy-fondo):
@@ -614,6 +670,14 @@
             window.nocAjustarMarquesina();
             document.fonts?.ready?.then(window.nocAjustarMarquesina);
         });
+        // Las escenas animadas de las tarjetas que se refrescan arrancarían de cero en cada refresco (un salto
+        // visible): se adelantan al tiempo de la página para que sigan como si nada hubiera cambiado.
+        document.addEventListener('nm:refrescado', () => {
+            const t = document.timeline?.currentTime;
+            if (t == null) return;
+            document.querySelectorAll('.kpi-escena').forEach(e => e.getAnimations?.({ subtree: true }).forEach(a => { a.currentTime = t; }));
+        });
+
         let nocMarquesinaT;
         window.addEventListener('resize', () => { clearTimeout(nocMarquesinaT); nocMarquesinaT = setTimeout(window.nocAjustarMarquesina, 200); });
 

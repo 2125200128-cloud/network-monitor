@@ -90,10 +90,13 @@ En la web: el dashboard debe mostrar equipos en línea en menos de un minuto y *
 
 ## HTTPS
 
-- **Con un nombre público** y acceso a Internet: `sudo apt install certbot python3-certbot-nginx && sudo certbot --nginx -d noc.ejemplo.gob.mx`.
-- **Red interna**: instala el certificado de la CA institucional en Nginx (`ssl_certificate` / `ssl_certificate_key` dentro de `/etc/nginx/sites-available/network-monitor`).
+Sin HTTPS el navegador muestra "No seguro" y la contraseña viaja sin cifrar. `deploy/https.sh` lo activa, redirige http → https y ajusta `APP_URL` y `SESSION_SECURE_COOKIE` en `.env`:
 
-En ambos casos, después cambia en `.env` `APP_URL=https://...` y `SESSION_SECURE_COOKIE=true`, y ejecuta `sudo -u www-data php artisan optimize`.
+- **Con certificado de la CA institucional** (o comprado): `sudo CERT=/ruta/servidor.crt LLAVE=/ruta/servidor.key bash deploy/https.sh`. No hay que instalar nada en las PCs.
+- **Sin CA institucional**: `sudo bash deploy/https.sh` crea una CA propia del NOC y firma el certificado del servidor. Se instala la CA **una vez** en cada PC (se descarga de `https://servidor/noc-ca.crt`; el script muestra el comando) o se distribuye por GPO.
+- **Con un nombre público** y acceso a Internet: `sudo apt install certbot python3-certbot-nginx && sudo certbot --nginx -d noc.ejemplo.gob.mx`.
+
+El certificado vale para los nombres e IPs que se le indiquen (`NOMBRES="noc.ejemplo.gob.mx 10.4.x.x"`). Si se abre la web con otro nombre o IP, el aviso vuelve.
 
 ## Notas
 

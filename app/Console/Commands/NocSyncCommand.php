@@ -170,7 +170,7 @@ class NocSyncCommand extends Command
     }
 
     /**
-     * Borra por rangos de id (bloques cortos, igual en MySQL y PostgreSQL) para no bloquear la tabla
+     * Borra por rangos de id (bloques cortos) para no bloquear la tabla
      * mientras los workers siguen escribiendo.
      */
     private function borrarAntesDe(string $tabla, string $columna, Carbon $limite, ?array $extra, int $bloque = 20000): int

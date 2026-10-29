@@ -24,28 +24,24 @@
 {{-- Banner de Notificaciones Carrusel NOC NEWS LIVE (Full-Width Stream) --}}
 @if(isset($unreadNotificaciones) && $unreadNotificaciones > 0 && isset($notificaciones) && count($notificaciones) > 0)
     <div id="dashboardAlertBanner" 
-         class="w-full mb-5 rounded-2xl border border-white/10 border-l-4 border-l-red-500 p-2.5 sm:p-3 flex items-center justify-between gap-3 overflow-hidden relative transition-all duration-300 shrink-0 text-white"
-         style="background: var(--nm-metal-sheen), linear-gradient(90deg, var(--nm-navy-900) 0%, var(--nm-navy-800) 35%, var(--nm-navy-700) 100%); box-shadow: var(--nm-shadow-lg);">
-        
-        {{-- Glow de Fondo Sutil --}}
-        <div class="absolute inset-0 bg-gradient-to-r from-red-600/20 via-transparent to-transparent pointer-events-none"></div>
+         class="nm-cinta w-full mb-5 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between gap-3 overflow-hidden relative transition-all duration-300 shrink-0 text-white">
 
-        {{-- Badge Fijo Izquierdo --}}
-        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-600 text-white font-bold text-[11px] uppercase tracking-wider shrink-0 z-10">
-            <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+        {{-- Insignia fija (vidrio sobre el carmesí; el punto y el contador llevan el rojo) --}}
+        <div class="flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 rounded-lg bg-white/15 ring-1 ring-white/25 text-white font-bold text-[11px] uppercase tracking-wider shrink-0 z-10 shadow-sm">
+            <span class="relative flex w-2 h-2">
+                <span class="absolute inset-0 rounded-full bg-red-300 animate-ping"></span>
+                <span class="relative w-2 h-2 rounded-full bg-red-400"></span>
+            </span>
             <span class="hidden sm:inline">Alertas en vivo</span>
             <span class="sm:hidden">INCIDENCIAS</span>
-            <span class="bg-black/50 px-1.5 py-0.5 rounded-md text-[11px] font-mono border border-white/20">{{ $unreadNotificaciones }}</span>
+            <span class="bg-red-600 px-1.5 py-0.5 rounded-md text-[11px] font-mono ring-1 ring-white/20">{{ $unreadNotificaciones }}</span>
         </div>
 
         {{-- Separador Visual --}}
         <div class="h-6 w-px bg-white/15 hidden sm:block shrink-0 z-10"></div>
 
         {{-- Contenedor Ancho del Marquee / Cinta de Noticias --}}
-        <div class="flex-1 overflow-hidden relative mx-2 sm:mx-3 flex items-center">
-            {{-- Máscaras de desvanecimiento laterales para un scrolling fluido --}}
-            <div class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-indigo-900 to-transparent z-10 pointer-events-none"></div>
-            <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-indigo-700 to-transparent z-10 pointer-events-none"></div>
+        <div class="nm-cinta-pista flex-1 overflow-hidden relative mx-2 sm:mx-3 flex items-center">
 
             {{-- Sin gap entre pistas: cada una lleva su espaciado final (pr) para que -50% empalme exacto --}}
             <div id="nocMarqueeTrack" class="animate-noc-marquee flex items-center text-xs font-semibold text-slate-200 whitespace-nowrap">
@@ -59,18 +55,18 @@
                         @endphp
                         <div class="inline-flex items-center gap-2.5 cursor-pointer hover:text-amber-300 group" onclick="handleBannerNotifClick(event)">
                             @if($g['tipo'] === 'critica')
-                                <span class="px-2.5 py-0.5 rounded-md text-[11px] font-black bg-red-500/30 text-red-300 border border-red-500/60">CRÍTICA</span>
+                                <span class="px-2.5 py-0.5 rounded-md text-[11px] font-black bg-red-950/35 text-red-100 border border-red-300/50">CRÍTICA</span>
                             @elseif($g['tipo'] === 'advertencia')
-                                <span class="px-2.5 py-0.5 rounded-md text-[11px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/60">ADVERTENCIA</span>
+                                <span class="px-2.5 py-0.5 rounded-md text-[11px] font-black bg-amber-950/30 text-amber-100 border border-amber-300/55">ADVERTENCIA</span>
                             @else
-                                <span class="px-2.5 py-0.5 rounded-md text-[11px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/60">SISTEMA</span>
+                                <span class="px-2.5 py-0.5 rounded-md text-[11px] font-black bg-white/10 text-sky-100 border border-sky-200/45">SISTEMA</span>
                             @endif
                             <span class="font-bold text-white text-xs sm:text-sm tracking-tight group-hover:underline decoration-amber-400 underline-offset-4">{{ $g['titulo'] }}</span>
                             @if($cnt > 1)
                                 <span class="px-1.5 py-0.5 rounded-md text-[11px] font-black font-mono bg-white/15 text-white">×{{ $cnt }}</span>
-                                <span class="text-slate-300 font-mono text-[11px] sm:text-xs">({{ implode(', ', $equipos) }}{{ $cnt > 3 ? ' +' . ($cnt - 3) : '' }})</span>
+                                <span class="text-white/75 font-mono text-[11px] sm:text-xs">({{ implode(', ', $equipos) }}{{ $cnt > 3 ? ' +' . ($cnt - 3) : '' }})</span>
                             @else
-                                <span class="text-slate-300 font-mono text-[11px] sm:text-xs">({{ $primero['dispositivo'] }} · {{ $primero['hora_falla'] ?? $primero['tiempo'] }})</span>
+                                <span class="text-white/75 font-mono text-[11px] sm:text-xs">({{ $primero['dispositivo'] }} · {{ $primero['hora_falla'] ?? $primero['tiempo'] }})</span>
                             @endif
                             <span class="text-white/30 font-black mx-2 select-none">•</span>
                         </div>
@@ -87,18 +83,18 @@
                         @endphp
                         <div class="inline-flex items-center gap-2.5 cursor-pointer hover:text-amber-300 group" onclick="handleBannerNotifClick(event)">
                             @if($g['tipo'] === 'critica')
-                                <span class="px-2.5 py-0.5 rounded-md text-[11px] font-black bg-red-500/30 text-red-300 border border-red-500/60">CRÍTICA</span>
+                                <span class="px-2.5 py-0.5 rounded-md text-[11px] font-black bg-red-950/35 text-red-100 border border-red-300/50">CRÍTICA</span>
                             @elseif($g['tipo'] === 'advertencia')
-                                <span class="px-2.5 py-0.5 rounded-md text-[11px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/60">ADVERTENCIA</span>
+                                <span class="px-2.5 py-0.5 rounded-md text-[11px] font-black bg-amber-950/30 text-amber-100 border border-amber-300/55">ADVERTENCIA</span>
                             @else
-                                <span class="px-2.5 py-0.5 rounded-md text-[11px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/60">SISTEMA</span>
+                                <span class="px-2.5 py-0.5 rounded-md text-[11px] font-black bg-white/10 text-sky-100 border border-sky-200/45">SISTEMA</span>
                             @endif
                             <span class="font-bold text-white text-xs sm:text-sm tracking-tight group-hover:underline decoration-amber-400 underline-offset-4">{{ $g['titulo'] }}</span>
                             @if($cnt > 1)
                                 <span class="px-1.5 py-0.5 rounded-md text-[11px] font-black font-mono bg-white/15 text-white">×{{ $cnt }}</span>
-                                <span class="text-slate-300 font-mono text-[11px] sm:text-xs">({{ implode(', ', $equipos) }}{{ $cnt > 3 ? ' +' . ($cnt - 3) : '' }})</span>
+                                <span class="text-white/75 font-mono text-[11px] sm:text-xs">({{ implode(', ', $equipos) }}{{ $cnt > 3 ? ' +' . ($cnt - 3) : '' }})</span>
                             @else
-                                <span class="text-slate-300 font-mono text-[11px] sm:text-xs">({{ $primero['dispositivo'] }} · {{ $primero['hora_falla'] ?? $primero['tiempo'] }})</span>
+                                <span class="text-white/75 font-mono text-[11px] sm:text-xs">({{ $primero['dispositivo'] }} · {{ $primero['hora_falla'] ?? $primero['tiempo'] }})</span>
                             @endif
                             <span class="text-white/30 font-black mx-2 select-none">•</span>
                         </div>

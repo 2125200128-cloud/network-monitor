@@ -16,7 +16,7 @@ from pysnmp.hlapi.v3arch.asyncio import (
 )
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'worker'))
-from nm_common import conectar, insertar_con_id  # credenciales del .env (MySQL o PostgreSQL)
+from nm_common import conectar, insertar_con_id  # credenciales de PostgreSQL del .env
 
 def get_db():
     return conectar()
@@ -260,7 +260,7 @@ async def sync_device_data(dev, engine, sem):
 
         # Database save
         conn = get_db()
-        cursor = conn.cursor(dictionary=True, buffered=True)
+        cursor = conn.cursor(dictionary=True)
         
         # 1. Update tablas_dispositivo
         cursor.execute("SELECT id FROM tablas_dispositivo WHERE dispositivo_id=%s", (dev_id,))

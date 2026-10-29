@@ -632,6 +632,9 @@ class DashboardMetricsService
         return [
             'rango' => $rango,
             'labels' => $rows->map(fn ($x) => Carbon::parse($x->t)->format($formato))->all(),
+            // Momento de cada muestra (ms): la gráfica usa un eje de tiempo real para deslizarse cuando llega una nueva
+            't' => $rows->map(fn ($x) => Carbon::parse($x->t)->getTimestampMs())->all(),
+            'bloque_s' => $bucket,
             'trafico_in' => $rows->map(fn ($x) => $r($x->tin))->all(),
             'trafico_out' => $rows->map(fn ($x) => $r($x->tout))->all(),
             'latencia' => $rows->map(fn ($x) => $r($x->lat, 1))->all(),

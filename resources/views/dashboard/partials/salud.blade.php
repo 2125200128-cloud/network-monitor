@@ -109,7 +109,8 @@
                     :valor-tono="$inc['criticas'] > 0 ? 'crit' : 'ok'"
                     :comparacion="$inc['advertencias'] . ' advertencias'"
                     :badge="'+' . ($inc['nuevas_24h'] ?? 0) . ' en 24 h'" :badge-tono="($inc['nuevas_24h'] ?? 0) > 0 ? 'crit' : 'ok'"
-                    detalle="incidentes" ayuda="Barras: alarmas nuevas por hora (últimas 12 h)">
+                    detalle="incidentes" ayuda="Barras: alarmas nuevas por hora (últimas 12 h)"
+                    escena="servidores" :escena-tono="$inc['criticas'] > 0 ? 'crit' : null">
             {!! $barras(array_column($porHora, 'n'), array_map(fn ($h) => $h['hora'] . ': ' . $h['n'] . ' nuevas', $porHora), '239, 68, 68') !!}
         </x-kpi-card>
 
@@ -118,21 +119,24 @@
                     :comparacion="'vs 7 días (' . $pct($sla7) . ')'"
                     :badge="$deltaSla === null ? null : ($deltaSla >= 0 ? '↑ ' : '↓ ') . abs($deltaSla) . ' pts'"
                     :badge-tono="$deltaSla === null ? 'neutral' : ($deltaSla >= 0 ? 'ok' : 'crit')"
-                    detalle="disponibilidad" ayuda="Muestras en que el equipo respondió ICMP o SNMP / muestras totales. Línea: disponibilidad global por hora.">
+                    detalle="disponibilidad" ayuda="Muestras en que el equipo respondió ICMP o SNMP / muestras totales. Línea: disponibilidad global por hora."
+                    escena="nube">
             {!! $area(array_column($slaHora, 'pct'), $azul) !!}
         </x-kpi-card>
 
         <x-kpi-card titulo="Tiempo medio de reparación (MTTR)" :valor="$inc['mttr'] ?? 'Sin dato'"
                     :comparacion="'MTBF ' . ($inc['mtbf'] ?? 'sin caídas')"
                     :badge="($inc['resueltas_7d'] ?? 0) . ' resueltas 7 d'" badge-tono="neutral"
-                    detalle="incidentes" ayuda="Barras: duración de las últimas alarmas resueltas">
+                    detalle="incidentes" ayuda="Barras: duración de las últimas alarmas resueltas"
+                    escena="reloj">
             {!! $barras(array_column($resueltas, 'segundos'), array_map(fn ($r) => $r['titulo'] . ': ' . $r['duracion'], $resueltas), $azul, 6) !!}
         </x-kpi-card>
 
         <x-kpi-card titulo="Cobertura SNMP" :valor="$cob['snmp']" :unidad="'/ ' . $cob['en_linea']"
                     :comparacion="$cob['solo_icmp'] . ' solo ICMP · ' . $cob['offline'] . ' sin respuesta'"
                     :badge="$cob['en_linea'] ? round($cob['snmp'] / $cob['en_linea'] * 100) . '%' : null" badge-tono="neutral"
-                    detalle="cobertura" ayuda="Equipos en línea que responden SNMP (telemetría completa)">
+                    detalle="cobertura" ayuda="Equipos en línea que responden SNMP (telemetría completa)"
+                    escena="molecula">
             {!! $dona([[$cob['snmp'], 'rgb(59, 89, 152)', 'Con SNMP: ' . $cob['snmp']], [$cob['solo_icmp'], 'rgb(147, 167, 214)', 'Solo ICMP: ' . $cob['solo_icmp']], [$cob['offline'], 'rgb(239, 68, 68)', 'Sin respuesta: ' . $cob['offline']]]) !!}
         </x-kpi-card>
 
@@ -140,7 +144,8 @@
                     :valor-tono="$reinicios ? 'warn' : 'ok'"
                     :comparacion="$reinicios ? collect($paneles['hardware']['reinicios_24h'])->take(1)->map(fn ($r) => $r['dispositivo'] . ' hace ' . $r['hace'])->first() : 'Uptime ≥ 24 h en todos'"
                     :badge="$reinicios ? 'Revisar' : 'Estable'" :badge-tono="$reinicios ? 'warn' : 'ok'"
-                    detalle="hardware" ayuda="Equipos SNMP cuyo sysUpTime es menor a 24 h">
+                    detalle="hardware" ayuda="Equipos SNMP cuyo sysUpTime es menor a 24 h"
+                    escena="reinicio">
             {!! $dona([[$estables, 'rgb(16, 185, 129)', 'Uptime ≥ 24 h: ' . $estables], [$reinicios, 'rgb(245, 158, 11)', 'Reiniciados: ' . $reinicios]]) !!}
         </x-kpi-card>
 
@@ -148,7 +153,8 @@
                     :valor-tono="$sslDias === null ? null : ($sslDias <= 7 ? 'crit' : ($sslDias <= 30 ? 'warn' : 'ok'))"
                     :comparacion="($web['ssl_medidos'] ?? 0) . ' certificados medidos'"
                     :badge="count($web['ssl_por_vencer'] ?? []) . ' por vencer'" :badge-tono="count($web['ssl_por_vencer'] ?? []) ? 'warn' : 'ok'"
-                    detalle="web" ayuda="Barras: certificados que vencen en ≤ 30 días; más alta = vence antes">
+                    detalle="web" ayuda="Barras: certificados que vencen en ≤ 30 días; más alta = vence antes"
+                    escena="escudo">
             {!! $barras(array_map(fn ($c) => max(1, 30 - $c['dias']), $sslTop), array_map(fn ($c) => $c['nombre'] . ': ' . $c['dias'] . ' días', $sslTop), '245, 158, 11', 5) !!}
         </x-kpi-card>
     </div>

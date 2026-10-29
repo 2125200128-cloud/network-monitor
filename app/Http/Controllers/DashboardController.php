@@ -66,6 +66,7 @@ class DashboardController extends Controller
             ->values();
 
         $labels      = $globalSeries->map(fn($r) => Carbon::parse($r->recorded_at)->format('H:i:s'))->toArray();
+        $tiempos     = $globalSeries->map(fn($r) => Carbon::parse($r->recorded_at)->getTimestampMs())->toArray();
         $pingData    = $globalSeries->map(fn($r) => $r->latency_ms !== null ? round($r->latency_ms, 1) : null)->toArray();
         $trafficData = $globalSeries->map(fn($r) => $r->traffic_mbps !== null ? round($r->traffic_mbps, 2) : null)->toArray();
         $lossData    = $globalSeries->map(fn($r) => $r->packet_loss_pct !== null ? round($r->packet_loss_pct, 2) : null)->toArray();
@@ -140,6 +141,7 @@ class DashboardController extends Controller
             'avgPortSat',
             'formattedUptime',
             'labels',
+            'tiempos',
             'pingData',
             'trafficData',
             'lossData',
@@ -196,6 +198,7 @@ class DashboardController extends Controller
                 'snmp_online'        => $online,
                 'dispositivos'       => compact('online', 'offline', 'warning', 'total'),
                 'recorded_at'        => $g?->recorded_at,
+                't'                  => $g?->recorded_at ? Carbon::parse($g->recorded_at)->getTimestampMs() : null,
             ];
         });
 

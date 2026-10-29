@@ -177,6 +177,15 @@
         </div>
     </div>
 
+    {{-- Incidencias de las últimas 24 h: muchas duran segundos y en "alertas activas" pasan sin verse --}}
+    <div class="bg-white dark:bg-nm-surface p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
+            <p class="text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Incidencias de las últimas 24 h</p>
+            <p id="incResumen" class="text-[11px] font-semibold text-gray-500 dark:text-slate-400"></p>
+        </div>
+        <div id="incLista" class="max-h-[232px] overflow-y-auto custom-scrollbar divide-y divide-slate-100 dark:divide-slate-800"></div>
+    </div>
+
     {{-- Filters & Search Bar --}}
     <div class="bg-white dark:bg-nm-surface p-3.5 sm:p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3.5">
         {{-- Category Pills --}}
@@ -798,6 +807,37 @@
         }
     }
 
+    // Panel de incidencias (24 h): activas primero, luego las resueltas con su duración
+    function pintarIncidencias(inc) {
+        if (!inc) return;
+        const partes = [`${inc.caidas} caída(s)`, `${inc.lentitudes} lentitud(es) o error(es)`];
+        if (inc.otras) partes.push(`${inc.otras} de servidor o del monitor`);
+        document.getElementById('incResumen').innerHTML = (inc.activas ? `<b class="text-red-600 dark:text-red-400">${inc.activas} activa(s)</b> · ` : '') + escHtml(partes.join(' · '));
+        const lista = document.getElementById('incLista');
+        if (!inc.lista.length) {
+            lista.innerHTML = '<p class="text-xs py-3 text-emerald-600 dark:text-emerald-400 font-semibold">Sin caídas ni lentitudes en las últimas 24 h.</p>';
+            return;
+        }
+        lista.innerHTML = inc.lista.map(a => {
+            const crit = a.severidad === 'critica';
+            const pill = a.activa
+                ? `<span class="px-2 py-0.5 rounded-full text-[10.5px] font-extrabold ${crit ? 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'}">${crit ? 'Activa · crítica' : 'Activa'}</span>`
+                : `<span class="px-2 py-0.5 rounded-full text-[10.5px] font-extrabold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">Resuelta</span>`;
+            return `<div class="py-1.5 flex items-start gap-3">
+                <span class="mt-1.5 w-2 h-2 rounded-full shrink-0 ${crit ? 'bg-red-500' : 'bg-amber-500'} ${a.activa ? 'animate-pulse' : 'opacity-60'}"></span>
+                <div class="min-w-0 flex-1">
+                    <p class="text-xs font-bold text-gray-900 dark:text-white">${escHtml(a.titulo)}</p>
+                    <p class="text-[11px] text-gray-500 dark:text-slate-400 truncate" title="${escHtml(a.mensaje)}">${escHtml(a.mensaje)}</p>
+                </div>
+                <div class="text-right shrink-0">
+                    ${pill}
+                    <p class="text-[10.5px] font-mono text-gray-500 dark:text-slate-400 mt-0.5" title="${escHtml(a.hace)}">${escHtml(a.inicio)} · duró ${escHtml(a.duracion)}${a.activa ? ' (sigue)' : ''}</p>
+                </div>
+            </div>`;
+        }).join('');
+    }
+    pintarIncidencias(@json($incidencias));
+
     async function refreshLiveServices() {
         try {
             const resp = await fetch('{{ route("servicios_web.api_live") }}', {
@@ -824,6 +864,7 @@
                     if (elLatency) elLatency.innerHTML = `${escHtml(data.stats.avg_latency)} <span class="text-sm font-semibold text-gray-500">ms</span>`;
                 }
                 marcarKpisSinRed(sinRedActual);
+                pintarIncidencias(data.incidencias);
 
                 // Update Individual Table Rows
                 if (Array.isArray(data.servicios)) {

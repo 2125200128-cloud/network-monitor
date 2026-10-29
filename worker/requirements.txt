@@ -5,5 +5,3 @@ cryptography==50.0.2      # SNMPv3 (AES) y descifrado de credenciales guardadas 
 paramiko==5.0.0           # Consola SSH y respaldos de configuración
 ping3==5.1.5              # deep_discovery
 python-dotenv==1.2.3
-# Solo si DB_CONNECTION=mysql:
-# mysql-connector-python==26.7.0

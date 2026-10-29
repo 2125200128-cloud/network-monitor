@@ -33,7 +33,7 @@
 <div class="floating-card p-6 mb-6" id="diagnosticoRed" data-refrescar="diagnostico"
      x-data="{ tab: 'puertos' }"
      @diag-tab.window="tab = $event.detail"
-     x-init="try { const t = localStorage.getItem('dashDiagTab'); if (t) tab = t; } catch (e) {} $watch('tab', v => { try { localStorage.setItem('dashDiagTab', v) } catch (e) {} })">
+     x-init="(() => { try { const t = localStorage.getItem('dashDiagTab'); if (t) tab = t; } catch (e) {} })(); $watch('tab', v => { try { localStorage.setItem('dashDiagTab', v) } catch (e) {} })">
     <div class="flex flex-col gap-3 mb-5 pb-4 border-b border-gray-100 dark:border-slate-800/40">
         <div>
             <div class="flex items-center gap-2">

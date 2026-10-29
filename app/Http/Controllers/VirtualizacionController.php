@@ -40,7 +40,14 @@ class VirtualizacionController extends Controller
             $leido = $e?->leido_en ? Carbon::parse($e->leido_en) : null;
             $vigente = $leido && $leido->gt(now()->subMinutes(self::MINUTOS_LECTURA_VIGENTE));
             $json = fn ($v) => json_decode($v ?? 'null', true) ?: [];
-            $vms = $vigente ? $json($e->vms) : [];
+            $sensores = $vigente ? $json($e->sensores) : [];
+            // % de CPU de cada VM respecto a sus vCPU (MHz que usa / vCPU × MHz de un núcleo del host)
+            $mhzNucleo = $vigente && $e->cpu_mhz_total && $e->nucleos ? $e->cpu_mhz_total / $e->nucleos : null;
+            $vms = collect($vigente ? $json($e->vms) : [])->map(fn ($v) => $v + [
+                'cpu_pct' => $mhzNucleo && ($v['vcpu'] ?? 0) && ($v['estado'] ?? '') === 'poweredOn' && isset($v['cpu_mhz'])
+                    ? min(100, round($v['cpu_mhz'] / ($v['vcpu'] * $mhzNucleo) * 100, 1)) : null,
+            ])->all();
+            $encendidas = collect($vms)->where('estado', 'poweredOn');
             return [
                 'id' => $d->id,
                 'nombre' => $d->nombre,
@@ -66,10 +73,21 @@ class VirtualizacionController extends Controller
                     'hardware' => trim(($e->fabricante ?? '') . ' ' . ($e->modelo ?? '')) ?: null,
                     'cpu_modelo' => $e->cpu_modelo, 'nucleos' => $e->nucleos, 'hilos' => $e->hilos,
                     'version' => $e->version,
-                    'sensores' => $json($e->sensores),
+                    'sensores' => $sensores,
                     'alarmas' => $json($e->alarmas),
                     'vms' => $vms,
                     'datastores' => $json($e->datastores),
+                    // Para el dibujo del sled: los discos físicos son los sensores de tipo storage ("Drive 0 n")
+                    'discos_fisicos' => collect($sensores)->where('tipo', 'storage')->sortBy('nombre', SORT_NATURAL)
+                        ->map(fn ($s) => ['nombre' => $s['nombre'], 'estado' => $s['estado'] ?? null])->values()->all(),
+                    'temperaturas' => collect($sensores)->where('tipo', 'temperature')->whereNotNull('valor')
+                        ->sortByDesc('valor')->map(fn ($s) => ['nombre' => $s['nombre'], 'valor' => $s['valor'], 'estado' => $s['estado'] ?? null])->values()->all(),
+                    'sensores_por_tipo' => collect($sensores)->groupBy('tipo')->map(fn ($g, $tipo) => [
+                        'tipo' => $tipo, 'total' => $g->count(), 'mal' => $g->whereIn('estado', ['yellow', 'red'])->count(),
+                        'rojos' => $g->where('estado', 'red')->count(),
+                    ])->sortByDesc('mal')->values()->all(),
+                    'vcpu_encendidas' => $encendidas->sum('vcpu'),
+                    'ram_asignada_gb' => round($encendidas->sum('ram_mb') / 1024),
                 ] : null,
                 'api_error' => $e?->error,
                 'api_leido_hace' => $leido?->locale('es')->diffForHumans(),

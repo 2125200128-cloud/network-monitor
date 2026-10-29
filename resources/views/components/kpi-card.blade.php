@@ -1,8 +1,9 @@
 {{--
     Tarjeta KPI: título, valor grande, comparación con insignia, mini gráfica (slot) y pie "Ver detalles".
-    Props: titulo, valor, unidad?, comparacion?, badge?, badgeTono (ok|warn|crit|neutral), valorTono?, detalle? (pestaña del diagnóstico)
+    Props: titulo, valor, unidad?, comparacion?, badge?, badgeTono (ok|warn|crit|neutral), valorTono?, detalle? (pestaña del diagnóstico),
+           escena? (ilustración animada de fondo, ver components/kpi-escena), escenaTono?
 --}}
-@props(['titulo', 'valor', 'unidad' => null, 'comparacion' => null, 'badge' => null, 'badgeTono' => 'neutral', 'valorTono' => null, 'detalle' => null, 'ayuda' => null])
+@props(['titulo', 'valor', 'unidad' => null, 'comparacion' => null, 'badge' => null, 'badgeTono' => 'neutral', 'valorTono' => null, 'detalle' => null, 'ayuda' => null, 'escena' => null, 'escenaTono' => null])
 @php
     $badgeClases = [
         'ok' => 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400',
@@ -17,9 +18,10 @@
     ][$valorTono] ?? 'text-gray-900 dark:text-white';
 @endphp
 <div class="rounded-2xl bg-gray-50 dark:bg-nm-sunken border border-gray-100 dark:border-slate-800/60 flex flex-col overflow-hidden" @if($ayuda) title="{{ $ayuda }}" @endif>
-    <div class="bg-white dark:bg-nm-surface rounded-2xl border-b border-gray-100 dark:border-slate-800/60 p-4 flex-1">
-        <p class="text-[13px] font-semibold text-gray-800 dark:text-slate-200">{{ $titulo }}</p>
-        <div class="flex items-end justify-between gap-3 mt-2">
+    <div class="relative overflow-hidden bg-white dark:bg-nm-surface rounded-2xl border-b border-gray-100 dark:border-slate-800/60 p-4 flex-1">
+        @if($escena)<x-kpi-escena :tipo="$escena" :tono="$escenaTono" centro />@endif
+        <p class="relative text-[13px] font-semibold text-gray-800 dark:text-slate-200">{{ $titulo }}</p>
+        <div class="relative flex items-end justify-between gap-3 mt-2">
             <div class="min-w-0">
                 <p class="flex items-baseline gap-1">
                     <span class="text-3xl font-extrabold tracking-tight leading-none {{ $valorClases }}">{{ $valor }}</span>

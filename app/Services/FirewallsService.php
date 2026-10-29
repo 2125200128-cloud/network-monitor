@@ -19,6 +19,10 @@ class FirewallsService
     /** Gráficas: últimas HORAS_HISTORIA horas, un punto cada BLOQUE_SEG segundos (promedio). */
     public const HORAS_HISTORIA = 6;
     private const BLOQUE_SEG = 300;
+    /** Lectura de un puerto más vieja que esto ya no dice su estado actual. */
+    private const MINUTOS_PUERTO_VIGENTE = 15;
+    /** Enlace que el vecino no ha vuelto a ver en estos días: el cable pudo cambiar de lugar. */
+    private const DIAS_ENLACE_VIGENTE = 2;
 
     public function resumen(): array
     {
@@ -86,7 +90,121 @@ class FirewallsService
             'seguridad' => $conSnmp->filter(fn ($f) => $f['seguridad'])->map(fn ($f) => ['firewall' => $f['nombre'], 'id' => $f['id']] + $f['seguridad'])->values()->all(),
             'alarmas' => $alarmasFw->sortBy(fn ($a) => ($a['severidad'] ?? '') === 'critica' ? 0 : 1)->values()->all(),
             'sin_snmp' => $filas->where('snmp', false)->where('estado', '!=', 'offline')->values()->all(),
+            'puertos' => $this->puertos($filas->all()),
         ];
+    }
+
+    /**
+     * Puertos físicos de cada FortiGate, para dibujarlos. Del que responde SNMP: lo que reporta él mismo.
+     * De los demás: solo los puertos que ven sus vecinos (LLDP/CDP), con el estado medido en el puerto del vecino,
+     * que es el otro extremo del mismo cable. Nada se supone: sin lectura vigente, el estado queda en null.
+     * [id => ['fuente' => 'snmp'|'vecinos'|null, 'grupos' => [[puerto, ...], ...], 'conectados' => n, 'total' => n]]
+     */
+    public function puertos(array $filas): array
+    {
+        $ids = array_column($filas, 'id');
+        if (!$ids) {
+            return [];
+        }
+        $vigente = now()->subMinutes(self::MINUTOS_PUERTO_VIGENTE);
+        $enlaceVigente = now()->subDays(self::DIAS_ENLACE_VIGENTE);
+        $campos = ['i.id', 'i.dispositivo_id', 'i.nombre', 'i.alias', 'i.port_type', 'i.mac_address', 'i.velocidad_mbps', 'i.admin_status',
+            't.oper_status', 't.bandwidth_util_pct', 't.in_errors', 't.out_errors', 't.updated_at as leido'];
+        // Estado y uso solo si la lectura es reciente (el poller los deja en NULL cuando el equipo no responde)
+        $estado = fn ($x) => $x->leido && Carbon::parse($x->leido)->gte($vigente) ? $x->oper_status : null;
+        $uso = fn ($x) => $estado($x) === 'up' && $x->bandwidth_util_pct !== null ? round((float) $x->bandwidth_util_pct, 2) : null;
+        $velocidad = fn ($v) => $v ? ($v >= 1000 ? rtrim(rtrim(number_format($v / 1000, 1), '0'), '.') . ' Gbps' : $v . ' Mbps') : null;
+
+        $interfaces = DB::table('interfaces_red as i')->leftJoin('telemetria_interfaces as t', 't.interfaz_id', '=', 'i.id')
+            ->whereIn('i.dispositivo_id', $ids)->get($campos)->groupBy('dispositivo_id');
+
+        // Enlaces descubiertos: interfaz del FortiGate => lo que hay del otro lado del cable
+        $lados = [];
+        $enlaces = DB::table('enlaces_red')
+            ->where(fn ($q) => $q->whereIn('origen_dispositivo_id', $ids)->orWhereIn('destino_dispositivo_id', $ids))
+            ->get(['origen_dispositivo_id', 'origen_interfaz_id', 'destino_dispositivo_id', 'destino_interfaz_id', 'tipo_medio', 'updated_at']);
+        foreach ($enlaces as $e) {
+            foreach ([['origen', 'destino'], ['destino', 'origen']] as [$aqui, $alla]) {
+                if ($e->{"{$aqui}_interfaz_id"} && in_array($e->{"{$aqui}_dispositivo_id"}, $ids)) {
+                    $lados[$e->{"{$aqui}_interfaz_id"}][] = ['interfaz' => $e->{"{$alla}_interfaz_id"}, 'equipo' => $e->{"{$alla}_dispositivo_id"},
+                        'medio' => $e->tipo_medio, 'visto' => $e->updated_at];
+                }
+            }
+        }
+        $lejanas = collect($lados)->flatten(1);
+        $otras = DB::table('interfaces_red as i')->leftJoin('telemetria_interfaces as t', 't.interfaz_id', '=', 'i.id')
+            ->whereIn('i.id', $lejanas->pluck('interfaz')->filter()->unique()->values()->all())->get($campos)->keyBy('id');
+        $equipos = DB::table('dispositivos')->whereIn('id', $lejanas->pluck('equipo')->unique()->values()->all())->pluck('nombre', 'id');
+
+        $vecinosDe = fn (int $interfazId) => collect($lados[$interfazId] ?? [])->map(function ($l) use ($otras, $equipos, $estado, $uso, $enlaceVigente, $velocidad) {
+            $o = $l['interfaz'] ? $otras->get($l['interfaz']) : null;
+            $vigenteEnlace = $l['visto'] && Carbon::parse($l['visto'])->gte($enlaceVigente);
+            return [
+                'equipo_id' => $l['equipo'],
+                'equipo' => $equipos[$l['equipo']] ?? 'Equipo #' . $l['equipo'],
+                'puerto' => $o?->nombre,
+                // Si el vecino dejó de verlo hace días, el estado de su puerto ya no dice nada de este cable
+                'estado' => $o && $vigenteEnlace ? $estado($o) : null,
+                'util_pct' => $o && $vigenteEnlace ? $uso($o) : null,
+                'velocidad' => $o && $vigenteEnlace && $estado($o) === 'up' ? $velocidad($o->velocidad_mbps) : null,
+                'medio' => $l['medio'],
+                'visto_hace' => $vigenteEnlace || !$l['visto'] ? null : Carbon::parse($l['visto'])->locale('es')->diffForHumans(),
+            ];
+        })->unique(fn ($v) => $v['equipo_id'] . '|' . $v['puerto'])->values();
+
+        $orden = ['mgmt' => 0, 'ha' => 0, 'wan' => 1, 'dmz' => 2, 'internal' => 3, 'port' => 4, 'lan' => 5, 's' => 6, 'vw' => 7, 'x' => 9];
+        $resultado = [];
+        foreach ($filas as $f) {
+            $lista = collect($interfaces[$f['id']] ?? []);
+            // Físicos: los que tienen MAC y no son virtuales (VLAN, túneles, agregados); sin SNMP, los que ve algún vecino
+            $lista = $f['snmp']
+                ? $lista->filter(fn ($i) => $i->port_type !== 'virtual' && $i->mac_address)
+                : $lista->filter(fn ($i) => isset($lados[$i->id]));
+
+            $puertos = $lista->map(function ($i) use ($f, $estado, $uso, $velocidad, $vecinosDe, $orden) {
+                $vecinos = $vecinosDe($i->id);
+                preg_match('/^([a-z]+)(\d*)$/i', $i->nombre, $m);
+                $prefijo = $m ? strtolower($m[1]) : null;
+                if ($f['snmp']) {
+                    $e = $estado($i);
+                    $p = [
+                        'estado' => $i->admin_status === 'down' && $e !== 'up' ? 'deshabilitado' : $e,
+                        'util_pct' => $uso($i),
+                        'velocidad' => $e === 'up' ? $velocidad($i->velocidad_mbps) : null,
+                        'errores' => $e !== null && $i->in_errors !== null ? (int) $i->in_errors + (int) $i->out_errors : null,
+                        'tipo' => $i->port_type === 'sfp_fiber' ? 'sfp' : 'rj45',
+                    ];
+                } else {
+                    // El estado del puerto es el del otro extremo del cable, medido en el vecino
+                    $medidos = $vecinos->whereNotNull('estado');
+                    $p = [
+                        'estado' => $medidos->contains('estado', 'up') ? 'up' : ($medidos->isNotEmpty() ? 'down' : null),
+                        'util_pct' => $medidos->whereNotNull('util_pct')->max('util_pct'),
+                        'velocidad' => $medidos->whereNotNull('velocidad')->first()['velocidad'] ?? null,
+                        'errores' => null,
+                        // Sin SNMP el tipo de puerto no se conoce; solo el medio del enlace que reporta el vecino
+                        'tipo' => $vecinos->contains(fn ($v) => str_starts_with((string) $v['medio'], 'fibra')) ? 'sfp' : 'generico',
+                    ];
+                }
+                return $p + [
+                    'clave' => $i->id,
+                    'nombre' => $i->nombre,
+                    'etiqueta' => $prefijo === 'port' && $m[2] !== '' ? $m[2] : $i->nombre,
+                    'alias' => $i->alias,
+                    'vecinos' => $vecinos->all(),
+                    'grupo' => $prefijo === null ? 'otros' : (isset($orden[$prefijo]) && $orden[$prefijo] === 0 ? 'gestion' : $prefijo),
+                    '_orden' => [$prefijo === null ? 8 : ($orden[$prefijo] ?? 8), $prefijo ?? $i->nombre, $m && $m[2] !== '' ? (int) $m[2] : 0],
+                ];
+            })->sortBy(fn ($p) => sprintf('%02d|%s|%05d', ...$p['_orden']))->values();
+
+            $resultado[$f['id']] = [
+                'fuente' => $puertos->isEmpty() ? null : ($f['snmp'] ? 'snmp' : 'vecinos'),
+                'grupos' => $puertos->groupBy('grupo')->map(fn ($g) => $g->map(fn ($p) => collect($p)->except(['_orden', 'grupo'])->all())->values()->all())->values()->all(),
+                'conectados' => $puertos->where('estado', 'up')->count(),
+                'total' => $puertos->count(),
+            ];
+        }
+        return $resultado;
     }
 
     /**

@@ -42,6 +42,7 @@ LIMITE_SHARD_S = 120    # si un proceso no termina su parte en este tiempo, se r
 PING_COUNT = 3
 SATURATION_PCT = 80.0
 MAX_RATE_FACTOR = 1.1   # tolerancia sobre ifHighSpeed antes de descartar una tasa por imposible
+MAX_RATE_SIN_VELOCIDAD_MBPS = 400_000   # puerto sin velocidad informada: más de 400 Gbps no es físico
 MAX_WALK_ROWS = 5000
 PING_TIME_RE = re.compile(r'(?:time|tiempo)\s*([=<])\s*([\d.,]+)')
 
@@ -386,11 +387,14 @@ async def collect_snmp(engine, ip, community):
 
 
 def counter_delta(cur, prev, is_hc):
+    """Diferencia entre dos lecturas del mismo contador; None si no hay una diferencia válida."""
     if cur is None or prev is None:
         return None
     if cur >= prev:
         return cur - prev
-    if not is_hc:  # vuelta del contador de 32 bits
+    # Vuelta del contador de 32 bits: solo si ambas lecturas caben en 32 bits (si la anterior era de 64 bits,
+    # restarla daba tasas de millones de Mbps negativas)
+    if not is_hc and prev < 2 ** 32 and cur < 2 ** 32:
         return cur + 2 ** 32 - prev
     return None    # reinicio del equipo/contador: no hay delta válido
 
@@ -525,11 +529,15 @@ async def poll_device(dev, engine, sem, thresholds, pings):
                     cur_out = snmp['out'].get(idx)
                     cur_err = (snmp['in_err'].get(idx) or 0) + (snmp['out_err'].get(idx) or 0) \
                         if (idx in snmp['in_err'] or idx in snmp['out_err']) else None
-                    new_prev[idx] = {'in': cur_in, 'out': cur_out, 'err': cur_err, 'ts': now_ts}
+                    new_prev[idx] = {'in': cur_in, 'out': cur_out, 'err': cur_err, 'ts': now_ts, 'hc': is_hc}
                     oper = 'up' if oper_raw == 1 else ('down' if oper_raw == 2 else None)
                     speed = snmp['speed'].get(idx)
                     util = None
                     p = prev.get(idx)
+                    # Si el equipo pasó de contadores de 64 a 32 bits (o al revés) entre ciclos, las dos lecturas
+                    # no se pueden restar: se descarta esta muestra
+                    if p and p.get('hc', is_hc) != is_hc:
+                        p = None
                     if p:
                         dt = now_ts - p['ts']
                         d_in = counter_delta(cur_in, p['in'], is_hc)
@@ -542,6 +550,9 @@ async def poll_device(dev, engine, sem, thresholds, pings):
                             # Una tasa mayor que la velocidad del puerto no es física: es una discontinuidad
                             # de contadores (reinicio de interfaz, ifIndex reasignado). Se descarta la muestra.
                             if speed and speed > 0 and max(in_mbps, out_mbps) > speed * MAX_RATE_FACTOR:
+                                rate_ok = False
+                            # Sin velocidad conocida: ningún puerto pasa de 400 Gbps; tampoco hay tasas negativas
+                            elif max(in_mbps, out_mbps) > MAX_RATE_SIN_VELOCIDAD_MBPS or min(in_mbps, out_mbps) < 0:
                                 rate_ok = False
                         if rate_ok:
                             if speed and speed > 0:

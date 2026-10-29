@@ -1,10 +1,10 @@
 import os
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'worker'))
-from nm_common import conectar, insertar_con_id  # credenciales del .env (MySQL o PostgreSQL)
+from nm_common import conectar, insertar_con_id  # credenciales de PostgreSQL del .env
 
 conn = conectar()
-cursor = conn.cursor(dictionary=True, buffered=True)
+cursor = conn.cursor(dictionary=True)
 
 # For each device, find if it has real interfaces (e.g. Gi0/X or Fa0/X or with if_index >= 10000)
 # and old mock interfaces (e.g. GigabitEthernet1/0/X with sequential if_index 1..48 and 0 traffic)

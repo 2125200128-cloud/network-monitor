@@ -70,8 +70,7 @@ class HistorialAlertas
     private function duracionSql(): string
     {
         $ahora = now()->format('Y-m-d H:i:s');   // valor propio, no viene del usuario
-        $ahoraSql = Sql::esPgsql() ? "TIMESTAMP '{$ahora}'" : "'{$ahora}'";
-        return Sql::segundosEntre('a.fecha_inicio', "COALESCE(a.fecha_resolucion, {$ahoraSql})");
+        return Sql::segundosEntre('a.fecha_inicio', "COALESCE(a.fecha_resolucion, TIMESTAMP '{$ahora}')");
     }
 
     /** Filas paginadas según la vista: una por alarma (agrupada por clave) o una por ocurrencia. */
