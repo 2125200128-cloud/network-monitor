@@ -14,10 +14,10 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 try:
-    from nm_common import conectar, upsert, descifrar_laravel
+    from nm_common import conectar, upsert, hace, descifrar_laravel
     import esxi_api
 except ImportError:
-    from worker.nm_common import conectar, upsert, descifrar_laravel
+    from worker.nm_common import conectar, upsert, hace, descifrar_laravel
     from worker import esxi_api
 
 if hasattr(sys.stdout, 'reconfigure'):
@@ -36,6 +36,16 @@ def credenciales():
     if not fila.get('esxi_usuario') or not fila.get('esxi_password'):
         return None
     return fila['esxi_usuario'], descifrar_laravel(fila['esxi_password'])
+
+
+def datastores_ignorados():
+    """Nombres de datastores que no se guardan (Ajustes → ESXi), p. ej. un volumen retirado que los hosts siguen listando."""
+    with conectar() as conn:
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT esxi_datastores_ignorados FROM configuraciones_generales ORDER BY id LIMIT 1")
+        fila = cur.fetchone() or {}
+    texto = fila.get('esxi_datastores_ignorados') or ''
+    return {n.strip().lower() for n in texto.replace(',', '\n').splitlines() if n.strip()}
 
 
 def hosts():
@@ -211,11 +221,13 @@ def ciclo():
         return
     usuario, clave = cred
     equipos = hosts()
+    ignorados = datastores_ignorados()
 
     def uno(dev):
         t = time.time()
         try:
             datos = leer_host(dev, usuario, clave)
+            datos['datastores'] = [d for d in datos['datastores'] if (d['nombre'] or '').lower() not in ignorados]
             guardar(dev, datos, None)
             print(f"[{dev['ip']}] {dev['nombre']}: CPU {datos['cpu_pct']}% RAM {datos['ram_pct']}% · "
                   f"{sum(1 for v in datos['vms'] if v['estado'] == 'poweredOn')}/{len(datos['vms'])} VMs · "
@@ -228,9 +240,7 @@ def ciclo():
         list(ex.map(uno, equipos))
 
     with conectar() as conn:
-        conn.cursor().execute(f"DELETE FROM esxi_metricas WHERE fecha < NOW() - INTERVAL '{RETENCION_DIAS} days'"
-                              if getattr(conn, 'pg', False) else
-                              f"DELETE FROM esxi_metricas WHERE fecha < NOW() - INTERVAL {RETENCION_DIAS} DAY")
+        conn.cursor().execute(f"DELETE FROM esxi_metricas WHERE fecha < {hace(RETENCION_DIAS, 'DAY')}")
         conn.commit()
 
 

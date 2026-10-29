@@ -29,6 +29,45 @@
     .fw-marca { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #dc2626; opacity: .7; }
     .fw-grafica { position: relative; height: 170px; }
     .fw-mini { position: relative; height: 46px; }
+
+    /* Panel frontal dibujado: el chasis es oscuro en los dos temas, como el equipo real */
+    .fw-chasis { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 10px; overflow-x: auto; min-height: 74px;
+        background: linear-gradient(180deg, #2b3038 0%, #1c2027 55%, #13161b 100%); border: 1px solid #3b424d;
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / .07), inset 0 -2px 6px rgb(0 0 0 / .55); }
+    .fw-placa { flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; padding-right: 9px; border-right: 1px solid #39404a; }
+    .fw-placa span { display: flex; align-items: center; gap: 5px; font: 700 9px/1 ui-monospace, Consolas, monospace; color: #9aa4b1; letter-spacing: .06em; text-transform: uppercase; }
+    .fw-placa i { width: 6px; height: 6px; border-radius: 50%; background: #3b434e; }
+    .fw-grupo { flex-shrink: 0; display: grid; grid-template-rows: auto auto; grid-auto-flow: column; gap: 2px 3px; padding: 4px 5px; border-radius: 6px;
+        background: rgb(0 0 0 / .28); box-shadow: inset 0 1px 2px rgb(0 0 0 / .6); }
+    .fw-p { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 3px 2px 2px; border-radius: 4px; background: none; border: 0; cursor: pointer; }
+    .fw-p:hover { background: rgb(255 255 255 / .07); }
+    .fw-p.sel { background: rgb(96 165 250 / .16); box-shadow: 0 0 0 1.5px #60a5fa; }
+    .fw-p small { font: 700 9px/1 ui-monospace, Consolas, monospace; color: #8d97a4; max-width: 44px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fw-p.e-up small { color: #d6dde6; }
+    .fw-boca { position: relative; display: block; background: #06080b; box-shadow: inset 0 2px 3px rgb(0 0 0 / .9); }
+    /* RJ45: contactos dorados arriba y la muesca del seguro abajo */
+    .fw-p-rj45 .fw-boca { width: 22px; height: 17px; border: 1px solid #4a525e; border-radius: 2px; }
+    .fw-p-rj45 .fw-boca::before { content: ''; position: absolute; top: 3px; left: 4px; right: 4px; height: 3px; background: repeating-linear-gradient(90deg, #b8932a 0 1px, transparent 1px 2.25px); }
+    .fw-p-rj45 .fw-boca::after { content: ''; position: absolute; bottom: -1px; left: 7px; width: 6px; height: 4px; background: #1c2027; border: 1px solid #4a525e; border-bottom: 0; }
+    /* SFP: jaula metálica con la ranura del módulo */
+    .fw-p-sfp .fw-boca { width: 28px; height: 12px; border: 1.5px solid #8b95a1; border-radius: 1px; }
+    .fw-p-sfp .fw-boca::before { content: ''; position: absolute; inset: 3px 4px auto; border-top: 1px solid #2f3640; }
+    /* Sin SNMP y sin medio conocido: no se dibuja un conector que no se sabe cuál es */
+    .fw-p-generico .fw-boca { width: 22px; height: 15px; border: 1px dashed #6b7280; border-radius: 3px; background: #0b0d11; }
+    .fw-led { display: block; width: 10px; height: 3px; border-radius: 2px; background: #2a3039; }
+    .e-up .fw-led, .fw-led-muestra.e-up { background: #22c55e; box-shadow: 0 0 5px #22c55e; }
+    .e-down .fw-led, .fw-led-muestra.e-down { background: #3b434e; }
+    .e-deshabilitado .fw-led, .fw-led-muestra.e-deshabilitado { background: #d97706; }
+    .e-nd .fw-led, .fw-led-muestra.e-nd { background: transparent; box-shadow: inset 0 0 0 1px #6b7280; }
+    .fw-p.act .fw-led { animation: fwActividad var(--ritmo, 1.4s) ease-in-out infinite; }
+    @keyframes fwActividad { 50% { opacity: .3; box-shadow: none; } }
+    @media (prefers-reduced-motion: reduce) { .fw-p.act .fw-led { animation: none; } }
+    .fw-uso { display: block; width: 22px; height: 2px; border-radius: 2px; background: #2a3039; overflow: hidden; }
+    .fw-uso i { display: block; height: 100%; }
+    .fw-leyenda { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; color: var(--nm-text-muted); }
+    .fw-leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+    .fw-led-muestra { display: inline-block; width: 10px; height: 3px; border-radius: 2px; }
+    .fw-detalle { margin-top: 8px; padding: 7px 10px; border-radius: var(--nm-radius-md); background: var(--nm-sunken); font-size: 12px; color: var(--nm-text); min-height: 34px; }
 </style>
 @endsection
 
@@ -288,6 +327,8 @@
             </div>
         @endif
     </div>
+
+    @include('firewalls.partials.puertos')
 
 </div>
 @endsection

@@ -200,7 +200,8 @@ class SettingController extends Controller
     /** Credenciales de los hosts ESXi (las usa worker/esxi_collector.py). Contraseña vacía = se conserva la guardada. */
     public function guardarEsxi(Request $request)
     {
-        $request->validate(['esxi_usuario' => 'nullable|string|max:128', 'esxi_password' => 'nullable|string|max:255']);
+        $request->validate(['esxi_usuario' => 'nullable|string|max:128', 'esxi_password' => 'nullable|string|max:255',
+            'esxi_datastores_ignorados' => 'nullable|string|max:2000']);
         $datos = ['esxi_usuario' => trim((string) $request->input('esxi_usuario')) ?: null];
         if ($request->filled('esxi_password')) {
             $datos['esxi_password'] = $request->input('esxi_password');
@@ -208,6 +209,10 @@ class SettingController extends Controller
         if ($request->boolean('esxi_borrar') || !$datos['esxi_usuario']) {
             $datos = ['esxi_usuario' => null, 'esxi_password' => null];
         }
+        // Un nombre por línea, sin repetidos ni líneas vacías
+        $ignorados = collect(preg_split('/[\r\n,]+/', (string) $request->input('esxi_datastores_ignorados')))
+            ->map(fn ($n) => trim($n))->filter()->unique(fn ($n) => mb_strtolower($n))->implode("\n");
+        $datos['esxi_datastores_ignorados'] = $ignorados ?: null;
         ConfiguracionGeneral::firstOrFail()->update($datos);
 
         return redirect()->route('settings.index', ['section' => 'general'])->with('success',
@@ -286,15 +291,18 @@ class SettingController extends Controller
         $request->validate([
             'telegram_bot_token' => ['nullable', 'string', 'max:100', 'regex:/^\d{5,}:[A-Za-z0-9_-]{30,}$/'],
             'telegram_chat_id' => ['nullable', 'string', 'max:64', 'regex:/^(-?\d+|@[A-Za-z0-9_]{5,})$/'],
+            'telegram_chat_id_servidores' => ['nullable', 'string', 'max:64', 'regex:/^(-?\d+|@[A-Za-z0-9_]{5,})$/'],
             'telegram_severidad_min' => 'required|in:critica,advertencia',
         ], [
             'telegram_bot_token.regex' => 'El token no tiene el formato de BotFather (números:letras).',
             'telegram_chat_id.regex' => 'El chat ID debe ser un número (p. ej. -1001234567890) o @nombre_del_canal.',
+            'telegram_chat_id_servidores.regex' => 'El chat de servidores debe ser un número (p. ej. -1001234567890) o @nombre_del_canal.',
         ]);
 
         $cfg = ConfiguracionGeneral::firstOrFail();
         $datos = [
             'telegram_chat_id' => trim((string) $request->input('telegram_chat_id')) ?: null,
+            'telegram_chat_id_servidores' => trim((string) $request->input('telegram_chat_id_servidores')) ?: null,
             'telegram_severidad_min' => $request->input('telegram_severidad_min'),
             'telegram_resueltas' => $request->boolean('telegram_resueltas'),
             'telegram_imagenes' => $request->boolean('telegram_imagenes'),
@@ -346,7 +354,8 @@ class SettingController extends Controller
         try {
             $r = $alertas->probar($cfg, $bot);
             Cache::forget('telegram_ultimo_error');
-            return response()->json(['ok' => true, 'mensaje' => 'Mensaje de prueba enviado' . ($r['imagen'] ? ' con gráfica de ejemplo.' : '.')]);
+            return response()->json(['ok' => true, 'mensaje' => 'Mensaje de prueba enviado' . ($r['chats'] > 1 ? " a los {$r['chats']} grupos" : '')
+                . ($r['imagen'] ? ' con gráfica de ejemplo.' : '.')]);
         } catch (\Throwable $e) {
             return response()->json(['ok' => false, 'mensaje' => $e->getMessage()], 422);
         }

@@ -50,7 +50,7 @@
 | **Backend** | PHP 8.3+, Laravel 12, Eloquent ORM, Fortify |
 | **Workers de Red** | Python 3.12+, AsyncIO, PySNMP, Requests |
 | **Frontend** | Blade Templates, Tailwind CSS, Alpine.js, Vis.js Network |
-| **Base de Datos** | MySQL / MariaDB / SQLite |
+| **Base de Datos** | PostgreSQL 18 |
 | **Protocolos de Red** | SNMP v2c/v3, ICMP Ping, CDP, LLDP, HTTP/HTTPS, ARP |
 
 ---

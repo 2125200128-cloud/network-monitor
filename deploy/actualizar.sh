@@ -23,6 +23,14 @@ npm ci --no-audit --no-fund --loglevel=error
 npm run build
 .venv/bin/pip install -q -r worker/requirements.txt
 
+echo "==> Parches de PHP"
+# Además de las actualizaciones automáticas: al actualizar el sistema, PHP queda con lo último de noble-security
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+apt-get install -y -qq --only-upgrade $(dpkg-query -W -f='${binary:Package}\n' "php${PHP_V}*" 2>/dev/null)
+zgrep -qs 'CVE-2026-109618' /usr/share/doc/php${PHP_V}-*/changelog.Debian.gz \
+    || echo "[!] PHP ${PHP_V} todavía sin el parche de PHP2Shell (CVE-2026-109618): Ubuntu aún no lo publica o falta el repositorio de seguridad"
+
 echo "==> Base de datos y cachés"
 chown -R "$DUENO:$USUARIO" "$APP_DIR"
 chown -R "$USUARIO:$USUARIO" storage bootstrap/cache public/images/topology/modelos

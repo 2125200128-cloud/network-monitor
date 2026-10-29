@@ -125,7 +125,7 @@ class DiscoveryController extends Controller
             $state['status'] = 'failed';
             $state['message'] = 'El proceso de descubrimiento dejó de responder.';
             $state['error'] = ($state['status'] ?? '') === 'starting'
-                ? 'Python no arrancó. Verifica PYTHON_PATH en .env y que pysnmp/mysql-connector estén instalados.'
+                ? 'Python no arrancó. Verifica PYTHON_PATH en .env y que pysnmp/psycopg estén instalados (worker/requirements.txt).'
                 : 'Sin latido del worker en ' . (int)$age . ' s.';
             @file_put_contents($file, json_encode($state, JSON_UNESCAPED_UNICODE));
         }

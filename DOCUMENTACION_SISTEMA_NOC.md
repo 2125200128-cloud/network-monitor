@@ -48,7 +48,7 @@ flowchart TB
     end
 
     subgraph Storage ["PERSISTENCIA (BASE DE DATOS)"]
-        MySQL[("Base de Datos MySQL / MariaDB<br/>network_monitor")]
+        BD[("Base de Datos PostgreSQL<br/>network_monitor")]
     end
 
     subgraph CoreApp ["APLICACIÓN WEB CENTRAL (LARAVEL 12 & PHP 8.3)"]
@@ -69,13 +69,13 @@ flowchart TB
     Webs -- "HTTP / HTTPS Checks" --> WebPoller
     Switches -. "SSH v2 (Solo Lectura)" .-> Term
 
-    SNMP_Poller --> MySQL
-    SNMP_Detail --> MySQL
-    Classifier --> MySQL
-    Discovery --> MySQL
-    WebPoller --> MySQL
+    SNMP_Poller --> BD
+    SNMP_Detail --> BD
+    Classifier --> BD
+    Discovery --> BD
+    WebPoller --> BD
 
-    MySQL <--> Controllers
+    BD <--> Controllers
     Controllers <--> UI
     Controllers --> Reporting
 ```
@@ -88,7 +88,7 @@ flowchart TB
 | **Workers de Red** | Python 3.12+, AsyncIO, PySNMP, Ping3 | Sondeo de telemetría de ultra baja latencia, recolección de chasis, barrido de tablas ARP/CAM y descubrimiento. |
 | **Frontend** | HTML5 semántico, Tailwind CSS, Alpine.js | Interfaz de operador NOC con soporte para tema Claro y Oscuro de alto contraste, animaciones Lottie y marquee continuo. |
 | **Visualización** | Vis.js Network Engine, Chart.js, xterm.js | Renderizado del mapa de topología con física de resortes, gráficas de telemetría en tiempo real y terminal CLI. |
-| **Base de Datos** | MySQL 8.0 / MariaDB 10.11+ | Almacenamiento estructurado de dispositivos, interfaces, métricas históricas, topología y registros de auditoría. |
+| **Base de Datos** | PostgreSQL 18 | Almacenamiento estructurado de dispositivos, interfaces, métricas históricas, topología y registros de auditoría. |
 | **Reportes** | FPDF con plantilla institucional oficial | Exportación ejecutiva en PDF de inventarios generales y hojas de especificación técnica individual. |
 
 ---
@@ -252,10 +252,10 @@ El archivo ejecutable incluido en la raíz del proyecto automatiza el arranque i
 
 ### 7.1 Requisitos del Sistema
 * **Sistema Operativo:** Windows Server 2019/2022 o Windows 10/11 Pro (también compatible con distribuciones Linux Ubuntu/Debian/RHEL).
-* **Entorno Web:** PHP 8.3 o superior (extensiones obligatorias: `pdo_mysql`, `mbstring`, `openssl`, `curl`, `snmp`, `gd`, `fileinfo`).
+* **Entorno Web:** PHP 8.3 o superior (extensiones obligatorias: `pdo_pgsql`, `pgsql`, `mbstring`, `openssl`, `curl`, `snmp`, `gd`, `fileinfo`).
 * **Gestor de Paquetes PHP:** Composer 2.7+.
-* **Motor de Base de Datos:** MySQL 8.0+ o MariaDB 10.5+ (puerto por defecto: 3306).
-* **Entorno de Red / Workers:** Python 3.12+ (con paquetes `mysql-connector-python`, `pysnmp`, `ping3`, `python-dotenv`).
+* **Motor de Base de Datos:** PostgreSQL 18 (puerto por defecto: 5432).
+* **Entorno de Red / Workers:** Python 3.12+ (paquetes de `worker/requirements.txt`: `psycopg`, `pysnmp`, `cryptography`, `paramiko`, `ping3`, `python-dotenv`).
 * **Entorno Frontend:** Node.js 18+ y NPM (para compilación de estilos con Vite).
 
 ### 7.2 Procedimiento de Instalación Paso a Paso
@@ -290,11 +290,11 @@ APP_ENV=production
 APP_DEBUG=false
 APP_URL=http://10.4.25.191:8000
 
-DB_CONNECTION=mysql
+DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
-DB_PORT=3306
+DB_PORT=5432
 DB_DATABASE=network_monitor
-DB_USERNAME=root
+DB_USERNAME=noc_monitor
 DB_PASSWORD=TuPasswordSeguro
 
 # Parámetros del motor de red
@@ -360,10 +360,9 @@ Hacer doble clic en `iniciar_monitor.bat` o configurar los comandos como Servici
 ## 9. MANTENIMIENTO, RESPALDOS Y RESOLUCIÓN DE PROBLEMAS
 
 ### 9.1 Respaldo Periódico de la Base de Datos
-Se recomienda programar una tarea diaria automatizada con `mysqldump`:
+En Ubuntu el respaldo diario ya lo hace el servicio `nm-respaldo.timer` (02:30, se conservan 14 días en `/var/backups/network-monitor`). Respaldo manual con `pg_dump`:
 ```bash
-# Comando de respaldo manual:
-mysqldump -u root -p network_monitor > backup_noc_%date:~-4,4%%date:~-7,2%%date:~-10,2%.sql
+pg_dump -U noc_monitor -h 127.0.0.1 -Fc -f network_monitor_$(date +%Y%m%d).dump network_monitor
 ```
 
 ### 9.2 Preguntas Frecuentes y Diagnóstico de Incidencias

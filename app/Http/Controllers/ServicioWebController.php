@@ -46,8 +46,41 @@ class ServicioWebController extends Controller
         $unreadNotificaciones = count(array_filter($notificaciones, fn($n) => !$n['leida']));
 
         $vmsDisponibles = \App\Services\VmsServiciosWeb::opciones();
+        $incidencias = self::incidencias();
 
-        return view('servicios_web.index', compact('servicios', 'stats', 'categorias', 'notificaciones', 'unreadNotificaciones', 'sinConectividad', 'vmsDisponibles'));
+        return view('servicios_web.index', compact('servicios', 'stats', 'categorias', 'notificaciones', 'unreadNotificaciones', 'sinConectividad', 'vmsDisponibles', 'incidencias'));
+    }
+
+    /**
+     * Alarmas de sitios web de las últimas 24 h, activas y resueltas. Muchas duran segundos (una caída breve), así que
+     * en la vista de alertas activas pasan sin verse: aquí quedan a la vista con su hora y su duración.
+     */
+    public static function incidencias(int $limite = 40): array
+    {
+        $base = \App\Models\AlarmaRed::where('categoria', 'servicio_web')->where('fecha_inicio', '>=', now()->subDay());
+        $dur = function (int $s): string {
+            return $s < 60 ? "{$s} s" : ($s < 3600 ? intdiv($s, 60) . ' min ' . ($s % 60) . ' s' : intdiv($s, 3600) . ' h ' . intdiv($s % 3600, 60) . ' min');
+        };
+        $lista = (clone $base)->orderByRaw("CASE WHEN estado = 'resuelta' THEN 1 ELSE 0 END")->orderByDesc('fecha_inicio')->limit($limite)
+            ->get(['id', 'titulo', 'mensaje', 'severidad', 'estado', 'codigo_evento', 'fecha_inicio', 'fecha_resolucion'])
+            ->map(fn ($a) => [
+                'id' => $a->id,
+                'titulo' => $a->titulo,
+                'mensaje' => $a->mensaje,
+                'severidad' => $a->severidad,
+                'activa' => $a->estado !== 'resuelta',
+                'inicio' => $a->fecha_inicio?->format('d/m H:i:s'),
+                'hace' => $a->fecha_inicio?->locale('es')->diffForHumans(),
+                'duracion' => $a->fecha_inicio ? $dur((int) $a->fecha_inicio->diffInSeconds($a->fecha_resolucion ?? now())) : null,
+            ])->all();
+        $conteo = (clone $base)->selectRaw("codigo_evento, COUNT(*) AS n")->groupBy('codigo_evento')->pluck('n', 'codigo_evento');
+        return [
+            'lista' => $lista,
+            'caidas' => (int) ($conteo['WEB_SERVICE_DOWN'] ?? 0),
+            'lentitudes' => (int) ($conteo['WEB_SERVICE_DEGRADED'] ?? 0),
+            'otras' => (int) $conteo->except(['WEB_SERVICE_DOWN', 'WEB_SERVICE_DEGRADED'])->sum(),
+            'activas' => (clone $base)->where('estado', '!=', 'resuelta')->count(),
+        ];
     }
 
     /** Reglas comunes de alta y edición. El umbral vacío = automático; el texto esperado vacío = sin revisar. */
@@ -194,6 +227,7 @@ class ServicioWebController extends Controller
             'stats' => $stats,
             'servicios' => $servicios,
             'sin_conectividad' => WebServicePoller::sinConectividad(),
+            'incidencias' => self::incidencias(),
         ]);
     }
 

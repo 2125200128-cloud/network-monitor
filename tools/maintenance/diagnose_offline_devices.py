@@ -9,7 +9,7 @@ from pysnmp.hlapi.asyncio import (
 )
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'worker'))
-from nm_common import conectar, insertar_con_id  # credenciales del .env (MySQL o PostgreSQL)
+from nm_common import conectar, insertar_con_id  # credenciales de PostgreSQL del .env
 
 def test_ping(ip):
     try:

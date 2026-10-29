@@ -109,6 +109,19 @@
     .dark .trend-btn { color: #94a3b8; }
     .dark .trend-btn:hover { color: #e2e8f0; }
     .dark .trend-btn-active { background: #1e293b; color: #667d93; box-shadow: none; }
+
+    /* Último punto real de una gráfica: late para indicar que la serie está en vivo (nmVivo.puntoVivo) */
+    .nm-punto-vivo {
+        position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 9999px;
+        background: var(--c, #667d93); box-shadow: 0 0 0 2px rgb(255 255 255 / 0.85); pointer-events: none; z-index: 2;
+    }
+    .nm-metal-navy .nm-punto-vivo, .nm-metal-azure .nm-punto-vivo { box-shadow: 0 0 0 2px rgb(255 255 255 / 0.35); }
+    .nm-punto-vivo::after {
+        content: ''; position: absolute; inset: -7px; border-radius: 9999px; border: 2px solid var(--c, #667d93);
+        animation: nmLatido 2.2s ease-out infinite;
+    }
+    @keyframes nmLatido { 0% { transform: scale(.35); opacity: .9; } 100% { transform: scale(1.5); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .nm-punto-vivo::after { animation: none; opacity: 0; } }
 </style>
 @endsection
 
@@ -368,8 +381,9 @@
             <!-- Mini Stat Cards (NOC Time Series) -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <!-- Card 1: Tráfico -->
-                <div class="floating-card nm-metal-navy p-5 flex flex-col justify-between">
-                    <div class="flex justify-between items-start mb-2">
+                <div class="floating-card nm-metal-navy p-5 flex flex-col justify-between relative overflow-hidden">
+                    <x-kpi-escena tipo="trafico" tono="claro" />
+                    <div class="relative flex justify-between items-start mb-2">
                         <div>
                             <p class="text-xs font-bold text-white/75 uppercase tracking-wider font-mono">Tráfico de Red</p>
                             <div class="flex items-baseline gap-1 mt-1">
@@ -380,13 +394,14 @@
                         <span class="text-xs font-semibold text-white bg-white/15 px-2.5 py-1 rounded-full border border-white/25 font-mono" title="Suma de puertos físicos (entrada + salida) de todos los equipos">Σ puertos</span>
                     </div>
                     <div class="w-full h-20 relative">
-                        <canvas id="sparkTraffic"></canvas>
+                        <canvas id="sparkTraffic" class="relative"></canvas>
                     </div>
                 </div>
 
                 <!-- Card 2: Latencia -->
-                <div class="floating-card nm-metal-azure p-5 flex flex-col justify-between">
-                    <div class="flex justify-between items-start mb-2">
+                <div class="floating-card nm-metal-azure p-5 flex flex-col justify-between relative overflow-hidden">
+                    <x-kpi-escena tipo="red" tono="claro" />
+                    <div class="relative flex justify-between items-start mb-2">
                         <div>
                             <p class="text-xs font-bold text-white/75 uppercase tracking-wider font-mono">Latencia Global</p>
                             <div class="flex items-baseline gap-1 mt-1">
@@ -402,8 +417,9 @@
                 </div>
 
                 <!-- Card 3: Pérdida de Paquetes -->
-                <div class="floating-card p-5 flex flex-col justify-between">
-                    <div class="flex justify-between items-start mb-2">
+                <div class="floating-card p-5 flex flex-col justify-between relative overflow-hidden">
+                    <x-kpi-escena tipo="ondas" tono="naranja" />
+                    <div class="relative flex justify-between items-start mb-2">
                         <div>
                             <p class="text-xs font-bold text-gray-400 uppercase tracking-wider font-mono">Pérdida Pkts</p>
                             <div class="flex items-baseline gap-1 mt-1">
@@ -1049,20 +1065,129 @@
 @endsection
 
 @php
-    // Últimas 7 muestras reales de global_metrics (null = sin dato en esa muestra)
-    $formattedLabels = array_slice($labels, -7);
-    $finalTraffic = array_slice($trafficData, -7);
-    $finalPing = array_slice($pingData, -7);
-    $finalLoss = array_slice($lossData, -7);
+    // Últimas muestras reales de global_metrics con su momento (null = sin dato en esa muestra)
+    $finalTiempos = $tiempos;
+    $finalTraffic = $trafficData;
+    $finalPing = $pingData;
+    $finalLoss = $lossData;
 @endphp
 
 @section('scripts')
     <script>
+        /*
+         * Movimiento de las gráficas, siempre con datos reales:
+         *  - Al crearse, la línea se dibuja de izquierda a derecha.
+         *  - Cuando llega una muestra nueva del sondeo, la ventana de tiempo avanza: los puntos se deslizan a la
+         *    izquierda y el nuevo crece desde el anterior. No se interpola ni se inventa ningún punto.
+         *  - El último punto real late (en vivo).
+         * Con "reducir movimiento" del sistema no hay animaciones.
+         */
+        window.nmVivo = (function () {
+            const reducido = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const opt = { hour12: false };
+            const hhmmss = t => new Date(t).toLocaleTimeString('es-MX', { ...opt, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const hhmm = t => new Date(t).toLocaleTimeString('es-MX', { ...opt, hour: '2-digit', minute: '2-digit' });
+            const ddhhmm = t => new Date(t).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' }) + ' ' + hhmm(t);
+
+            function animaciones(totalMs = 1100) {
+                if (reducido) return { animation: false };
+                const vistos = new WeakSet();
+                const nuevo = ctx => ctx.type === 'data' && ctx.element && !vistos.has(ctx.element);
+                const paso = ctx => totalMs / Math.max(1, ctx.chart.data.datasets[0]?.data.length || 1);
+                const yPrevio = ctx => {
+                    const meta = ctx.chart.getDatasetMeta(ctx.datasetIndex);
+                    const ant = meta.data[ctx.index - 1];
+                    const escala = ctx.chart.scales[meta.yAxisID || 'y'];
+                    return ant ? ant.getProps(['y'], true).y : escala.getPixelForValue(escala.min);
+                };
+                const propiedad = (desde) => ({
+                    type: 'number',
+                    from: ctx => nuevo(ctx) ? desde(ctx) : undefined,
+                    duration: ctx => nuevo(ctx) ? (ctx.chart.$dibujado ? 700 : paso(ctx)) : 900,
+                    easing: ctx => nuevo(ctx) && !ctx.chart.$dibujado ? 'linear' : 'easeInOutCubic',
+                    delay: ctx => nuevo(ctx) && !ctx.chart.$dibujado ? ctx.index * paso(ctx) : 0,
+                });
+                return {
+                    animation: {
+                        onComplete: ({ chart }) => {
+                            chart.$dibujado = true;
+                            chart.data.datasets.forEach((_, i) => chart.getDatasetMeta(i).data.forEach(e => vistos.add(e)));
+                        },
+                    },
+                    animations: { x: propiedad(() => NaN), y: propiedad(yPrevio) },
+                };
+            }
+
+            // Punto que late en la última muestra real de cada serie (sigue a la línea mientras se desliza)
+            function puntoVivo(series = [0]) {
+                return {
+                    id: 'nmPuntoVivo',
+                    afterDraw(chart) {
+                        const cont = chart.canvas.parentElement;
+                        if (!cont) return;
+                        chart.$puntos = chart.$puntos || [];
+                        series.forEach((di, k) => {
+                            const meta = chart.getDatasetMeta(di);
+                            const ds = chart.data.datasets[di];
+                            if (!meta || !ds) return;
+                            let el = chart.$puntos[k];
+                            if (!el) {
+                                el = document.createElement('span');
+                                el.className = 'nm-punto-vivo';
+                                cont.appendChild(el);
+                                chart.$puntos[k] = el;
+                            }
+                            let ult = null;
+                            for (let i = meta.data.length - 1; i >= 0; i--) {
+                                const p = meta.data[i], d = ds.data[i];
+                                if (p && !p.skip && Number.isFinite(p.x) && Number.isFinite(p.y) && d && d.y !== null && d.y !== undefined) { ult = p; break; }
+                            }
+                            const a = chart.chartArea;
+                            const visible = ult && !meta.hidden && a && ult.x >= a.left - 1 && ult.x <= a.right + 1;
+                            el.style.display = visible ? '' : 'none';
+                            if (visible) {
+                                el.style.left = ult.x + 'px';
+                                el.style.top = ult.y + 'px';
+                                el.style.setProperty('--c', ds.borderColor);
+                            }
+                        });
+                    },
+                    beforeDestroy(chart) { (chart.$puntos || []).forEach(el => el.remove()); },
+                };
+            }
+
+            // Agrega muestras reales al final y avanza la ventana; quita solo lo que ya salió de la vista
+            function avanzar(chart, nuevos, ventanaMs) {
+                let ultimo = -Infinity;
+                chart.data.datasets.forEach((ds, i) => {
+                    const pts = ds.data;
+                    (nuevos[i] || []).forEach(p => {
+                        const igual = pts.length && pts[pts.length - 1].x === p.x ? pts[pts.length - 1] : null;
+                        if (igual) igual.y = p.y;                       // el bloque en curso cambió su promedio
+                        else if (!pts.length || p.x > pts[pts.length - 1].x) pts.push({ x: p.x, y: p.y });
+                    });
+                    if (pts.length) ultimo = Math.max(ultimo, pts[pts.length - 1].x);
+                });
+                if (!Number.isFinite(ultimo)) return;
+                const minActual = chart.options.scales.x.min;
+                chart.data.datasets.forEach(ds => { while (ds.data.length > 2 && ds.data[1].x < minActual) ds.data.shift(); });
+                chart.options.scales.x.min = ultimo - ventanaMs;
+                chart.options.scales.x.max = ultimo;
+                chart.update();
+            }
+
+            return { animaciones, puntoVivo, avanzar, hhmmss, hhmm, ddhhmm, reducido };
+        })();
+    </script>
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const timeLabels = @json($formattedLabels);
+            const tiempos = @json($finalTiempos);
             const trafficData = @json($finalTraffic);
             const pingData = @json($finalPing);
             const lossData = @json($finalLoss);
+            // Ventana visible de las mini gráficas: lo que abarcan las muestras iniciales (mín. 1 min)
+            const VENTANA_SPARK = Math.max(60000, (tiempos[tiempos.length - 1] || 0) - (tiempos[0] || 0));
+            window.nmSparks = {};
 
             const avgCpu = {{ $avgCpu !== null ? round($avgCpu) : 0 }};
             const avgMem = {{ $avgMem !== null ? round($avgMem) : 0 }};
@@ -1098,7 +1223,7 @@
                     bodyFont: { family: 'monospace', size: 11, weight: '700' },
                     callbacks: {
                         title: function(items) {
-                            return 'DIAG // ' + items[0].label;
+                            return 'DIAG // ' + nmVivo.hhmmss(items[0].parsed.x);
                         },
                         label: function(context) {
                             const val = context.parsed.y;
@@ -1124,11 +1249,11 @@
 
                 const chart = new Chart(ctx, {
                     type: 'line',
+                    plugins: [nmVivo.puntoVivo()],
                     data: {
-                        labels: timeLabels,
                         datasets: [{
                             label: metricName,
-                            data: dataVals,
+                            data: dataVals.map((v, i) => ({ x: tiempos[i], y: v })),
                             borderColor: `rgb(${colorRgb})`,
                             borderWidth: 2,
                             fill: true,
@@ -1152,7 +1277,7 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        animation: { duration: 800, easing: 'easeOutQuart' },
+                        ...nmVivo.animaciones(),
                         interaction: {
                             mode: 'index',
                             intersect: false
@@ -1163,6 +1288,9 @@
                         },
                         scales: {
                             x: {
+                                type: 'linear',
+                                min: (tiempos[tiempos.length - 1] || 0) - VENTANA_SPARK,
+                                max: tiempos[tiempos.length - 1],
                                 display: true,
                                 grid: {
                                     display: true,
@@ -1176,7 +1304,8 @@
                                     color: colorEjes,
                                     maxRotation: 0,
                                     autoSkip: true,
-                                    maxTicksLimit: 4
+                                    maxTicksLimit: 4,
+                                    callback: v => nmVivo.hhmmss(v)
                                 }
                             },
                             y: {
@@ -1212,13 +1341,15 @@
             }
 
             // 1. Tráfico: azul real (#667d93)
-            initNocTimeSeries('sparkTraffic', 'TRAFFIC', trafficData, '102, 125, 147', 'Mbps');
+            nmSparks.traffic = initNocTimeSeries('sparkTraffic', 'TRAFFIC', trafficData, '102, 125, 147', 'Mbps');
 
             // 2. Latencia: turquesa (#00b8c4)
-            initNocTimeSeries('sparkPing', 'LATENCY', pingData, '0, 184, 196', 'ms');
+            nmSparks.ping = initNocTimeSeries('sparkPing', 'LATENCY', pingData, '0, 184, 196', 'ms');
 
             // 3. Pérdida: Naranja Institucional (#ff8300 -> 242, 100, 25)
-            initNocTimeSeries('sparkLoss', 'LOSS', lossData, '255, 131, 0', '%');
+            nmSparks.loss = initNocTimeSeries('sparkLoss', 'LOSS', lossData, '255, 131, 0', '%');
+            nmSparks.ventana = VENTANA_SPARK;
+            nmSparks.ultimoT = tiempos[tiempos.length - 1] || null;
 
             // 4. Concentric Dual-Gauge Donut (Health CPU / RAM)
             const doughnutCanvas = document.getElementById('mainDoughnut');
@@ -1832,6 +1963,15 @@
                     setVal('kpiMemValue', orNd(data.ram_avg_pct, '%'));
                     setVal('kpiNodesValue', `${data.dispositivos.online} / ${data.dispositivos.total}`);
 
+                    // Muestra nueva del sondeo: entra por la derecha de las mini gráficas (solo si es más reciente)
+                    const s = window.nmSparks;
+                    if (s && data.t && (!s.ultimoT || data.t > s.ultimoT)) {
+                        s.ultimoT = data.t;
+                        [[s.traffic, data.traffic_mbps], [s.ping, data.latency_ms], [s.loss, data.packet_loss_pct]].forEach(([chart, v]) => {
+                            if (chart) nmVivo.avanzar(chart, [[{ x: data.t, y: v ?? null }]], s.ventana);
+                        });
+                    }
+
                     // Actualizar Alertas y Notificaciones en Vivo
                     if (data.unread_notif_count !== undefined) {
                         const countBadge = document.getElementById('notifCountBadge');
@@ -1891,6 +2031,10 @@
             const gridColor = () => isDark() ? 'rgba(255, 255, 255, 0.06)' : 'rgba(156, 163, 175, 0.15)';
             const axisColor = () => isDark() ? '#94a3b8' : '#64748b';
             const fmtMbps = v => v >= 1000 ? (v / 1000).toFixed(1) + ' Gbps' : Math.round(v) + ' Mbps';
+            // Ancho de la ventana visible, cada cuánto se piden muestras nuevas y formato de la hora por rango
+            const VENTANA = { '1h': 3600e3, '24h': 86400e3, '7d': 7 * 86400e3 };
+            const CADA = { '1h': 15000, '24h': 60000, '7d': 60000 };
+            const fmtX = (t, largo = false) => rango === '7d' ? nmVivo.ddhhmm(t) : (rango === '1h' || largo ? nmVivo.hhmmss(t) : nmVivo.hhmm(t));
 
             const GRUPOS = {
                 trafico: { fmtY: fmtMbps, series: [
@@ -1921,15 +2065,19 @@
                 if (g.fmtY1) {
                     scales.y1 = { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, border: { display: false }, ticks: { ...ticks, callback: g.fmtY1 } };
                 }
+                // Eje de tiempo real: al llegar muestras nuevas la ventana avanza y la línea se desliza
+                const fin = datos.t.length ? datos.t[datos.t.length - 1] : Date.now();
+                scales.x = { ...scales.x, type: 'linear', min: fin - VENTANA[rango], max: fin,
+                             ticks: { ...scales.x.ticks, callback: v => fmtX(v) } };
 
                 if (chart) chart.destroy();
                 chart = new Chart(canvas.getContext('2d'), {
                     type: 'line',
+                    plugins: [nmVivo.puntoVivo(g.series.map((_, i) => i))],
                     data: {
-                        labels: datos.labels,
                         datasets: g.series.map(s => ({
                             label: s.label,
-                            data: datos[s.key],
+                            data: datos.t.map((t, i) => ({ x: t, y: datos[s.key][i] })),
                             yAxisID: s.axis,
                             borderColor: `rgb(${s.color})`,
                             backgroundColor: `rgba(${s.color}, 0.10)`,
@@ -1944,7 +2092,7 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        animation: { duration: 400 },
+                        ...nmVivo.animaciones(1400),
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
                             legend: { display: true, align: 'end', labels: { color: axisColor(), boxWidth: 10, boxHeight: 10, font: { size: 11 } } },
@@ -1953,6 +2101,7 @@
                                 titleFont: { family: 'monospace', size: 10 },
                                 bodyFont: { family: 'monospace', size: 11, weight: '700' },
                                 callbacks: {
+                                    title: items => items.length ? fmtX(items[0].parsed.x, true) : '',
                                     label: ctx => {
                                         const v = ctx.parsed.y;
                                         if (v === null || v === undefined) return `${ctx.dataset.label}: sin dato`;
@@ -1967,16 +2116,44 @@
                 });
             }
 
+            async function pedir() {
+                const resp = await fetch(`${ENDPOINT}?rango=${rango}`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                return resp.json();
+            }
+
             async function cargar() {
                 try {
-                    const resp = await fetch(`${ENDPOINT}?rango=${rango}`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
-                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                    datos = await resp.json();
+                    datos = await pedir();
                     render();
                 } catch (err) {
                     console.error('Error cargando tendencias:', err);
                 }
             }
+
+            // Actualización periódica: solo agrega las muestras reales nuevas (o el promedio del bloque en curso)
+            // y la ventana avanza; la gráfica no se vuelve a crear
+            async function actualizar() {
+                if (!chart || document.hidden) return;
+                const pedido = rango;
+                try {
+                    const nuevos = await pedir();
+                    if (pedido !== rango || !chart || !nuevos.t.length) return;
+                    datos = nuevos;
+                    const desde = chart.data.datasets[0]?.data.slice(-1)[0]?.x ?? -Infinity;
+                    const g = GRUPOS[metrica];
+                    const serie = key => nuevos.t.map((t, i) => ({ x: t, y: nuevos[key][i] })).filter(p => p.x >= desde);
+                    nmVivo.avanzar(chart, g.series.map(s => serie(s.key)), VENTANA[rango]);
+                } catch (err) {
+                    console.error('Error actualizando tendencias:', err);
+                }
+            }
+            let ultimaActualizacion = 0;
+            setInterval(() => {
+                if (Date.now() - ultimaActualizacion < CADA[rango] - 500) return;
+                ultimaActualizacion = Date.now();
+                actualizar();
+            }, 5000);
 
             function activar(selector, btn) {
                 document.querySelectorAll(selector).forEach(b => b.classList.toggle('trend-btn-active', b === btn));

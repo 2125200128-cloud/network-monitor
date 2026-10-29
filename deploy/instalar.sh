@@ -20,6 +20,7 @@ USUARIO="${USUARIO:-www-data}"
 DUENO="${SUDO_USER:-root}"                 # quien actualiza el código (git pull)
 PHP_V="${PHP_V:-8.3}"
 PG_V="${PG_V:-18}"
+ZONA="${ZONA:-America/Mexico_City}"           # la de config/app.php: Laravel y los workers deben ver la misma hora
 NODE_V="${NODE_V:-22}"
 DB_NOMBRE=network_monitor
 DB_USUARIO=noc_monitor
@@ -46,6 +47,11 @@ if [[ -z "$APP_KEY_ACTUAL" && -z "${APP_KEY_ORIGEN:-}" && "${NUEVA_INSTALACION:-
 fi
 
 # -----------------------------------------------------------------------------
+paso "Zona horaria ${ZONA}"
+# Ubuntu Server se instala en UTC. Los workers guardan NOW() de PostgreSQL y Laravel compara en hora de México:
+# con zonas distintas cada medición quedaría 6 h adelantada.
+timedatectl set-timezone "$ZONA"
+
 paso "Paquetes del sistema"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
@@ -54,6 +60,17 @@ apt-get install -y -qq git curl unzip ca-certificates gnupg lsb-release openssl 
     python3 python3-venv python3-pip \
     "php${PHP_V}-fpm" "php${PHP_V}-cli" "php${PHP_V}-pgsql" "php${PHP_V}-gd" "php${PHP_V}-curl" \
     "php${PHP_V}-mbstring" "php${PHP_V}-xml" "php${PHP_V}-zip" "php${PHP_V}-intl" "php${PHP_V}-bcmath" composer
+
+paso "Parches de seguridad automáticos"
+# Ubuntu publica las correcciones (PHP, nginx, OpenSSL...) en noble-security; se instalan solas cada día
+apt-get install -y -qq unattended-upgrades
+cat > /etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+EOF
+# PHP2Shell (CVE-2026-109618/109619): Ubuntu corrige sin cambiar el número de versión; se confirma en el changelog
+zgrep -qs 'CVE-2026-109618' /usr/share/doc/php${PHP_V}-*/changelog.Debian.gz \
+    || aviso "PHP ${PHP_V} todavía sin el parche de PHP2Shell (CVE-2026-109618). En cuanto Ubuntu lo publique: sudo apt update && sudo apt upgrade"
 
 paso "PostgreSQL ${PG_V} (repositorio oficial de PostgreSQL)"
 if ! dpkg -s "postgresql-${PG_V}" >/dev/null 2>&1; then
@@ -84,6 +101,8 @@ if ! pg psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NOMBRE}'" | gre
     pg createdb -O "${DB_USUARIO}" -E UTF8 -T template0 "${DB_NOMBRE}"
 fi
 pg psql -q -d "${DB_NOMBRE}" -c "ALTER SCHEMA public OWNER TO ${DB_USUARIO}"
+# La base usa la zona de la aplicación aunque PostgreSQL se haya inicializado en UTC
+pg psql -q -c "ALTER DATABASE ${DB_NOMBRE} SET timezone TO '${ZONA}'"
 
 # -----------------------------------------------------------------------------
 paso ".env de producción"
@@ -141,6 +160,8 @@ post_max_size = 12M
 max_execution_time = 180
 expose_php = Off
 date.timezone = America/Mexico_City
+; Mitigación de PHP2Shell (CVE-2026-109618/109619); el monitor no usa el progreso de subida
+session.upload_progress.enabled = Off
 EOF
 cp "/etc/php/${PHP_V}/fpm/conf.d/99-network-monitor.ini" "/etc/php/${PHP_V}/cli/conf.d/99-network-monitor.ini"
 # Varias TV y usuarios a la vez con refresco cada 30 s
@@ -177,7 +198,7 @@ fi
 # -----------------------------------------------------------------------------
 paso "Listo"
 cat <<EOF
-  Web:            http://${DOMINIO}
+  Web:            $([[ -f /etc/nginx/snippets/network-monitor-tls.conf ]] && echo https || echo http)://${DOMINIO}
   Proyecto:       ${APP_DIR}
   Base de datos:  ${DB_NOMBRE} (usuario ${DB_USUARIO}; contraseña en ${ENV_FILE})
   Respaldos:      /var/backups/network-monitor (diario 02:30, 14 días)
@@ -186,5 +207,6 @@ cat <<EOF
   Bitácora: journalctl -u nm-poller -f      (también nm-detalle, nm-clasificador, nm-noc-sync, nm-web-poll)
 
   Siguiente paso si vienes de otro servidor:  sudo bash deploy/importar-datos.sh /ruta/network_monitor.dump
+  Para quitar el aviso "No seguro" del navegador (HTTPS):  sudo bash deploy/https.sh
   Recuerda autorizar la IP de este servidor (${IP_SERVIDOR}) en el SNMP de los equipos (ACL / hosts permitidos).
 EOF

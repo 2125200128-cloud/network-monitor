@@ -26,6 +26,7 @@ class ConfiguracionGeneral extends Model
         'telegram_activo',
         'telegram_bot_token',
         'telegram_chat_id',
+        'telegram_chat_id_servidores',
         'telegram_severidad_min',
         'telegram_resueltas',
         'telegram_imagenes',
@@ -40,6 +41,7 @@ class ConfiguracionGeneral extends Model
         'vcenter_password',
         'esxi_usuario',
         'esxi_password',
+        'esxi_datastores_ignorados',
     ];
 
     protected $hidden = ['telegram_bot_token', 'snmpv3_auth_pass', 'snmpv3_priv_pass', 'vcenter_password', 'esxi_password'];

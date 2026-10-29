@@ -4,7 +4,8 @@ cd /d "%~dp0"
 
 set PY=%LOCALAPPDATA%\Programs\Python\Python312\python.exe
 if not exist "%PY%" set PY=python
-set PHP=C:\MAMP\bin\php\php8.3.1\php.exe
+rem 8.3.36 o posterior: corrige PHP2Shell (CVE-2026-109618/109619); la 8.3.1 de MAMP es vulnerable
+set PHP=C:\MAMP\bin\php\php8.3.36\php.exe
 if not exist "%PHP%" set PHP=php
 
 rem IP del adaptador que tiene la puerta de enlace (la red real), no la del hotspot u otros adaptadores virtuales

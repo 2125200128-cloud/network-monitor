@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -11,7 +10,6 @@ use Illuminate\Support\Facades\Schema;
  *  - Las métricas desconocidas pasan a NULL en lugar de valores por defecto inventados
  *    (CPU 0, RAM 4096 MB, presupuesto PoE 740 W, etc.).
  *  - Se agregan columnas de tráfico real (Mbps de entrada/salida).
- *  - Se eliminan los datos simulados que generaban versiones anteriores de los workers.
  *  - Se garantiza una sola fila de estado por equipo/interfaz (llaves únicas) y se
  *    restauran las llaves foráneas que perdió tools/maintenance/batch_dedup.php.
  */
@@ -67,12 +65,6 @@ return new class extends Migration
             $table->string('mode')->nullable()->default(null)->change();
         });
 
-        // Limpieza de los datos existentes: solo aplica a la base MySQL original. En una base nueva
-        // (p. ej. PostgreSQL, cuyos datos se copian ya limpios) las tablas están vacías y este SQL es de MySQL.
-        if (DB::connection()->getDriverName() === 'mysql') {
-            $this->limpiarDatosMysql();
-        }
-
         $this->ensureUnique('telemetria_chasis', 'dispositivo_id', 'uq_disp_id');
         $this->ensureUnique('telemetria_interfaces', 'interfaz_id', 'uq_interfaz_id');
         $this->ensureUnique('tablas_dispositivo', 'dispositivo_id', 'uq_tablas_disp_id');
@@ -95,80 +87,6 @@ return new class extends Migration
                 $table->dropColumn(['traffic_in_mbps', 'traffic_out_mbps']);
             }
         });
-    }
-
-    private function limpiarDatosMysql(): void
-    {
-        // ---------------- Limpieza de datos simulados ----------------
-        // Interfaces inventadas por snmp_detail_collector.py (MAC 00:1A:2B:3C:xx:xx)
-        // y por el alta manual de dispositivos (MAC 00:1E:F7:28:44:xx, alias PORT-n).
-        $fakeIfaces = DB::table('interfaces_red')
-            ->where(function ($q) {
-                $q->where('mac_address', 'like', '00:1A:2B:3C:%')
-                  ->orWhere(function ($q2) {
-                      $q2->where('mac_address', 'like', '00:1E:F7:28:44:%')
-                         ->where(fn ($q3) => $q3->where('alias', 'like', 'PORT-%')->orWhere('alias', 'UPLINK-MANAGEMENT-PC'));
-                  });
-            })
-            ->pluck('id');
-        foreach ($fakeIfaces->chunk(1000) as $chunk) {
-            DB::table('telemetria_interfaces')->whereIn('interfaz_id', $chunk)->delete();
-            DB::table('enlaces_red')->whereIn('origen_interfaz_id', $chunk)->update(['origen_interfaz_id' => null]);
-            DB::table('enlaces_red')->whereIn('destino_interfaz_id', $chunk)->update(['destino_interfaz_id' => null]);
-            DB::table('interfaces_red')->whereIn('id', $chunk)->delete();
-        }
-
-        // Los crawlers escribían 'VLAN 1' fijo en todos los enlaces sin consultarlo
-        DB::table('enlaces_red')->where('vlans_permitidas', 'VLAN 1')->update(['vlans_permitidas' => null]);
-
-        // Tráfico simulado (18500000 / 9200000) escrito como "octetos"
-        DB::table('telemetria_interfaces')->whereIn('in_octets', [18500000])->update(['in_octets' => null, 'out_octets' => null]);
-
-        // Dúplex, autonegociación, modo, VLAN y PoE nunca se han recolectado del equipo:
-        // los valores guardados son los de por defecto, no mediciones.
-        DB::table('interfaces_red')->update(['duplex' => null, 'autoneg' => null, 'mode' => null, 'vlan_id' => null]);
-        DB::table('telemetria_interfaces')->update(['poe_status' => null]);
-
-        // Chasis: temperatura simulada "Chasis Principal (Óptimo)", RAM/PoE por defecto, uptime ficticio
-        DB::table('telemetria_chasis')->where('sensores_temperatura', 'like', '%Chasis Principal%')
-            ->update(['temperatura_c' => null, 'sensores_temperatura' => null]);
-        DB::table('telemetria_chasis')->update(['poe_total_budget_w' => null, 'poe_used_w' => null, 'poe_available_w' => null]);
-        DB::table('telemetria_chasis')->where(function ($q) {
-            $q->where(fn ($a) => $a->where('ram_total_mb', 4096)->where('ram_used_mb', 1638))
-              ->orWhere(fn ($a) => $a->where('ram_total_mb', 512)->where('ram_used_mb', 128))
-              ->orWhere('ram_total_mb', 0);
-        })->update(['ram_total_mb' => null, 'ram_used_mb' => null]);
-        DB::table('telemetria_chasis')->whereIn('uptime_str', ['Activo en Red', '14d 6h 22m', '0d 0h 0m'])
-            ->update(['uptime_str' => null]);
-        DB::table('telemetria_chasis')->whereIn('serial_number', ['FG100FTK21004859', 'FOC2438L8PQ'])
-            ->orWhere('serial_number', 'like', 'SN-%')->update(['serial_number' => null]);
-
-        // ---------------- Una fila de estado por equipo / interfaz ----------------
-        // tablas_dispositivo: conservar por equipo la fila más reciente que tenga datos
-        DB::statement("
-            DELETE t FROM tablas_dispositivo t
-            JOIN (
-                SELECT dispositivo_id,
-                       COALESCE(MAX(CASE WHEN JSON_LENGTH(COALESCE(mac_table, '[]')) > 0
-                                           OR JSON_LENGTH(COALESCE(arp_table, '[]')) > 0
-                                           OR JSON_LENGTH(COALESCE(vlans_table, '[]')) > 0 THEN id END),
-                                MAX(id)) AS keep_id
-                FROM tablas_dispositivo GROUP BY dispositivo_id
-            ) k ON k.dispositivo_id = t.dispositivo_id
-            WHERE t.id <> k.keep_id
-        ");
-        foreach (['telemetria_chasis' => 'dispositivo_id', 'telemetria_interfaces' => 'interfaz_id'] as $table => $col) {
-            DB::statement("
-                DELETE t FROM {$table} t
-                JOIN (SELECT {$col}, MAX(id) AS keep_id FROM {$table} GROUP BY {$col}) k ON k.{$col} = t.{$col}
-                WHERE t.id <> k.keep_id
-            ");
-        }
-
-        // Huérfanos (sin equipo / sin interfaz) antes de restaurar llaves foráneas
-        DB::statement('DELETE t FROM telemetria_chasis t LEFT JOIN dispositivos d ON d.id = t.dispositivo_id WHERE d.id IS NULL');
-        DB::statement('DELETE t FROM telemetria_interfaces t LEFT JOIN interfaces_red i ON i.id = t.interfaz_id WHERE i.id IS NULL');
-        DB::statement('DELETE t FROM tablas_dispositivo t LEFT JOIN dispositivos d ON d.id = t.dispositivo_id WHERE d.id IS NULL');
     }
 
     private function ensureUnique(string $table, string $column, string $name): void

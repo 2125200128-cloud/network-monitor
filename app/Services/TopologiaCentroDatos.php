@@ -39,7 +39,7 @@ class TopologiaCentroDatos
         // (p. ej. la que anuncia por CDP)
         $identidad = fn (?string $nombre) => $nombre ? strtolower(explode('.', preg_replace('/\(.*?\)/', '', $nombre))[0]) : '';
         $hostnames = $filas->pluck('hostname')->filter()->map($identidad)->unique()->values();
-        $primerSegmento = \App\Support\Sql::esPgsql() ? "SPLIT_PART(d.nombre, '.', 1)" : "SUBSTRING_INDEX(d.nombre, '.', 1)";
+        $primerSegmento = "SPLIT_PART(d.nombre, '.', 1)";
         $disp = DB::table('dispositivos as d')
             ->leftJoin('telemetria_chasis as t', 't.dispositivo_id', '=', 'd.id')
             ->where(fn ($q) => $q->whereIn('d.ip', $ips)->orWhereIn(DB::raw("LOWER({$primerSegmento})"), $hostnames))

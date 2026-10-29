@@ -409,9 +409,7 @@ class WebServicePoller
             return;
         }
 
-        $p95 = Sql::esPgsql()
-            ? 'percentile_cont(0.95) WITHIN GROUP (ORDER BY tiempo_respuesta_ms)'
-            : 'AVG(tiempo_respuesta_ms) * 1.5';   // MySQL no tiene percentiles: aproximación
+        $p95 = 'percentile_cont(0.95) WITHIN GROUP (ORDER BY tiempo_respuesta_ms)';
         $filas = DB::table('historico_servicio_web')
             ->where('created_at', '>=', now()->subDays(7))
             ->whereBetween('codigo_http', [200, 399])

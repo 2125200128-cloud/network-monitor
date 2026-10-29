@@ -471,7 +471,7 @@ async def inspect_device(snmp, ip, is_seed, probe_timeout):
 
 
 # ============================================================================
-#  Persistencia en la BD de Laravel (MySQL o PostgreSQL, con caché en memoria)
+#  Persistencia en la BD de Laravel (PostgreSQL, con caché en memoria)
 # ============================================================================
 class Store:
     def __init__(self, community):

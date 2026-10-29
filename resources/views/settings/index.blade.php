@@ -579,6 +579,13 @@
                         </div>
                         <input type="password" name="esxi_password" x-model="contrasena" autocomplete="new-password" placeholder="{{ $esxi['clave_guardada'] ? 'Sin cambios' : 'Contraseña' }}" class="settings-input font-mono" style="width: 260px;">
                     </div>
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Datastores ignorados</div>
+                            <div class="settings-row-desc">Uno por línea. No se guardan ni generan alarmas: úsalo para un volumen retirado que los hosts siguen listando. Lo correcto es desmontarlo en VMware.</div>
+                        </div>
+                        <textarea name="esxi_datastores_ignorados" rows="3" placeholder="Ninguno" class="settings-input font-mono" style="width: 260px;">{{ old('esxi_datastores_ignorados', $settings->esxi_datastores_ignorados) }}</textarea>
+                    </div>
                     <div class="flex flex-wrap items-center justify-end gap-3 mt-5">
                         <span class="text-xs font-semibold mr-auto max-w-xl" :class="ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'" x-text="aviso"></span>
                         @if($esxi['configurado'])
@@ -1290,15 +1297,21 @@
                         </div>
                     </div>
 
+                    @foreach([
+                        ['campo' => 'chatId', 'nombre' => 'telegram_chat_id', 'etiqueta' => 'Chat de redes',
+                         'desc' => 'Switches, firewalls, routers, APs y teléfonos. Si no defines el chat de servidores, aquí llega todo.'],
+                        ['campo' => 'chatServidores', 'nombre' => 'telegram_chat_id_servidores', 'etiqueta' => 'Chat de servidores y webs (opcional)',
+                         'desc' => 'Servidores, virtualización (ESXi, VMs, datastores) y sitios web. Vacío = estas alarmas también van al chat de redes.'],
+                    ] as $fila)
                     <div class="settings-row">
                         <div>
-                            <div class="settings-row-label">Chat ID</div>
-                            <div class="settings-row-desc">Escribe cualquier mensaje al bot (o agrégalo a tu grupo y escribe en él) y pulsa <b>Detectar</b>.</div>
-                            <template x-if="chats.length">
+                            <div class="settings-row-label">{{ $fila['etiqueta'] }}</div>
+                            <div class="settings-row-desc">{{ $fila['desc'] }}<br>Agrega el bot al grupo, escribe cualquier mensaje en él y pulsa <b>Detectar</b>.</div>
+                            <template x-if="chats.length && destino === '{{ $fila['campo'] }}'">
                                 <div class="mt-2 flex flex-wrap gap-2">
                                     <template x-for="c in chats" :key="c.id">
-                                        <button type="button" @click="chatId = c.id" class="text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
-                                                :class="chatId === c.id ? 'ring-2 ring-black dark:ring-white' : ''">
+                                        <button type="button" @click="{{ $fila['campo'] }} = c.id" class="text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                :class="{{ $fila['campo'] }} === c.id ? 'ring-2 ring-black dark:ring-white' : ''">
                                             <span x-text="c.nombre || c.id"></span> <span class="text-slate-400" x-text="'(' + c.tipo + ')'"></span>
                                         </button>
                                     </template>
@@ -1306,10 +1319,11 @@
                             </template>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="text" name="telegram_chat_id" x-model="chatId" autocomplete="off" placeholder="-1001234567890" class="settings-input font-mono font-bold" style="width: 200px;">
-                            <button type="button" @click="detectar()" :disabled="cargando" class="text-xs font-bold px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50">Detectar</button>
+                            <input type="text" name="{{ $fila['nombre'] }}" x-model="{{ $fila['campo'] }}" autocomplete="off" placeholder="-1001234567890" class="settings-input font-mono font-bold" style="width: 200px;">
+                            <button type="button" @click="detectar('{{ $fila['campo'] }}')" :disabled="cargando" class="text-xs font-bold px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50">Detectar</button>
                         </div>
                     </div>
+                    @endforeach
 
                     <div class="settings-row">
                         <div>
@@ -1361,14 +1375,17 @@
                             return j;
                         };
                         return {
-                            token: '', chatId: @json(old('telegram_chat_id', $settings->telegram_chat_id) ?? ''), chats: [], aviso: '', ok: true, cargando: false,
-                            async detectar() {
+                            token: '', chatId: @json(old('telegram_chat_id', $settings->telegram_chat_id) ?? ''),
+                            chatServidores: @json(old('telegram_chat_id_servidores', $settings->telegram_chat_id_servidores) ?? ''),
+                            destino: 'chatId', chats: [], aviso: '', ok: true, cargando: false,
+                            async detectar(destino) {
+                                this.destino = destino;
                                 this.cargando = true; this.aviso = 'Consultando al bot…'; this.ok = true;
                                 const j = await llamar(@json(route('settings.telegram.chats')), { token: this.token });
                                 this.cargando = false; this.ok = !!j.ok;
                                 if (!j.ok) { this.aviso = j.mensaje; return; }
                                 this.chats = j.chats;
-                                if (j.chats.length === 1) this.chatId = j.chats[0].id;
+                                if (j.chats.length === 1) this[destino] = j.chats[0].id;
                                 this.aviso = j.chats.length
                                     ? `Bot ${j.bot}: ${j.chats.length} chat(s) encontrados. Elige uno y guarda.`
                                     : `Bot ${j.bot} válido, pero nadie le ha escrito en las últimas 24 h. Escríbele un mensaje y vuelve a pulsar Detectar.`;
