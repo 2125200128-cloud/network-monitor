@@ -13,6 +13,19 @@ set MY_IP=127.0.0.1
 for /f "usebackq tokens=*" %%i in (`powershell -NoProfile -Command "(Get-NetRoute -DestinationPrefix 0.0.0.0/0 | Sort-Object { $_.RouteMetric + $_.InterfaceMetric } | ForEach-Object { Get-NetIPAddress -InterfaceIndex $_.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue } | Where-Object { $_.IPAddress -notlike '169.254.*' -and $_.IPAddress -notlike '127.*' } | Select-Object -ExpandProperty IPAddress -First 1)"`) do set MY_IP=%%i
 
 echo ==========================================================
+echo   ATENCION: el monitor de produccion ya corre en el servidor
+echo   https://10.4.150.194
+echo.
+echo   Iniciarlo tambien aqui sondea la red dos veces y manda cada
+echo   alerta de Telegram por duplicado. Para programar y probar
+echo   cambios usa iniciar_desarrollo.bat (solo la web, sin workers).
+echo.
+echo   Usalo aqui solo si el servidor esta caido.
+echo ==========================================================
+set /p CONFIRMA=Escribe SI para iniciar el monitor completo en esta PC: 
+if /i not "%CONFIRMA%"=="SI" exit /b
+echo.
+echo ==========================================================
 echo   NETWORK MONITOR NOC - Iniciando servicios
 echo ==========================================================
 

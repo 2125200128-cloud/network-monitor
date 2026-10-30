@@ -76,6 +76,25 @@ curl -I http://localhost                # 302 hacia /login
 
 En la web: el dashboard debe mostrar equipos en línea en menos de un minuto y **Configuración → Notificaciones → Enviar prueba** debe llegar a Telegram.
 
+## Cambios y actualizaciones
+
+El servidor es **producción**. El equipo Windows queda para **desarrollo**: se programa y se prueba ahí, y el servidor solo recibe versiones ya probadas.
+
+1. **Programar y probar en Windows** con `iniciar_desarrollo.bat`: solo la web en `http://localhost:8000`, con la copia local de la base. No sondea la red ni manda Telegram. No uses `iniciar_monitor.bat` mientras el servidor funcione: duplicaría el sondeo y cada alerta de Telegram.
+2. **Subir el cambio** (PowerShell, en la carpeta del proyecto):
+   ```powershell
+   git add -A
+   git commit -m "qué cambió y por qué"
+   git push
+   ```
+3. **Aplicarlo en el servidor**: `cd /var/www/network-monitor && sudo bash deploy/actualizar.sh`. Descarga el código, compila, **respalda la base** y luego migra y reinicia los servicios. Al final muestra la versión anterior y el respaldo que hizo.
+4. **Revisar**: la web, y `sudo journalctl -u nm-poller --no-pager | grep -E 'SHARD|CYCLE' | tail -9` si el cambio tocó el sondeo.
+
+Si una actualización sale mal:
+
+- **Solo el código**: en Windows `git revert HEAD` y `git push`, y de nuevo `actualizar.sh`. Regresa a la versión anterior sin perder el historial.
+- **También los datos** (una migración que dañó algo): `sudo bash deploy/importar-datos.sh /var/backups/network-monitor/<respaldo previo>.dump`, el que mostró `actualizar.sh`.
+
 ## Operación diaria
 
 | Tarea | Comando |
