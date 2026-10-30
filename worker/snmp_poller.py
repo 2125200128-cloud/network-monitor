@@ -40,6 +40,7 @@ POLL_INTERVAL = 5       # mínimo entre ciclos: en la práctica un ciclo empieza
 # (16 núcleos → 8 en el equipo Windows, 6 → 6 en el servidor). NM_PROCESOS en el entorno lo fija a mano.
 SHARDS = int(os.environ.get('NM_PROCESOS') or max(2, min(8, os.cpu_count() or 2)))
 CONCURRENCY = 24        # equipos a la vez por proceso (ping y SNMP de cada uno van en paralelo)
+PESO_EQUIPO = 20        # costo fijo de un equipo (ping, consultas sueltas) medido en "interfaces" para repartir()
 LIMITE_SHARD_S = 120    # si un proceso no termina su parte en este tiempo, se reinicia
 PING_COUNT = 3
 SATURATION_PCT = 80.0
@@ -682,19 +683,36 @@ def save_global_metrics(results):
         conn.close()
 
 
+def repartir(devices, n):
+    """{id: proceso}. Reparte por peso (interfaces que se leen en cada ciclo), no por id: el core con 1,400
+    interfaces cuesta lo que decenas de equipos pequeños, y con id % n un proceso se llevaba 2,555 interfaces
+    mientras otro 518. Cada equipo va al proceso menos cargado, del más pesado al más ligero; el orden
+    es fijo, así todos los procesos calculan el mismo reparto."""
+    cargas = [0] * n
+    asignado = {}
+    for d in sorted(devices, key=lambda d: (-d['n_interfaces'], d['id'])):
+        k = cargas.index(min(cargas))
+        cargas[k] += PESO_EQUIPO + d['n_interfaces']
+        asignado[d['id']] = k
+    return asignado
+
+
 async def run_poll_cycle(shard=None):
-    """Sondea los equipos (todos, o solo los de shard=(k, n): id % n == k).
+    """Sondea los equipos (todos, o solo los que repartir() asigna a shard=(k, n)).
     Sin shard guarda también las métricas globales; con shard devuelve los resultados al proceso principal."""
     conn = get_db_connection()
     if not conn:
         return []
     cursor = conn.cursor(dictionary=True)
-    sql = f"SELECT id, nombre, ip, {COMUNIDAD_EFECTIVA_SQL} FROM dispositivos WHERE ip IS NOT NULL AND ip <> '0.0.0.0'"
-    if shard:
-        sql += f" AND MOD(id, {int(shard[1])}) = {int(shard[0])}"
-    cursor.execute(sql)
+    cursor.execute(f"""
+        SELECT id, nombre, ip, {COMUNIDAD_EFECTIVA_SQL},
+               (SELECT COUNT(*) FROM interfaces_red i WHERE i.dispositivo_id = dispositivos.id) AS n_interfaces
+        FROM dispositivos WHERE ip IS NOT NULL AND ip <> '0.0.0.0'""")
     devices = cursor.fetchall()
     conn.close()
+    if shard:
+        asignado = repartir(devices, shard[1])
+        devices = [d for d in devices if asignado[d['id']] == shard[0]]
 
     thresholds = load_thresholds()
     engine = SnmpEngine()
