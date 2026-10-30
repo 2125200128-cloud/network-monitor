@@ -35,7 +35,10 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
 
 DB_CONFIG = db_config()
-POLL_INTERVAL = 5       # mínimo entre ciclos: en la práctica un ciclo empieza en cuanto termina el anterior (~6-8 s)
+# Segundos entre el inicio de un ciclo y el siguiente. Si el ciclo tarda más, el siguiente empieza en cuanto termina.
+# El sondeo es intensivo en CPU (decodificar SNMP): sin pausa ocupa todos los núcleos que tenga y deja sin CPU
+# a la web y a PostgreSQL. NM_INTERVALO en el entorno lo cambia (el servicio de Ubuntu usa 12).
+POLL_INTERVAL = int(os.environ.get('NM_INTERVALO') or 5)
 # Procesos de sondeo: casi todo el tiempo esperan respuestas de ping/SNMP, así que uno por núcleo no satura
 # (16 núcleos → 8 en el equipo Windows, 6 → 6 en el servidor). NM_PROCESOS en el entorno lo fija a mano.
 SHARDS = int(os.environ.get('NM_PROCESOS') or max(2, min(8, os.cpu_count() or 2)))
