@@ -8,7 +8,7 @@ Guía para instalar la aplicación en **Ubuntu Server 24.04 LTS** y traer los da
 |---|---|
 | Nginx + PHP 8.3-FPM | La aplicación web (Laravel 12) |
 | PostgreSQL 18 | La base de datos (misma versión que el equipo actual) |
-| `nm-poller` | Sondeo ICMP/SNMP continuo de todos los equipos (~8 s por vuelta; repartido en varios procesos, uno por cada 2 núcleos, máx. 8) |
+| `nm-poller` | Sondeo ICMP/SNMP continuo de todos los equipos (~8 s por vuelta; repartido en varios procesos, uno por núcleo, máx. 8) |
 | `nm-detalle` | Colector SNMP de detalle cada 5 min (puertos, hardware, PoE, FortiGate) |
 | `nm-clasificador` | Clasifica los equipos por evidencia SNMP/CDP/LLDP cada hora |
 | `nm-esxi` | Lee cada host ESXi por su API cada minuto (CPU, memoria, sensores, VMs, datastores). Usuario y contraseña en Ajustes → Hosts ESXi |
