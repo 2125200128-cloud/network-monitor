@@ -44,6 +44,7 @@ POLL_INTERVAL = int(os.environ.get('NM_INTERVALO') or 5)
 SHARDS = int(os.environ.get('NM_PROCESOS') or max(2, min(8, os.cpu_count() or 2)))
 CONCURRENCY = 24        # equipos a la vez por proceso (ping y SNMP de cada uno van en paralelo)
 PESO_EQUIPO = 20        # costo fijo de un equipo (ping, consultas sueltas) medido en "interfaces" para repartir()
+LIMITE_TABLAS_S = 6     # tiempo máximo para las tablas de un equipo (el core, con 1,400 interfaces, tarda ~2.5 s)
 LIMITE_SHARD_S = 120    # si un proceso no termina su parte en este tiempo, se reinicia
 PING_COUNT = 3
 SATURATION_PCT = 80.0
@@ -362,6 +363,20 @@ async def collect_snmp(engine, ip, community):
 
     data['sessions'] = _int(vals[11])
 
+    try:
+        data.update(await asyncio.wait_for(_tablas(engine, auth, target), LIMITE_TABLAS_S))
+    except asyncio.TimeoutError:
+        # Equipos que pierden paquetes con varias consultas a la vez (tarjetas Carel de los aires): cada pérdida
+        # cuesta 3 s y retrasaban 10-12 s el ciclo de todo su proceso. Se conserva lo leído arriba (uptime, CPU,
+        # memoria) y las tablas quedan para el siguiente ciclo.
+        data.update({'sensores': [], 'temp_c': None, 'hc': True, 'if_type': {}, 'oper': {}, 'speed': {},
+                     'in': {}, 'out': {}, 'in_err': {}, 'out_err': {}, 'in_disc': {}, 'out_disc': {}})
+    return data
+
+
+async def _tablas(engine, auth, target):
+    """Sensores de temperatura e interfaces (consultas de tabla) de un equipo que ya respondió SNMP."""
+    data = {}
     # Las consultas de tabla van en paralelo (antes una tras otra: era lo que alargaba el ciclo)
     (temps, if_type, oper, speed, hc_in, hc_out, in_err, out_err, in_disc, out_disc) = await asyncio.gather(
         snmp_walk(engine, auth, target, TEMP_VALUE),
