@@ -484,6 +484,7 @@ async def poll_device(dev, engine, sem, thresholds, pings, conn):
     """conn es la conexión del ciclo, compartida: entre el primer execute y el commit no hay ningún await,
     así que dos equipos nunca se mezclan en la misma transacción."""
     async with sem:
+        t_ini = time.time()
         dev_id = dev['id']
         ip = dev['ip']
         name = dev['nombre']
@@ -521,7 +522,7 @@ async def poll_device(dev, engine, sem, thresholds, pings, conn):
                 mark_device_offline(cursor, dev_id)
                 _prev_counters.pop(dev_id, None)
                 conn.commit()
-                return {'id': dev_id, 'online': False}
+                return {'id': dev_id, 'online': False, 'ip': ip, 'seg': round(time.time() - t_ini, 2)}
 
             # Pérdida real solo si ICMP respondió al menos una vez; si ICMP está filtrado
             # pero SNMP responde, la pérdida es desconocida.
@@ -645,6 +646,7 @@ async def poll_device(dev, engine, sem, thresholds, pings, conn):
             return {
                 'id': dev_id, 'online': True, 'cpu': cpu, 'mem': mem, 'ping': ping_ms,
                 'loss': packet_loss, 'in': mbps_in, 'out': mbps_out, 'util': util_values,
+                'ip': ip, 'seg': round(time.time() - t_ini, 2),
             }
         except Exception as e:
             print(f"[{ip}] Error guardando métricas: {e}", flush=True)
@@ -712,6 +714,7 @@ def repartir(devices, n):
 async def run_poll_cycle(shard=None):
     """Sondea los equipos (todos, o solo los que repartir() asigna a shard=(k, n)).
     Sin shard guarda también las métricas globales; con shard devuelve los resultados al proceso principal."""
+    t_ciclo = time.time()
     conn = get_db_connection()
     if not conn:
         return []
@@ -739,6 +742,11 @@ async def run_poll_cycle(shard=None):
     finally:
         conn.close()
     results = [r for r in results if isinstance(r, dict)]
+    if shard:
+        # El ciclo dura lo que el proceso más lento: así se ve en la bitácora qué equipo lo retrasa
+        lentos = sorted(results, key=lambda r: -r['seg'])[:3]
+        print(f"[SHARD {shard[0]}] {len(devices)} equipos en {time.time() - t_ciclo:.1f}s · más lentos: "
+              + ', '.join(f"{r['ip']} {r['seg']}s" for r in lentos), flush=True)
     if not shard:
         save_global_metrics(results)
     return results
