@@ -36,7 +36,9 @@ if hasattr(sys.stdout, 'reconfigure'):
 
 DB_CONFIG = db_config()
 POLL_INTERVAL = 5       # mínimo entre ciclos: en la práctica un ciclo empieza en cuanto termina el anterior (~6-8 s)
-SHARDS = max(1, min(8, (os.cpu_count() or 2) // 2))   # procesos de sondeo (deja núcleos libres para web y BD)
+# Procesos de sondeo: casi todo el tiempo esperan respuestas de ping/SNMP, así que uno por núcleo no satura
+# (16 núcleos → 8 en el equipo Windows, 6 → 6 en el servidor). NM_PROCESOS en el entorno lo fija a mano.
+SHARDS = int(os.environ.get('NM_PROCESOS') or max(2, min(8, os.cpu_count() or 2)))
 CONCURRENCY = 24        # equipos a la vez por proceso (ping y SNMP de cada uno van en paralelo)
 LIMITE_SHARD_S = 120    # si un proceso no termina su parte en este tiempo, se reinicia
 PING_COUNT = 3
