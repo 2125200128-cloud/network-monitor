@@ -220,6 +220,15 @@ def icmp_probe(host, count=PING_COUNT):
 # ----------------------------------------------------------------------------
 #  SNMP
 # ----------------------------------------------------------------------------
+def _texto(v):
+    """Texto de un OctetString. Sin lookupMib llega como bytes crudos: prettyPrint lo daría en hexadecimal
+    si trae acentos u otro carácter fuera de ASCII."""
+    try:
+        return v.asOctets().decode('utf-8', errors='replace').strip()
+    except Exception:
+        return str(v.prettyPrint()).strip()
+
+
 def _int(v):
     try:
         if v is None or v.__class__.__name__ in ('NoSuchObject', 'NoSuchInstance', 'EndOfMibView', 'Null'):
@@ -234,10 +243,11 @@ async def snmp_walk(engine, auth, target, base_oid):
     root = tuple(int(x) for x in base_oid.split('.'))
     result = {}
     try:
+        # lookupMib=False: sin traducir cada OID a su nombre en los MIB; era la mitad del CPU de cada ciclo
         async for err_ind, err_stat, _, vbs in bulk_walk_cmd(
                 engine, auth, target, ContextData(), 0, 40,
                 ObjectType(ObjectIdentity(base_oid)),
-                lexicographicMode=False, ignoreNonIncreasingOid=True):
+                lexicographicMode=False, ignoreNonIncreasingOid=True, lookupMib=False):
             if err_ind or err_stat:
                 break
             for name, val in vbs:
@@ -261,14 +271,14 @@ async def snmp_walk_text(engine, auth, target, base_oid):
         async for err_ind, err_stat, _, vbs in bulk_walk_cmd(
                 engine, auth, target, ContextData(), 0, 40,
                 ObjectType(ObjectIdentity(base_oid)),
-                lexicographicMode=False, ignoreNonIncreasingOid=True):
+                lexicographicMode=False, ignoreNonIncreasingOid=True, lookupMib=False):
             if err_ind or err_stat:
                 break
             for name, val in vbs:
                 oid_t = tuple(name)
                 if oid_t[:len(root)] != root:
                     return result
-                result[oid_t[-1]] = str(val.prettyPrint()).strip()
+                result[oid_t[-1]] = _texto(val)
     except Exception:
         pass
     return result
@@ -308,7 +318,7 @@ async def collect_snmp(engine, ip, community):
         target = await UdpTransportTarget.create((ip, 161), timeout=1.5, retries=1)
         err_ind, err_stat, _, vbs = await get_cmd(
             engine, auth, target, ContextData(),
-            *[ObjectType(ObjectIdentity(o)) for o in SCALAR_OIDS]
+            *[ObjectType(ObjectIdentity(o)) for o in SCALAR_OIDS], lookupMib=False
         )
     except Exception:
         return None
@@ -324,8 +334,7 @@ async def collect_snmp(engine, ip, community):
         'ram_total_mb': None, 'ram_used_mb': None, 'sessions': None,
     }
     try:
-        d = str(vals[1].prettyPrint()).strip()
-        data['sys_descr'] = d or None
+        data['sys_descr'] = _texto(vals[1]) or None
     except Exception:
         pass
 
@@ -471,7 +480,9 @@ async def _ping_de(pings, ip):
         return PING_COUNT, 0, None
 
 
-async def poll_device(dev, engine, sem, thresholds, pings):
+async def poll_device(dev, engine, sem, thresholds, pings, conn):
+    """conn es la conexión del ciclo, compartida: entre el primer execute y el commit no hay ningún await,
+    así que dos equipos nunca se mezclan en la misma transacción."""
     async with sem:
         dev_id = dev['id']
         ip = dev['ip']
@@ -503,9 +514,6 @@ async def poll_device(dev, engine, sem, thresholds, pings):
         else:
             _sin_ping.discard(dev_id)
 
-        conn = get_db_connection()
-        if not conn:
-            return None
         cursor = conn.cursor(dictionary=True)
         try:
             if received == 0 and snmp is None:
@@ -640,10 +648,11 @@ async def poll_device(dev, engine, sem, thresholds, pings):
             }
         except Exception as e:
             print(f"[{ip}] Error guardando métricas: {e}", flush=True)
-            conn.rollback()
+            try:
+                conn.rollback()
+            except Exception:
+                pass
             return None
-        finally:
-            conn.close()
 
 
 def _avg(values):
@@ -712,7 +721,7 @@ async def run_poll_cycle(shard=None):
                (SELECT COUNT(*) FROM interfaces_red i WHERE i.dispositivo_id = dispositivos.id) AS n_interfaces
         FROM dispositivos WHERE ip IS NOT NULL AND ip <> '0.0.0.0'""")
     devices = cursor.fetchall()
-    conn.close()
+    conn.commit()
     if shard:
         asignado = repartir(devices, shard[1])
         devices = [d for d in devices if asignado[d['id']] == shard[0]]
@@ -723,8 +732,12 @@ async def run_poll_cycle(shard=None):
     sem = asyncio.Semaphore(concurrencia)
     # Todos los pings del ciclo salen ya, en el proceso de ping, mientras aquí se consulta SNMP
     pings = asyncio.get_running_loop().run_in_executor(_proceso_ping(), ping_lote, [d['ip'] for d in devices])
-    results = await asyncio.gather(*[poll_device(d, engine, sem, thresholds, pings) for d in devices],
-                                   return_exceptions=True)
+    # Una conexión para todo el ciclo: abrir una por equipo (260 inicios de sesión SCRAM) era la otra mitad del CPU
+    try:
+        results = await asyncio.gather(*[poll_device(d, engine, sem, thresholds, pings, conn) for d in devices],
+                                       return_exceptions=True)
+    finally:
+        conn.close()
     results = [r for r in results if isinstance(r, dict)]
     if not shard:
         save_global_metrics(results)
