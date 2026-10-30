@@ -27,7 +27,8 @@ echo "==> Parches de PHP"
 # Además de las actualizaciones automáticas: al actualizar el sistema, PHP queda con lo último de noble-security
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-apt-get install -y -qq --only-upgrade $(dpkg-query -W -f='${binary:Package}\n' "php${PHP_V}*" 2>/dev/null)
+# Solo los instalados ("ii"): dpkg también recuerda paquetes virtuales como php8.3-json, que apt no puede instalar
+apt-get install -y -qq --only-upgrade $(dpkg-query -W -f='${db:Status-Abbrev} ${binary:Package}\n' "php${PHP_V}*" 2>/dev/null | awk '$1 == "ii" {print $2}')
 zgrep -qs 'CVE-2026-109618' /usr/share/doc/php${PHP_V}-*/changelog.Debian.gz \
     || echo "[!] PHP ${PHP_V} todavía sin el parche de PHP2Shell (CVE-2026-109618): Ubuntu aún no lo publica o falta el repositorio de seguridad"
 
