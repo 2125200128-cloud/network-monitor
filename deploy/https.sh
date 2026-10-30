@@ -100,6 +100,8 @@ paso "Nginx"
 # Sitios instalados antes de que nginx.conf trajera el include
 grep -q 'network-monitor-tl' "$SITIO" \
     || sed -i "0,/server_name .*;/s##&\n    include /etc/nginx/snippets/network-monitor-tl[s].conf;#" "$SITIO"
+# El sitio responde con los mismos nombres e IPs que cubre el certificado
+sed -i -E "s/^(\s*)server_name .*;/\1server_name ${NOMBRES};/" "$SITIO"
 nginx -t
 systemctl reload nginx
 if command -v ufw >/dev/null && ufw status | grep -q "Status: active"; then
