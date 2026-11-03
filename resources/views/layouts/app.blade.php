@@ -311,6 +311,13 @@
                 'svg'    => '<rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect>',
             ],
             [
+                'href'   => route('equipos.index'),
+                'active' => request()->is('equipos*'),
+                'title'  => 'Equipos de red: inventario, salud y diagnóstico',
+                'label'  => 'Equipos',
+                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M3 6h.01M3 12h.01M3 18h.01M8 6h13M8 12h13M8 18h13"></path>',
+            ],
+            [
                 'href'   => route('topologia.index'),
                 'active' => request()->is('topologia*'),
                 'title'  => 'Mapa de Topología',
@@ -485,10 +492,11 @@
         @endif
 
         <!-- ==================== MOBILE FLOATING BOTTOM BAR ==================== -->
-        <nav id="navMovilInferior" class="fixed bottom-3 left-3 right-3 z-50 flex md:hidden items-center justify-around nm-glass p-2 rounded-2xl shadow-2xl transition-all">
+        {{-- 9 secciones no caben en un teléfono angosto: la barra se desliza de lado --}}
+        <nav id="navMovilInferior" class="fixed bottom-3 left-3 right-3 z-50 flex md:hidden items-center justify-between gap-1 overflow-x-auto nm-glass p-2 rounded-2xl shadow-2xl transition-all">
             @foreach($navItems as $item)
             <a href="{{ $item['href'] }}" title="{{ $item['title'] }}" @if($item['active']) aria-current="page" @endif
-               class="flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-bold transition active:scale-95 {{ $item['active'] ? 'text-hacienda-blue dark:text-blue-300 bg-slate-100 dark:bg-slate-800/80' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}" aria-label="{{ $item['title'] }}">
+               class="shrink-0 flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-bold transition active:scale-95 {{ $item['active'] ? 'text-hacienda-blue dark:text-blue-300 bg-slate-100 dark:bg-slate-800/80' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}" aria-label="{{ $item['title'] }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75" aria-hidden="true">{!! $item['svg'] !!}</svg>
                 <span class="text-[11px] leading-none">{{ $item['label'] }}</span>
             </a>
@@ -613,6 +621,9 @@
                     { nombre: 'Topología', url: @json(route('topologia.index')) },
                     { nombre: 'Centro de datos', url: @json(route('topologia.centro_datos')) },
                     { nombre: 'Servicios web', url: @json(route('servicios_web.index')) },
+                    { nombre: 'Firewalls', url: @json(route('firewalls.index')) },
+                    { nombre: 'Virtualización', url: @json(route('virtualizacion.index')) },
+                    { nombre: 'Equipos', url: @json(route('equipos.index')) },
                     { nombre: 'Esta página', url: location.pathname + location.search },
                 ],
                 abrirPanel() { this.abierto = !this.abierto; this.aviso = ''; },

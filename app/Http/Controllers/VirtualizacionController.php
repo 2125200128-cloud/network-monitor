@@ -97,7 +97,7 @@ class VirtualizacionController extends Controller
         // VMs y datastores de todos los hosts leídos. Un datastore compartido aparece una vez (se agrupa por su URL,
         // no por nombre). Cada host reporta su propia copia del espacio libre y no siempre coinciden: se usa la menor
         // y se guarda el rango para mostrarlo.
-        $vms = $filas->flatMap(fn ($f) => collect($f['api']['vms'] ?? [])->map(fn ($v) => $v + ['host' => $f['nombre'], 'host_id' => $f['id']]));
+        $vms = $filas->flatMap(fn ($f) => collect($f['api']['vms'] ?? [])->map(fn ($v) => $v + ['host' => $f['nombre'], 'host_id' => $f['id'], 'host_ip' => $f['ip']]));
         $datastores = $filas->flatMap(fn ($f) => collect($f['api']['datastores'] ?? [])->map(fn ($ds) => $ds + ['host' => $f['nombre']]))
             ->groupBy(fn ($ds) => $ds['url'] ?? $ds['host'] . '|' . $ds['nombre'])->map(function ($g) {
                 $ds = $g->first();
@@ -116,6 +116,18 @@ class VirtualizacionController extends Controller
 
         $vc = $vcenter->resumen();
         $ultimaLectura = $estados->max('leido_en');
+
+        // Botones para entrar: la consola web de cada host (ESXi Host Client) y, si el vCenter se puede leer,
+        // la página del host / VM en el vSphere Client. Solo ligas: cada quien entra con su usuario.
+        $ligas = $vcenter->ligas();
+        $filas = $filas->map(fn ($f) => $f + [
+            'consola' => $f['es_vcenter'] ? (VcenterService::base() ?? "https://{$f['ip']}") . '/ui/' : "https://{$f['ip']}/ui/",
+            'en_vcenter' => $ligas['hosts'][mb_strtolower($f['nombre'])] ?? $ligas['hosts'][$f['ip']] ?? null,
+        ]);
+        $vms = $vms->map(fn ($v) => $v + [
+            'url_host' => isset($v['id']) ? "https://{$v['host_ip']}/ui/#/host/vms/{$v['id']}" : null,
+            'url_vcenter' => $ligas['vms'][mb_strtolower($v['nombre'] ?? '')] ?? null,
+        ]);
 
         return view('virtualizacion.index', [
             'filas' => $filas->where('es_vcenter', false)->values()->all(),

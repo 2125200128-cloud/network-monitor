@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Dispositivo;
+use App\Support\AccesoWeb;
 use App\Support\Sql;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -49,6 +50,7 @@ class FirewallsService
             'disponibilidad_24h' => $disponibilidad[$d->id] ?? null,
             'ping_ms' => $d->ultimaMetrica?->ping_ms,
             'perdida_pct' => $d->ultimaMetrica?->packet_loss,
+            'consola' => $d->ip ? AccesoWeb::url($d->ip) : null,
         ]);
         // Interfaces con más uso, solo de los que responden SNMP
         $filas = $filas->map(fn ($f) => $f + ['interfaces' => $f['snmp'] ? $this->interfacesTop($f['id']) : []]);

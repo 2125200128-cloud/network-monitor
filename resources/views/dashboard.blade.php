@@ -356,15 +356,30 @@
                         $nombreCompleto = $prefijo ? $prefijo . ' ' . $nombreUsuario : $nombreUsuario;
                     @endphp
                     <h2 class="text-2xl lg:text-4xl font-bold mb-2 text-gray-900 dark:text-white leading-tight">{{ $saludo }}, {{ $nombreCompleto }}!</h2>
-                    <p class="text-gray-500 dark:text-slate-400 text-sm lg:text-lg max-w-2xl" data-refrescar="resumen">
-                        <span class="font-bold text-hacienda-blue dark:text-blue-400">{{ $dispositivosOnline }}</span> de {{ $totalDispositivos }} dispositivos responden al sondeo.
-                        @if($dispositivosOffline > 0)
-                            <span class="font-bold text-red-600">{{ $dispositivosOffline }} sin respuesta</span>.
-                        @endif
-                        @if($dispositivosWarning > 0)
-                            <span class="font-bold text-amber-600">{{ $dispositivosWarning }} con advertencia</span>.
-                        @endif
-                    </p>
+                    @php
+                        $incRes = $resumen['incidentes'];
+                        $nombres = fn ($claves) => collect($claves)->map(fn ($k) => \App\Services\ResumenSectores::SECTORES[$k]['nombre'])->join(', ', ' y ');
+                        $conAlarma = collect($resumen['sectores'])->filter(fn ($s) => in_array($s['tono'], ['crit', 'warn'], true))->keys();
+                        $sinNovedad = collect($resumen['sectores'])->filter(fn ($s) => $s['tono'] === 'ok')->keys();
+                        $workers = $paneles['cobertura']['workers'];
+                        $workersOk = collect($workers)->where('ok', true)->count();
+                    @endphp
+                    <div data-refrescar="resumen">
+                        <p class="text-gray-500 dark:text-slate-400 text-sm lg:text-lg max-w-2xl">
+                            @if($incRes['total'] === 0)
+                                <span class="font-bold text-emerald-600 dark:text-emerald-400">Todo en orden:</span> sin incidentes activos en ningún sector.
+                            @else
+                                <span class="font-bold {{ $incRes['criticas'] ? 'text-red-600' : 'text-amber-600' }}">{{ $incRes['total'] }} {{ $incRes['total'] === 1 ? 'incidente activo' : 'incidentes activos' }}</span>@if($incRes['criticas']) ({{ $incRes['criticas'] }} {{ $incRes['criticas'] === 1 ? 'crítico' : 'críticos' }})@endif
+                                en {{ $nombres($conAlarma) }}.
+                                @if($sinNovedad->isNotEmpty()) Sin novedad en {{ $nombres($sinNovedad) }}.@endif
+                            @endif
+                        </p>
+                        <p class="mt-2 inline-flex items-center gap-2 text-xs font-semibold {{ $workersOk === count($workers) ? 'text-gray-400 dark:text-slate-500' : 'text-red-600 dark:text-red-400' }}"
+                           title="{{ collect($workers)->map(fn ($w) => $w['nombre'] . ': ' . $w['edad'])->join(' · ') }}">
+                            <span class="w-2 h-2 rounded-full {{ $workersOk === count($workers) ? 'bg-emerald-500' : 'bg-red-500 animate-pulse' }}"></span>
+                            Recolección de datos: {{ $workersOk }} de {{ count($workers) }} procesos al día
+                        </p>
+                    </div>
                 </div>
                 
                 <!-- Illustration Placeholder -->
@@ -374,74 +389,20 @@
                 </div>
             </div>
 
-            <div data-refrescar="salud">
-                @include('dashboard.partials.salud')
+            {{-- Estado de cada sector --}}
+            <div data-refrescar="sectores">
+                @include('dashboard.partials.sectores', ['sectores' => $resumen['sectores']])
             </div>
 
-            <!-- Mini Stat Cards (NOC Time Series) -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <!-- Card 1: Tráfico -->
-                <div class="floating-card nm-metal-navy p-5 flex flex-col justify-between relative overflow-hidden">
-                    <x-kpi-escena tipo="trafico" tono="claro" />
-                    <div class="relative flex justify-between items-start mb-2">
-                        <div>
-                            <p class="text-xs font-bold text-white/75 uppercase tracking-wider font-mono">Tráfico de Red</p>
-                            <div class="flex items-baseline gap-1 mt-1">
-                                <span class="text-2xl font-bold text-white font-mono tracking-tight" id="kpiTraffic">{{ $trafficTotal !== null ? number_format($trafficTotal, 1) : 'Sin dato' }}</span>
-                                <span class="text-xs font-mono text-white/70">Mbps</span>
-                            </div>
-                        </div>
-                        <span class="text-xs font-semibold text-white bg-white/15 px-2.5 py-1 rounded-full border border-white/25 font-mono" title="Suma de puertos físicos (entrada + salida) de todos los equipos">Σ puertos</span>
-                    </div>
-                    <div class="w-full h-20 relative">
-                        <canvas id="sparkTraffic" class="relative"></canvas>
-                    </div>
-                </div>
-
-                <!-- Card 2: Latencia -->
-                <div class="floating-card nm-metal-azure p-5 flex flex-col justify-between relative overflow-hidden">
-                    <x-kpi-escena tipo="red" tono="claro" />
-                    <div class="relative flex justify-between items-start mb-2">
-                        <div>
-                            <p class="text-xs font-bold text-white/75 uppercase tracking-wider font-mono">Latencia Global</p>
-                            <div class="flex items-baseline gap-1 mt-1">
-                                <span class="text-2xl font-bold text-white font-mono tracking-tight" id="kpiPing">{{ $avgPing !== null ? $avgPing : 'Sin dato' }}</span>
-                                <span class="text-xs font-mono text-white/70">ms</span>
-                            </div>
-                        </div>
-                        <span class="text-xs font-semibold text-white bg-white/15 px-2.5 py-1 rounded-full border border-white/25 font-mono" title="Promedio ICMP de los equipos en línea">ICMP prom.</span>
-                    </div>
-                    <div class="w-full h-20 relative">
-                        <canvas id="sparkPing"></canvas>
-                    </div>
-                </div>
-
-                <!-- Card 3: Pérdida de Paquetes -->
-                <div class="floating-card p-5 flex flex-col justify-between relative overflow-hidden">
-                    <x-kpi-escena tipo="ondas" tono="naranja" />
-                    <div class="relative flex justify-between items-start mb-2">
-                        <div>
-                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider font-mono">Pérdida Pkts</p>
-                            <div class="flex items-baseline gap-1 mt-1">
-                                <span class="text-2xl font-bold text-gray-900 dark:text-white font-mono tracking-tight" id="kpiLoss">{{ $avgPacketLoss !== null ? number_format($avgPacketLoss, 2) : 'Sin dato' }}</span>
-                                <span class="text-xs font-mono text-gray-500">%</span>
-                            </div>
-                        </div>
-                        <span class="text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-100 font-mono" title="Promedio de pérdida ICMP; los equipos sin respuesta cuentan como 100%">ICMP</span>
-                    </div>
-                    <div class="w-full h-20 relative">
-                        <canvas id="sparkLoss"></canvas>
-                    </div>
-                </div>
+            {{-- Incidentes activos de todos los sectores --}}
+            <div data-refrescar="incidentes">
+                @include('dashboard.partials.incidentes', ['incidentes' => $resumen['incidentes']])
             </div>
 
-            {{-- ========================================================================= --}}
-            {{-- LIVE TRAFFIC DUAL GAUGES (DOWNLOAD & UPLOAD)                              --}}
-            {{-- ========================================================================= --}}
-            {{-- ========================================================================= --}}
-            {{-- NOC DYNAMIC DUAL TRAFFIC GAUGES (INSTITUTIONAL LIGHT & DARK MODE)          --}}
-            {{-- ========================================================================= --}}
-            <div class="traffic-gauge-card p-6 sm:p-8 mb-6" id="snmpTrafficCard">
+            {{-- Tráfico de la red en vivo | lo que más preocupa --}}
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+                <div class="xl:col-span-2 min-w-0">
+            <div class="traffic-gauge-card p-6 sm:p-8 h-full" id="snmpTrafficCard">
                 {{-- Header: Título Institucional + Status SNMP --}}
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-white/10">
                     <div class="flex items-center gap-3">
@@ -602,475 +563,14 @@
                     </div>
                 </div>
             </div>
+                </div>
+                <div data-refrescar="atencion" class="min-w-0">
+                    @include('dashboard.partials.atencion', ['atencion' => $resumen['atencion']])
+                </div>
+            </div>
 
             @include('dashboard.partials.tendencias')
-
-            <!-- Bottom Section (Doughnut & Progress) -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
-                
-                <!-- Health CPU / RAM (Concentric Donut / Dual Gauge) -->
-                <div class="floating-card p-6 flex flex-col">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider font-mono">Health CPU / RAM</h3>
-                        <span class="text-xs bg-blue-50 text-hacienda-blue font-semibold px-3 py-1 rounded-full flex items-center font-mono">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-1.5"></span> Global
-                        </span>
-                    </div>
-                    <div class="flex-1 flex flex-col sm:flex-row items-center justify-between gap-6">
-                        <!-- Chart container -->
-                        <div class="relative w-44 h-44 flex-shrink-0">
-                            <canvas id="mainDoughnut"></canvas>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                                <span class="text-2xl font-extrabold text-gray-900 dark:text-white font-mono leading-none tracking-tight">{{ $avgCpu !== null ? round($avgCpu) : '—' }}<span class="text-xs text-gray-400 dark:text-slate-500 font-sans ml-0.5">%</span></span>
-                                <span class="text-[11px] font-bold text-blue-600 dark:text-blue-400 font-mono uppercase tracking-widest mt-0.5">CPU CORE</span>
-                                <div class="mt-1 flex items-center gap-1 font-mono text-[11px] text-gray-500">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-[#00b8c4]"></span>
-                                    <span>RAM</span>
-                                    <span class="font-bold text-[#00838c] dark:text-[#33d6e0]">{{ $avgMem !== null ? round($avgMem) . '%' : 'Sin dato' }}</span>
-                                </div>
-                            </div>
-                        </div>
-                              <!-- Legend -->
-                        <div class="flex-1 w-full space-y-3">
-                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/70 dark:bg-nm-sunken border border-gray-100 dark:border-slate-800/40">
-                                <div class="flex items-center">
-                                    <span class="w-3 h-3 rounded-md bg-blue-600 dark:bg-blue-400 mr-2.5 flex-shrink-0 shadow-sm"></span>
-                                    <div>
-                                        <p class="text-xs font-bold text-gray-800 dark:text-slate-200">CPU Consumo</p>
-                                        <p class="text-[11px] text-gray-400 dark:text-slate-500 font-mono">Track: 0 - 100%</p>
-                                    </div>
-                                </div>
-                                <span class="text-lg font-extrabold text-gray-900 dark:text-white font-mono" id="kpiCpuValue">{{ $avgCpu !== null ? round($avgCpu) . '%' : 'Sin dato' }}</span>
-                            </div>
-
-                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/70 dark:bg-nm-sunken border border-gray-100 dark:border-slate-800/40">
-                                <div class="flex items-center">
-                                    <span class="w-3 h-3 rounded-md bg-[#00b8c4] mr-2.5 flex-shrink-0 shadow-sm"></span>
-                                    <div>
-                                        <p class="text-xs font-bold text-gray-800 dark:text-slate-200">Memoria RAM</p>
-                                        <p class="text-[11px] text-gray-400 dark:text-slate-500 font-mono">Track: 0 - 100%</p>
-                                    </div>
-                                </div>
-                                <span class="text-lg font-extrabold text-gray-900 dark:text-white font-mono" id="kpiMemValue">{{ $avgMem !== null ? round($avgMem) . '%' : 'Sin dato' }}</span>
-                            </div>
-
-                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/70 dark:bg-nm-sunken border border-gray-100 dark:border-slate-800/40">
-                                <div class="flex items-center">
-                                    <span class="w-3 h-3 rounded-md bg-emerald-500 mr-2.5 flex-shrink-0 shadow-sm"></span>
-                                    <div>
-                                        <p class="text-xs font-bold text-gray-800 dark:text-slate-200">Nodos Activos</p>
-                                        <p class="text-[11px] text-gray-400 dark:text-slate-500 font-mono">Dispositivos en línea</p>
-                                    </div>
-                                </div>
-                                <span class="text-sm font-bold text-gray-900 dark:text-white font-mono" id="kpiNodesValue">{{ $dispositivosOnline }} / {{ $totalDispositivos }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Progress Bars -->
-                <div class="floating-card p-6" data-refrescar="operacion">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Detalles de Operación</h3>
-                        <span class="text-xs bg-gray-50 dark:bg-slate-800/60 text-gray-600 dark:text-slate-300 font-semibold px-3 py-1 rounded-full border border-transparent dark:border-slate-700/50">Global</span>
-                    </div>
-
-                    <div class="space-y-6">
-                        <!-- Temp: el medidor usa la máxima (el promedio oculta un equipo sobrecalentado) -->
-                        @php $tempMax = $paneles['hardware']['temp_max']; @endphp
-                        <div>
-                            <div class="flex justify-between text-sm mb-2">
-                                <span class="font-medium text-gray-600 dark:text-slate-400" title="Sensor más caliente entre todos los equipos que reportan temperatura">Temperatura máxima de la red</span>
-                                <span class="font-bold text-gray-800 dark:text-slate-200">
-                                    {{ $tempMax !== null ? round($tempMax) . ' °C' : 'Sin sensores reportados' }}
-                                    @if($avgTemp !== null)<span class="text-xs font-normal text-gray-400">(prom. {{ round($avgTemp) }} °C)</span>@endif
-                                </span>
-                            </div>
-
-                            <!-- Speedometer animado para Dashboard -->
-                            @php
-                                $dasharray = 125.6;
-                                $percentage = $tempMax === null ? 0 : min(100, max(0, ($tempMax / 80) * 100)); // Escala hasta 80°C
-                                $dashoffset = 125.6 - (125.6 * $percentage / 100);
-                                // Mismos umbrales que la alarma térmica (55 °C advertencia, 65 °C crítica)
-                                $color = $tempMax === null ? '#94a3b8' : ($tempMax >= 65 ? '#ef4444' : ($tempMax >= 55 ? '#f59e0b' : '#10b981'));
-                            @endphp
-                            <div class="relative w-full h-20 overflow-hidden flex justify-center mt-3">
-                                <svg viewBox="0 0 100 50" class="w-40 h-20 drop-shadow-md">
-                                    <!-- Background arc -->
-                                    <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#e2e8f0" class="dark:stroke-slate-700" stroke-width="10" stroke-linecap="round"/>
-                                    <!-- Animated fill arc -->
-                                    <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="{{ $color }}" stroke-width="10" stroke-linecap="round" 
-                                          stroke-dasharray="125.6" stroke-dashoffset="125.6" 
-                                          class="dash-gauge-fill drop-shadow-sm"
-                                          style="--dash-target-offset: {{ $dashoffset }};"/>
-                                </svg>
-                                <div class="absolute bottom-0 left-0 w-full text-center flex flex-col items-center">
-                                    <span class="text-2xl font-extrabold text-gray-800 dark:text-white font-mono leading-none">{{ $tempMax !== null ? round($tempMax) : '—' }}<span class="text-sm text-gray-400">°C</span></span>
-                                    <span class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">{{ $tempMax === null ? 'SIN DATO' : ($tempMax < 55 ? 'NORMAL' : ($tempMax < 65 ? 'ELEVADA' : 'CRÍTICA')) }}</span>
-                                </div>
-                            </div>
-                            
-                            <style>
-                                @keyframes dashFillGauge {
-                                    from { stroke-dashoffset: 125.6; }
-                                    to { stroke-dashoffset: var(--dash-target-offset); }
-                                }
-                                .dash-gauge-fill {
-                                    animation: dashFillGauge 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-                                }
-                            </style>
-                        </div>
-
-                        <!-- Conexiones -->
-                        <div>
-                            <div class="flex justify-between text-sm mb-2">
-                                <span class="font-medium text-gray-600 dark:text-slate-400" title="% de puertos físicos activos con utilización ≥ 80%">Puertos saturados (≥80%)</span>
-                                <span class="font-bold text-gray-800 dark:text-slate-200">{{ $avgPortSat !== null ? $avgPortSat . '%' : 'Sin dato' }}</span>
-                            </div>
-                            <div class="w-full bg-gray-100 dark:bg-slate-800/80 rounded-full h-2">
-                                <div class="bg-hacienda-orange h-2 rounded-full" style="width: {{ $avgPortSat ?? 0 }}%"></div>
-                            </div>
-                        </div>
-
-                        <!-- Errores: es un conteo, no un porcentaje; no se dibuja como barra -->
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="font-medium text-gray-600 dark:text-slate-400" title="Errores de entrada+salida en puertos físicos durante el último ciclo de sondeo (15 s)">Errores de interfaz (último ciclo)</span>
-                                <span class="font-bold {{ $erroresUltimoCiclo ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-slate-200' }}">{{ $erroresUltimoCiclo !== null ? number_format($erroresUltimoCiclo) : 'Sin dato' }}</span>
-                            </div>
-                            <button type="button" onclick="abrirDiagnostico('puertos')" class="text-[11px] font-semibold text-hacienda-blue dark:text-blue-400 hover:underline">
-                                Ver puertos con errores y CRC →
-                            </button>
-                        </div>
-
-                        <div class="mt-8 pt-4 border-t border-dashed border-gray-200 dark:border-slate-800/40">
-                            <a href="{{ route('reportes.inventario_pdf') }}" target="_blank" class="w-full py-2 text-sm font-semibold text-hacienda-blue dark:text-blue-400 hover:text-[#667d93] dark:hover:text-blue-300 transition flex items-center justify-center">
-                                Generar reporte PDF de inventario +
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            @include('dashboard.partials.diagnostico')
-
-            <!-- ==================== TABLA DE INVENTARIO DE DISPOSITIVOS (NOC) ==================== -->
-            <div class="floating-card p-6 mb-6" data-refrescar="inventario" x-data="{
-                filtroBusqueda: '',
-                filtroEstado: 'todos',
-                filtroTipo: 'todos',
-                matches(nombre, ip, estado, tipo) {
-                    const q = this.filtroBusqueda.toLowerCase().trim();
-                    const matchText = !q || nombre.toLowerCase().includes(q) || ip.toLowerCase().includes(q);
-                    const matchStatus = this.filtroEstado === 'todos' || estado.toLowerCase() === this.filtroEstado;
-                    const matchTipo = this.filtroTipo === 'todos' || tipo === this.filtroTipo;
-                    return matchText && matchStatus && matchTipo;
-                }
-            }">
-                <!-- Encabezado con Título, Filtros de Categoría, Estado y Buscador -->
-                <div class="flex flex-col gap-4 mb-5 pb-4 border-b border-gray-100 dark:border-slate-800/40">
-                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-hacienda-orange shadow-sm"></span>
-                                <h3 class="text-lg font-bold text-gray-900 dark:text-white tracking-tight">Inventario de Dispositivos e Infraestructura</h3>
-                            </div>
-                            <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Supervisión en tiempo real de switches, teléfonos VoIP, servidores, PCs, routers y APs</p>
-                        </div>
-
-                        <!-- Buscador en tiempo real -->
-                        <div class="relative w-full sm:w-72">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="w-4 h-4 text-gray-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /> <path d="m21 21-4.3-4.3" /></svg>
-                            </div>
-                            <input 
-                                type="text" 
-                                x-model="filtroBusqueda"
-                                placeholder="Buscar por nombre, IP, tipo..." 
-                                class="w-full pl-9 pr-8 py-2 bg-gray-50 dark:bg-nm-sunken border border-gray-200 dark:border-slate-800/60 rounded-xl text-xs focus:ring-2 focus:ring-hacienda-blue dark:focus:ring-blue-500 focus:border-transparent outline-none transition placeholder-gray-400 dark:placeholder-slate-500 text-gray-800 dark:text-slate-200"
-                            >
-                            <button 
-                                x-show="filtroBusqueda.length > 0" 
-                                @click="filtroBusqueda = ''"
-                                type="button" 
-                                class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
-                                style="display: none;">
-                                <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Barra de Filtros Dual: Categorías de Hardware + Estado Online/Offline -->
-                    <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
-                        <!-- Filtros por Tipo de Dispositivo -->
-                        <div class="flex flex-wrap items-center gap-1.5 bg-gray-100/80 dark:bg-nm-sunken border border-transparent dark:border-slate-800/40 p-1 rounded-xl text-xs font-semibold">
-                            <button 
-                                @click="filtroTipo = 'todos'"
-                                :class="filtroTipo === 'todos' ? 'bg-white dark:bg-slate-800 text-hacienda-blue dark:text-blue-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
-                                class="px-2.5 py-1.5 rounded-lg transition"
-                                type="button">
-                                Todos ({{ $totalDispositivos }})
-                            </button>
-                            <button 
-                                @click="filtroTipo = 'switch'"
-                                :class="filtroTipo === 'switch' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
-                                class="px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
-                                type="button">
-                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /> <rect width="20" height="8" x="2" y="14" rx="2" ry="2" /> <line x1="6" x2="6.01" y1="6" y2="6" /> <line x1="6" x2="6.01" y1="18" y2="18" /></svg>
-                                Switches ({{ $totalSwitches }})
-                            </button>
-                            <button 
-                                @click="filtroTipo = 'telefono'"
-                                :class="filtroTipo === 'telefono' ? 'bg-white dark:bg-slate-800 text-pink-600 dark:text-pink-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
-                                class="px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
-                                type="button">
-                                <img src="{{ asset('images/topology/ip-phone.png') }}" class="w-4 h-4 object-contain" alt="Teléfonos">
-                                Teléfonos IP ({{ $totalTelefonos }})
-                            </button>
-                            <button 
-                                @click="filtroTipo = 'router'"
-                                :class="filtroTipo === 'router' ? 'bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
-                                class="px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
-                                type="button">
-                                <img src="{{ asset('images/topology/router.png') }}" class="w-4 h-4 object-contain" alt="Routers">
-                                Routers ({{ $totalRouters }})
-                            </button>
-                            <button 
-                                @click="filtroTipo = 'access_point'"
-                                :class="filtroTipo === 'access_point' ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
-                                class="px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
-                                type="button">
-                                <img src="{{ asset('images/topology/access-point.png') }}" class="w-4 h-4 object-contain" alt="APs">
-                                APs Wi-Fi ({{ $totalAPs }})
-                            </button>
-                            <button 
-                                @click="filtroTipo = 'servidor'"
-                                :class="filtroTipo === 'servidor' ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
-                                class="px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
-                                type="button">
-                                <img src="{{ asset('images/topology/server.png') }}" class="w-4 h-4 object-contain" alt="Servidores">
-                                Servidores ({{ $totalServidores }})
-                            </button>
-                            <button 
-                                @click="filtroTipo = 'pc'"
-                                :class="filtroTipo === 'pc' ? 'bg-white dark:bg-slate-800 text-cyan-600 dark:text-cyan-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
-                                class="px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
-                                type="button">
-                                <img src="{{ asset('images/topology/pc.png') }}" class="w-4 h-4 object-contain" alt="PCs">
-                                PCs ({{ $totalPCs }})
-                            </button>
-                        </div>
-
-                        <!-- Filtros por Estado -->
-                        <div class="flex items-center bg-gray-100/80 dark:bg-nm-sunken border border-transparent dark:border-slate-800/40 p-1 rounded-xl text-xs font-semibold">
-                            <button 
-                                @click="filtroEstado = 'todos'"
-                                :class="filtroEstado === 'todos' ? 'bg-white dark:bg-slate-800 text-hacienda-blue dark:text-blue-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
-                                class="px-3 py-1.5 rounded-lg transition"
-                                type="button">
-                                Todos
-                            </button>
-                            <button 
-                                @click="filtroEstado = 'online'"
-                                :class="filtroEstado === 'online' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
-                                class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
-                                type="button">
-                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                Online ({{ $dispositivosOnline }})
-                            </button>
-                            <button 
-                                @click="filtroEstado = 'offline'"
-                                :class="filtroEstado === 'offline' ? 'bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
-                                class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
-                                type="button">
-                                <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                                Offline ({{ $dispositivosOffline }})
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Contenedor con Scroll Interno Controlado (Evita scroll infinito de la página) -->
-                <div class="rounded-xl border border-gray-200/80 dark:border-slate-800/40 overflow-hidden shadow-xs dark:shadow-none bg-white dark:bg-nm-surface">
-                    <div x-ref="tableContainer" class="max-h-[420px] overflow-y-auto overflow-x-auto custom-scrollbar relative" style="scrollbar-gutter: stable;">
-                        <table class="w-full text-left border-separate border-spacing-0 text-xs">
-                            <thead class="sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.04)] dark:shadow-none">
-                                <tr class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-nm-surface/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-28">Estado</th>
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-nm-surface/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 min-w-[210px]">Dispositivo / Hostname</th>
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-nm-surface/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-32">Dirección IP</th>
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-nm-surface/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 min-w-[160px]">Tipo / Modelo</th>
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-nm-surface/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-32">CPU / RAM (%)</th>
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-nm-surface/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-28">Uptime</th>
-                                    <th class="sticky top-0 z-20 py-2.5 px-3.5 bg-slate-50/95 dark:bg-nm-surface/95 backdrop-blur-md border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 w-36 text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100 dark:divide-slate-800/30 bg-white dark:bg-nm-surface">
-                                @forelse($dispositivos as $disp)
-                                <tr 
-                                    x-show="matches('{{ addslashes($disp->nombre) }}', '{{ $disp->ip }}', '{{ $disp->estado }}', '{{ $disp->tipo_dispositivo }}')"
-                                    class="hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition duration-150 group">
-                                    
-                                    <!-- Estado LED / Badge -->
-                                    <td class="py-2.5 px-3.5 whitespace-nowrap border-b border-gray-100 dark:border-slate-800/30">
-                                        @if(strtolower($disp->estado) === 'online' || strtolower($disp->estado) === 'up')
-                                             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                                Online
-                                            </span>
-                                        @elseif(strtolower($disp->estado) === 'offline' || strtolower($disp->estado) === 'down')
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/40">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                                Offline
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gray-50 dark:bg-gray-800/60 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700/40">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                                                Unknown
-                                            </span>
-                                        @endif
-                                    </td>
-
-                                    <!-- Nombre del Dispositivo con Icono Específico Más Grande -->
-                                    <td class="py-2.5 px-3.5 border-b border-gray-100 dark:border-slate-800/30">
-                                        <div class="flex items-center gap-2.5">
-                                            <!-- Icono según el tipo real -->
-                                            <div class="w-9 h-9 rounded-xl {{ $disp->tipo_icon_container_classes }} flex items-center justify-center flex-shrink-0 font-bold shadow-xs border border-transparent dark:border-white/5" title="{{ $disp->tipo_label }}">
-                                                @if($disp->tipo_dispositivo === 'firewall')
-                                                    <!-- Firewall -->
-                                                    <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></svg>
-                                                @elseif($disp->tipo_dispositivo === 'telefono')
-                                                    <!-- Teléfono IP (VoIP) -->
-                                                    <img src="{{ asset('images/topology/ip-phone.png') }}" class="w-6 h-6 object-contain" alt="Teléfono">
-                                                @elseif($disp->tipo_dispositivo === 'servidor')
-                                                    <!-- Servidor Dedicado (Icono Isométrico) -->
-                                                    <img src="{{ asset('images/topology/server.png') }}" class="w-6 h-6 object-contain" alt="Servidor">
-                                                @elseif($disp->tipo_dispositivo === 'pc')
-                                                    <!-- PC / Workstation -->
-                                                    <img src="{{ asset('images/topology/pc.png') }}" class="w-6 h-6 object-contain" alt="PC">
-                                                @elseif($disp->tipo_dispositivo === 'access_point')
-                                                    <!-- Access Point Wi-Fi -->
-                                                    <img src="{{ asset('images/topology/access-point.png') }}" class="w-6 h-6 object-contain" alt="Access Point">
-                                                @elseif($disp->tipo_dispositivo === 'router')
-                                                    <!-- Router WAN / ISR -->
-                                                    <img src="{{ asset('images/topology/router.png') }}" class="w-6 h-6 object-contain" alt="Router">
-                                                @else
-                                                    <!-- Switch L2/L3 -->
-                                                    <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /> <rect width="20" height="8" x="2" y="14" rx="2" ry="2" /> <line x1="6" x2="6.01" y1="6" y2="6" /> <line x1="6" x2="6.01" y1="18" y2="18" /></svg>
-                                                @endif
-                                            </div>
-                                            <div class="min-w-0 max-w-[200px] sm:max-w-[240px]">
-                                                <a href="{{ route('dispositivos.show', $disp->id) }}" class="font-bold text-gray-900 dark:text-slate-100 group-hover:text-hacienda-blue dark:group-hover:text-blue-400 hover:underline transition truncate block" title="{{ $disp->nombre }}">
-                                                    {{ $disp->nombre }}
-                                                </a>
-                                                <span class="text-[11px] text-gray-400 dark:text-slate-500 font-mono truncate block">{{ $disp->ubicacion ?: 'NOC Data Center' }}</span>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <!-- Dirección IP -->
-                                    <td class="py-2.5 px-3.5 whitespace-nowrap border-b border-gray-100 dark:border-slate-800/30">
-                                        <span class="font-mono text-xs text-gray-700 dark:text-slate-300 bg-gray-50 dark:bg-nm-sunken px-2 py-0.5 rounded-md border border-gray-200 dark:border-slate-800/60">
-                                            {{ $disp->ip }}
-                                        </span>
-                                    </td>
-
-                                    <!-- Modelo / Plataforma y Badge de Tipo -->
-                                    <td class="py-2.5 px-3.5 whitespace-nowrap border-b border-gray-100 dark:border-slate-800/30">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border {{ $disp->tipo_badge_classes }}">
-                                            {{ $disp->clean_model }}
-                                        </span>
-                                    </td>
-
-                                    <!-- CPU y Memoria (%) de la última muestra del poller; sin dato = "—" -->
-                                    <td class="py-2.5 px-3.5 whitespace-nowrap border-b border-gray-100 dark:border-slate-800/30">
-                                        <div class="flex flex-col gap-1.5">
-                                            @foreach(['CPU' => $disp->latest_cpu, 'RAM' => $disp->latest_mem] as $etiqueta => $valor)
-                                                <div class="flex items-center gap-2">
-                                                    <span class="text-[11px] font-bold text-gray-400 w-6">{{ $etiqueta }}</span>
-                                                    <div class="w-12 bg-gray-100 dark:bg-slate-800/80 rounded-full h-1.5 overflow-hidden flex-shrink-0">
-                                                        @if($valor !== null)
-                                                            <div class="h-1.5 rounded-full {{ $valor > 75 ? 'bg-red-500' : ($valor > 40 ? 'bg-[#ff8300]' : 'bg-nm-primary') }}" style="width: {{ min(100, max(4, $valor)) }}%"></div>
-                                                        @endif
-                                                    </div>
-                                                    <span class="font-mono font-bold text-gray-800 dark:text-slate-200 text-[11px] w-6 text-right">{{ $valor !== null ? $valor . '%' : '—' }}</span>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </td>
-
-                                    <!-- Uptime -->
-                                    <td class="py-2.5 px-3.5 whitespace-nowrap border-b border-gray-100 dark:border-slate-800/30">
-                                        <span class="font-mono text-xs {{ $disp->estado === 'online' ? 'text-gray-600 dark:text-slate-400' : 'text-gray-400 dark:text-slate-600' }}">
-                                            {{ $disp->clean_uptime }}
-                                        </span>
-                                    </td>
-
-                                    <!-- Acciones Rápidas -->
-                                    <td class="py-2.5 px-3.5 whitespace-nowrap text-right border-b border-gray-100 dark:border-slate-800/30">
-                                        <div class="flex items-center justify-end gap-1.5">
-                                            <!-- Ver Detalle -->
-                                            <a href="{{ route('dispositivos.show', $disp->id) }}" 
-                                               class="px-2.5 py-1 rounded-lg text-xs font-semibold text-hacienda-blue dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-hacienda-blue dark:hover:bg-blue-600 hover:text-white dark:hover:text-white transition flex items-center gap-1 shadow-xs border border-transparent dark:border-blue-900/40"
-                                               title="Ver detalles e interfaces del dispositivo">
-                                                <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /></svg>
-                                                <span>Detalles</span>
-                                            </a>
-                                            <!-- Consola CLI -->
-                                            <a href="{{ route('consola.index') }}" 
-                                               class="px-2.5 py-1 rounded-lg text-xs font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-900 dark:hover:bg-slate-700 hover:text-emerald-400 transition font-mono flex items-center gap-1 shadow-xs border border-transparent dark:border-slate-700"
-                                               title="Abrir consola CLI remota" aria-label="Abrir consola CLI remota">
-                                                <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m7 11 2-2-2-2" /> <path d="M11 13h4" /> <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /></svg>
-                                                <span>CLI</span>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="7" class="py-8 text-center text-gray-400 dark:text-slate-500">
-                                        No hay dispositivos registrados en el sistema.
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Footer Informativo y Control de Desplazamiento -->
-                <div class="mt-3.5 pt-3 border-t border-gray-100 dark:border-slate-800/40 flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-gray-400 dark:text-slate-400 gap-2">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        <span class="font-medium text-gray-600 dark:text-slate-400">Desplazamiento interno independiente · <strong class="text-gray-800 dark:text-white">{{ $totalDispositivos }}</strong> nodos monitoreados</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="text-[11px] font-mono text-gray-400 flex items-center gap-1">
-                            <svg class="w-3.5 h-3.5 text-gray-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4" /> <path d="M17 20V4" /> <path d="m3 8 4-4 4 4" /> <path d="M7 4v16" /></svg>
-                            <span>Scroll interno activo</span>
-                        </div>
-                        <button 
-                            @click="$refs.tableContainer.scrollTo({top: 0, behavior: 'smooth'})" 
-                            type="button" 
-                            class="px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300 transition flex items-center gap-1 border border-transparent dark:border-slate-700"
-                            title="Subir al inicio de la tabla" aria-label="Subir al inicio de la tabla">
-                            <svg class="w-3 h-3" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7" /> <path d="M12 19V5" /></svg>
-                            <span>Inicio</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
 @endsection
-
-@php
-    // Últimas muestras reales de global_metrics con su momento (null = sin dato en esa muestra)
-    $finalTiempos = $tiempos;
-    $finalTraffic = $trafficData;
-    $finalPing = $pingData;
-    $finalLoss = $lossData;
-@endphp
 
 @section('scripts')
     <script>
@@ -1180,277 +680,6 @@
         })();
     </script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const tiempos = @json($finalTiempos);
-            const trafficData = @json($finalTraffic);
-            const pingData = @json($finalPing);
-            const lossData = @json($finalLoss);
-            // Ventana visible de las mini gráficas: lo que abarcan las muestras iniciales (mín. 1 min)
-            const VENTANA_SPARK = Math.max(60000, (tiempos[tiempos.length - 1] || 0) - (tiempos[0] || 0));
-            window.nmSparks = {};
-
-            const avgCpu = {{ $avgCpu !== null ? round($avgCpu) : 0 }};
-            const avgMem = {{ $avgMem !== null ? round($avgMem) : 0 }};
-
-            window.dashboardCharts = [];
-
-            function isDarkTheme() {
-                return document.documentElement.classList.contains('dark');
-            }
-
-            function getGridColor() {
-                return isDarkTheme() ? 'rgba(255, 255, 255, 0.06)' : 'rgba(156, 163, 175, 0.12)';
-            }
-
-            function getAxisColor() {
-                return isDarkTheme() ? '#94a3b8' : '#64748b';
-            }
-
-            // Diagnostic Terminal Tooltip Configuration
-            function getTerminalTooltip(metricName, unit) {
-                const isDark = isDarkTheme();
-                return {
-                    enabled: true,
-                    backgroundColor: isDark ? 'rgba(18, 22, 31, 0.95)' : 'rgba(30, 41, 59, 0.95)',
-                    titleColor: isDark ? '#94a3b8' : '#cbd5e1',
-                    bodyColor: '#ffffff',
-                    borderColor: isDark ? 'rgba(51, 65, 85, 0.8)' : 'rgba(255, 255, 255, 0.1)',
-                    borderWidth: 1,
-                    padding: { top: 6, bottom: 6, left: 10, right: 10 },
-                    cornerRadius: 6,
-                    displayColors: false,
-                    titleFont: { family: 'monospace', size: 10, weight: '600' },
-                    bodyFont: { family: 'monospace', size: 11, weight: '700' },
-                    callbacks: {
-                        title: function(items) {
-                            return 'DIAG // ' + nmVivo.hhmmss(items[0].parsed.x);
-                        },
-                        label: function(context) {
-                            const val = context.parsed.y;
-                            const formatted = typeof val === 'number' 
-                                ? val.toFixed(unit === 'ms' ? 1 : 2) 
-                                : val;
-                            return `${metricName}: ${formatted} ${unit}`;
-                        }
-                    }
-                };
-            }
-
-            // Factory for NOC Time-Series with Vertical LinearGradient & Technical Grid
-            function initNocTimeSeries(canvasId, metricName, dataVals, colorRgb, unit) {
-                const canvas = document.getElementById(canvasId);
-                if (!canvas) return null;
-                const ctx = canvas.getContext('2d');
-                // Sobre tarjetas metálicas la serie y los ejes van en blanco translúcido
-                const sobreMetal = !!canvas.closest('.nm-metal-navy, .nm-metal-azure');
-                if (sobreMetal) colorRgb = '255, 255, 255';
-                const colorRejilla = sobreMetal ? 'rgba(255, 255, 255, 0.14)' : getGridColor();
-                const colorEjes = sobreMetal ? 'rgba(255, 255, 255, 0.72)' : getAxisColor();
-
-                const chart = new Chart(ctx, {
-                    type: 'line',
-                    plugins: [nmVivo.puntoVivo()],
-                    data: {
-                        datasets: [{
-                            label: metricName,
-                            data: dataVals.map((v, i) => ({ x: tiempos[i], y: v })),
-                            borderColor: `rgb(${colorRgb})`,
-                            borderWidth: 2,
-                            fill: true,
-                            backgroundColor: function(context) {
-                                const chart = context.chart;
-                                const { ctx, chartArea } = chart;
-                                if (!chartArea) return 'transparent';
-                                const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                                gradient.addColorStop(0, `rgba(${colorRgb}, 0.25)`);
-                                gradient.addColorStop(1, `rgba(${colorRgb}, 0.0)`);
-                                return gradient;
-                            },
-                            tension: 0.25,
-                            pointRadius: 0,
-                            pointHoverRadius: 4,
-                            pointHoverBackgroundColor: `rgb(${colorRgb})`,
-                            pointHoverBorderColor: '#ffffff',
-                            pointHoverBorderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        ...nmVivo.animaciones(),
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: getTerminalTooltip(metricName, unit)
-                        },
-                        scales: {
-                            x: {
-                                type: 'linear',
-                                min: (tiempos[tiempos.length - 1] || 0) - VENTANA_SPARK,
-                                max: tiempos[tiempos.length - 1],
-                                display: true,
-                                grid: {
-                                    display: true,
-                                    color: colorRejilla,
-                                    borderDash: [3, 3],
-                                    drawTicks: false
-                                },
-                                border: { display: false },
-                                ticks: {
-                                    font: { family: 'monospace', size: 10 },
-                                    color: colorEjes,
-                                    maxRotation: 0,
-                                    autoSkip: true,
-                                    maxTicksLimit: 4,
-                                    callback: v => nmVivo.hhmmss(v)
-                                }
-                            },
-                            y: {
-                                display: true,
-                                position: 'right',
-                                grid: {
-                                    display: true,
-                                    color: colorRejilla,
-                                    borderDash: [3, 3],
-                                    drawTicks: false
-                                },
-                                border: { display: false },
-                                ticks: {
-                                    font: { family: 'monospace', size: 10 },
-                                    color: colorEjes,
-                                    maxTicksLimit: 3,
-                                    callback: function(val) {
-                                        return val + ' ' + unit;
-                                    }
-                                },
-                                suggestedMin: 0
-                            }
-                        },
-                        layout: {
-                            padding: { top: 4, bottom: 2, left: 0, right: 4 }
-                        }
-                    }
-                });
-
-                chart.$sobreMetal = sobreMetal;
-                window.dashboardCharts.push(chart);
-                return chart;
-            }
-
-            // 1. Tráfico: azul real (#667d93)
-            nmSparks.traffic = initNocTimeSeries('sparkTraffic', 'TRAFFIC', trafficData, '102, 125, 147', 'Mbps');
-
-            // 2. Latencia: turquesa (#00b8c4)
-            nmSparks.ping = initNocTimeSeries('sparkPing', 'LATENCY', pingData, '0, 184, 196', 'ms');
-
-            // 3. Pérdida: Naranja Institucional (#ff8300 -> 242, 100, 25)
-            nmSparks.loss = initNocTimeSeries('sparkLoss', 'LOSS', lossData, '255, 131, 0', '%');
-            nmSparks.ventana = VENTANA_SPARK;
-            nmSparks.ultimoT = tiempos[tiempos.length - 1] || null;
-
-            // 4. Concentric Dual-Gauge Donut (Health CPU / RAM)
-            const doughnutCanvas = document.getElementById('mainDoughnut');
-            if (doughnutCanvas) {
-                const emptyTrackColor = isDarkTheme() ? 'rgba(255, 255, 255, 0.08)' : '#e5e7eb';
-                const doughnutChart = new Chart(doughnutCanvas.getContext('2d'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Used', 'Idle'],
-                        datasets: [
-                            {
-                                label: 'CPU',
-                                data: [avgCpu, Math.max(0, 100 - avgCpu)],
-                                backgroundColor: [isDarkTheme() ? '#667d93' : '#667d93', emptyTrackColor],
-                                borderWidth: 0,
-                                borderRadius: [4, 0],
-                                hoverOffset: 3,
-                                weight: 1.0
-                            },
-                            {
-                                label: 'RAM',
-                                data: [avgMem, Math.max(0, 100 - avgMem)],
-                                backgroundColor: ['#00b8c4', emptyTrackColor],
-                                borderWidth: 0,
-                                borderRadius: [4, 0],
-                                hoverOffset: 3,
-                                weight: 0.85
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '62%',
-                        animation: { duration: 1000, easing: 'easeOutQuart' },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                backgroundColor: isDarkTheme() ? 'rgba(18, 22, 31, 0.95)' : '#1e293b',
-                                titleColor: isDarkTheme() ? '#94a3b8' : '#cbd5e1',
-                                bodyColor: '#f8fafc',
-                                borderColor: isDarkTheme() ? '#334155' : 'rgba(255, 255, 255, 0.1)',
-                                borderWidth: 1,
-                                padding: { top: 6, bottom: 6, left: 10, right: 10 },
-                                cornerRadius: 6,
-                                displayColors: false,
-                                titleFont: { family: 'monospace', size: 10, weight: '600' },
-                                bodyFont: { family: 'monospace', size: 11, weight: '700' },
-                                callbacks: {
-                                    title: function(items) {
-                                        return 'SUBSYSTEM // ' + items[0].dataset.label;
-                                    },
-                                    label: function(context) {
-                                        const isUsed = context.dataIndex === 0;
-                                        const status = isUsed ? 'LOAD' : 'FREE';
-                                        return `${context.dataset.label} ${status}: ${context.raw}%`;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-
-                window.dashboardCharts.push(doughnutChart);
-            }
-
-            // Real-time Theme Listener to Update All Charts without reload
-            window.addEventListener('theme-changed', function(e) {
-                const isDark = e.detail.isDark;
-                const gridCol = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(156, 163, 175, 0.12)';
-                const axisCol = isDark ? '#94a3b8' : '#64748b';
-                const emptyCol = isDark ? 'rgba(255, 255, 255, 0.08)' : '#e5e7eb';
-                const tooltipBg = isDark ? 'rgba(18, 22, 31, 0.95)' : 'rgba(30, 41, 59, 0.95)';
-                const tooltipBorder = isDark ? '#334155' : 'rgba(255, 255, 255, 0.1)';
-
-                window.dashboardCharts.forEach(ch => {
-                    if (ch.config.type === 'line' && !ch.$sobreMetal) {
-                        if (ch.options.scales.x) {
-                            ch.options.scales.x.grid.color = gridCol;
-                            ch.options.scales.x.ticks.color = axisCol;
-                        }
-                        if (ch.options.scales.y) {
-                            ch.options.scales.y.grid.color = gridCol;
-                            ch.options.scales.y.ticks.color = axisCol;
-                        }
-                        if (ch.options.plugins && ch.options.plugins.tooltip) {
-                            ch.options.plugins.tooltip.backgroundColor = tooltipBg;
-                            ch.options.plugins.tooltip.borderColor = tooltipBorder;
-                        }
-                    } else if (ch.config.type === 'doughnut') {
-                        ch.data.datasets[0].backgroundColor[1] = emptyCol;
-                        ch.data.datasets[1].backgroundColor[1] = emptyCol;
-                        if (ch.options.plugins && ch.options.plugins.tooltip) {
-                            ch.options.plugins.tooltip.backgroundColor = tooltipBg;
-                            ch.options.plugins.tooltip.borderColor = tooltipBorder;
-                        }
-                    }
-                    ch.update('none');
-                });
-            });
-        });
 
         // ==========================================
         // CENTRO DE NOTIFICACIONES & ALERTAS NOC
@@ -2022,10 +1251,10 @@
 
         (function () {
             const ENDPOINT = '{{ route("dashboard.series") }}';
-            const canvas = document.getElementById('trendChart');
-            if (!canvas) return;
-            const empty = document.getElementById('trendEmpty');
-            let rango = '24h', metrica = 'trafico', datos = null, chart = null;
+            const lienzos = document.querySelectorAll('[data-trend-chart]');
+            if (!lienzos.length) return;
+            let rango = '24h', datos = null;
+            const charts = {};
 
             const isDark = () => document.documentElement.classList.contains('dark');
             const gridColor = () => isDark() ? 'rgba(255, 255, 255, 0.06)' : 'rgba(156, 163, 175, 0.15)';
@@ -2049,35 +1278,52 @@
                     { key: 'cpu', label: 'CPU promedio', color: '242, 100, 25', axis: 'y' },
                     { key: 'ram', label: 'RAM promedio', color: '59, 89, 152', axis: 'y' },
                 ] },
+                // Los otros sectores traen su propio eje de tiempo (t: nombre del arreglo de momentos)
+                firewalls: { fmtY: v => Math.round(v).toLocaleString('es-MX'), series: [
+                    { key: 'fw_sesiones', t: 'fw_t', label: 'Sesiones (todos los FortiGate)', color: '242, 100, 25', axis: 'y', fill: true },
+                ] },
+                virtualizacion: { fmtY: v => v + ' %', series: [
+                    { key: 'virt_cpu', t: 'virt_t', label: 'CPU hosts ESXi', color: '242, 100, 25', axis: 'y' },
+                    { key: 'virt_ram', t: 'virt_t', label: 'Memoria hosts ESXi', color: '59, 89, 152', axis: 'y' },
+                ] },
+                web: { fmtY: v => Math.round(v) + ' ms', series: [
+                    { key: 'web_ms', t: 'web_t', label: 'Respuesta promedio de los sitios', color: '92, 128, 150', axis: 'y', fill: true },
+                ] },
             };
+            const momentos = (d, s) => d[s.t || 't'] || [];
 
             function render() {
                 if (!datos) return;
+                lienzos.forEach(canvas => dibujar(canvas.dataset.trendChart, canvas));
+            }
+
+            function dibujar(metrica, canvas) {
                 const g = GRUPOS[metrica];
                 const hayDatos = g.series.some(s => (datos[s.key] || []).some(v => v !== null));
-                empty.style.display = hayDatos ? 'none' : 'flex';
+                document.querySelector(`[data-trend-empty="${metrica}"]`).style.display = hayDatos ? 'none' : 'flex';
 
                 const ticks = { color: axisColor(), font: { family: 'monospace', size: 10 } };
                 const scales = {
-                    x: { grid: { color: gridColor() }, border: { display: false }, ticks: { ...ticks, maxTicksLimit: 8, maxRotation: 0, autoSkip: true } },
+                    x: { grid: { color: gridColor() }, border: { display: false }, ticks: { ...ticks, maxTicksLimit: 5, maxRotation: 0, autoSkip: true } },
                     y: { position: 'left', beginAtZero: true, grid: { color: gridColor() }, border: { display: false }, ticks: { ...ticks, callback: g.fmtY } },
                 };
                 if (g.fmtY1) {
                     scales.y1 = { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, border: { display: false }, ticks: { ...ticks, callback: g.fmtY1 } };
                 }
                 // Eje de tiempo real: al llegar muestras nuevas la ventana avanza y la línea se desliza
-                const fin = datos.t.length ? datos.t[datos.t.length - 1] : Date.now();
+                const finales = g.series.map(s => momentos(datos, s).slice(-1)[0]).filter(Boolean);
+                const fin = finales.length ? Math.max(...finales) : Date.now();
                 scales.x = { ...scales.x, type: 'linear', min: fin - VENTANA[rango], max: fin,
                              ticks: { ...scales.x.ticks, callback: v => fmtX(v) } };
 
-                if (chart) chart.destroy();
-                chart = new Chart(canvas.getContext('2d'), {
+                if (charts[metrica]) charts[metrica].destroy();
+                charts[metrica] = new Chart(canvas.getContext('2d'), {
                     type: 'line',
                     plugins: [nmVivo.puntoVivo(g.series.map((_, i) => i))],
                     data: {
                         datasets: g.series.map(s => ({
                             label: s.label,
-                            data: datos.t.map((t, i) => ({ x: t, y: datos[s.key][i] })),
+                            data: momentos(datos, s).map((t, i) => ({ x: t, y: datos[s.key][i] })),
                             yAxisID: s.axis,
                             borderColor: `rgb(${s.color})`,
                             backgroundColor: `rgba(${s.color}, 0.10)`,
@@ -2095,7 +1341,8 @@
                         ...nmVivo.animaciones(1400),
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: { display: true, align: 'end', labels: { color: axisColor(), boxWidth: 10, boxHeight: 10, font: { size: 11 } } },
+                            // Con una sola serie el título de la tarjeta ya dice qué es
+                            legend: { display: g.series.length > 1, align: 'end', labels: { color: axisColor(), boxWidth: 8, boxHeight: 8, font: { size: 10 } } },
                             tooltip: {
                                 backgroundColor: isDark() ? 'rgba(18, 22, 31, 0.95)' : 'rgba(30, 41, 59, 0.95)',
                                 titleFont: { family: 'monospace', size: 10 },
@@ -2106,7 +1353,7 @@
                                         const v = ctx.parsed.y;
                                         if (v === null || v === undefined) return `${ctx.dataset.label}: sin dato`;
                                         const fmt = ctx.dataset.yAxisID === 'y1' ? g.fmtY1 : g.fmtY;
-                                        return `${ctx.dataset.label}: ${metrica === 'trafico' ? fmtMbps(v) : fmt(v)}`;
+                                        return `${ctx.dataset.label}: ${fmt(v)}`;
                                     },
                                 },
                             },
@@ -2134,16 +1381,21 @@
             // Actualización periódica: solo agrega las muestras reales nuevas (o el promedio del bloque en curso)
             // y la ventana avanza; la gráfica no se vuelve a crear
             async function actualizar() {
-                if (!chart || document.hidden) return;
+                if (!datos || document.hidden) return;
                 const pedido = rango;
                 try {
                     const nuevos = await pedir();
-                    if (pedido !== rango || !chart || !nuevos.t.length) return;
+                    if (pedido !== rango) return;
                     datos = nuevos;
-                    const desde = chart.data.datasets[0]?.data.slice(-1)[0]?.x ?? -Infinity;
-                    const g = GRUPOS[metrica];
-                    const serie = key => nuevos.t.map((t, i) => ({ x: t, y: nuevos[key][i] })).filter(p => p.x >= desde);
-                    nmVivo.avanzar(chart, g.series.map(s => serie(s.key)), VENTANA[rango]);
+                    Object.entries(charts).forEach(([metrica, chart]) => {
+                        const g = GRUPOS[metrica];
+                        if (!g.series.some(s => momentos(nuevos, s).length)) return;
+                        const serie = (s, i) => {
+                            const desde = chart.data.datasets[i]?.data.slice(-1)[0]?.x ?? -Infinity;
+                            return momentos(nuevos, s).map((t, j) => ({ x: t, y: nuevos[s.key][j] })).filter(p => p.x >= desde);
+                        };
+                        nmVivo.avanzar(chart, g.series.map(serie), VENTANA[rango]);
+                    });
                 } catch (err) {
                     console.error('Error actualizando tendencias:', err);
                 }
@@ -2162,11 +1414,6 @@
                 rango = btn.dataset.trendRange;
                 activar('[data-trend-range]', btn);
                 cargar();
-            }));
-            document.querySelectorAll('[data-trend-metric]').forEach(btn => btn.addEventListener('click', () => {
-                metrica = btn.dataset.trendMetric;
-                activar('[data-trend-metric]', btn);
-                render();
             }));
 
             window.addEventListener('theme-changed', render);

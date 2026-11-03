@@ -156,7 +156,10 @@
                             {{ $f['ip'] }}{{ $f['serie'] ? ' · S/N ' . $f['serie'] : '' }}{{ $f['version'] ? ' · FortiOS ' . $f['version'] : '' }}{{ $f['uptime'] ? ' · encendido ' . $f['uptime'] : '' }}
                         </p>
                     </div>
-                    <p class="text-[11px]" style="color: var(--nm-text-muted)">Disponibilidad 24 h: <b class="font-mono">{{ $f['disponibilidad_24h'] === null ? '—' : $f['disponibilidad_24h'] . '%' }}</b> · Latencia: <b class="font-mono">{{ $f['ping_ms'] === null ? '—' : $f['ping_ms'] . ' ms' }}</b></p>
+                    <div class="flex flex-col items-end gap-2">
+                        @if($f['consola'])<x-boton-consola :url="$f['consola']" texto="Abrir consola web" />@endif
+                        <p class="text-[11px]" style="color: var(--nm-text-muted)">Disponibilidad 24 h: <b class="font-mono">{{ $f['disponibilidad_24h'] === null ? '—' : $f['disponibilidad_24h'] . '%' }}</b> · Latencia: <b class="font-mono">{{ $f['ping_ms'] === null ? '—' : $f['ping_ms'] . ' ms' }}</b></p>
+                    </div>
                 </div>
 
                 {{-- Métricas actuales --}}
@@ -307,13 +310,17 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                     @foreach($sinSnmp as $f)
-                        <a href="{{ route('dispositivos.show', $f['id']) }}" class="block p-3 rounded-xl border hover:shadow-sm transition" style="border-color: var(--nm-border); background: var(--nm-surface)">
+                        {{-- div y no <a>: adentro va el botón de la consola (un enlace no puede contener otro) --}}
+                        <div class="block p-3 rounded-xl border hover:shadow-sm transition" style="border-color: var(--nm-border); background: var(--nm-surface)">
                             <div class="flex items-start justify-between gap-2">
                                 <div class="min-w-0">
-                                    <p class="text-sm font-bold truncate" style="color: var(--nm-text)">{{ $f['nombre'] }}</p>
+                                    <a href="{{ route('dispositivos.show', $f['id']) }}" class="block text-sm font-bold truncate hover:underline" style="color: var(--nm-text)">{{ $f['nombre'] }}</a>
                                     <p class="text-[11px] font-mono" style="color: var(--nm-text-muted)">{{ $f['ip'] }}</p>
                                 </div>
-                                <span class="fw-pill {{ $f['estado'] === 'offline' ? 'fw-crit' : 'fw-ok' }}">{{ $f['estado'] === 'offline' ? 'Caído' : 'En línea' }}</span>
+                                <div class="flex flex-col items-end gap-1.5">
+                                    <span class="fw-pill {{ $f['estado'] === 'offline' ? 'fw-crit' : 'fw-ok' }}">{{ $f['estado'] === 'offline' ? 'Caído' : 'En línea' }}</span>
+                                    @if($f['consola'])<x-boton-consola :url="$f['consola']" texto="Consola" />@endif
+                                </div>
                             </div>
                             <div class="grid grid-cols-3 gap-2 mt-2">
                                 <div><p class="text-[10px] font-bold uppercase" style="color: var(--nm-text-muted)">Latencia</p><p class="text-sm font-mono font-bold" style="color: var(--nm-text)">{{ $f['ping_ms'] === null ? '—' : $f['ping_ms'] . ' ms' }}</p></div>
@@ -321,7 +328,7 @@
                                 <div><p class="text-[10px] font-bold uppercase" style="color: var(--nm-text-muted)">Disp. 24 h</p><p class="text-sm font-mono font-bold {{ $f['disponibilidad_24h'] !== null && $f['disponibilidad_24h'] < 99 ? 'fw-t-warn' : '' }}" style="color: var(--nm-text)">{{ $f['disponibilidad_24h'] === null ? '—' : $f['disponibilidad_24h'] . '%' }}</p></div>
                             </div>
                             <div class="fw-mini mt-1"><canvas data-fw-grafica="ping" data-fw-id="{{ $f['id'] }}"></canvas></div>
-                        </a>
+                        </div>
                     @endforeach
                 </div>
             </div>

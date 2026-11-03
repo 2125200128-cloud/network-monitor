@@ -641,6 +641,45 @@ class DashboardMetricsService
             'perdida' => $rows->map(fn ($x) => $r($x->loss))->all(),
             'cpu' => $rows->map(fn ($x) => $r($x->cpu, 1))->all(),
             'ram' => $rows->map(fn ($x) => $r($x->ram, 1))->all(),
+        ] + $this->seriesSectores($desde, $bucket ?: 60);
+    }
+
+    /**
+     * Series de los otros sectores en bloques de $bucket segundos, cada una con su propio eje de tiempo (*_t):
+     * CPU y memoria promedio de los hosts ESXi, sesiones de todos los FortiGate y respuesta promedio de los sitios web.
+     */
+    private function seriesSectores(Carbon $desde, int $bucket): array
+    {
+        $b = fn (string $col) => 'FLOOR(' . Sql::epoch($col) . " / {$bucket})";
+        $r = fn ($v, $p = 1) => $v === null ? null : round((float) $v, $p);
+        $t = fn (Collection $rows) => $rows->map(fn ($x) => Carbon::parse($x->t)->getTimestampMs())->all();
+
+        $virt = DB::table('esxi_metricas')->where('fecha', '>=', $desde)
+            ->groupBy('b')->orderBy('b')
+            ->get([DB::raw($b('fecha') . ' AS b'), DB::raw('MIN(fecha) AS t'), DB::raw('AVG(cpu_pct) AS cpu'), DB::raw('AVG(ram_pct) AS ram')]);
+
+        // Sesiones: promedio de cada firewall dentro del bloque y luego la suma de todos
+        $ids = ResumenSectores::idsFirewalls();
+        $fw = $ids ? DB::query()->fromSub(DB::table('metricas_red')
+                ->whereIn('dispositivo_id', $ids)->where('fecha_registro', '>=', $desde)->whereNotNull('conexiones_activas')
+                ->groupBy('b', 'dispositivo_id')
+                ->select([DB::raw($b('fecha_registro') . ' AS b'), DB::raw('MIN(fecha_registro) AS t'), DB::raw('AVG(conexiones_activas) AS s')]), 'x')
+            ->groupBy('b')->orderBy('b')->get(['b', DB::raw('MIN(t) AS t'), DB::raw('SUM(s) AS s')]) : collect();
+
+        // Solo chequeos con respuesta: un sitio caído no tiene tiempo de respuesta
+        $web = DB::table('historico_servicio_web')->where('created_at', '>=', $desde)->where('estado', '!=', 'offline')
+            ->whereNotNull('tiempo_respuesta_ms')
+            ->groupBy('b')->orderBy('b')
+            ->get([DB::raw($b('created_at') . ' AS b'), DB::raw('MIN(created_at) AS t'), DB::raw('AVG(tiempo_respuesta_ms) AS ms')]);
+
+        return [
+            'virt_t' => $t($virt),
+            'virt_cpu' => $virt->map(fn ($x) => $r($x->cpu))->all(),
+            'virt_ram' => $virt->map(fn ($x) => $r($x->ram))->all(),
+            'fw_t' => $t($fw),
+            'fw_sesiones' => $fw->map(fn ($x) => $r($x->s, 0))->all(),
+            'web_t' => $t($web),
+            'web_ms' => $web->map(fn ($x) => $r($x->ms, 0))->all(),
         ];
     }
 

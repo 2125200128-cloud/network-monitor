@@ -129,6 +129,7 @@
         'ip' => $v['ip'] ?? null, 'ips' => $v['ips'] ?? [], 'so' => $v['so'] ?? null, 't' => $v['tools'] ?? null,
         'up' => $v['uptime_seg'] ?? null, 'l' => $v['latido'] ?? null, 'b' => $v['balloon_mb'] ?? null, 'sw' => $v['swap_mb'] ?? null,
         'd' => $v['discos'] ?? [],
+        'uh' => $v['url_host'] ?? null, 'uv' => $v['url_vcenter'] ?? null,
     ])->values();
     $dsPorUrl = collect($datastores)->keyBy(fn ($d) => $d['url'] ?? ($d['host'] . '|' . $d['nombre']));
     $compartidos = collect($datastores)->where('hosts', '>', 1)->values();
@@ -278,11 +279,17 @@
                         </p>
                         @if($a && $a['cpu_modelo'])<p class="text-[11px] mt-0.5" style="color: var(--nm-text-muted)">{{ $a['cpu_modelo'] }} · {{ $a['nucleos'] }} núcleos / {{ $a['hilos'] }} hilos</p>@endif
                     </div>
-                    <p class="text-[11px]" style="color: var(--nm-text-muted)">
-                        Disponibilidad 24 h: <b class="font-mono">{{ $f['disponibilidad_24h'] === null ? '—' : $f['disponibilidad_24h'] . '%' }}</b>
-                        · Latencia: <b class="font-mono {{ $f['estado'] === 'offline' ? 'vz-t-crit' : '' }}">{{ $f['estado'] === 'offline' ? 'sin respuesta' : ($f['ping_ms'] === null ? '—' : $f['ping_ms'] . ' ms') }}</b>
-                        · Pérdida: <b class="font-mono {{ $tono($f['perdida_pct'], 1, 20) }}">{{ $f['perdida_pct'] === null ? '—' : round($f['perdida_pct']) . '%' }}</b>
-                    </p>
+                    <div class="flex flex-col items-end gap-2">
+                        <div class="flex flex-wrap justify-end gap-1.5">
+                            <x-boton-consola :url="$f['consola']" texto="Consola del host" titulo="ESXi Host Client · {{ $f['consola'] }}" />
+                            @if($f['en_vcenter'])<x-boton-consola :url="$f['en_vcenter']" texto="Ver en vCenter" titulo="Este host en el vSphere Client" />@endif
+                        </div>
+                        <p class="text-[11px]" style="color: var(--nm-text-muted)">
+                            Disponibilidad 24 h: <b class="font-mono">{{ $f['disponibilidad_24h'] === null ? '—' : $f['disponibilidad_24h'] . '%' }}</b>
+                            · Latencia: <b class="font-mono {{ $f['estado'] === 'offline' ? 'vz-t-crit' : '' }}">{{ $f['estado'] === 'offline' ? 'sin respuesta' : ($f['ping_ms'] === null ? '—' : $f['ping_ms'] . ' ms') }}</b>
+                            · Pérdida: <b class="font-mono {{ $tono($f['perdida_pct'], 1, 20) }}">{{ $f['perdida_pct'] === null ? '—' : round($f['perdida_pct']) . '%' }}</b>
+                        </p>
+                    </div>
                 </div>
 
                 @if(!$a)
@@ -374,6 +381,10 @@
                                         <span class="vz-pill" :class="{ poweredOn: 'vz-ok', poweredOff: 'vz-gris', suspended: 'vz-warn' }[v.e] || 'vz-gris'" x-text="{ poweredOn: 'Encendida', poweredOff: 'Apagada', suspended: 'Suspendida' }[v.e] || v.e"></span>
                                         <span x-show="v.s === 'yellow' || v.s === 'red'" class="vz-pill" :class="v.s === 'red' ? 'vz-crit' : 'vz-warn'" x-text="'Estado VMware: ' + (v.s === 'red' ? 'rojo' : 'amarillo')"></span>
                                         <span x-show="v.e === 'poweredOn' && v.l && v.l !== 'gray'" class="vz-pill" :class="v.l === 'green' ? 'vz-ok' : (v.l === 'red' ? 'vz-crit' : 'vz-warn')" x-text="v.l === 'green' ? 'El SO responde' : 'El SO no responde bien'"></span>
+                                        <span class="ml-auto flex flex-wrap gap-1.5">
+                                            <template x-if="v.uv"><x-boton-consola x-bind:href="v.uv" url="#" texto="Abrir en vCenter" titulo="Esta VM en el vSphere Client (consola, encender, reiniciar…)" /></template>
+                                            <template x-if="v.uh"><x-boton-consola x-bind:href="v.uh" url="#" texto="Abrir en el host" titulo="Esta VM en la consola web de su host ESXi" /></template>
+                                        </span>
                                     </div>
                                     <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-x-4 gap-y-2">
                                         <div><span class="vz-dato">vCPU</span><span class="font-mono" x-text="v.c ?? '—'"></span></div>
@@ -542,7 +553,10 @@
                             <a href="{{ route('dispositivos.show', $vc['id']) }}" class="font-black hover:underline" style="color: var(--nm-text)">{{ $vc['nombre'] }}</a>
                             <p class="text-[10.5px] font-mono" style="color: var(--nm-text-muted)">{{ $vc['ip'] }}</p>
                         </div>
-                        <span class="vz-pill {{ $vc['estado'] === 'offline' ? 'vz-crit' : 'vz-ok' }}">{{ $vc['estado'] === 'offline' ? 'Sin respuesta' : 'En línea' }}</span>
+                        <div class="flex flex-col items-end gap-1.5">
+                            <span class="vz-pill {{ $vc['estado'] === 'offline' ? 'vz-crit' : 'vz-ok' }}">{{ $vc['estado'] === 'offline' ? 'Sin respuesta' : 'En línea' }}</span>
+                            <x-boton-consola :url="$vc['consola']" texto="Abrir vSphere Client" />
+                        </div>
                     </div>
                     <div class="grid grid-cols-3 gap-2 mt-2 text-center">
                         <div class="vz-metrica" style="padding: 6px"><span>Latencia</span><b class="text-[15px]">{{ $vc['ping_ms'] === null ? '—' : $vc['ping_ms'] . ' ms' }}</b></div>
@@ -593,7 +607,7 @@
                 <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
                     <table class="vz-tabla">
                         <thead class="sticky top-0" style="background: var(--nm-surface)">
-                            <tr><th>VM</th><th>Estado</th><th>Host</th><th class="num">vCPU</th><th class="num">CPU</th><th class="num">Memoria activa</th><th>IP</th><th>Sistema operativo</th><th>Tools</th></tr>
+                            <tr><th>VM</th><th>Estado</th><th>Host</th><th class="num">vCPU</th><th class="num">CPU</th><th class="num">Memoria activa</th><th>IP</th><th>Sistema operativo</th><th>Tools</th><th>Abrir</th></tr>
                         </thead>
                         <tbody>
                             <template x-for="v in filas" :key="v.k">
@@ -607,6 +621,10 @@
                                     <td class="text-xs font-mono" x-text="v.ip || '—'"></td>
                                     <td class="text-xs truncate max-w-[220px]" :title="v.so" x-text="v.so || '—'"></td>
                                     <td class="text-xs" x-text="{ guestToolsRunning: 'Activas', guestToolsNotRunning: 'Detenidas', guestToolsExecutingScripts: 'Iniciando' }[v.t] || '—'"></td>
+                                    <td class="text-xs font-bold space-x-2">
+                                        <a x-show="v.uv" :href="v.uv" target="_blank" rel="noopener noreferrer" @click.stop class="hover:underline" style="color: var(--nm-primary)" title="Esta VM en el vSphere Client">vCenter ↗</a>
+                                        <a x-show="v.uh" :href="v.uh" target="_blank" rel="noopener noreferrer" @click.stop class="hover:underline" style="color: var(--nm-primary)" title="Esta VM en la consola web de su host ESXi">Host ↗</a>
+                                    </td>
                                 </tr>
                             </template>
                         </tbody>

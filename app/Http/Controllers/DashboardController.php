@@ -14,140 +14,38 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index(\App\Services\DashboardMetricsService $metricas)
+    /**
+     * Vista general de todos los sectores (red, firewalls, virtualización y sitios web).
+     * El inventario, la salud y el diagnóstico de la red están en Equipos (EquiposController).
+     */
+    public function index(\App\Services\DashboardMetricsService $metricas, \App\Services\ResumenSectores $sectores)
     {
-        $dispositivos = Dispositivo::with(['telemetriaChasis', 'ultimaMetrica'])
-            ->orderByRaw("CASE estado WHEN 'online' THEN 1 WHEN 'warning' THEN 2 ELSE 3 END")
-            ->orderBy('nombre')
-            ->get();
-        
-        $totalDispositivos = $dispositivos->count();
-        $dispositivosOnline = $dispositivos->where('estado', 'online')->count();
-        $dispositivosOffline = $dispositivos->where('estado', 'offline')->count();
-        $dispositivosWarning = $dispositivos->where('estado', 'warning')->count();
-
-        // -----------------------------------------------------------------------
-        // Indicadores globales: solo valores medidos. null = sin dato disponible.
-        // -----------------------------------------------------------------------
-        $onlineMetrics = $dispositivos->where('estado', '!=', 'offline')
-            ->map(fn($d) => $d->ultimaMetrica)->filter()->values();
-
-        $avgOrNull = fn($collection, $key, $precision = 1) =>
-            ($v = $collection->whereNotNull($key)->avg($key)) === null ? null : round($v, $precision);
-
-        $avgCpu  = $avgOrNull($onlineMetrics, 'cpu_usage');
-        $avgMem  = $avgOrNull($onlineMetrics, 'memory_usage');
-        $avgTemp = $avgOrNull($onlineMetrics, 'temperatura_celsius');
-        $erroresUltimoCiclo = $onlineMetrics->whereNotNull('errores_interfaz')->isEmpty()
-            ? null : (int) $onlineMetrics->sum('errores_interfaz');
-
-        // Uptime mínimo entre dispositivos en línea (eslabón más débil)
-        $globalUptime = $onlineMetrics->where('uptime', '>', 0)->min('uptime');
+        // Uptime mínimo entre los equipos en línea (el reiniciado más recientemente), de la última muestra de cada uno
+        $globalUptime = DB::table('metricas_red as m')
+            ->joinSub(DB::table('metricas_red')->where('fecha_registro', '>=', now()->subMinutes(2))
+                ->groupBy('dispositivo_id')->selectRaw('MAX(id) AS id'), 'x', 'x.id', '=', 'm.id')
+            ->where('m.uptime', '>', 0)->min('m.uptime');
         $formattedUptime = $globalUptime === null
             ? 'Sin dato'
             : floor($globalUptime / 86400) . 'd ' . floor(($globalUptime % 86400) / 3600) . 'h';
 
+        // Valores iniciales de los medidores de tráfico (después los actualiza /api/snmp/live-traffic)
         $globalRow = DB::table('global_metrics')->latest('recorded_at')->first();
-        $avgPing       = $globalRow?->latency_ms !== null ? round($globalRow->latency_ms, 1) : $avgOrNull($onlineMetrics, 'ping_ms');
-        $avgPacketLoss = $globalRow?->packet_loss_pct !== null ? round($globalRow->packet_loss_pct, 2) : null;
-        $trafficTotal  = $globalRow?->traffic_mbps !== null ? round($globalRow->traffic_mbps, 2) : null;
-        $trafficInNow  = $globalRow?->traffic_in_mbps ?? null;
+        $trafficInNow = $globalRow?->traffic_in_mbps ?? null;
         $trafficOutNow = $globalRow?->traffic_out_mbps ?? null;
-        $avgPortSat    = $globalRow?->port_saturation_pct !== null ? round($globalRow->port_saturation_pct, 1) : null;
-        if ($globalRow?->cpu_avg_pct !== null) $avgCpu = round($globalRow->cpu_avg_pct, 1);
-        if ($globalRow?->ram_avg_pct !== null) $avgMem = round($globalRow->ram_avg_pct, 1);
 
-        // Series para las gráficas (últimas 24 muestras reales de global_metrics)
-        $globalSeries = DB::table('global_metrics')
-            ->orderByDesc('recorded_at')
-            ->limit(24)
-            ->get()
-            ->reverse()
-            ->values();
-
-        $labels      = $globalSeries->map(fn($r) => Carbon::parse($r->recorded_at)->format('H:i:s'))->toArray();
-        $tiempos     = $globalSeries->map(fn($r) => Carbon::parse($r->recorded_at)->getTimestampMs())->toArray();
-        $pingData    = $globalSeries->map(fn($r) => $r->latency_ms !== null ? round($r->latency_ms, 1) : null)->toArray();
-        $trafficData = $globalSeries->map(fn($r) => $r->traffic_mbps !== null ? round($r->traffic_mbps, 2) : null)->toArray();
-        $lossData    = $globalSeries->map(fn($r) => $r->packet_loss_pct !== null ? round($r->packet_loss_pct, 2) : null)->toArray();
-
-        // Attach latest metrics, type info and platform info to each device for the inventory table
-        foreach ($dispositivos as $device) {
-            // CPU/RAM de la última muestra del poller (dispositivos.cpu_usage no lo actualiza ningún worker).
-            // Un equipo caído no tiene lectura vigente.
-            $latest = $device->ultimaMetrica;
-            $vigente = $device->estado !== 'offline' ? $latest : null;
-            $device->latest_cpu = $vigente?->cpu_usage;
-            $device->latest_mem = $vigente?->memory_usage;
-            $device->latest_loss = $latest?->packet_loss;
-            $device->latest_ping = $latest?->ping_ms;
-
-            // Resolve Type, Icon & Clean Model Info
-            $typeInfo = $device->resolveTypeInfo();
-            $device->tipo_dispositivo = $typeInfo['tipo'];
-            $device->tipo_label = $typeInfo['label'];
-            $device->clean_model = $typeInfo['clean_model'];
-            $device->tipo_badge_classes = $typeInfo['badge_classes'];
-            $device->tipo_icon_container_classes = $typeInfo['icon_container'];
-
-            // Clean Uptime
-            $uptimeStr = $device->telemetriaChasis->uptime_str ?? null;
-            if ((!$uptimeStr || str_contains($uptimeStr, 'Inaccesible') || str_contains($uptimeStr, 'Desconectado')) && $latest && $latest->uptime > 0 && $device->estado === 'online') {
-                $days = floor($latest->uptime / 86400);
-                $hrs = floor(($latest->uptime % 86400) / 3600);
-                $uptimeStr = "{$days}d {$hrs}h";
-            }
-            $device->clean_uptime = ($device->estado === 'online') 
-                ? ($uptimeStr ?: 'En línea') 
-                : 'Offline';
-        }
-
-        // Conteos por categoría de dispositivo
-        $totalSwitches = $dispositivos->where('tipo_dispositivo', 'switch')->count();
-        $totalTelefonos = $dispositivos->where('tipo_dispositivo', 'telefono')->count();
-        $totalServidores = $dispositivos->where('tipo_dispositivo', 'servidor')->count();
-        $totalPCs = $dispositivos->where('tipo_dispositivo', 'pc')->count();
-        $totalRouters = $dispositivos->where('tipo_dispositivo', 'router')->count();
-        $totalAPs = $dispositivos->where('tipo_dispositivo', 'access_point')->count();
-
-        // Compilar notificaciones inteligentes de red
-        $notificaciones = $this->compilarNotificaciones($dispositivos);
+        $notificaciones = $this->compilarNotificaciones();
         $unreadNotificaciones = count(array_filter($notificaciones, fn($n) => !$n['leida']));
 
-        $paneles = $metricas->paneles();
-
-        return view('dashboard', compact(
-            'paneles',
-            'dispositivos', 
-            'totalDispositivos', 
-            'dispositivosOnline', 
-            'dispositivosOffline', 
-            'dispositivosWarning', 
-            'totalSwitches',
-            'totalTelefonos',
-            'totalServidores',
-            'totalPCs',
-            'totalRouters',
-            'totalAPs',
-            'avgPing',
-            'avgPacketLoss',
-            'avgCpu',
-            'avgMem',
-            'avgTemp',
-            'trafficTotal',
-            'trafficInNow',
-            'trafficOutNow',
-            'erroresUltimoCiclo',
-            'avgPortSat',
-            'formattedUptime',
-            'labels',
-            'tiempos',
-            'pingData',
-            'trafficData',
-            'lossData',
-            'notificaciones',
-            'unreadNotificaciones'
-        ));
+        return view('dashboard', [
+            'paneles' => $metricas->paneles(),
+            'resumen' => $sectores->resumen(),
+            'formattedUptime' => $formattedUptime,
+            'trafficInNow' => $trafficInNow,
+            'trafficOutNow' => $trafficOutNow,
+            'notificaciones' => $notificaciones,
+            'unreadNotificaciones' => $unreadNotificaciones,
+        ]);
     }
 
     /**

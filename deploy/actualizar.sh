@@ -51,6 +51,21 @@ sudo -u "$USUARIO" php artisan migrate --force
 sudo -u "$USUARIO" php artisan optimize:clear >/dev/null
 sudo -u "$USUARIO" php artisan optimize
 
+echo "==> Nginx"
+# El sitio se regenera de deploy/nginx.conf con el server_name que ya tiene (https.sh lo pudo cambiar); lo de
+# HTTPS vive aparte en snippets/ y no se toca. Si la versión nueva no pasa 'nginx -t', se regresa la anterior.
+SITIO=/etc/nginx/sites-available/network-monitor
+if [[ -f "$SITIO" ]]; then
+    NOMBRE="$(grep -m1 -oP '^\s*server_name\s+\K[^;]+' "$SITIO" || echo _)"
+    cp "$SITIO" "$SITIO.anterior"
+    sed -e "s#@APP_DIR@#${APP_DIR}#g" -e "s#@DOMINIO@#${NOMBRE}#g" -e "s#@PHP_SOCK@#/run/php/php${PHP_V}-fpm.sock#g" \
+        deploy/nginx.conf > "$SITIO"
+    if ! nginx -t 2>/dev/null; then
+        mv "$SITIO.anterior" "$SITIO"
+        echo "[!] La configuración nueva de Nginx no pasó 'nginx -t': se dejó la anterior"
+    fi
+fi
+
 echo "==> Reinicio de servicios"
 # Los servicios systemd pudieron cambiar en el repositorio
 for f in deploy/systemd/*; do
