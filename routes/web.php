@@ -20,7 +20,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/alertas', [AlertasController::class, 'index'])->name('alertas.index');
     Route::get('/alertas/exportar', [AlertasController::class, 'exportar'])->middleware('throttle:20,1')->name('alertas.exportar');
     Route::get('/parciales/alertas',fn () => view('partials.alertas-refresco'))->name('parciales.alertas');
-    Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'index'])->name('firewalls.index');
+    Route::get('/equipos', [\App\Http\Controllers\EquiposController::class, 'index'])->name('equipos.index');
+Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'index'])->name('firewalls.index');
     Route::get('/virtualizacion', [\App\Http\Controllers\VirtualizacionController::class, 'index'])->name('virtualizacion.index');
     Route::post('/pantalla/mantener-sesion',[PantallaController::class, 'mantener'])->middleware('throttle:30,1')->name('pantalla.mantener');
 

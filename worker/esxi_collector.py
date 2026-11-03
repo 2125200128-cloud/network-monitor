@@ -134,6 +134,7 @@ def leer_host(dev, usuario, clave):
     } for a in disparadas if isinstance(a, dict)]
 
     lista_vms = [{
+        'id': v.get('_ref'),                               # id de la VM en este host: liga directa en su consola web
         'nombre': v.get('name'),
         'estado': v.get('runtime.powerState'),             # poweredOn / poweredOff / suspended
         'salud': v.get('summary.overallStatus'),

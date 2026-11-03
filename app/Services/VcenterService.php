@@ -91,6 +91,56 @@ class VcenterService
         });
     }
 
+    /** https://<vcenter> tal como está en Ajustes, o null si no hay. */
+    public static function base(): ?string
+    {
+        $host = ConfiguracionGeneral::first()?->vcenter_host;
+        return $host ? 'https://' . preg_replace('#^https?://#', '', rtrim($host, '/')) : null;
+    }
+
+    /**
+     * Ligas directas al vSphere Client, por nombre en minúsculas: ['vms' => [nombre => url], 'hosts' => [nombre => url]].
+     * Salen del inventario ya leído (resumen); vacías si el vCenter no se puede leer.
+     */
+    public function ligas(): array
+    {
+        $r = $this->resumen();
+        $uuid = ($r['ok'] ?? false) ? $this->instancia() : null;
+        if (!$uuid) {
+            return ['vms' => [], 'hosts' => []];
+        }
+        $liga = fn (string $tipo, string $clase, string $ref) => self::base() . "/ui/app/{$tipo};nav=h/urn:vmomi:{$clase}:{$ref}:{$uuid}/summary";
+        // Dos VMs con el mismo nombre: no se sabe cuál es, mejor sin liga
+        $vms = collect($r['vms'] ?? [])->groupBy(fn ($v) => mb_strtolower($v['name'] ?? ''))->filter(fn ($g) => $g->count() === 1)
+            ->map(fn ($g) => $liga('vm', 'VirtualMachine', $g->first()['vm']));
+        $hosts = collect($r['hosts'] ?? [])->mapWithKeys(fn ($h) => [mb_strtolower($h['name'] ?? '') => $liga('host', 'HostSystem', $h['host'])]);
+        return ['vms' => $vms->all(), 'hosts' => $hosts->all()];
+    }
+
+    /**
+     * Identificador de la instancia del vCenter (va dentro de las ligas del vSphere Client).
+     * RetrieveServiceContent de la API SOAP no pide sesión. Se guarda un día; si falla, se reintenta en 10 min.
+     */
+    private function instancia(): ?string
+    {
+        $clave = 'vcenter_instancia_' . md5((string) self::base());
+        $uuid = Cache::get($clave);
+        if ($uuid === null) {
+            $xml = '<?xml version="1.0"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body>'
+                . '<RetrieveServiceContent xmlns="urn:vim25"><_this type="ServiceInstance">ServiceInstance</_this></RetrieveServiceContent>'
+                . '</soapenv:Body></soapenv:Envelope>';
+            try {
+                $resp = Http::timeout(self::TIMEOUT_S)->connectTimeout(5)->withOptions(['verify' => false])
+                    ->withHeaders(['SOAPAction' => 'urn:vim25/7.0'])->withBody($xml, 'text/xml')->post(self::base() . '/sdk');
+                $uuid = preg_match('#<instanceUuid>([0-9a-f-]+)</instanceUuid>#i', $resp->body(), $m) ? $m[1] : '';
+            } catch (\Throwable) {
+                $uuid = '';
+            }
+            Cache::put($clave, $uuid, $uuid ? 86400 : 600);
+        }
+        return $uuid ?: null;
+    }
+
     /** Abre una sesión, ejecuta las consultas y la cierra aunque algo falle. */
     private function conSesion(string $host, string $usuario, string $clave, callable $trabajo): array
     {
