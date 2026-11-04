@@ -23,7 +23,6 @@ Route::middleware(['auth'])->group(function () {
     // Avisos de Telegram tal como llegan (para quien no tiene Telegram)
     Route::get('/alertas/telegram', [\App\Http\Controllers\TelegramAvisosController::class, 'index'])->name('alertas.telegram');
     Route::get('/alertas/telegram/{id}/imagen', [\App\Http\Controllers\TelegramAvisosController::class, 'imagen'])->whereNumber('id')->name('alertas.telegram.imagen');
-    Route::get('/alertas/telegram/vista/{alarma}/grafica', [\App\Http\Controllers\TelegramAvisosController::class, 'graficaVista'])->whereNumber('alarma')->name('alertas.telegram.grafica');
     Route::get('/equipos', [\App\Http\Controllers\EquiposController::class, 'index'])->name('equipos.index');
 Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'index'])->name('firewalls.index');
     Route::get('/virtualizacion', [\App\Http\Controllers\VirtualizacionController::class, 'index'])->name('virtualizacion.index');
