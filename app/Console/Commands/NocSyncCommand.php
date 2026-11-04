@@ -166,6 +166,15 @@ class NocSyncCommand extends Command
             }
         }
 
+        // Copia de los avisos de Telegram (página Avisos de Telegram): 30 días, con sus gráficas
+        $viejos = DB::table('telegram_mensajes')->where('created_at', '<', now()->subDays(30));
+        foreach ((clone $viejos)->where('con_imagen', true)->pluck('id') as $id) {
+            \Illuminate\Support\Facades\Storage::delete("telegram/{$id}.png");
+        }
+        if ($n = $viejos->delete()) {
+            $borradas['telegram_mensajes'] = $n;
+        }
+
         return $borradas;
     }
 

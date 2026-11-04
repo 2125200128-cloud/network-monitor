@@ -22,9 +22,11 @@ class EnlaceRed extends Model
         'trafico_in_mbps',
         'trafico_out_mbps',
         'vlans_permitidas',
+        'manual',
     ];
 
     protected $casts = [
+        'manual' => 'boolean',
         'velocidad_mbps' => 'integer',
         'trafico_in_mbps' => 'float',
         'trafico_out_mbps' => 'float',

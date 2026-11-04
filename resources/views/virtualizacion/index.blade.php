@@ -151,13 +151,35 @@
                 <p class="text-xs" style="color: var(--nm-text-muted)">API de cada host ESXi leída cada minuto · se actualiza cada 15 s</p>
             </div>
         </div>
-        <a href="{{ route('settings.index', ['section' => 'general']) }}" class="text-xs font-bold hover:underline" style="color: var(--nm-primary)">Credenciales ESXi / vCenter · Ajustes →</a>
+        <div class="flex flex-wrap items-center gap-4">
+            <a href="{{ route('settings.index', ['section' => 'general']) }}" class="text-xs font-bold hover:underline" style="color: var(--nm-primary)">Credenciales ESXi / vCenter · Ajustes →</a>
+            {{-- Reporte PDF: estado actual + uso e incidencias del periodo elegido --}}
+            <div class="relative" x-data="{ abierto: false }" @keydown.escape.window="abierto = false" @click.outside="abierto = false">
+                <button type="button" @click="abierto = !abierto" class="fancy fancy-sm" style="--fancy-fondo: var(--nm-bg)" :aria-expanded="abierto" title="Descargar reporte de virtualización en PDF">
+                    <span class="top-key"></span>
+                    <span class="text">
+                        <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M12 18v-6" /> <path d="m9 15 3 3 3-3" /></svg>
+                        Reporte PDF
+                    </span>
+                    <span class="bottom-key-1"></span>
+                    <span class="bottom-key-2"></span>
+                </button>
+                <div x-show="abierto" x-cloak x-transition.opacity
+                     class="absolute right-0 mt-2 w-56 z-30 rounded-xl border p-1.5 shadow-lg" style="background: var(--nm-surface); border-color: var(--nm-border)">
+                    <p class="px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider" style="color: var(--nm-text-muted)">Uso e incidencias de</p>
+                    @foreach([1 => 'Las últimas 24 h', 7 => 'Los últimos 7 días', 30 => 'Los últimos 30 días'] as $dias => $texto)
+                        <a href="{{ route('virtualizacion.pdf', ['dias' => $dias]) }}" target="_blank" @click="abierto = false"
+                           class="block px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5" style="color: var(--nm-text)">{{ $texto }}</a>
+                    @endforeach
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- x-data aquí: el refresco conserva el estado de este elemento (host y VM elegidos, filtros de la tabla) --}}
     <div data-refrescar="virtualizacion" data-refrescar-cada="15" class="flex flex-col space-y-4"
          x-data="{ buscar: '', host: '', estado: 'todas', orden: 'nombre', sel: {{ (int) $hostDefecto }}, vm: '' }"
-         x-init="$nextTick(() => window.vzPintar && vzPintar()); $watch('sel', () => $nextTick(() => vzPintar()))">
+         x-init="$nextTick(() => window.vzPintar && vzPintar()); $watch('sel', () => requestAnimationFrame(() => vzPintar()))">
         <script type="application/json" id="vzSeries">{!! json_encode($series, JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
         <script type="application/json" id="vzVmsDatos">{!! json_encode($vmsJson, JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
 

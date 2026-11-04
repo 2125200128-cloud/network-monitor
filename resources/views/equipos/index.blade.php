@@ -73,6 +73,15 @@
                             <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Supervisión en tiempo real de switches, teléfonos VoIP, servidores, PCs, routers y APs</p>
                         </div>
 
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                        @if(in_array(strtolower((string) auth()->user()?->role), ['admin', 'operador'], true))
+                            <button type="button" @click="$dispatch('agregar-dispositivo')"
+                                    class="px-3 py-2 rounded-xl text-xs font-bold text-white bg-hacienda-blue hover:opacity-90 transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
+                                    style="background: var(--nm-primary)">
+                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+                                Agregar dispositivo
+                            </button>
+                        @endif
                         <!-- Buscador en tiempo real -->
                         <div class="relative w-full sm:w-72">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -92,6 +101,7 @@
                                 style="display: none;">
                                 <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
                             </button>
+                        </div>
                         </div>
                     </div>
 
@@ -201,8 +211,9 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 dark:divide-slate-800/30 bg-white dark:bg-nm-surface">
+                                @php $esAdmin = strtolower((string) auth()->user()?->role) === 'admin'; @endphp
                                 @forelse($dispositivos as $disp)
-                                <tr 
+                                <tr data-disp-id="{{ $disp->id }}"
                                     x-show="matches('{{ addslashes($disp->nombre) }}', '{{ $disp->ip }}', '{{ $disp->estado }}', '{{ $disp->tipo_dispositivo }}')"
                                     class="hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition duration-150 group">
                                     
@@ -318,6 +329,15 @@
                                                 <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m7 11 2-2-2-2" /> <path d="M11 13h4" /> <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /></svg>
                                                 <span>CLI</span>
                                             </a>
+                                            @if($esAdmin)
+                                                <!-- Eliminar (solo Administrador): la ventana de confirmación está fuera de la zona que se refresca -->
+                                                <button type="button"
+                                                        @click="$dispatch('eliminar-dispositivo', {{ json_encode(['id' => $disp->id, 'nombre' => $disp->nombre, 'ip' => $disp->ip]) }})"
+                                                        class="px-2 py-1 rounded-lg text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white transition flex items-center shadow-xs border border-transparent dark:border-red-900/40"
+                                                        title="Eliminar del monitoreo" aria-label="Eliminar {{ $disp->nombre }} del monitoreo">
+                                                    <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M10 11v6M14 11v6" /></svg>
+                                                </button>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -355,6 +375,165 @@
                     </div>
                 </div>
             </div>
+
+    {{-- Confirmación para eliminar un equipo (la abre el botón de la tabla con el evento eliminar-dispositivo) --}}
+    @if(strtolower((string) auth()->user()?->role) === 'admin')
+        <div x-data="eliminarDispositivo()" @eliminar-dispositivo.window="abrir($event.detail)" @keydown.escape.window="cerrar()"
+             x-show="equipo" x-cloak style="display: none" @click.self="cerrar()"
+             class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="tituloEliminar">
+            {{-- Se cierra con clic en el fondo (no con .outside: el mismo clic que la abre la cerraría) --}}
+            <div class="floating-card w-full max-w-md p-6">
+                <h3 id="tituloEliminar" class="text-base font-bold text-gray-900 dark:text-white">Eliminar del monitoreo</h3>
+                <p class="mt-1 text-sm font-semibold text-gray-800 dark:text-slate-200" x-text="equipo && equipo.nombre"></p>
+                <p class="text-xs font-mono text-gray-500 dark:text-slate-400" x-text="equipo && equipo.ip"></p>
+                <p class="mt-3 text-xs text-gray-600 dark:text-slate-300 leading-relaxed">
+                    Se borran también su historial de métricas, interfaces, enlaces de topología, alarmas, notas y registro de comandos.
+                    <b>No se puede deshacer.</b> Si el equipo sigue en la red, solo volverá si se corre el descubrimiento de la topología.
+                </p>
+                <label class="block mt-4 text-xs font-semibold text-gray-700 dark:text-slate-300" for="confirmaIp">Para confirmar, escribe su IP</label>
+                <input id="confirmaIp" x-ref="campo" x-model="confirmacion" @keydown.enter.prevent="eliminar()" type="text" autocomplete="off" spellcheck="false"
+                       class="mt-1 w-full px-3 py-2 rounded-xl text-sm font-mono bg-gray-50 dark:bg-nm-sunken border border-gray-200 dark:border-slate-800/60 text-gray-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-red-500">
+                <p x-show="error" x-text="error" class="mt-2 text-xs font-semibold text-red-600 dark:text-red-400"></p>
+                <div class="mt-5 flex justify-end gap-2">
+                    <button type="button" @click="cerrar()" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition">Cancelar</button>
+                    <button type="button" @click="eliminar()" :disabled="borrando || confirmacion.trim() !== equipo?.ip"
+                            class="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                            x-text="borrando ? 'Eliminando…' : 'Eliminar'"></button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Alta de un equipo por IP: descubrimiento SNMP/CDP/LLDP; si no responde, alta manual. Después, enlaces a mano. --}}
+    @if(in_array(strtolower((string) auth()->user()?->role), ['admin', 'operador'], true))
+        <datalist id="equiposVecinos">
+            @foreach($dispositivos->sortBy(fn ($d) => mb_strtolower($d->nombre)) as $d)<option value="{{ $d->nombre }} — {{ $d->ip }}"></option>@endforeach
+        </datalist>
+        <script type="application/json" id="equiposLista">{!! json_encode($dispositivos->map(fn ($d) => ['id' => $d->id, 'n' => $d->nombre, 'ip' => $d->ip])->values(), JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
+        <div x-data="agregarDispositivo()" @agregar-dispositivo.window="abrir()" @keydown.escape.window="cerrar()"
+             x-show="abierto" x-cloak style="display: none" @click.self="cerrar()"
+             class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="tituloAgregar">
+            <div class="floating-card w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+                <div class="flex items-start justify-between gap-3">
+                    <h3 id="tituloAgregar" class="text-base font-bold text-gray-900 dark:text-white"
+                        x-text="paso === 'enlaces' ? 'Enlaces de ' + dispositivo.nombre : 'Agregar dispositivo'"></h3>
+                    <button type="button" @click="cerrar()" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" aria-label="Cerrar">
+                        <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                    </button>
+                </div>
+
+                {{-- Paso 1: IP --}}
+                <form x-show="paso === 'ip'" @submit.prevent="descubrir()" class="mt-3 space-y-3">
+                    <p class="text-xs text-gray-600 dark:text-slate-300">Se consulta el equipo por SNMP: nombre, modelo, interfaces y vecinos CDP/LLDP (sus enlaces). Tarda unos segundos.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300">IP de gestión
+                            <input x-ref="ip" x-model.trim="ip" type="text" inputmode="decimal" autocomplete="off" placeholder="10.4.1.20" required
+                                   class="mt-1 w-full px-3 py-2 rounded-xl text-sm font-mono bg-gray-50 dark:bg-nm-sunken border border-gray-200 dark:border-slate-800/60 text-gray-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500">
+                        </label>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300">Comunidad SNMP <span class="font-normal text-gray-400">(opcional)</span>
+                            <input x-model.trim="comunidad" type="password" autocomplete="off" placeholder="La general de Ajustes"
+                                   class="mt-1 w-full px-3 py-2 rounded-xl text-sm bg-gray-50 dark:bg-nm-sunken border border-gray-200 dark:border-slate-800/60 text-gray-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500">
+                        </label>
+                    </div>
+                    <p x-show="error" class="text-xs font-semibold text-red-600 dark:text-red-400">
+                        <span x-text="error"></span>
+                        <a x-show="existente" :href="existente?.url" class="underline ml-1">Ver equipo</a>
+                    </p>
+                    <div class="flex justify-end">
+                        <button type="submit" :disabled="ocupado || !ip"
+                                class="px-4 py-2 rounded-xl text-xs font-bold text-white disabled:opacity-40 transition" style="background: var(--nm-primary)"
+                                x-text="ocupado ? 'Descubriendo…' : 'Descubrir'"></button>
+                    </div>
+                </form>
+
+                {{-- Paso 2: no respondió SNMP → alta manual --}}
+                <form x-show="paso === 'manual'" @submit.prevent="guardarManual()" class="mt-3 space-y-3">
+                    <div class="px-3 py-2 rounded-xl text-xs bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300">
+                        <b x-text="ip"></b> no se pudo descubrir: <span x-text="aviso"></span><br>
+                        Puedes darlo de alta a mano: se monitorea por ping y después le agregas sus enlaces.
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300">Nombre
+                            <input x-ref="nombre" x-model.trim="nombre" type="text" maxlength="255" required
+                                   class="mt-1 w-full px-3 py-2 rounded-xl text-sm bg-gray-50 dark:bg-nm-sunken border border-gray-200 dark:border-slate-800/60 text-gray-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500">
+                        </label>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300">Tipo
+                            <select x-model="tipo" required class="mt-1 w-full px-3 py-2 rounded-xl text-sm bg-gray-50 dark:bg-nm-sunken border border-gray-200 dark:border-slate-800/60 text-gray-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500">
+                                @foreach(\App\Services\TipoDispositivoResolver::CATALOGO as $clave => $t)
+                                    @if($clave !== 'desconocido')<option value="{{ $clave }}">{{ $t['label'] }}</option>@endif
+                                @endforeach
+                            </select>
+                        </label>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300 sm:col-span-2">Ubicación <span class="font-normal text-gray-400">(opcional)</span>
+                            <input x-model.trim="ubicacion" type="text" maxlength="255" placeholder="p. ej. Site 3, rack 2"
+                                   class="mt-1 w-full px-3 py-2 rounded-xl text-sm bg-gray-50 dark:bg-nm-sunken border border-gray-200 dark:border-slate-800/60 text-gray-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500">
+                        </label>
+                    </div>
+                    <p x-show="error" x-text="error" class="text-xs font-semibold text-red-600 dark:text-red-400"></p>
+                    <div class="flex justify-between gap-2">
+                        <button type="button" @click="paso = 'ip'; error = ''" class="px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800">← Probar otra vez</button>
+                        <button type="submit" :disabled="ocupado || !nombre"
+                                class="px-4 py-2 rounded-xl text-xs font-bold text-white disabled:opacity-40 transition" style="background: var(--nm-primary)"
+                                x-text="ocupado ? 'Guardando…' : 'Agregar y seguir con enlaces'"></button>
+                    </div>
+                </form>
+
+                {{-- Paso 3: enlaces (descubiertos y manuales) --}}
+                <div x-show="paso === 'enlaces'" class="mt-3 space-y-4">
+                    <div class="px-3 py-2 rounded-xl text-xs bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300">
+                        <b x-text="dispositivo?.nombre"></b> (<span class="font-mono" x-text="dispositivo?.ip"></span>) quedó agregado<span x-show="modelo" x-text="' · ' + (modelo || '').slice(0, 80)"></span>.
+                        <span x-show="vecinosNuevos.length" x-text="'También se agregaron sus vecinos nuevos: ' + vecinosNuevos.join(', ') + '.'"></span>
+                        <a :href="dispositivo?.url" class="underline ml-1">Ver ficha</a>
+                    </div>
+
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-1">Enlaces · <span x-text="enlaces.length"></span></p>
+                        <p x-show="!enlaces.length" class="text-xs text-gray-500 dark:text-slate-400">Sin enlaces: no anunció vecinos por CDP/LLDP. Agrégalos abajo.</p>
+                        <table x-show="enlaces.length" class="w-full text-xs">
+                            <thead><tr class="text-left text-[10px] uppercase tracking-wider text-gray-400"><th class="py-1">Puerto</th><th>Vecino</th><th>Puerto del vecino</th><th>Velocidad</th><th></th></tr></thead>
+                            <tbody>
+                                <template x-for="e in enlaces" :key="e.id">
+                                    <tr class="border-t border-gray-100 dark:border-slate-800/60 text-gray-700 dark:text-slate-300">
+                                        <td class="py-1.5 font-mono" x-text="e.puerto || '—'"></td>
+                                        <td><span class="font-semibold" x-text="e.vecino"></span> <span class="font-mono text-gray-400" x-text="e.vecino_ip"></span></td>
+                                        <td class="font-mono" x-text="e.puerto_vecino || '—'"></td>
+                                        <td class="font-mono" x-text="velocidadTexto(e.velocidad)"></td>
+                                        <td class="text-right whitespace-nowrap">
+                                            <span x-show="!e.manual" class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">descubierto</span>
+                                            <button x-show="e.manual" type="button" @click="quitarEnlace(e)" class="text-[11px] font-bold text-red-600 dark:text-red-400 hover:underline">Quitar</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <form @submit.prevent="agregarEnlace()" class="p-3 rounded-xl bg-gray-50 dark:bg-nm-sunken space-y-2">
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">Agregar enlace manual</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-6 gap-2">
+                            <input x-model.trim="enlace.puertoLocal" type="text" placeholder="Su puerto (Gi1/0/1)" maxlength="64"
+                                   class="sm:col-span-1 px-2.5 py-2 rounded-lg text-xs font-mono bg-white dark:bg-nm-surface border border-gray-200 dark:border-slate-800/60 text-gray-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500">
+                            <input x-model="enlace.vecino" list="equiposVecinos" type="text" placeholder="Equipo vecino (nombre o IP)" required
+                                   class="sm:col-span-2 px-2.5 py-2 rounded-lg text-xs bg-white dark:bg-nm-surface border border-gray-200 dark:border-slate-800/60 text-gray-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500">
+                            <input x-model.trim="enlace.puertoVecino" type="text" placeholder="Puerto del vecino" maxlength="64"
+                                   class="sm:col-span-1 px-2.5 py-2 rounded-lg text-xs font-mono bg-white dark:bg-nm-surface border border-gray-200 dark:border-slate-800/60 text-gray-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500">
+                            <select x-model.number="enlace.velocidad" class="sm:col-span-1 px-2 py-2 rounded-lg text-xs bg-white dark:bg-nm-surface border border-gray-200 dark:border-slate-800/60 text-gray-800 dark:text-slate-200">
+                                <template x-for="v in [100, 1000, 10000, 25000, 40000, 100000]" :key="v"><option :value="v" x-text="velocidadTexto(v)" :selected="v === enlace.velocidad"></option></template>
+                            </select>
+                            <button type="submit" :disabled="ocupado" class="sm:col-span-1 px-3 py-2 rounded-lg text-xs font-bold text-white disabled:opacity-40" style="background: var(--nm-primary)">Agregar</button>
+                        </div>
+                        <p class="text-[11px] text-gray-400">Los puertos son opcionales; se aceptan abreviaturas (Gi, Te, Fa, Po).</p>
+                        <p x-show="error" x-text="error" class="text-xs font-semibold text-red-600 dark:text-red-400"></p>
+                    </form>
+
+                    <div class="flex justify-between gap-2">
+                        <button type="button" @click="reiniciar()" class="px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800">Agregar otro</button>
+                        <button type="button" @click="cerrar()" class="px-4 py-2 rounded-xl text-xs font-bold text-white" style="background: var(--nm-primary)">Listo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
 @endsection
 
@@ -371,5 +550,125 @@
         const tab = new URLSearchParams(location.search).get('diag');
         if (tab) setTimeout(() => abrirDiagnostico(tab), 300);
     });
+
+    // Alta por IP: paso 'ip' (descubrir) → 'manual' si no respondió SNMP → 'enlaces'
+    function agregarDispositivo() {
+        const pedir = async (metodo, url, cuerpo) => {
+            const resp = await fetch(url, {
+                method: metodo,
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'X-Requested-With': 'XMLHttpRequest' },
+                body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+            });
+            const datos = await resp.json().catch(() => ({}));
+            // 409 (IP ya registrada) y la respuesta "sin SNMP" traen su propio mensaje; los 422 traen errores por campo
+            if (!resp.ok && resp.status !== 409) {
+                throw new Error(Object.values(datos.errors || {})[0]?.[0] || datos.message || `HTTP ${resp.status}`);
+            }
+            return datos;
+        };
+        const base = '{{ url('/api/dispositivos') }}';
+        return {
+            abierto: false, paso: 'ip', ocupado: false, error: '', aviso: '', cambios: false,
+            ip: '', comunidad: '', nombre: '', tipo: 'switch', ubicacion: '',
+            dispositivo: null, modelo: null, vecinosNuevos: [], existente: null, enlaces: [],
+            enlace: { puertoLocal: '', vecino: '', puertoVecino: '', velocidad: 1000 },
+            abrir() { this.reiniciar(); this.abierto = true; },
+            reiniciar() {
+                Object.assign(this, { paso: 'ip', ocupado: false, error: '', aviso: '', ip: '', comunidad: '', nombre: '', tipo: 'switch',
+                    ubicacion: '', dispositivo: null, modelo: null, vecinosNuevos: [], existente: null, enlaces: [] });
+                this.enlace = { puertoLocal: '', vecino: '', puertoVecino: '', velocidad: 1000 };
+                this.$nextTick(() => this.$refs.ip.focus());
+            },
+            cerrar() {
+                if (this.ocupado) return;
+                this.abierto = false;
+                // El equipo nuevo aparece en la tabla (y en la lista de vecinos) al recargar
+                if (this.cambios) location.reload();
+            },
+            velocidadTexto: v => v >= 1000 ? (v / 1000) + ' Gbps' : v + ' Mbps',
+            async descubrir() {
+                this.ocupado = true; this.error = ''; this.existente = null;
+                try {
+                    const r = await pedir('POST', `${base}/descubrir`, { ip: this.ip, comunidad: this.comunidad });
+                    if (r.ok) {
+                        this.cambios = true;
+                        Object.assign(this, { dispositivo: r.dispositivo, modelo: r.modelo, vecinosNuevos: r.vecinos_nuevos || [], enlaces: r.enlaces || [], paso: 'enlaces' });
+                    } else if (r.existente) {
+                        this.error = r.mensaje; this.existente = r.existente;
+                    } else {
+                        this.aviso = r.mensaje; this.paso = 'manual';
+                        this.$nextTick(() => this.$refs.nombre.focus());
+                    }
+                } catch (e) { this.error = e.message; }
+                this.ocupado = false;
+            },
+            async guardarManual() {
+                this.ocupado = true; this.error = '';
+                try {
+                    const r = await pedir('POST', base, { ip: this.ip, nombre: this.nombre, tipo: this.tipo, ubicacion: this.ubicacion, comunidad: this.comunidad });
+                    this.cambios = true;
+                    Object.assign(this, { dispositivo: r.dispositivo, modelo: null, vecinosNuevos: [], enlaces: [], paso: 'enlaces' });
+                } catch (e) { this.error = e.message; }
+                this.ocupado = false;
+            },
+            // El vecino se elige de la lista ("nombre — IP") o escribiendo su IP o nombre exacto
+            vecinoId() {
+                const texto = this.enlace.vecino.trim().toLowerCase();
+                const lista = JSON.parse(document.getElementById('equiposLista')?.textContent || '[]');
+                const e = lista.find(d => `${d.n} — ${d.ip}`.toLowerCase() === texto || d.ip === texto || d.n.toLowerCase() === texto);
+                return e ? e.id : null;
+            },
+            async agregarEnlace() {
+                const vecino = this.vecinoId();
+                if (!vecino) { this.error = 'Elige el equipo vecino de la lista (o escribe su IP exacta).'; return; }
+                this.ocupado = true; this.error = '';
+                try {
+                    const r = await pedir('POST', `${base}/${this.dispositivo.id}/enlaces`,
+                        { vecino_id: vecino, puerto_local: this.enlace.puertoLocal, puerto_vecino: this.enlace.puertoVecino, velocidad: this.enlace.velocidad });
+                    this.enlaces = r.enlaces;
+                    this.enlace = { puertoLocal: '', vecino: '', puertoVecino: '', velocidad: this.enlace.velocidad };
+                } catch (e) { this.error = e.message; }
+                this.ocupado = false;
+            },
+            async quitarEnlace(e) {
+                this.ocupado = true; this.error = '';
+                try { this.enlaces = (await pedir('DELETE', `${base}/${this.dispositivo.id}/enlaces/${e.id}`)).enlaces; }
+                catch (err) { this.error = err.message; }
+                this.ocupado = false;
+            },
+        };
+    }
+
+    function eliminarDispositivo() {
+        return {
+            equipo: null, confirmacion: '', error: '', borrando: false,
+            abrir(equipo) {
+                Object.assign(this, { equipo, confirmacion: '', error: '', borrando: false });
+                this.$nextTick(() => this.$refs.campo.focus());
+            },
+            cerrar() { if (!this.borrando) this.equipo = null; },
+            async eliminar() {
+                if (this.borrando || this.confirmacion.trim() !== this.equipo?.ip) return;
+                this.borrando = true;
+                this.error = '';
+                try {
+                    const resp = await fetch(`{{ url('/api/dispositivos') }}/${this.equipo.id}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'X-Requested-With': 'XMLHttpRequest' },
+                        body: JSON.stringify({ confirmacion: this.confirmacion.trim() }),
+                    });
+                    const datos = await resp.json().catch(() => ({}));
+                    if (!resp.ok) throw new Error(datos.errors?.confirmacion?.[0] || datos.message || `HTTP ${resp.status}`);
+                    // Fuera de la tabla al instante; el siguiente refresco ya no lo trae
+                    document.querySelectorAll(`[data-disp-id="${this.equipo.id}"]`).forEach(fila => fila.remove());
+                    this.borrando = false;
+                    this.equipo = null;
+                } catch (err) {
+                    this.borrando = false;
+                    this.error = 'No se pudo eliminar: ' + err.message;
+                }
+            },
+        };
+    }
 </script>
 @endsection
