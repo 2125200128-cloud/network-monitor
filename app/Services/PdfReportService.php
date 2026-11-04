@@ -536,6 +536,155 @@ class PdfReportService
         return $this->responder($pdf, 'Inventario_NOC_' . date('Ymd_His') . '.pdf');
     }
 
+    /**
+     * Virtualización VMware: estado actual de hosts, datastores y VMs (lo mismo que la pantalla), uso de CPU y
+     * memoria de cada host en el periodo e incidencias del periodo. Solo lecturas reales; lo que no se leyó dice "Sin lectura".
+     */
+    public function descargarReporteVirtualizacion(array $d, $uso, $incidencias, int $dias)
+    {
+        $P = InstitutionalPdf::class;
+        $pct = fn ($v, $aviso = 80, $critico = 90) => $v === null ? '—'
+            : [number_format((float) $v, 1) . ' %', $v >= $critico ? $P::ROJO : ($v >= $aviso ? $P::AMBAR : $P::TEXTO), $v >= $aviso];
+        $bytes = fn ($b) => $b === null ? '—' : ($b >= 1024 ** 4 ? number_format($b / 1024 ** 4, 2) . ' TB' : number_format($b / 1024 ** 3, 0) . ' GB');
+        $fecha = fn ($v) => $v ? Carbon::parse($v)->format('d/m/Y H:i') : '—';
+        $periodo = $dias === 1 ? 'las últimas 24 h' : "los últimos {$dias} días";
+        $k = $d['kpi'];
+
+        $pdf = $this->nuevoPdf('L', 'Reporte de virtualización VMware',
+            'Corte al ' . now()->format('d/m/Y H:i') . " · {$k['hosts']} hosts ESXi · uso e incidencias de {$periodo}");
+
+        $pdf->tarjetasKpi([
+            ['Hosts en línea', "{$k['hosts_en_linea']} / {$k['hosts']}", $k['hosts_en_linea'] < $k['hosts'] ? $P::ROJO : $P::VERDE],
+            ['CPU promedio', $k['cpu_prom'] === null ? '—' : number_format($k['cpu_prom'], 1) . ' %', $P::AZUL_OSCURO],
+            ['Memoria promedio', $k['ram_prom'] === null ? '—' : number_format($k['ram_prom'], 1) . ' %', $P::AZUL_OSCURO],
+            ['VMs encendidas', $d['hay_api'] ? "{$k['vms_encendidas']} / {$k['vms_total']}" : '—', $P::AZUL_OSCURO],
+            ['Almacenamiento libre', $d['hay_api'] ? $bytes($k['ds_libre']) : '—', $P::AZUL_OSCURO],
+            ['Disponibilidad 24 h', $k['disponibilidad_24h'] === null ? '—' : number_format($k['disponibilidad_24h'], 2) . ' %',
+                ($k['disponibilidad_24h'] ?? 100) >= 99.9 ? $P::VERDE : $P::AMBAR],
+        ]);
+        if (!$d['hay_api']) {
+            $pdf->aviso('Ningún host tiene lectura reciente de su API (colector ESXi detenido o sin credenciales): solo hay datos de ping.');
+        }
+
+        $w = $pdf->ancho();
+        $pdf->seccion('Requiere atención ahora', 'Lo que se leyó al momento del corte: hosts, sensores, alarmas de VMware, datastores y VMs.');
+        if (!$d['atencion']) {
+            $pdf->aviso('Nada requiere atención en este momento.');
+        } else {
+            $cols = [['Nivel', $w * 0.1, 'L'], ['Qué pasa', $w * 0.42, 'L'], ['Dónde', $w * 0.22, 'L'], ['Detalle', $w * 0.26, 'L']];
+            $pdf->encabezadoTabla($cols);
+            foreach ($d['atencion'] as $i => $a) {
+                $pdf->filaTabla($cols, [$a['nivel'] === 'crit' ? ['Crítico', $P::ROJO, true] : ['Atención', $P::AMBAR, true],
+                    [$a['que'], $P::TEXTO, true], $a['donde'], $a['detalle'] ?? '—'], $i % 2 === 1);
+            }
+        }
+
+        $pdf->seccion('Hosts ESXi: estado actual');
+        $cols = [['Host', $w * 0.16, 'L'], ['IP', $w * 0.08, 'L'], ['Estado', $w * 0.08, 'L'], ['CPU', $w * 0.07, 'R'], ['Memoria', $w * 0.07, 'R'],
+            ['VMs encendidas', $w * 0.09, 'C'], ['vCPU / hilos', $w * 0.08, 'C'], ['Mem. asignada', $w * 0.08, 'R'],
+            ['Versión', $w * 0.16, 'L'], ['Encendido', $w * 0.07, 'C'], ['Disp. 24 h', $w * 0.06, 'R']];
+        $pdf->encabezadoTabla($cols);
+        foreach ($d['filas'] as $i => $f) {
+            $a = $f['api'];
+            $vms = collect($a['vms'] ?? []);
+            $asignada = $a && $a['ram_gb_total'] ? round($a['ram_asignada_gb'] / $a['ram_gb_total'] * 100) : null;
+            $pdf->filaTabla($cols, [
+                [$f['nombre'], $P::TEXTO, true], $f['ip'],
+                $f['estado'] === 'offline' ? ['Sin respuesta', $P::ROJO, true] : ($a ? ['En línea', $P::VERDE] : ['Sin lectura API', $P::AMBAR]),
+                $a ? $pct($a['cpu_pct']) : '—', $a ? $pct($a['ram_pct'], 85, 95) : '—',
+                $a ? $vms->where('estado', 'poweredOn')->count() . ' / ' . $vms->count() : '—',
+                $a ? $a['vcpu_encendidas'] . ' / ' . ($a['hilos'] ?? '—') : '—',
+                $asignada === null ? '—' : [$asignada . ' %', $asignada >= 130 ? $P::ROJO : ($asignada >= 100 ? $P::AMBAR : $P::TEXTO), $asignada >= 100],
+                \Illuminate\Support\Str::after($a['version'] ?? '—', 'VMware '), $a['uptime'] ?? '—',
+                $f['disponibilidad_24h'] === null ? '—' : $f['disponibilidad_24h'] . ' %',
+            ], $i % 2 === 1);
+        }
+
+        $pdf->seccion("Uso de CPU y memoria en {$periodo}", 'Promedio y máximo de las lecturas de la API de cada host (una por minuto). '
+            . 'Si el host tiene lecturas desde después del inicio del periodo, se indica desde cuándo.');
+        $cols = [['Host', $w * 0.24, 'L'], ['CPU promedio', $w * 0.12, 'R'], ['CPU máxima', $w * 0.12, 'R'], ['Memoria promedio', $w * 0.13, 'R'],
+            ['Memoria máxima', $w * 0.13, 'R'], ['Lecturas', $w * 0.1, 'R'], ['Datos desde', $w * 0.16, 'C']];
+        $pdf->encabezadoTabla($cols);
+        $inicio = now()->subDays($dias);
+        foreach ($d['filas'] as $i => $f) {
+            $u = $uso[$f['id']] ?? null;
+            $desde = $u ? Carbon::parse($u->desde) : null;
+            $pdf->filaTabla($cols, [
+                [$f['nombre'], $P::TEXTO, true],
+                $u ? $pct($u->cpu_prom) : 'Sin lecturas', $u ? $pct($u->cpu_max) : '—',
+                $u ? $pct($u->ram_prom, 85, 95) : '—', $u ? $pct($u->ram_max, 85, 95) : '—',
+                $u ? number_format($u->lecturas) : '0',
+                $desde && $desde->gt($inicio->copy()->addHour()) ? [$desde->format('d/m/Y H:i'), $P::AMBAR] : ($u ? 'Todo el periodo' : '—'),
+            ], $i % 2 === 1);
+        }
+
+        if ($d['clusters']) {
+            $pdf->seccion('Clústeres (vCenter)');
+            $cols = [['Clúster', $w * 0.5, 'L'], ['HA', $w * 0.25, 'C'], ['DRS', $w * 0.25, 'C']];
+            $pdf->encabezadoTabla($cols);
+            foreach ($d['clusters'] as $i => $c) {
+                $pdf->filaTabla($cols, [[$c['name'], $P::TEXTO, true],
+                    ($c['ha_enabled'] ?? false) ? ['Activo', $P::VERDE] : ['Inactivo', $P::TENUE],
+                    ($c['drs_enabled'] ?? false) ? ['Activo', $P::VERDE] : ['Inactivo', $P::TENUE]], $i % 2 === 1);
+            }
+        }
+
+        $pdf->seccion('Datastores', 'Un datastore compartido aparece una vez; el espacio libre es el menor que reporta alguno de sus hosts.');
+        if (!$d['datastores']) {
+            $pdf->aviso('Sin lectura de datastores.');
+        } else {
+            $cols = [['Datastore', $w * 0.3, 'L'], ['Tipo', $w * 0.1, 'L'], ['Capacidad', $w * 0.13, 'R'], ['Libre', $w * 0.13, 'R'],
+                ['Usado', $w * 0.12, 'R'], ['Hosts', $w * 0.1, 'C'], ['Accesible', $w * 0.12, 'C']];
+            $pdf->encabezadoTabla($cols);
+            foreach ($d['datastores'] as $i => $ds) {
+                $pdf->filaTabla($cols, [[$ds['nombre'], $P::TEXTO, true], $ds['tipo'] ?? '—', $bytes($ds['capacidad']), $bytes($ds['libre']),
+                    $pct($ds['usado_pct']), $ds['hosts'], ($ds['accesible'] ?? true) === false ? ['No', $P::ROJO, true] : 'Sí'], $i % 2 === 1);
+            }
+        }
+
+        $vms = collect($d['vms'])->sortBy(fn ($v) => [mb_strtolower($v['host']), mb_strtolower($v['nombre'] ?? '')])->values();
+        $pdf->seccion('Máquinas virtuales · ' . $vms->count(), 'CPU: uso respecto a sus vCPU. Memoria activa: la que el sistema invitado está usando.');
+        if ($vms->isEmpty()) {
+            $pdf->aviso('Sin lectura de máquinas virtuales.');
+        } else {
+            $cols = [['VM', $w * 0.2, 'L'], ['Host', $w * 0.1, 'L'], ['Estado', $w * 0.08, 'L'], ['vCPU', $w * 0.05, 'C'], ['CPU', $w * 0.07, 'R'],
+                ['Memoria', $w * 0.08, 'R'], ['Mem. activa', $w * 0.08, 'R'], ['IP', $w * 0.1, 'L'], ['Sistema operativo', $w * 0.17, 'L'], ['Tools', $w * 0.07, 'L']];
+            $pdf->encabezadoTabla($cols);
+            $gb = fn ($mb) => $mb === null ? '—' : number_format($mb / 1024, 1) . ' GB';
+            foreach ($vms as $i => $v) {
+                $on = ($v['estado'] ?? '') === 'poweredOn';
+                $pdf->filaTabla($cols, [
+                    [$v['nombre'], $P::TEXTO, true], \Illuminate\Support\Str::before($v['host'], '.'),
+                    match ($v['estado'] ?? '') { 'poweredOn' => ['Encendida', $P::VERDE], 'suspended' => ['Suspendida', $P::AMBAR], default => ['Apagada', $P::TENUE] },
+                    $v['vcpu'] ?? '—', $on ? $pct($v['cpu_pct'] ?? null) : '—', $gb($v['ram_mb'] ?? null),
+                    $on ? $gb($v['ram_mb_uso'] ?? null) : '—', $v['ip'] ?? '—', $v['so'] ?? '—',
+                    match ($v['tools'] ?? null) { 'guestToolsRunning' => 'Activas', 'guestToolsNotRunning' => 'Detenidas', default => '—' },
+                ], $i % 2 === 1);
+            }
+        }
+
+        $pdf->seccion("Incidencias de {$periodo}", 'Alarmas de los hosts, del vCenter y de la categoría virtualización (VMs, datastores).'
+            . ($incidencias->count() >= 500 ? ' Se muestran las 500 más recientes.' : ''));
+        if ($incidencias->isEmpty()) {
+            $pdf->aviso("Sin incidencias en {$periodo}.");
+        } else {
+            $cols = [['Alarma', $w * 0.34, 'L'], ['Severidad', $w * 0.09, 'L'], ['Equipo', $w * 0.17, 'L'], ['Inicio', $w * 0.12, 'C'],
+                ['Resolución', $w * 0.12, 'C'], ['Duración', $w * 0.08, 'C'], ['Estado', $w * 0.08, 'L']];
+            $pdf->encabezadoTabla($cols);
+            foreach ($incidencias as $i => $r) {
+                $fin = $r->fecha_resolucion ? Carbon::parse($r->fecha_resolucion) : now();
+                $pdf->filaTabla($cols, [[$r->titulo, $P::TEXTO, true],
+                    $r->severidad === 'critica' ? ['Crítica', $P::ROJO] : ['Advertencia', $P::AMBAR],
+                    $r->equipo ?? '—', $fecha($r->fecha_inicio),
+                    $r->fecha_resolucion ? $fecha($r->fecha_resolucion) : ['Activa', $P::ROJO, true],
+                    \App\Services\HistorialAlertas::duracion((int) Carbon::parse($r->fecha_inicio)->diffInSeconds($fin)),
+                    $r->estado === 'resuelta' ? 'Resuelta' : ['Activa', $P::ROJO, true]], $i % 2 === 1);
+            }
+        }
+
+        return $this->responder($pdf, 'Virtualizacion_' . date('Ymd_His') . '.pdf');
+    }
+
     /** Historial de incidencias (sección Alertas) con los filtros aplicados en pantalla. */
     public function descargarReporteAlertas(array $f, array $resumen, $filas)
     {

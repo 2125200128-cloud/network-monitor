@@ -78,15 +78,46 @@ class TelegramBot
                 ? $peticion->attach('photo', $foto, 'grafica.png')->post($url, $datos)
                 : $peticion->asForm()->post($url, $datos);
         } catch (\Throwable $e) {
-            throw new RuntimeException('Sin conexión con Telegram: ' . $this->ocultarToken($e->getMessage()));
+            $error = 'Sin conexión con Telegram: ' . $this->ocultarToken($e->getMessage());
+            $this->registrar($metodo, $datos, $foto, $error);
+            throw new RuntimeException($error);
         }
 
         $json = $respuesta->json();
         if (!is_array($json) || !($json['ok'] ?? false)) {
             $detalle = $json['description'] ?? ('HTTP ' . $respuesta->status());
-            throw new RuntimeException('Telegram rechazó la petición: ' . $this->ocultarToken($detalle));
+            $error = 'Telegram rechazó la petición: ' . $this->ocultarToken($detalle);
+            $this->registrar($metodo, $datos, $foto, $error);
+            throw new RuntimeException($error);
         }
+        $this->registrar($metodo, $datos, $foto, null);
         return $json['result'];
+    }
+
+    /**
+     * Copia de cada mensaje enviado (o que falló) en telegram_mensajes, para verlo en el NOC (página Avisos de Telegram).
+     * Un fallo al registrar nunca impide el envío.
+     */
+    private function registrar(string $metodo, array $datos, ?string $foto, ?string $error): void
+    {
+        if (!in_array($metodo, ['sendMessage', 'sendPhoto'], true)) {
+            return;
+        }
+        try {
+            $id = \Illuminate\Support\Facades\DB::table('telegram_mensajes')->insertGetId([
+                'chat_id' => (string) ($datos['chat_id'] ?? ''),
+                'texto' => (string) ($datos['text'] ?? $datos['caption'] ?? ''),
+                'con_imagen' => $foto !== null,
+                'ok' => $error === null,
+                'error' => $error,
+                'created_at' => now(),
+            ]);
+            if ($foto !== null) {
+                \Illuminate\Support\Facades\Storage::put("telegram/{$id}.png", $foto);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('No se pudo registrar el mensaje de Telegram: ' . $e->getMessage());
+        }
     }
 
     private function ocultarToken(string $texto): string

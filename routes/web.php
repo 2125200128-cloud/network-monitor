@@ -20,9 +20,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/alertas', [AlertasController::class, 'index'])->name('alertas.index');
     Route::get('/alertas/exportar', [AlertasController::class, 'exportar'])->middleware('throttle:20,1')->name('alertas.exportar');
     Route::get('/parciales/alertas',fn () => view('partials.alertas-refresco'))->name('parciales.alertas');
+    // Avisos de Telegram tal como llegan (para quien no tiene Telegram)
+    Route::get('/alertas/telegram', [\App\Http\Controllers\TelegramAvisosController::class, 'index'])->name('alertas.telegram');
+    Route::get('/alertas/telegram/{id}/imagen', [\App\Http\Controllers\TelegramAvisosController::class, 'imagen'])->whereNumber('id')->name('alertas.telegram.imagen');
+    Route::get('/alertas/telegram/vista/{alarma}/grafica', [\App\Http\Controllers\TelegramAvisosController::class, 'graficaVista'])->whereNumber('alarma')->name('alertas.telegram.grafica');
     Route::get('/equipos', [\App\Http\Controllers\EquiposController::class, 'index'])->name('equipos.index');
 Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'index'])->name('firewalls.index');
     Route::get('/virtualizacion', [\App\Http\Controllers\VirtualizacionController::class, 'index'])->name('virtualizacion.index');
+    Route::get('/virtualizacion/pdf', [\App\Http\Controllers\VirtualizacionController::class, 'pdf'])->middleware('throttle:20,1')->name('virtualizacion.pdf');
     Route::post('/pantalla/mantener-sesion',[PantallaController::class, 'mantener'])->middleware('throttle:30,1')->name('pantalla.mantener');
 
     // ==========================================
@@ -51,7 +56,7 @@ Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'ind
     // CONSULTA (todos los roles, incluido Auditor)
     // ==========================================
     Route::get('/consola', [ConsolaSeguraController::class, 'index'])->name('consola.index');
-    // Solo comandos de lectura (lista blanca en el controlador)
+    // Admin y Operador: cualquier comando; Auditor: solo lectura (lista en el controlador). Todo se audita.
     Route::post('/consola/ejecutar', [ConsolaSeguraController::class, 'ejecutar'])->name('consola.ejecutar');
     Route::get('/dispositivos/{id}', [DispositivoShowController::class, 'show'])->whereNumber('id')->name('dispositivos.show');
     Route::get('/dispositivos/{id}/pdf', [DispositivoShowController::class, 'descargarPdf'])->whereNumber('id')->name('dispositivos.pdf');
@@ -84,6 +89,14 @@ Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'ind
         Route::post('/api/dispositivos/{id}/tipo', [DispositivoController::class, 'corregirTipo'])->whereNumber('id')->name('dispositivos.corregir_tipo');
         Route::post('/api/dispositivos/{id}/snmp', [DispositivoController::class, 'guardarSnmp'])->whereNumber('id')->name('dispositivos.snmp.guardar');
         Route::post('/api/dispositivos/{id}/snmp/probar', [DispositivoController::class, 'probarSnmp'])->whereNumber('id')->middleware('throttle:20,1')->name('dispositivos.snmp.probar');
+        // Alta por IP (descubrimiento o manual) y enlaces a mano
+        Route::post('/api/dispositivos/descubrir', [\App\Http\Controllers\AltaDispositivoController::class, 'descubrir'])->middleware('throttle:20,1')->name('dispositivos.descubrir');
+        Route::post('/api/dispositivos', [\App\Http\Controllers\AltaDispositivoController::class, 'guardar'])->name('dispositivos.store');
+        Route::get('/api/dispositivos/{id}/enlaces', [\App\Http\Controllers\AltaDispositivoController::class, 'enlaces'])->whereNumber('id')->name('dispositivos.enlaces');
+        Route::post('/api/dispositivos/{id}/enlaces', [\App\Http\Controllers\AltaDispositivoController::class, 'agregarEnlace'])->whereNumber('id')->name('dispositivos.enlaces.store');
+        Route::delete('/api/dispositivos/{id}/enlaces/{enlace}', [\App\Http\Controllers\AltaDispositivoController::class, 'quitarEnlace'])->whereNumber(['id', 'enlace'])->name('dispositivos.enlaces.destroy');
+        // Borrar un equipo: solo Administrador
+        Route::delete('/api/dispositivos/{id}', [DispositivoController::class, 'destroy'])->whereNumber('id')->middleware('check.admin')->name('dispositivos.destroy');
 
         // Plano compartido: acomodo y zonas
         Route::post('/topologia/guardar-posiciones', [TopologiaController::class, 'guardarPosiciones'])->name('topologia.guardar_posiciones');

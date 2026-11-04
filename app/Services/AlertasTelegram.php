@@ -184,6 +184,24 @@ class AlertasTelegram
         AlarmaRed::whereIn('id', $alarmas->pluck('id'))->update(['notificada_telegram_at' => now()]);
     }
 
+    /** El mismo texto que se enviaría por esta alarma (vista previa en la página Avisos de Telegram). */
+    public function vistaPrevia(AlarmaRed $a): string
+    {
+        return $this->mensajeAlarma($a);
+    }
+
+    /** Nombre del grupo que recibe una alarma de este sector, según los chats configurados. */
+    public static function grupoDe(?ConfiguracionGeneral $cfg, string $chatId): string
+    {
+        $redes = (string) $cfg?->telegram_chat_id;
+        $servidores = trim((string) $cfg?->telegram_chat_id_servidores);
+        return match (true) {
+            $servidores !== '' && $chatId === $servidores && $chatId !== $redes => 'servidores',
+            $chatId === $redes => $servidores === '' || $servidores === $redes ? 'todo' : 'redes',
+            default => 'otro',
+        };
+    }
+
     private function mensajeAlarma(AlarmaRed $a): string
     {
         $e = fn ($t) => htmlspecialchars((string) $t, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');

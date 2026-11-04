@@ -24,8 +24,11 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
 
 INTERVALO = 60
-RETENCION_DIAS = 7
+# El reporte PDF de Virtualización llega a 30 días (8 hosts × 1 lectura/min ≈ 400 mil filas)
+RETENCION_DIAS = 35
 UBICACION = 'Centro de datos · Virtualización'
+# VMs: CPU alta respecto a sus vCPU (la alarma se dispara si dura VM_CPU_MINUTOS, ver AlarmDiagnosisService)
+VM_CPU_ALTA = 90
 
 
 def credenciales():
@@ -201,12 +204,45 @@ SQL_ERROR = upsert('esxi_estado',
                    {'error': '{nuevo}', 'intentado_en': 'NOW()', 'updated_at': 'NOW()'})
 
 
+def marcar_vms(vms, anteriores, mhz_nucleo):
+    """Compara cada VM con la lectura anterior del mismo host y anota desde cuándo:
+    - cpu_alta_desde: usa ≥ VM_CPU_ALTA % de sus vCPU (se conserva mientras siga alta);
+    - apagada_en: estaba encendida y ahora no (se conserva mientras siga apagada).
+    Con eso se alarma lo sostenido y no un pico de un minuto. Una VM movida a otro host (vMotion) empieza de cero ahí."""
+    ahora = time.strftime('%Y-%m-%d %H:%M:%S')   # hora local sin zona, como NOW() de la base
+    previas = {}
+    for p in anteriores or []:
+        for clave in (p.get('id'), p.get('nombre')):
+            if clave:
+                previas.setdefault(clave, p)
+    for v in vms:
+        p = previas.get(v.get('id')) or previas.get(v.get('nombre')) or {}
+        encendida = v['estado'] == 'poweredOn'
+        pct = None
+        if encendida and mhz_nucleo and v.get('vcpu') and v.get('cpu_mhz') is not None:
+            pct = min(100.0, v['cpu_mhz'] / (v['vcpu'] * mhz_nucleo) * 100)
+        if pct is not None and pct >= VM_CPU_ALTA:
+            v['cpu_alta_desde'] = p.get('cpu_alta_desde') or ahora
+        if not encendida:
+            if p.get('estado') == 'poweredOn':
+                v['apagada_en'] = ahora
+            elif p.get('apagada_en'):
+                v['apagada_en'] = p['apagada_en']
+
+
 def guardar(dev, datos, error):
     with conectar() as conn:
         cur = conn.cursor()
         if error:
             cur.execute(SQL_ERROR, (dev['id'], error[:1000]))
         else:
+            cur.execute('SELECT vms FROM esxi_estado WHERE dispositivo_id = %s', (dev['id'],))
+            fila = cur.fetchone()
+            anteriores = fila[0] if fila else None
+            if isinstance(anteriores, (str, bytes)):
+                anteriores = json.loads(anteriores)
+            mhz_nucleo = datos['cpu_mhz_total'] / datos['nucleos'] if datos['cpu_mhz_total'] and datos['nucleos'] else None
+            marcar_vms(datos['vms'], anteriores, mhz_nucleo)
             valores = [json.dumps(datos[c], ensure_ascii=False) if c in JSON_COLS else datos[c] for c in COLS]
             cur.execute(SQL_OK, (dev['id'], *valores))
             encendidas = sum(1 for v in datos['vms'] if v['estado'] == 'poweredOn')

@@ -47,6 +47,31 @@ class DispositivoController extends Controller
     }
 
     /**
+     * Elimina el equipo del monitoreo. La base borra en cascada todo lo suyo (métricas, interfaces, enlaces,
+     * alarmas, notas, telemetría, ESXi). Ningún proceso automático lo vuelve a dar de alta: solo un
+     * descubrimiento manual de la topología, si el equipo sigue en la red.
+     */
+    public function destroy(Request $request, int $id)
+    {
+        $dispositivo = Dispositivo::findOrFail($id);
+        // Confirmación escribiendo la IP: evita borrar el equipo de al lado por un clic
+        $request->validate(['confirmacion' => ['required', 'string', \Illuminate\Validation\Rule::in([$dispositivo->ip])]],
+            ['confirmacion.in' => 'La IP escrita no coincide con la del equipo.']);
+
+        $dispositivo->delete();
+        \App\Http\Controllers\TopologiaController::olvidarCacheGrafo();
+        \Illuminate\Support\Facades\Cache::forget('dashboard_ids_firewalls_v1');
+        \Illuminate\Support\Facades\Cache::forget('dashboard_sectores_v1');
+
+        \Illuminate\Support\Facades\Log::warning('Dispositivo eliminado', [
+            'dispositivo' => $dispositivo->id . ' ' . $dispositivo->nombre . ' (' . $dispositivo->ip . ')',
+            'usuario' => auth()->user()?->email,
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * Prueba SNMP v2c contra el equipo (sysName, sysDescr). Usa la comunidad escrita en el formulario
      * o, si viene vacía, la que el sondeo usa actualmente. No guarda nada.
      */

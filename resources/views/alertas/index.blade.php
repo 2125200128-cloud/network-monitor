@@ -34,6 +34,7 @@
                        class="inline-flex items-center h-8 px-4 rounded-lg text-[13px] font-semibold transition"
                        style="{{ $pestana === $clave ? 'color:#fff; background: var(--nm-metal-sheen), var(--nm-metal-azure);' : 'color: var(--nm-text-muted);' }}">{{ $texto }}</a>
                 @endforeach
+                <a href="{{ route('alertas.telegram') }}" class="inline-flex items-center h-8 px-4 rounded-lg text-[13px] font-semibold transition" style="color: var(--nm-text-muted);">Telegram</a>
             </nav>
         </div>
         <p class="text-xs" style="color: var(--nm-text-muted)">

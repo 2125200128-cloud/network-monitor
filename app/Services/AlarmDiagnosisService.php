@@ -1004,6 +1004,9 @@ class AlarmDiagnosisService
     /** Umbrales de los hosts ESXi y datastores (los mismos que muestra la sección Virtualización). */
     private const ESXI_CPU_AVISO = 80, ESXI_CPU_CRITICO = 90, ESXI_RAM_AVISO = 85, ESXI_RAM_CRITICO = 95;
     private const DATASTORE_AVISO = 80, DATASTORE_CRITICO = 90;
+    // VMs: CPU ≥ 90 % de sus vCPU (lo marca esxi_collector.py) sostenida estos minutos; pasa a crítica si dura la hora.
+    // Una VM que se apagó alarma este tiempo; si sigue apagada después, se da por apagado intencional.
+    private const VM_CPU_MINUTOS = 15, VM_CPU_MINUTOS_CRITICO = 60, VM_APAGADA_HORAS = 24;
 
     /**
      * Hosts ESXi y datastores, con lo que leyó worker/esxi_collector.py (tabla esxi_estado). Se usa la última
@@ -1014,7 +1017,7 @@ class AlarmDiagnosisService
     {
         $hosts = \Illuminate\Support\Facades\DB::table('esxi_estado as e')->join('dispositivos as d', 'd.id', '=', 'e.dispositivo_id')
             ->whereNotNull('e.leido_en')
-            ->get(['d.id', 'd.nombre', 'd.ip', 'e.conexion', 'e.mantenimiento', 'e.cpu_pct', 'e.ram_pct', 'e.sensores', 'e.alarmas', 'e.datastores', 'e.leido_en']);
+            ->get(['d.id', 'd.nombre', 'd.ip', 'e.conexion', 'e.mantenimiento', 'e.cpu_pct', 'e.ram_pct', 'e.sensores', 'e.alarmas', 'e.datastores', 'e.vms', 'e.leido_en']);
         $alarmas = [];
         $datastores = [];
         $link = route('virtualizacion.index');
@@ -1080,6 +1083,49 @@ class AlarmDiagnosisService
                     'VMware disparó la alarma «' . ($al['nombre'] ?? '') . '».', 'Alarma definida en VMware.', 'Según la alarma.',
                     'Revisar la alarma en el vCenter.');
             }
+            // Máquinas virtuales del host (van al chat de servidores por ser categoría virtualización)
+            foreach (json_decode($h->vms ?? '[]', true) ?: [] as $vm) {
+                $nombreVm = $vm['nombre'] ?? 'sin nombre';
+                $claveVm = $h->id . '-' . substr(md5((string) ($vm['id'] ?? $nombreVm)), 0, 10);
+                $alarmaVm = function (string $id, string $sev, string $codigo, string $titulo, string $mensaje, string $causa, string $impacto, string $accion)
+                    use ($nueva, &$alarmas, $vm, $nombreVm) {
+                    $nueva($id, $sev, 'virtualizacion', $codigo, $titulo, $mensaje, $causa, $impacto, $accion);
+                    $alarmas[array_key_last($alarmas)]['dispositivo'] = "VM {$nombreVm}";
+                    $alarmas[array_key_last($alarmas)]['ip'] = $vm['ip'] ?? '—';
+                };
+                if (in_array($vm['salud'] ?? null, ['yellow', 'red'], true) && ($vm['estado'] ?? '') === 'poweredOn') {
+                    $rojo = $vm['salud'] === 'red';
+                    $alarmaVm("esxi-vm-salud-{$claveVm}", $rojo ? 'critica' : 'advertencia', 'ESXI_VM_STATUS',
+                        "VM {$nombreVm} en " . ($rojo ? 'rojo' : 'amarillo') . " en VMware (host {$corto})",
+                        'VMware marca la máquina virtual con estado ' . ($rojo ? 'rojo' : 'amarillo') . '.',
+                        'VMware detectó un problema en la VM (alarma propia, recursos o disco).', 'La VM puede estar lenta o fallando.',
+                        '1. Abrir la VM en el vCenter o en la consola del host y revisar sus alarmas y eventos.');
+                }
+                if (!empty($vm['cpu_alta_desde']) && ($vm['estado'] ?? '') === 'poweredOn') {
+                    $desde = \Carbon\Carbon::parse($vm['cpu_alta_desde']);
+                    $minutos = (int) $desde->diffInMinutes(now());
+                    if ($minutos >= self::VM_CPU_MINUTOS) {
+                        $alarmaVm("esxi-vm-cpu-{$claveVm}", $minutos >= self::VM_CPU_MINUTOS_CRITICO ? 'critica' : 'advertencia', 'ESXI_VM_CPU_HIGH',
+                            "CPU de la VM {$nombreVm} al máximo desde hace {$minutos} min",
+                            'La VM usa 90 % o más de sus ' . ($vm['vcpu'] ?? '?') . " vCPU desde las {$desde->format('H:i')} (host {$corto}).",
+                            'Un proceso dentro de la VM consume todo el procesador asignado, o la VM tiene pocas vCPU para su carga.',
+                            'La VM y sus servicios responden lento.',
+                            '1. Entrar a la VM y ver qué proceso consume CPU. 2. Si la carga es normal, asignarle más vCPU.');
+                    }
+                }
+                if (!empty($vm['apagada_en']) && ($vm['estado'] ?? '') !== 'poweredOn') {
+                    $apagada = \Carbon\Carbon::parse($vm['apagada_en']);
+                    if ($apagada->gt(now()->subHours(self::VM_APAGADA_HORAS))) {
+                        $alarmaVm("esxi-vm-apagada-{$claveVm}", 'critica', 'ESXI_VM_POWERED_OFF',
+                            "VM {$nombreVm} " . (($vm['estado'] ?? '') === 'suspended' ? 'suspendida' : 'apagada'),
+                            "Estaba encendida y a las {$apagada->format('H:i')} del {$apagada->format('d/m')} dejó de estarlo (host {$corto}).",
+                            'Alguien la apagó o suspendió, o se cayó el sistema invitado.',
+                            'Los servicios de esa VM no están disponibles.',
+                            '1. Si fue intencional, ignorar (la alarma se retira sola a las ' . self::VM_APAGADA_HORAS . ' h). 2. Si no, encenderla y revisar sus eventos en VMware.');
+                    }
+                }
+            }
+
             foreach (json_decode($h->datastores ?? '[]', true) ?: [] as $ds) {
                 $clave = $ds['url'] ?? ($h->id . '|' . ($ds['nombre'] ?? ''));
                 $datastores[$clave] ??= $ds + ['hosts' => [], 'libres' => [], 'host_id' => $h->id, 'viejo' => $viejo, 'leido' => $leido];

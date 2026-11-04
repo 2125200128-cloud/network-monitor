@@ -77,12 +77,23 @@
     $mbps = fn ($v) => $v === null ? '—' : ($v >= 1000 ? number_format($v / 1000, 2) . ' Gbps' : number_format($v, 1) . ' Mbps');
     $tono = fn ($v, $aviso, $critico) => $v === null ? '' : ($v >= $critico ? 'fw-t-crit' : ($v >= $aviso ? 'fw-t-warn' : ''));
     $colorBarra = fn ($v, $aviso, $critico) => $v >= $critico ? '#dc2626' : ($v >= $aviso ? '#d97706' : '#10b981');
-    $conSnmp = collect($filas)->where('snmp', true);
-    $sinSnmp = collect($filas)->where('snmp', false);
     // Series para las gráficas (se leen en el script; viajan dentro de la zona que se refresca)
     $series = collect($filas)->mapWithKeys(fn ($f) => [$f['id'] => $f['historia']]);
+    // Semáforo de cada equipo con lo medido: caído, alertas, HA sin sincronizar, CPU o memoria altas
+    $nivel = function ($f) use ($umbralCpu, $memAviso) {
+        if ($f['estado'] === 'offline' || $f['alarmas_criticas'] || ($f['ha']['sincronizado'] ?? null) === false) {
+            return 'crit';
+        }
+        return $f['alarmas'] || ($f['cpu'] ?? 0) >= $umbralCpu || ($f['ram'] ?? 0) >= $memAviso ? 'warn' : 'ok';
+    };
+    $niveles = collect($filas)->mapWithKeys(fn ($f) => [$f['id'] => $nivel($f)]);
+    // Al abrir la página se muestra el que más atención requiere; si todos están bien, el primero con SNMP
+    $fwDefecto = $niveles->search('crit') ?: ($niveles->search('warn') ?: (collect($filas)->firstWhere('snmp', true)['id'] ?? (collect($filas)->first()['id'] ?? 0)));
+    $led = ['ok' => '#22c55e', 'warn' => '#f59e0b', 'crit' => '#ef4444'];
 @endphp
-<div class="flex flex-col space-y-4 pb-6">
+{{-- sel vive fuera de las zonas que se refrescan: el equipo elegido se conserva al refrescar --}}
+<div class="flex flex-col space-y-4 pb-6" x-data="{ sel: {{ (int) $fwDefecto }} }"
+     x-init="$nextTick(() => window.fwPintar && fwPintar()); $watch('sel', () => requestAnimationFrame(() => window.fwPintar && fwPintar()))">
 
     {{-- Encabezado --}}
     <div class="floating-card px-5 py-3 flex flex-wrap items-center justify-between gap-3">
@@ -137,10 +148,46 @@
             </div>
         @endif
 
-        {{-- ===== Un panel completo por cada FortiGate con métricas SNMP ===== --}}
-        @foreach($conSnmp as $f)
+        {{-- ===== Selector: todos los FortiGate; clic para ver su panel ===== --}}
+        <div class="floating-card p-5">
+            <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+                <h2 class="fw-titulo">FortiGate · {{ count($filas) }}</h2>
+                <div class="fw-leyenda">
+                    <span><i class="inline-block w-2 h-2 rounded-full" style="background: {{ $led['ok'] }}"></i>Sin novedad</span>
+                    <span><i class="inline-block w-2 h-2 rounded-full" style="background: {{ $led['warn'] }}"></i>Alerta o uso alto</span>
+                    <span><i class="inline-block w-2 h-2 rounded-full" style="background: {{ $led['crit'] }}"></i>Caído, alerta crítica o HA sin sincronizar</span>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                @foreach($filas as $f)
+                    @php $nv = $niveles[$f['id']]; @endphp
+                    <button type="button" @click="sel = {{ $f['id'] }}"
+                            class="text-left p-2.5 rounded-xl border transition hover:shadow-sm min-w-0"
+                            :style="sel === {{ $f['id'] }} ? 'border-color: var(--nm-primary); box-shadow: 0 0 0 1.5px var(--nm-primary); background: var(--nm-sunken)' : 'border-color: var(--nm-border); background: var(--nm-surface)'">
+                        <span class="flex items-center gap-1.5 min-w-0">
+                            <i class="w-2 h-2 rounded-full shrink-0 {{ $nv === 'crit' ? 'animate-pulse' : '' }}" style="background: {{ $led[$nv] }}; box-shadow: 0 0 5px {{ $led[$nv] }}"></i>
+                            <b class="text-[12.5px] truncate" style="color: var(--nm-text)" title="{{ $f['nombre'] }}">{{ \Illuminate\Support\Str::before($f['nombre'], '.') }}</b>
+                        </span>
+                        <span class="block text-[10.5px] font-mono mt-0.5" style="color: var(--nm-text-muted)">{{ $f['ip'] }}</span>
+                        <span class="block text-[11px] font-mono mt-1 truncate" style="color: var(--nm-text)">
+                            @if($f['estado'] === 'offline')
+                                <span class="fw-t-crit">Sin respuesta</span>
+                            @elseif($f['snmp'])
+                                CPU {{ $f['cpu'] === null ? '—' : round($f['cpu']) . '%' }} · RAM {{ $f['ram'] === null ? '—' : round($f['ram']) . '%' }}
+                            @else
+                                Ping {{ $f['ping_ms'] === null ? '—' : $f['ping_ms'] . ' ms' }} <span style="color: var(--nm-text-muted)">· sin SNMP</span>
+                            @endif
+                        </span>
+                        @if($f['alarmas'])<span class="fw-pill {{ $f['alarmas_criticas'] ? 'fw-crit' : 'fw-warn' }} mt-1">{{ $f['alarmas'] }} alerta(s)</span>@endif
+                    </button>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- ===== Panel del FortiGate elegido ===== --}}
+        @foreach($filas as $f)
             @php $ultimo = collect($f['historia'])->last() ?? []; @endphp
-            <div class="floating-card p-5">
+            <div class="floating-card p-5" x-show="sel === {{ $f['id'] }}" x-cloak>
                 {{-- Identificación --}}
                 <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
                     <div>
@@ -162,6 +209,23 @@
                     </div>
                 </div>
 
+                @if(!$f['snmp'])
+                    {{-- Sin SNMP: lo que sí se mide por ping --}}
+                    <div class="px-3 py-2 mb-4 rounded-xl text-[12.5px]" style="background: var(--nm-sunken); color: var(--nm-text)">
+                        <span class="fw-pill fw-gris mr-1">Solo ping</span>
+                        No responde SNMP, así que no hay CPU, memoria, sesiones ni túneles. Para tenerlos, autoriza la IP del monitor
+                        en el SNMP del equipo (o fija su comunidad en su <a href="{{ route('dispositivos.show', $f['id']) }}" class="font-bold hover:underline" style="color: var(--nm-primary)">ficha</a>).
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                        <div class="fw-metrica"><span>Estado</span><b class="{{ $f['estado'] === 'offline' ? 'fw-t-crit' : '' }}">{{ $f['estado'] === 'offline' ? 'Caído' : 'En línea' }}</b></div>
+                        <div class="fw-metrica"><span>Latencia</span><b>{{ $f['ping_ms'] === null ? '—' : $f['ping_ms'] . ' ms' }}</b><small>última medición</small></div>
+                        <div class="fw-metrica"><span>Pérdida</span><b class="{{ $tono($f['perdida_pct'], 1, 20) }}">{{ $f['perdida_pct'] === null ? '—' : round($f['perdida_pct']) . '%' }}</b><small>de paquetes</small></div>
+                        <div class="fw-metrica"><span>Disponibilidad 24 h</span><b class="{{ $f['disponibilidad_24h'] !== null && $f['disponibilidad_24h'] < 99 ? 'fw-t-warn' : '' }}">{{ $f['disponibilidad_24h'] === null ? '—' : $f['disponibilidad_24h'] . '%' }}</b></div>
+                    </div>
+                    <p class="fw-titulo mb-1">Latencia de ping (ms)</p>
+                    <div class="fw-grafica"><canvas data-fw-grafica="ping-grande" data-fw-id="{{ $f['id'] }}"></canvas></div>
+                    <p class="text-[11px] mt-1" style="color: var(--nm-text-muted)">Últimas {{ \App\Services\FirewallsService::HORAS_HISTORIA }} h; cada punto es el promedio de 5 min y los huecos son periodos sin respuesta.</p>
+                @else
                 {{-- Métricas actuales --}}
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
                     <div class="fw-metrica">
@@ -298,41 +362,9 @@
                         @endif
                     </div>
                 @endif
+                @endif
             </div>
         @endforeach
-
-        {{-- ===== Los que no responden SNMP: lo que sí se mide por ping ===== --}}
-        @if($sinSnmp->isNotEmpty())
-            <div class="floating-card p-5">
-                <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
-                    <h2 class="fw-titulo">Solo por ping · {{ $sinSnmp->count() }} FortiGate sin SNMP</h2>
-                    <p class="text-[11px]" style="color: var(--nm-text-muted)">Latencia medida de las últimas {{ \App\Services\FirewallsService::HORAS_HISTORIA }} h (promedio cada 5 min).</p>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                    @foreach($sinSnmp as $f)
-                        {{-- div y no <a>: adentro va el botón de la consola (un enlace no puede contener otro) --}}
-                        <div class="block p-3 rounded-xl border hover:shadow-sm transition" style="border-color: var(--nm-border); background: var(--nm-surface)">
-                            <div class="flex items-start justify-between gap-2">
-                                <div class="min-w-0">
-                                    <a href="{{ route('dispositivos.show', $f['id']) }}" class="block text-sm font-bold truncate hover:underline" style="color: var(--nm-text)">{{ $f['nombre'] }}</a>
-                                    <p class="text-[11px] font-mono" style="color: var(--nm-text-muted)">{{ $f['ip'] }}</p>
-                                </div>
-                                <div class="flex flex-col items-end gap-1.5">
-                                    <span class="fw-pill {{ $f['estado'] === 'offline' ? 'fw-crit' : 'fw-ok' }}">{{ $f['estado'] === 'offline' ? 'Caído' : 'En línea' }}</span>
-                                    @if($f['consola'])<x-boton-consola :url="$f['consola']" texto="Consola" />@endif
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-3 gap-2 mt-2">
-                                <div><p class="text-[10px] font-bold uppercase" style="color: var(--nm-text-muted)">Latencia</p><p class="text-sm font-mono font-bold" style="color: var(--nm-text)">{{ $f['ping_ms'] === null ? '—' : $f['ping_ms'] . ' ms' }}</p></div>
-                                <div><p class="text-[10px] font-bold uppercase" style="color: var(--nm-text-muted)">Pérdida</p><p class="text-sm font-mono font-bold {{ $tono($f['perdida_pct'], 1, 20) }}" style="color: var(--nm-text)">{{ $f['perdida_pct'] === null ? '—' : round($f['perdida_pct']) . '%' }}</p></div>
-                                <div><p class="text-[10px] font-bold uppercase" style="color: var(--nm-text-muted)">Disp. 24 h</p><p class="text-sm font-mono font-bold {{ $f['disponibilidad_24h'] !== null && $f['disponibilidad_24h'] < 99 ? 'fw-t-warn' : '' }}" style="color: var(--nm-text)">{{ $f['disponibilidad_24h'] === null ? '—' : $f['disponibilidad_24h'] . '%' }}</p></div>
-                            </div>
-                            <div class="fw-mini mt-1"><canvas data-fw-grafica="ping" data-fw-id="{{ $f['id'] }}"></canvas></div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
     </div>
 
     @include('firewalls.partials.puertos')
@@ -364,6 +396,7 @@
             const series = JSON.parse(fuente.textContent || '{}');
 
             document.querySelectorAll('canvas[data-fw-grafica]').forEach(canvas => {
+                if (!canvas.offsetParent) return;   // panel de otro equipo (oculto): sin tamaño; se dibuja al elegirlo
                 const puntos = series[canvas.dataset.fwId] || [];
                 const etiquetas = puntos.map(p => p.h);   // hora local ya formateada por el servidor
                 const col = k => puntos.map(p => p[k]);
@@ -388,11 +421,16 @@
                         config = { type: 'line', data: { labels: etiquetas, datasets: [linea('Latencia (ms)', col('ping'), '#667d93', true)] },
                                    options: base({ plugins: { legend: { display: false }, tooltip: { enabled: true } }, scales: { x: { display: false }, y: { display: false, beginAtZero: true } } }) };
                         break;
+                    case 'ping-grande':
+                        config = { type: 'line', data: { labels: etiquetas, datasets: [linea('Latencia (ms)', col('ping'), '#667d93', true)] },
+                                   options: base({ plugins: { legend: { display: false } } }) };
+                        break;
                 }
                 if (config) instancias.push(new Chart(canvas, config));
             });
         }
 
+        window.fwPintar = pintar;   // al cambiar de equipo (x-init del contenedor)
         document.addEventListener('DOMContentLoaded', pintar);
         document.addEventListener('nm:refrescado', e => { if (e.detail.claves.includes('firewalls')) pintar(); });
     })();

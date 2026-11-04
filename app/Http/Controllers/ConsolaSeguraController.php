@@ -12,9 +12,12 @@ use Symfony\Component\Process\Process;
 
 class ConsolaSeguraController extends Controller
 {
+    /** Administrador y Operador ejecutan cualquier comando; los demás roles (Auditor) solo los de lectura de abajo. */
+    private const ROLES_SIN_RESTRICCION = ['admin', 'operador'];
+
     /**
-     * Comandos de solo lectura permitidos (prefijos, ya normalizados a minúsculas).
-     * Cualquier comando que modifique configuración o estado del equipo se rechaza.
+     * Comandos de solo lectura para los roles restringidos (prefijos, ya normalizados a minúsculas).
+     * Cualquier comando que modifique configuración o estado del equipo se les rechaza.
      */
     private const COMANDOS_PERMITIDOS = [
         'show ', 'get ', 'ping ', 'traceroute ',
@@ -119,32 +122,37 @@ class ConsolaSeguraController extends Controller
     }
 
     /**
-     * Ejecuta un comando de solo lectura en el equipo real vía SSH.
+     * Ejecuta un comando (o un bloque de varias líneas en una sola sesión) en el equipo real vía SSH.
+     * Administrador y Operador: cualquier comando. Auditor: solo lectura. Todo queda en la auditoría.
      * Nunca se devuelve salida simulada: si no hay conexión, se informa el error.
      */
     public function ejecutar(Request $request)
     {
         $request->validate([
             'dispositivo_id' => 'required|exists:dispositivos,id',
-            'comando' => 'required|string|max:255',
+            'comando' => 'required|string|max:8000',
             'ssh_user' => 'nullable|string|max:100',
             'ssh_password' => 'nullable|string|max:255',
             'ssh_port' => 'nullable|integer|min:1|max:65535',
         ]);
 
         $dispositivo = Dispositivo::findOrFail($request->dispositivo_id);
-        $comandoRaw = trim($request->comando);
+        $comandoRaw = trim(str_replace("\r\n", "\n", $request->comando));
         $clientIp = $request->ip() ?: '127.0.0.1';
-        $comando = $this->normalizarComando($comandoRaw);
+        $sinRestriccion = in_array(strtolower((string) auth()->user()?->role), self::ROLES_SIN_RESTRICCION, true);
+        // Los atajos (sh run, sh ver…) se reconocen en minúsculas, pero lo demás se manda tal como se escribió:
+        // descripciones, nombres y contraseñas distinguen mayúsculas
+        $canonico = $this->normalizarComando($comandoRaw);
+        $comando = $canonico !== strtolower(preg_replace('/\s+/', ' ', $comandoRaw)) ? $canonico : $comandoRaw;
 
-        if ($comando === 'help') {
-            return response()->json(['output' => $this->textoAyuda(), 'real_ssh' => false]);
+        if ($canonico === 'help') {
+            return response()->json(['output' => $this->textoAyuda($sinRestriccion), 'real_ssh' => false]);
         }
 
-        if (preg_match('/[;|&`$><\r\n]/', $comandoRaw) || !$this->comandoPermitido($comando)) {
+        if (!$sinRestriccion && (preg_match('/[;|&`$><\r\n]/', $comandoRaw) || !$this->comandoPermitido($canonico))) {
             $this->registrarAuditoria($dispositivo->id, $comandoRaw, $clientIp, 'bloqueado', 'Comando fuera de la lista de solo lectura.');
             return response()->json([
-                'error' => "Comando bloqueado: la consola solo permite comandos de lectura (show, get, ping, traceroute). Escriba 'help' para ver la lista.",
+                'error' => "Comando bloqueado: tu rol solo permite comandos de lectura (show, get, ping, traceroute). Escribe 'help' para ver la lista.",
             ], 403);
         }
 
@@ -196,8 +204,9 @@ class ConsolaSeguraController extends Controller
      */
     private function ejecutarSsh(Dispositivo $dispositivo, string $user, int $port, string $password, string $comando): array
     {
-        // La contraseña viaja por entorno, no en la línea de comandos (visible en la lista de procesos)
-        $env = \App\Support\Python::entorno(['NOC_SSH_PASSWORD' => $password]);
+        // La contraseña y el comando viajan por entorno: la contraseña no queda en la lista de procesos y
+        // los saltos de línea de un bloque no se pierden (en Windows no viajan bien como argumento)
+        $env = \App\Support\Python::entorno(['NOC_SSH_PASSWORD' => $password, 'NOC_SSH_COMANDO' => $comando]);
 
         $process = new Process([
             \App\Support\Python::binario(),
@@ -205,9 +214,9 @@ class ConsolaSeguraController extends Controller
             $dispositivo->ip,
             (string) $port,
             $user,
-            $comando,
         ], base_path(), $env);
-        $process->setTimeout(25);
+        // Un bloque largo de configuración o un write memory tardan más que un show
+        $process->setTimeout(90);
 
         try {
             $process->run();
@@ -264,9 +273,17 @@ class ConsolaSeguraController extends Controller
         return false;
     }
 
-    private function textoAyuda(): string
+    private function textoAyuda(bool $sinRestriccion): string
     {
-        return "Consola de solo lectura. Se ejecuta por SSH en el equipo real.\n" .
+        if ($sinRestriccion) {
+            return "Se ejecuta por SSH en el equipo real. Puedes usar cualquier comando; todo queda en la auditoría.\n" .
+                   "Configuración: lo que escribas desde 'conf t' (Cisco) o 'config ...' (FortiOS) hasta 'end'\n" .
+                   "se junta y se manda en UNA sola sesión al escribir 'end'. Ctrl+C descarta el bloque.\n" .
+                   "También puedes pegar varias líneas: van juntas en la misma sesión.\n" .
+                   "Comandos como reload, write erase o execute reboot piden confirmación antes de enviarse.\n" .
+                   "  clear                          Limpiar la pantalla\n";
+        }
+        return "Tu rol solo permite comandos de lectura. Se ejecuta por SSH en el equipo real.\n" .
                "Comandos permitidos:\n" .
                "  show ...                       (Cisco IOS / NX-OS)\n" .
                "  get ...                        (FortiOS)\n" .

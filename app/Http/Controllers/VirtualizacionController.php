@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Dispositivo;
 use App\Support\Sql;
 use App\Services\FirewallsService;
+use App\Services\PdfReportService;
 use App\Services\VcenterService;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -26,6 +28,37 @@ class VirtualizacionController extends Controller
     private const BLOQUE_SEG = 300;
 
     public function index(FirewallsService $metricas, VcenterService $vcenter)
+    {
+        return view('virtualizacion.index', $this->datos($metricas, $vcenter));
+    }
+
+    /**
+     * Reporte PDF: estado actual (lo mismo que la pantalla) más el uso de CPU/memoria de cada host y las
+     * incidencias del periodo elegido.
+     */
+    public function pdf(Request $request, FirewallsService $metricas, VcenterService $vcenter, PdfReportService $pdf)
+    {
+        $dias = (int) ($request->validate(['dias' => 'nullable|in:1,7,30'])['dias'] ?? 7);
+        $datos = $this->datos($metricas, $vcenter);
+        $desde = now()->subDays($dias);
+        $ids = collect($datos['filas'])->pluck('id')->push($datos['vcenter_fila']['id'] ?? null)->filter()->all();
+
+        // Uso por host en el periodo: promedio y máximo de las lecturas reales de su API
+        $uso = DB::table('esxi_metricas')->whereIn('dispositivo_id', $ids)->where('fecha', '>=', $desde)->groupBy('dispositivo_id')
+            ->get(['dispositivo_id', DB::raw('AVG(cpu_pct) AS cpu_prom'), DB::raw('MAX(cpu_pct) AS cpu_max'),
+                DB::raw('AVG(ram_pct) AS ram_prom'), DB::raw('MAX(ram_pct) AS ram_max'), DB::raw('COUNT(*) AS lecturas'), DB::raw('MIN(fecha) AS desde')])
+            ->keyBy('dispositivo_id');
+        // Incidencias del periodo de estos equipos o de la categoría virtualización (VMs, datastores)
+        $incidencias = DB::table('alarmas_red as a')->leftJoin('dispositivos as d', 'd.id', '=', 'a.dispositivo_id')
+            ->where('a.fecha_inicio', '>=', $desde)
+            ->where(fn ($q) => $q->whereIn('a.dispositivo_id', $ids)->orWhere('a.categoria', 'virtualizacion'))
+            ->orderByDesc('a.fecha_inicio')->limit(500)
+            ->get(['a.titulo', 'a.severidad', 'a.estado', 'a.fecha_inicio', 'a.fecha_resolucion', 'd.nombre AS equipo']);
+
+        return $pdf->descargarReporteVirtualizacion($datos, $uso, $incidencias, $dias);
+    }
+
+    private function datos(FirewallsService $metricas, VcenterService $vcenter): array
     {
         $equipos = Dispositivo::with('ultimaMetrica')->where('ubicacion', self::UBICACION)->orderBy('nombre')->get();
         $ids = $equipos->pluck('id')->all();
@@ -129,7 +162,7 @@ class VirtualizacionController extends Controller
             'url_vcenter' => $ligas['vms'][mb_strtolower($v['nombre'] ?? '')] ?? null,
         ]);
 
-        return view('virtualizacion.index', [
+        return [
             'filas' => $filas->where('es_vcenter', false)->values()->all(),
             'vcenter_fila' => $filas->firstWhere('es_vcenter', true),
             'atencion' => $this->atencion($filas, $sensoresMal, $alarmas, $datastores, $vms, $vc),
@@ -158,7 +191,7 @@ class VirtualizacionController extends Controller
                 'alarmas_rojas' => $alarmas->where('estado', 'red')->count(),
                 'disponibilidad_24h' => $filas->whereNotNull('disponibilidad_24h')->avg('disponibilidad_24h'),
             ],
-        ]);
+        ];
     }
 
     /**

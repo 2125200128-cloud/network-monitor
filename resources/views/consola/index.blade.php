@@ -731,6 +731,77 @@
             let cmdHistory = [];
             let historyIndex = -1;
 
+            // Cada comando abre su propia sesión SSH. Para que la configuración funcione, desde "conf t" (Cisco) o
+            // "config ..." (FortiOS) hasta su "end" las líneas se juntan y se mandan en UNA sola sesión.
+            let bloque = null;   // { tipo: 'cisco' | 'forti', lineas: [], nivel: n }
+            const esConfCisco = l => /^conf\w*(\s+t\w*)?$/i.test(l);
+            const esConfForti = l => /^config\s+\S+/i.test(l) && !esConfCisco(l);
+            const DESTRUCTIVO = /^(reload\b|write\s+erase|erase\b|format\b|delete\b|execute\s+(reboot|shutdown|factoryreset|formatlogdisk|erase-disk))/i;
+
+            function promptBloque() {
+                const base = currentHostname.replace(/\s*#\s*$/, '');
+                term.write('\r\n\x1b[1;33m' + base + (bloque.tipo === 'cisco' ? '(config)# ' : ' (config) # ') + '\x1b[0m');
+            }
+
+            // Una línea escrita (o pegada) estando en un bloque; al cerrarse, se manda completo
+            function agregarAlBloque(linea) {
+                bloque.lineas.push(linea);
+                const l = linea.trim();
+                if (bloque.tipo === 'forti') {
+                    if (esConfForti(l)) bloque.nivel++;
+                    else if (/^end$/i.test(l)) bloque.nivel--;
+                } else if (/^end$/i.test(l)) {
+                    bloque.nivel = 0;
+                }
+                if (bloque.nivel > 0) return false;
+                const texto = bloque.lineas.join('\n');
+                bloque = null;
+                window.executeCommand(texto);
+                return true;
+            }
+
+            // Enter: comando suelto, inicio de bloque de configuración o línea dentro del bloque
+            function procesarLinea(linea) {
+                const l = linea.trim();
+                if (l !== '') {
+                    cmdHistory.push(l);
+                    historyIndex = cmdHistory.length;
+                }
+                if (bloque) {
+                    if (!agregarAlBloque(linea)) promptBloque();
+                    return;
+                }
+                if (l === '') { window.writePrompt(); return; }
+                if (esConfCisco(l) || esConfForti(l)) {
+                    bloque = { tipo: esConfCisco(l) ? 'cisco' : 'forti', lineas: [linea], nivel: 1 };
+                    term.write('\r\n\x1b[90mBloque de configuración: se manda completo en una sola sesión al escribir "end". Ctrl+C lo descarta.\x1b[0m');
+                    promptBloque();
+                    return;
+                }
+                window.executeCommand(l);
+            }
+
+            // Texto pegado con varias líneas: dentro de un bloque se suma a él; fuera, va todo junto en una sesión
+            function procesarPegado(texto) {
+                const lineas = texto.replace(/\r\n|\r/g, '\n').split('\n');
+                lineas[0] = currentLine + lineas[0];
+                currentLine = '';
+                while (lineas.length && lineas[lineas.length - 1].trim() === '') lineas.pop();
+                if (!lineas.length) return;
+                if (bloque) {
+                    for (const linea of lineas) {
+                        term.write('\r\n' + linea);
+                        if (agregarAlBloque(linea)) return;
+                    }
+                    promptBloque();
+                    return;
+                }
+                term.write(lineas.join('\r\n'));
+                cmdHistory.push(...lineas.filter(l => l.trim()));
+                historyIndex = cmdHistory.length;
+                window.executeCommand(lineas.join('\n'));
+            }
+
             function getPromptForDevice(name) {
                 const clean = (name || 'switch').split(' ')[0].replace(/[^a-zA-Z0-9_-]/g, '');
                 if (clean.toLowerCase().includes('forti') || clean.toLowerCase().startsWith('fg') || clean.toLowerCase().startsWith('fw')) {
@@ -770,17 +841,19 @@
                 const hiddenInput = document.getElementById('dispositivo_id');
                 if (isExecuting || !hiddenInput || !hiddenInput.value) return;
 
+                // Pegado de varias líneas
+                if (e.length > 1 && /[\r\n]/.test(e)) {
+                    procesarPegado(e);
+                    return;
+                }
+
                 switch (e) {
-                    case '\r': // Enter
-                        if (currentLine.trim() !== '') {
-                            cmdHistory.push(currentLine.trim());
-                            historyIndex = cmdHistory.length;
-                            window.executeCommand(currentLine.trim());
-                        } else {
-                            window.writePrompt();
-                        }
+                    case '\r': { // Enter
+                        const linea = currentLine;
                         currentLine = '';
+                        procesarLinea(linea);
                         break;
+                    }
                     case '\u007F': // Backspace
                         if (currentLine.length > 0) {
                             currentLine = currentLine.substring(0, currentLine.length - 1);
@@ -815,10 +888,21 @@
                             }
                         }
                         break;
-                    case '\u0003': // Ctrl + C
+                    case '\u0003': // Ctrl + C (también descarta un bloque de configuración sin mandar)
                         term.write('^C');
                         currentLine = '';
+                        if (bloque) {
+                            bloque = null;
+                            term.write('\r\n\x1b[33mBloque de configuración descartado: no se mandó nada al equipo.\x1b[0m');
+                        }
                         window.writePrompt();
+                        break;
+                    case '\u001a': // Ctrl + Z: en Cisco equivale a "end"
+                        if (bloque && bloque.tipo === 'cisco') {
+                            term.write('^Z');
+                            currentLine = '';
+                            agregarAlBloque('end');
+                        }
                         break;
                     case '\u000c': // Ctrl + L
                         window.clearTerminalScreen();
@@ -837,9 +921,22 @@
                     return;
                 }
 
-                isExecuting = true;
                 const hiddenInput = document.getElementById('dispositivo_id');
                 const dispositivoId = hiddenInput ? hiddenInput.value : null;
+
+                // Reinicios, borrados y formateos: confirmación antes de mandarlos
+                const peligrosas = comando.split('\n').map(l => l.trim()).filter(l => DESTRUCTIVO.test(l));
+                if (peligrosas.length) {
+                    const dev = (window.devicesMap || []).find(d => d.id == dispositivoId);
+                    const equipo = dev ? dev.nombre + ' (' + dev.ip + ')' : 'el equipo';
+                    if (!window.confirm('Vas a ejecutar en ' + equipo + ':\n\n' + peligrosas.join('\n') + '\n\nPuede reiniciar o borrar datos del equipo. ¿Continuar?')) {
+                        term.write('\r\n\x1b[33mCancelado: no se mandó nada al equipo.\x1b[0m');
+                        window.writePrompt();
+                        return;
+                    }
+                }
+
+                isExecuting = true;
                 term.write('\r\n');
 
                 fetch('{{ route('consola.ejecutar') }}', {
