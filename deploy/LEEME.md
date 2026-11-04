@@ -15,6 +15,7 @@ Guía para instalar la aplicación en **Ubuntu Server 24.04 LTS** y traer los da
 | `nm-noc-sync.timer` | Cada 10 s: alarmas, Telegram, consolidado horario, certificados SSL y limpieza |
 | `nm-web-poll.timer` | Cada 15 s: monitoreo de servicios web |
 | `nm-respaldo.timer` | Respaldo de la base todos los días a las 02:30 (se guardan 14 días) |
+| `nm-tendencias.timer` | Cada 2 h (00:00, 02:00…): tendencias de la última hora a Telegram (si está activo) |
 
 Todos arrancan solos con el servidor y se reinician si fallan. Equivalen a las ventanas de `iniciar_monitor.bat` en Windows.
 
