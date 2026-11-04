@@ -26,7 +26,7 @@ class AlertasTelegram
     private const MAX_LINEAS_RESUMEN = 25;
     private const MINUTOS_INTERMITENTE = 15;
 
-    public function __construct(private GraficaEquipo $grafica)
+    public function __construct(private TarjetaAlarma $tarjeta)
     {
     }
 
@@ -110,11 +110,11 @@ class AlertasTelegram
             $imagenes = 0;
             foreach ($nuevas as $a) {
                 $png = null;
-                if ($cfg->telegram_imagenes && $a->dispositivo_id && $imagenes < self::MAX_IMAGENES) {
+                if ($cfg->telegram_imagenes && $imagenes < self::MAX_IMAGENES) {
                     try {
-                        $png = $this->grafica->png($a->dispositivo_id, $a->fecha_inicio);
+                        $png = $this->tarjeta->png($a);
                     } catch (\Throwable $e) {
-                        Log::warning('Alertas Telegram: no se pudo generar la gráfica: ' . $e->getMessage());
+                        Log::warning('Alertas Telegram: no se pudo generar la tarjeta: ' . $e->getMessage());
                     }
                 }
                 $texto = $this->mensajeAlarma($a);
@@ -141,14 +141,13 @@ class AlertasTelegram
         }
     }
 
-    /** Mensaje de prueba a cada grupo, con una gráfica real (del switch core o del primer equipo con métricas). */
+    /** Mensaje de prueba a cada grupo, con la tarjeta de una alarma activa real como ejemplo (si hay alguna). */
     public function probar(ConfiguracionGeneral $cfg, TelegramBot $bot): array
     {
         $png = null;
         if ($cfg->telegram_imagenes) {
-            $id = \Illuminate\Support\Facades\DB::table('dispositivos')->where('ip', $cfg->ip_switch_core)->value('id')
-                ?? \Illuminate\Support\Facades\DB::table('metricas_red')->where('fecha_registro', '>=', now()->subMinutes(10))->value('dispositivo_id');
-            $png = $id ? $this->grafica->png((int) $id) : null;
+            $ejemplo = AlarmaRed::with('dispositivo')->where('estado', '!=', 'resuelta')->orderByDesc('fecha_inicio')->first();
+            $png = $ejemplo ? $this->tarjeta->png($ejemplo) : null;
         }
 
         $destinos = $this->destinos($cfg);
@@ -163,7 +162,7 @@ class AlertasTelegram
                 . 'Se enviarán: ' . ($cfg->telegram_severidad_min === 'advertencia' ? 'críticas y advertencias' : 'solo críticas')
                 . ($cfg->telegram_resueltas ? ', y avisos de resolución.' : '.'));
             if ($png) {
-                $bot->enviarFoto((string) $chat, $png, 'Ejemplo de la gráfica que acompaña a cada alerta.');
+                $bot->enviarFoto((string) $chat, $png, 'Ejemplo de la tarjeta que acompaña a cada alerta (con una alarma activa real).');
             }
         }
         return ['imagen' => (bool) $png, 'chats' => count($destinos)];

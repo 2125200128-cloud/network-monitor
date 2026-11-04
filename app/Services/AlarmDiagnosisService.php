@@ -351,8 +351,8 @@ class AlarmDiagnosisService
                 continue;
             }
             $temp = (float)($disp->telemetriaChasis->temperatura_c ?? 0);
-            if ($temp >= 55.0) {
-                $esCritica = ($temp >= 65.0);
+            if ($temp >= self::TEMP_AVISO) {
+                $esCritica = ($temp >= self::TEMP_CRITICO);
                 $dt = ($disp->telemetriaChasis && $disp->telemetriaChasis->updated_at) ? \Carbon\Carbon::parse($disp->telemetriaChasis->updated_at) : ($disp->updated_at ? \Carbon\Carbon::parse($disp->updated_at) : now());
                 $fechaFalla = $dt->format('d/m/Y H:i:s');
                 $horaFalla = $dt->format('h:i:s A');
@@ -1002,11 +1002,13 @@ class AlarmDiagnosisService
     }
 
     /** Umbrales de los hosts ESXi y datastores (los mismos que muestra la sección Virtualización). */
-    private const ESXI_CPU_AVISO = 80, ESXI_CPU_CRITICO = 90, ESXI_RAM_AVISO = 85, ESXI_RAM_CRITICO = 95;
-    private const DATASTORE_AVISO = 80, DATASTORE_CRITICO = 90;
+    // Públicas: la tarjeta de los avisos de Telegram (TarjetaAlarma) muestra el valor contra estos mismos umbrales
+    public const ESXI_CPU_AVISO = 80, ESXI_CPU_CRITICO = 90, ESXI_RAM_AVISO = 85, ESXI_RAM_CRITICO = 95;
+    public const DATASTORE_AVISO = 80, DATASTORE_CRITICO = 90;
+    public const TEMP_AVISO = 55, TEMP_CRITICO = 65;
     // VMs: CPU ≥ 90 % de sus vCPU (lo marca esxi_collector.py) sostenida estos minutos; pasa a crítica si dura la hora.
     // Una VM que se apagó alarma este tiempo; si sigue apagada después, se da por apagado intencional.
-    private const VM_CPU_MINUTOS = 15, VM_CPU_MINUTOS_CRITICO = 60, VM_APAGADA_HORAS = 24;
+    public const VM_CPU_MINUTOS = 15, VM_CPU_MINUTOS_CRITICO = 60, VM_APAGADA_HORAS = 24;
 
     /**
      * Hosts ESXi y datastores, con lo que leyó worker/esxi_collector.py (tabla esxi_estado). Se usa la última

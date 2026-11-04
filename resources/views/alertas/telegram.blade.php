@@ -60,7 +60,7 @@
         @else
             <span>Envío: <b class="{{ $cfg->telegram_activo ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600' }}">{{ $cfg->telegram_activo ? 'activado' : 'desactivado' }}</b></span>
             <span>{{ $dosGrupos ? 'Dos grupos: redes y servidores' : 'Un solo grupo para todo' }}</span>
-            <span>Se envían: <b>{{ $cfg->telegram_severidad_min === 'advertencia' ? 'críticas y advertencias' : 'solo críticas' }}</b>{{ $cfg->telegram_resueltas ? ' · y cuando se resuelven' : '' }}{{ $cfg->telegram_imagenes ? ' · con gráfica' : '' }}</span>
+            <span>Se envían: <b>{{ $cfg->telegram_severidad_min === 'advertencia' ? 'críticas y advertencias' : 'solo críticas' }}</b>{{ $cfg->telegram_resueltas ? ' · y cuando se resuelven' : '' }}{{ $cfg->telegram_imagenes ? ' · con tarjeta resumen' : '' }}</span>
         @endif
         <span>Últimas 24 h: <b>{{ $enviados24h }}</b> enviados{!! $fallidos24h ? ' · <b class="text-red-600">' . $fallidos24h . ' fallidos</b>' : '' !!}</span>
         @if(strtolower((string) auth()->user()?->role) === 'admin')
@@ -113,8 +113,8 @@
                         <p class="text-[11px] font-bold uppercase tracking-wider mb-1" style="color: var(--nm-text-muted)">Formato del aviso</p>
                         <div class="tg-chat">
                             <div class="tg-globo">
-                                @if($cfg?->telegram_imagenes && $v['alarma']->dispositivo_id)
-                                    <img src="{{ route('alertas.telegram.grafica', $v['alarma']->id) }}" alt="Gráfica de latencia y pérdida del equipo" loading="lazy" onerror="this.remove()">
+                                @if($cfg?->telegram_imagenes)
+                                    <img src="{{ route('alertas.telegram.grafica', $v['alarma']->id) }}" alt="Tarjeta resumen de la alarma" loading="lazy" onerror="this.remove()">
                                 @endif
                                 <div class="tg-bot">{{ $botNombre }}</div>
                                 <div class="tg-texto">{!! $html($v['texto']) !!}</div>
@@ -154,7 +154,7 @@
                         </p>
                         <div class="tg-globo">
                             @if($m->con_imagen)
-                                <img src="{{ route('alertas.telegram.imagen', $m->id) }}" alt="Gráfica enviada con el aviso" loading="lazy" onerror="this.remove()">
+                                <img src="{{ route('alertas.telegram.imagen', $m->id) }}" alt="Imagen enviada con el aviso" loading="lazy" onerror="this.remove()">
                             @endif
                             <div class="tg-bot">{{ $botNombre }}</div>
                             <div class="tg-texto">{!! $html($m->texto) !!}</div>
