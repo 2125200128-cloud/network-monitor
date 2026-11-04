@@ -1339,10 +1339,10 @@
                     <div class="settings-row">
                         <div>
                             <div class="settings-row-label">Opciones</div>
-                            <div class="settings-row-desc">La gráfica muestra latencia y pérdida de las últimas 3 h del equipo, con el inicio de la alarma marcado.</div>
+                            <div class="settings-row-desc">La tarjeta resume la alarma: equipo, desde cuándo y el valor que la disparó contra su umbral.</div>
                         </div>
                         <div class="flex flex-col gap-2 text-sm font-semibold">
-                            <label class="flex items-center gap-2"><input type="checkbox" name="telegram_imagenes" value="1" class="w-4 h-4 accent-black" @checked(old('telegram_imagenes', $settings->telegram_imagenes))> Adjuntar gráfica del equipo</label>
+                            <label class="flex items-center gap-2"><input type="checkbox" name="telegram_imagenes" value="1" class="w-4 h-4 accent-black" @checked(old('telegram_imagenes', $settings->telegram_imagenes))> Adjuntar tarjeta resumen</label>
                             <label class="flex items-center gap-2"><input type="checkbox" name="telegram_resueltas" value="1" class="w-4 h-4 accent-black" @checked(old('telegram_resueltas', $settings->telegram_resueltas))> Avisar cuando se resuelvan</label>
                         </div>
                     </div>

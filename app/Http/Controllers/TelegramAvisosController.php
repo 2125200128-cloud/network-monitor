@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AlarmaRed;
 use App\Models\ConfiguracionGeneral;
 use App\Services\AlertasTelegram;
-use App\Services\GraficaEquipo;
+use App\Services\TarjetaAlarma;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -69,11 +69,10 @@ class TelegramAvisosController extends Controller
         return response(Storage::get("telegram/{$id}.png"), 200, ['Content-Type' => 'image/png', 'Cache-Control' => 'private, max-age=86400']);
     }
 
-    /** Gráfica que llevaría el aviso de una alarma activa (vista previa). */
-    public function graficaVista(int $alarma, GraficaEquipo $grafica)
+    /** Tarjeta que llevaría el aviso de una alarma activa (vista previa). */
+    public function graficaVista(int $alarma, TarjetaAlarma $tarjeta)
     {
-        $a = AlarmaRed::findOrFail($alarma);
-        $png = $a->dispositivo_id ? $grafica->png($a->dispositivo_id, $a->fecha_inicio) : null;
+        $png = $tarjeta->png(AlarmaRed::with('dispositivo')->findOrFail($alarma));
         abort_unless($png, 404);
         return response($png, 200, ['Content-Type' => 'image/png', 'Cache-Control' => 'private, max-age=60']);
     }
