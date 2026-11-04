@@ -1,0 +1,8 @@
+[Unit]
+Description=Network Monitor - tendencias a Telegram cada 2 horas (00:00, 02:00, 04:00...)
+
+[Timer]
+OnCalendar=*-*-* 00/2:00:00
+
+[Install]
+WantedBy=timers.target

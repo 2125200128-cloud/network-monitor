@@ -73,6 +73,8 @@ for f in deploy/systemd/*; do
 done
 systemctl daemon-reload
 systemctl enable nm-esxi.service
+# Unidades agregadas después de la instalación: se activan aquí
+systemctl enable --now nm-tendencias.timer
 systemctl restart "php${PHP_V}-fpm" nm-poller.service nm-detalle.service nm-clasificador.service nm-esxi.service
 systemctl reload nginx
 cat <<EOF
