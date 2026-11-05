@@ -15,8 +15,12 @@ use App\Http\Controllers\ServicioWebController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TopologiaController;
 
+// Nginx pregunta aquí (auth_request) antes de dejar pasar el video de /go2rtc/: 204 o 401, sin redirigir al login
+Route::get('/api/camaras/autorizar', [\App\Http\Controllers\CamarasController::class, 'autorizar'])->name('camaras.autorizar');
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/camaras', [\App\Http\Controllers\CamarasController::class, 'index'])->name('camaras.index');
     Route::get('/alertas', [AlertasController::class, 'index'])->name('alertas.index');
     Route::get('/alertas/exportar', [AlertasController::class, 'exportar'])->middleware('throttle:20,1')->name('alertas.exportar');
     Route::get('/parciales/alertas',fn () => view('partials.alertas-refresco'))->name('parciales.alertas');
@@ -88,8 +92,10 @@ Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'ind
         Route::post('/api/dispositivos/{id}/tipo', [DispositivoController::class, 'corregirTipo'])->whereNumber('id')->name('dispositivos.corregir_tipo');
         Route::post('/api/dispositivos/{id}/snmp', [DispositivoController::class, 'guardarSnmp'])->whereNumber('id')->name('dispositivos.snmp.guardar');
         Route::post('/api/dispositivos/{id}/snmp/probar', [DispositivoController::class, 'probarSnmp'])->whereNumber('id')->middleware('throttle:20,1')->name('dispositivos.snmp.probar');
-        // Cámaras de seguridad en las tablas ARP (solo inventario)
-        Route::post('/api/camaras/buscar', [\App\Http\Controllers\EquiposController::class, 'buscarCamaras'])->middleware('throttle:6,1')->name('camaras.buscar');
+        // Cámaras de seguridad: búsqueda en las tablas ARP, acceso (credenciales cifradas) y video en vivo
+        Route::post('/api/camaras/buscar', [\App\Http\Controllers\CamarasController::class, 'buscar'])->middleware('throttle:6,1')->name('camaras.buscar');
+        Route::put('/api/camaras/{id}/acceso', [\App\Http\Controllers\CamarasController::class, 'guardarAcceso'])->whereNumber('id')->name('camaras.acceso');
+        Route::get('/api/camaras/{id}/video', [\App\Http\Controllers\CamarasController::class, 'ver'])->whereNumber('id')->middleware('throttle:120,1')->name('camaras.video');
         // Alta por IP (descubrimiento o manual) y enlaces a mano
         Route::post('/api/dispositivos/descubrir', [\App\Http\Controllers\AltaDispositivoController::class, 'descubrir'])->middleware('throttle:20,1')->name('dispositivos.descubrir');
         Route::post('/api/dispositivos', [\App\Http\Controllers\AltaDispositivoController::class, 'guardar'])->name('dispositivos.store');

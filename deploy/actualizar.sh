@@ -51,6 +51,10 @@ sudo -u "$USUARIO" php artisan migrate --force
 sudo -u "$USUARIO" php artisan optimize:clear >/dev/null
 sudo -u "$USUARIO" php artisan optimize
 
+echo "==> Video de cámaras (go2rtc)"
+# Si falla (sin salida a GitHub, huella distinta) se avisa y sigue: el resto del sistema no depende de él
+APP_DIR="$APP_DIR" bash deploy/go2rtc.sh || echo "[!] go2rtc no se pudo instalar: la página Cámaras no mostrará video"
+
 echo "==> Nginx"
 # El sitio se regenera de deploy/nginx.conf con el server_name que ya tiene (https.sh lo pudo cambiar); lo de
 # HTTPS vive aparte en snippets/ y no se toca. Si la versión nueva no pasa 'nginx -t', se regresa la anterior.
@@ -75,6 +79,10 @@ systemctl daemon-reload
 systemctl enable nm-esxi.service
 # Unidades agregadas después de la instalación: se activan aquí
 systemctl enable --now nm-tendencias.timer nm-camaras.timer
+if [[ -x /usr/local/bin/go2rtc ]]; then
+    systemctl enable nm-go2rtc.service
+    systemctl restart nm-go2rtc.service
+fi
 systemctl restart "php${PHP_V}-fpm" nm-poller.service nm-detalle.service nm-clasificador.service nm-esxi.service
 systemctl reload nginx
 cat <<EOF

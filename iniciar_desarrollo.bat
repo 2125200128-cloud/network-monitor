@@ -10,6 +10,11 @@ if not exist "%PHP%" set PHP=php
 rem Sin caches: los cambios en vistas, rutas y configuracion se ven al recargar
 "%PHP%" artisan optimize:clear >nul 2>&1
 
+rem Video de las camaras (pagina Camaras): go2rtc solo en esta PC. La configuracion va en la linea de comandos,
+rem sin archivo, para que nunca guarde en disco las credenciales de las camaras que se le registran.
+set GO2RTC=storage\app\go2rtc\go2rtc.exe
+if exist "%GO2RTC%" start "go2rtc - video de camaras" /min "%GO2RTC%" -config "{api: {listen: '127.0.0.1:1984', base_path: '/go2rtc', origin: '*'}, rtsp: {listen: ''}, webrtc: {listen: ''}, srtp: {listen: ''}, log: {level: warn}}"
+
 echo ==========================================================
 echo   NETWORK MONITOR NOC - Desarrollo
 echo     Web local:   http://localhost:8000

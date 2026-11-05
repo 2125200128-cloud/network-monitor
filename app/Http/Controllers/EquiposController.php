@@ -54,19 +54,6 @@ class EquiposController extends Controller
             'totalPCs' => $dispositivos->where('tipo_dispositivo', 'pc')->count(),
             'totalRouters' => $dispositivos->where('tipo_dispositivo', 'router')->count(),
             'totalAPs' => $dispositivos->where('tipo_dispositivo', 'access_point')->count(),
-            // Cámaras encontradas en las tablas ARP (camaras:buscar): solo inventario, no se monitorean
-            'camaras' => \Illuminate\Support\Facades\DB::table('camaras_detectadas')->orderBy('visto_en')
-                ->orderByRaw('inet(ip)')->get(),
-            'camarasBuscadas' => \Illuminate\Support\Facades\DB::table('camaras_detectadas')->max('ultima_vez'),
         ]);
-    }
-
-    /** Botón "Buscar cámaras": la misma búsqueda que corre cada noche (camaras:buscar), en el momento. */
-    public function buscarCamaras()
-    {
-        set_time_limit(300);
-        $codigo = \Illuminate\Support\Facades\Artisan::call('camaras:buscar');
-        $salida = trim(\Illuminate\Support\Facades\Artisan::output());
-        return response()->json(['message' => $salida], $codigo === 0 ? 200 : 500);
     }
 }

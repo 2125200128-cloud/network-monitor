@@ -1,0 +1,18 @@
+# go2rtc en el servidor: convierte el RTSP de las cámaras a video para el navegador (página Cámaras).
+# Solo escucha en el propio servidor; Nginx lo publica en /go2rtc/ para usuarios con sesión y solo las rutas de video.
+# Las cámaras no se configuran aquí: la aplicación las registra al abrirlas (PUT /api/streams), con sus credenciales
+# descifradas en ese momento; no quedan en este archivo.
+api:
+  listen: "127.0.0.1:1984"
+  base_path: "/go2rtc"
+
+# Servidores que no se usan (el video sale por la API vía WebSocket/MSE): apagados para no abrir puertos
+rtsp:
+  listen: ""
+webrtc:
+  listen: ""
+srtp:
+  listen: ""
+
+log:
+  level: warn
