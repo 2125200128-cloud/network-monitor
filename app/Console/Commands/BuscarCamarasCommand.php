@@ -25,6 +25,9 @@ class BuscarCamarasCommand extends Command
      */
     private const OUI_CAMARAS = 'data/oui_camaras.csv';
 
+    /** Solo se guardan las cámaras de esta red (sector 10.4); las de otras dependencias no se muestran. */
+    private const RED_CAMARAS = '10.4.0.0/16';
+
     /** Tipos de equipo que pueden tener tabla ARP de otras redes (los que enrutan o gestionan VLANs). */
     private const TIPOS_CON_ARP = ['switch', 'router', 'firewall', 'wlc', 'desconocido'];
 
@@ -47,9 +50,16 @@ class BuscarCamarasCommand extends Command
             return self::FAILURE;
         }
 
+        [$red, $bits] = explode('/', self::RED_CAMARAS);
+        $mascara = -1 << (32 - (int) $bits);
+        $enRed = fn (string $ip) => ip2long($ip) !== false && (ip2long($ip) & $mascara) === (ip2long($red) & $mascara);
+        $camaras = array_values(array_filter($res['camaras'], fn ($c) => $enRed($c['ip'])));
+        // Las que quedaron guardadas de antes fuera de la red (p. ej. si cambió RED_CAMARAS) se quitan
+        $fuera = DB::table('camaras_detectadas')->whereRaw('NOT (inet(ip) << ?::cidr)', [self::RED_CAMARAS])->delete();
+
         $ahora = now();
         $nuevas = 0;
-        foreach ($res['camaras'] as $c) {
+        foreach ($camaras as $c) {
             $datos = ['ip' => $c['ip'], 'fabricante' => mb_substr($c['fabricante'], 0, 255), 'visto_en' => $c['visto_en'],
                 'visto_en_ip' => $c['visto_en_ip'], 'rtsp' => $c['rtsp'], 'http' => $c['http'], 'https' => $c['https'], 'ultima_vez' => $ahora];
             if (DB::table('camaras_detectadas')->where('mac', $c['mac'])->update($datos) === 0) {
@@ -59,8 +69,8 @@ class BuscarCamarasCommand extends Command
         }
 
         $conTabla = collect($res['equipos'])->where('entradas', '>', 0)->count();
-        $this->info(count($res['camaras']) . " cámaras encontradas ({$nuevas} nuevas) en las tablas ARP de {$conTabla} de "
-            . count($res['equipos']) . ' equipos.');
+        $this->info(count($camaras) . ' cámaras en ' . self::RED_CAMARAS . " ({$nuevas} nuevas) en las tablas ARP de {$conTabla} de "
+            . count($res['equipos']) . ' equipos' . ($fuera ? "; se quitaron {$fuera} de otras redes" : '') . '.');
         return self::SUCCESS;
     }
 }
