@@ -25,6 +25,8 @@ class AlertasTelegram
     private const MAX_IMAGENES = 3;
     private const MAX_LINEAS_RESUMEN = 25;
     private const MINUTOS_INTERMITENTE = 15;
+    /** Tipos de equipo cuyas alarmas no se avisan por Telegram (siguen en Alertas y en el dashboard). */
+    private const TIPOS_SIN_TELEGRAM = ['telefono'];
 
     public function __construct(private TarjetaAlarma $tarjeta)
     {
@@ -47,9 +49,10 @@ class AlertasTelegram
             ->get()->filter(fn (AlarmaRed $a) => $this->esIntermitente($a));
         $nuevas = $nuevas->reject(fn (AlarmaRed $a) => $this->esIntermitente($a))->merge($pospuestas)
             ->filter(fn (AlarmaRed $a) => in_array($a->severidad, $severidades, true))
+            ->reject(fn (AlarmaRed $a) => $this->excluida($a))
             ->sortBy(fn (AlarmaRed $a) => $a->severidad === 'critica' ? 0 : 1)->values();
         $resueltas = $cfg->telegram_resueltas
-            ? $resueltas->filter(fn (AlarmaRed $a) => $a->notificada_telegram_at !== null)->values()
+            ? $resueltas->filter(fn (AlarmaRed $a) => $a->notificada_telegram_at !== null)->reject(fn (AlarmaRed $a) => $this->excluida($a))->values()
             : collect();
 
         $enviar = function (callable $fn) use (&$res) {
@@ -75,6 +78,12 @@ class AlertasTelegram
             Cache::forget('telegram_ultimo_error');
         }
         return $res;
+    }
+
+    /** Alarma de un tipo de equipo que no se avisa por Telegram (teléfonos IP). */
+    private function excluida(AlarmaRed $a): bool
+    {
+        return $a->dispositivo && in_array($a->dispositivo->tipo_dispositivo, self::TIPOS_SIN_TELEGRAM, true);
     }
 
     /** Sector de la alarma: 'servidores' (servidores, virtualización y sitios web) o 'redes' (todo lo demás). */
