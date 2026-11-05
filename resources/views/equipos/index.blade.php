@@ -53,8 +53,7 @@
             <div class="floating-card p-6 mb-6" data-refrescar="inventario" x-data="{
                 filtroBusqueda: '',
                 filtroEstado: 'todos',
-                // ?tipo=camaras abre directo el filtro (lo usa el botón Buscar cámaras al recargar)
-                filtroTipo: new URLSearchParams(location.search).get('tipo') || 'todos',
+                filtroTipo: 'todos',
                 matches(nombre, ip, estado, tipo) {
                     const q = this.filtroBusqueda.toLowerCase().trim();
                     const matchText = !q || nombre.toLowerCase().includes(q) || ip.toLowerCase().includes(q);
@@ -81,12 +80,6 @@
                                     style="background: var(--nm-primary)">
                                 <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14" /></svg>
                                 Agregar dispositivo
-                            </button>
-                            <button type="button" @click="$dispatch('buscar-camaras')"
-                                    class="px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 whitespace-nowrap border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800"
-                                    title="Busca cámaras de seguridad en las tablas ARP de los switches y routers (tarda unos 30 s)">
-                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
-                                Buscar cámaras
                             </button>
                         @endif
                         <!-- Buscador en tiempo real -->
@@ -171,18 +164,10 @@
                                 <img src="{{ asset('images/topology/pc.png') }}" class="w-4 h-4 object-contain" alt="PCs">
                                 PCs ({{ $totalPCs }})
                             </button>
-                            <button
-                                @click="filtroTipo = 'camaras'"
-                                :class="filtroTipo === 'camaras' ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
-                                class="px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
-                                type="button" title="Cámaras de seguridad encontradas en las tablas ARP (solo inventario, no se monitorean)">
-                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16.75 12h3.63a1 1 0 0 1 .96 1.28l-1.17 4.1a1 1 0 0 1-.96.72H17" /><path d="M2 8.55V5a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v6.58a1 1 0 0 1-.4.8l-3.2 2.4a1 1 0 0 1-.6.2H3a1 1 0 0 1-1-1z" /><path d="M7 15v3a2 2 0 0 1-2 2H2" /></svg>
-                                Cámaras ({{ $camaras->count() }})
-                            </button>
                         </div>
 
-                        <!-- Filtros por Estado (las cámaras no se monitorean: no tienen estado) -->
-                        <div x-show="filtroTipo !== 'camaras'" class="flex items-center bg-gray-100/80 dark:bg-nm-sunken border border-transparent dark:border-slate-800/40 p-1 rounded-xl text-xs font-semibold">
+                        <!-- Filtros por Estado -->
+                        <div class="flex items-center bg-gray-100/80 dark:bg-nm-sunken border border-transparent dark:border-slate-800/40 p-1 rounded-xl text-xs font-semibold">
                             <button 
                                 @click="filtroEstado = 'todos'"
                                 :class="filtroEstado === 'todos' ? 'bg-white dark:bg-slate-800 text-hacienda-blue dark:text-blue-400 shadow-sm dark:shadow-none font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'"
@@ -211,7 +196,7 @@
                 </div>
 
                 <!-- Contenedor con Scroll Interno Controlado (Evita scroll infinito de la página) -->
-                <div x-show="filtroTipo !== 'camaras'" class="rounded-xl border border-gray-200/80 dark:border-slate-800/40 overflow-hidden shadow-xs dark:shadow-none bg-white dark:bg-nm-surface">
+                <div class="rounded-xl border border-gray-200/80 dark:border-slate-800/40 overflow-hidden shadow-xs dark:shadow-none bg-white dark:bg-nm-surface">
                     <div x-ref="tableContainer" class="max-h-[420px] overflow-y-auto overflow-x-auto custom-scrollbar relative" style="scrollbar-gutter: stable;">
                         <table class="w-full text-left border-separate border-spacing-0 text-xs">
                             <thead class="sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.04)] dark:shadow-none">
@@ -368,65 +353,8 @@
                     </div>
                 </div>
 
-                {{-- Cámaras de seguridad (filtro "Cámaras"): encontradas en las tablas ARP; solo inventario, no se monitorean --}}
-                @php
-                    $marcaCamara = fn ($f) => match (true) {
-                        (bool) preg_match('/ezviz/i', $f) => 'Ezviz (Hikvision)', (bool) preg_match('/hikvision/i', $f) => 'Hikvision',
-                        (bool) preg_match('/dahua/i', $f) => 'Dahua', (bool) preg_match('/axis/i', $f) => 'Axis',
-                        (bool) preg_match('/uniview/i', $f) => 'Uniview', (bool) preg_match('/hanwha|samsung techwin/i', $f) => 'Hanwha',
-                        default => \Illuminate\Support\Str::of($f)->before(',')->limit(24)->toString(),
-                    };
-                    $ultimaBusqueda = $camarasBuscadas ? \Carbon\Carbon::parse($camarasBuscadas) : null;
-                @endphp
-                <div x-show="filtroTipo === 'camaras'" x-cloak>
-                    <p class="text-[11.5px] mb-2 text-gray-500 dark:text-slate-400">
-                        Encontradas en las tablas ARP de los switches y routers por el fabricante de su tarjeta de red (Hikvision, Dahua, Axis…).
-                        Solo inventario: no se monitorean ni generan alarmas. Algunas pueden ser grabadoras (NVR/DVR) del mismo fabricante.
-                        · Última búsqueda: <b>{{ $ultimaBusqueda ? $ultimaBusqueda->format('d/m/Y H:i') : 'nunca' }}</b> (se repite cada noche)
-                    </p>
-                    <div class="rounded-xl border border-gray-200/80 dark:border-slate-800/40 overflow-hidden bg-white dark:bg-nm-surface">
-                        <div class="max-h-[420px] overflow-y-auto overflow-x-auto custom-scrollbar">
-                            <table class="w-full text-left border-separate border-spacing-0 text-xs">
-                                <thead class="sticky top-0 z-20">
-                                    <tr class="text-[11px] font-bold uppercase tracking-wider">
-                                        @foreach(['IP', 'MAC', 'Fabricante', 'Vista en', 'Video (RTSP)', 'Web', 'Primera vez', 'Última vez'] as $th)
-                                            <th class="py-2.5 px-3.5 bg-slate-50/95 dark:bg-nm-surface/95 border-b border-gray-200 dark:border-slate-800/40 text-gray-500 dark:text-slate-400 whitespace-nowrap">{{ $th }}</th>
-                                        @endforeach
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($camaras as $cam)
-                                        @php
-                                            $busqueda = mb_strtolower("{$cam->ip} {$cam->mac} {$cam->fabricante} {$cam->visto_en}");
-                                            $web = $cam->https ? "https://{$cam->ip}" : ($cam->http ? "http://{$cam->ip}" : null);
-                                            // No apareció en la última búsqueda: apagada, desconectada o cambió de IP
-                                            $vieja = $ultimaBusqueda && \Carbon\Carbon::parse($cam->ultima_vez)->lt($ultimaBusqueda->copy()->subMinutes(30));
-                                        @endphp
-                                        <tr x-show="!filtroBusqueda || {{ json_encode($busqueda) }}.includes(filtroBusqueda.toLowerCase().trim())"
-                                            class="hover:bg-blue-50/40 dark:hover:bg-slate-800/40 {{ $vieja ? 'opacity-60' : '' }}">
-                                            <td class="py-2 px-3.5 border-b border-gray-100 dark:border-slate-800/30 font-mono font-bold text-gray-800 dark:text-slate-200 whitespace-nowrap">{{ $cam->ip }}</td>
-                                            <td class="py-2 px-3.5 border-b border-gray-100 dark:border-slate-800/30 font-mono text-gray-500 dark:text-slate-400 whitespace-nowrap">{{ $cam->mac }}</td>
-                                            <td class="py-2 px-3.5 border-b border-gray-100 dark:border-slate-800/30 font-semibold text-gray-800 dark:text-slate-200 whitespace-nowrap" title="{{ $cam->fabricante }}">{{ $marcaCamara($cam->fabricante) }}</td>
-                                            <td class="py-2 px-3.5 border-b border-gray-100 dark:border-slate-800/30 text-gray-600 dark:text-slate-300 whitespace-nowrap" title="Equipo de red en cuya tabla ARP apareció ({{ $cam->visto_en_ip }})">{{ \Illuminate\Support\Str::before($cam->visto_en, '.') }}</td>
-                                            <td class="py-2 px-3.5 border-b border-gray-100 dark:border-slate-800/30 whitespace-nowrap">{!! $cam->rtsp ? '<span class="text-emerald-600 dark:text-emerald-400 font-bold">✓ abierto</span>' : '<span class="text-gray-400">—</span>' !!}</td>
-                                            <td class="py-2 px-3.5 border-b border-gray-100 dark:border-slate-800/30 whitespace-nowrap">
-                                                @if($web)<x-boton-consola :url="$web" texto="Abrir" titulo="Página web de la cámara ({{ $web }})" />@else<span class="text-gray-400">—</span>@endif
-                                            </td>
-                                            <td class="py-2 px-3.5 border-b border-gray-100 dark:border-slate-800/30 font-mono text-gray-500 dark:text-slate-400 whitespace-nowrap">{{ \Carbon\Carbon::parse($cam->primera_vez)->format('d/m/Y') }}</td>
-                                            <td class="py-2 px-3.5 border-b border-gray-100 dark:border-slate-800/30 font-mono whitespace-nowrap {{ $vieja ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-gray-500 dark:text-slate-400' }}"
-                                                title="{{ $vieja ? 'No apareció en la última búsqueda: apagada, desconectada o cambió de IP' : '' }}">{{ \Carbon\Carbon::parse($cam->ultima_vez)->format('d/m/Y H:i') }}</td>
-                                        </tr>
-                                    @empty
-                                        <tr><td colspan="8" class="py-8 text-center text-gray-400 dark:text-slate-500">Todavía no se han buscado cámaras. Pulsa «Buscar cámaras».</td></tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Footer Informativo y Control de Desplazamiento -->
-                <div x-show="filtroTipo !== 'camaras'" class="mt-3.5 pt-3 border-t border-gray-100 dark:border-slate-800/40 flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-gray-400 dark:text-slate-400 gap-2">
+                <div class="mt-3.5 pt-3 border-t border-gray-100 dark:border-slate-800/40 flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-gray-400 dark:text-slate-400 gap-2">
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                         <span class="font-medium text-gray-600 dark:text-slate-400">Desplazamiento interno independiente · <strong class="text-gray-800 dark:text-white">{{ $totalDispositivos }}</strong> nodos monitoreados</span>
@@ -473,22 +401,6 @@
                             x-text="borrando ? 'Eliminando…' : 'Eliminar'"></button>
                 </div>
             </div>
-        </div>
-    @endif
-
-    {{-- Búsqueda de cámaras: fuera de la zona que se refresca para que el aviso de "buscando" no se pierda --}}
-    @if(in_array(strtolower((string) auth()->user()?->role), ['admin', 'operador'], true))
-        <div x-data="{ buscando: false, error: '' }" x-show="buscando || error" x-cloak style="display: none"
-             @buscar-camaras.window="if (!buscando) { buscando = true; error = '';
-                 fetch('{{ route('camaras.buscar') }}', { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'X-Requested-With': 'XMLHttpRequest' } })
-                     .then(r => r.json().then(j => ({ ok: r.ok, j })))
-                     .then(({ ok, j }) => { if (ok) { location.href = '{{ route('equipos.index') }}?tipo=camaras'; } else { error = j.message || 'La búsqueda falló.'; buscando = false; } })
-                     .catch(() => { error = 'No se pudo completar la búsqueda.'; buscando = false; }); }"
-             class="fixed bottom-6 right-6 z-[70] px-4 py-3 rounded-xl shadow-lg text-sm font-semibold"
-             :class="error ? 'bg-red-600 text-white' : 'bg-gray-900 text-white dark:bg-slate-700'">
-            <span x-show="buscando">Buscando cámaras en las tablas ARP… (unos 30 s)</span>
-            <span x-show="error" x-text="error"></span>
-            <button x-show="error" type="button" @click="error = ''" class="ml-3 underline">Cerrar</button>
         </div>
     @endif
 

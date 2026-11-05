@@ -10,6 +10,15 @@ return [
     'ip_switch_core' => env('IP_SWITCH_CORE', '10.4.254.3'),
 
     /*
+    | Video en vivo de las cámaras (go2rtc convierte su RTSP a video para el navegador).
+    |  - api: dónde la aplicación le registra cada cámara (solo escucha en el propio servidor).
+    |  - publico: desde dónde lo pide el navegador. En el servidor, Nginx lo publica en /go2rtc solo para usuarios
+    |    con sesión; en desarrollo (php artisan serve, sin Nginx) el navegador va directo a go2rtc.
+    */
+    'go2rtc_api' => env('GO2RTC_API', 'http://127.0.0.1:1984/go2rtc'),
+    'go2rtc_publico' => env('GO2RTC_PUBLICO', env('APP_ENV') === 'local' ? 'http://127.0.0.1:1984/go2rtc' : '/go2rtc'),
+
+    /*
     | Días que se conservan los registros históricos. La limpieza la hace `php artisan noc:sync`
     | (como máximo una vez por hora). Las pantallas usan:
     |  - metricas_red: solo la última hora (lo histórico sale de metricas_red_hora).

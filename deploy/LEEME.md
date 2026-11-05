@@ -16,7 +16,8 @@ Guía para instalar la aplicación en **Ubuntu Server 24.04 LTS** y traer los da
 | `nm-web-poll.timer` | Cada 15 s: monitoreo de servicios web |
 | `nm-respaldo.timer` | Respaldo de la base todos los días a las 02:30 (se guardan 14 días) |
 | `nm-tendencias.timer` | Cada 2 h (00:00, 02:00…): tendencias de la última hora a Telegram (si está activo) |
-| `nm-camaras.timer` | Cada noche a las 03:15: busca cámaras de seguridad en las tablas ARP (Equipos → filtro Cámaras) |
+| `nm-camaras.timer` | Cada noche a las 03:15: busca cámaras de seguridad en las tablas ARP (página Cámaras) |
+| `nm-go2rtc` | Video en vivo de las cámaras (go2rtc v1.9.14, solo en 127.0.0.1:1984; Nginx lo publica en `/go2rtc/` solo con sesión). Lo instala `deploy/go2rtc.sh` verificando su SHA-256; su configuración (`/etc/network-monitor/go2rtc.yaml`) es de solo lectura para que nunca guarde credenciales de cámaras |
 
 Todos arrancan solos con el servidor y se reinician si fallan. Equivalen a las ventanas de `iniciar_monitor.bat` en Windows.
 

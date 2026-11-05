@@ -353,6 +353,13 @@
                 'svg'    => '<rect width="20" height="8" x="2" y="2" rx="2"></rect><rect width="20" height="8" x="2" y="14" rx="2"></rect><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.01M6 18h.01"></path>',
             ],
             [
+                'href'   => route('camaras.index'),
+                'active' => request()->is('camaras*'),
+                'title'  => 'Cámaras de seguridad: inventario y video en vivo',
+                'label'  => 'Cámaras',
+                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M16.75 12h3.63a1 1 0 0 1 .96 1.28l-1.17 4.1a1 1 0 0 1-.96.72H17M2 8.55V5a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v6.58a1 1 0 0 1-.4.8l-3.2 2.4a1 1 0 0 1-.6.2H3a1 1 0 0 1-1-1zM7 15v3a2 2 0 0 1-2 2H2"></path>',
+            ],
+            [
                 'href'   => route('consola.index'),
                 'active' => request()->is('consola*'),
                 'title'  => 'Consola Segura CLI',
@@ -624,6 +631,7 @@
                     { nombre: 'Firewalls', url: @json(route('firewalls.index')) },
                     { nombre: 'Virtualización', url: @json(route('virtualizacion.index')) },
                     { nombre: 'Equipos', url: @json(route('equipos.index')) },
+                    { nombre: 'Cámaras', url: @json(route('camaras.index')) },
                     { nombre: 'Esta página', url: location.pathname + location.search },
                 ],
                 abrirPanel() { this.abierto = !this.abierto; this.aviso = ''; },

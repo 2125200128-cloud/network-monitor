@@ -1,0 +1,17 @@
+[Unit]
+Description=Network Monitor - go2rtc (video en vivo de las cámaras, solo en 127.0.0.1)
+After=network-online.target
+
+[Service]
+User=@USUARIO@
+Group=@USUARIO@
+ExecStart=/usr/local/bin/go2rtc -config /etc/network-monitor/go2rtc.yaml
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
