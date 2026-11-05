@@ -29,6 +29,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/alertas/telegram', [\App\Http\Controllers\TelegramAvisosController::class, 'index'])->name('alertas.telegram');
     Route::get('/alertas/telegram/{id}/imagen', [\App\Http\Controllers\TelegramAvisosController::class, 'imagen'])->whereNumber('id')->name('alertas.telegram.imagen');
     Route::get('/equipos', [\App\Http\Controllers\EquiposController::class, 'index'])->name('equipos.index');
+    Route::get('/equipos/nuevos', [\App\Http\Controllers\EquiposNuevosController::class, 'index'])->name('equipos.nuevos');
 Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'index'])->name('firewalls.index');
     Route::get('/virtualizacion', [\App\Http\Controllers\VirtualizacionController::class, 'index'])->name('virtualizacion.index');
     Route::get('/virtualizacion/pdf', [\App\Http\Controllers\VirtualizacionController::class, 'pdf'])->middleware('throttle:20,1')->name('virtualizacion.pdf');
@@ -93,6 +94,9 @@ Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'ind
         Route::post('/api/dispositivos/{id}/tipo', [DispositivoController::class, 'corregirTipo'])->whereNumber('id')->name('dispositivos.corregir_tipo');
         Route::post('/api/dispositivos/{id}/snmp', [DispositivoController::class, 'guardarSnmp'])->whereNumber('id')->name('dispositivos.snmp.guardar');
         Route::post('/api/dispositivos/{id}/snmp/probar', [DispositivoController::class, 'probarSnmp'])->whereNumber('id')->middleware('throttle:20,1')->name('dispositivos.snmp.probar');
+        // Equipos nuevos en la red: revisión (conocido / sospechoso)
+        Route::put('/api/equipos-vistos/{id}', [\App\Http\Controllers\EquiposNuevosController::class, 'revisar'])->whereNumber('id')->name('equipos_vistos.revisar');
+        Route::post('/api/equipos-vistos/aprobar-pendientes', [\App\Http\Controllers\EquiposNuevosController::class, 'aprobarPendientes'])->name('equipos_vistos.aprobar');
         // Cámaras de seguridad: búsqueda en las tablas ARP, acceso (credenciales cifradas) y video en vivo
         Route::post('/api/camaras/buscar', [\App\Http\Controllers\CamarasController::class, 'buscar'])->middleware('throttle:6,1')->name('camaras.buscar');
         Route::put('/api/camaras/{id}/acceso', [\App\Http\Controllers\CamarasController::class, 'guardarAcceso'])->whereNumber('id')->name('camaras.acceso');

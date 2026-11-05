@@ -19,11 +19,8 @@ class BuscarCamarasCommand extends Command
 
     protected $description = 'Busca cámaras de seguridad en las tablas ARP de los equipos de red';
 
-    /**
-     * Prefijos de MAC de fabricantes de cámaras, extraídos del registro OUI oficial de la IEEE
-     * (https://standards-oui.ieee.org/oui/oui.csv). Para incluir un fabricante nuevo se vuelve a extraer.
-     */
-    private const OUI_CAMARAS = 'data/oui_camaras.csv';
+    /** Registro OUI de la IEEE (prefijo de MAC → fabricante), reducido de https://standards-oui.ieee.org/oui/oui.csv. */
+    public const OUI = 'data/oui.csv';
 
     /** Solo se guardan las cámaras de esta red (sector 10.4); las de otras dependencias no se muestran. */
     private const RED_CAMARAS = '10.4.0.0/16';
@@ -33,15 +30,11 @@ class BuscarCamarasCommand extends Command
 
     public function handle(): int
     {
-        $oui = database_path(self::OUI_CAMARAS);
-
-        $objetivos = Dispositivo::with('telemetriaChasis')->where('estado', '!=', 'offline')->whereNotNull('ip')->get()
-            ->filter(fn ($d) => in_array($d->tipo_dispositivo, self::TIPOS_CON_ARP, true))
-            ->map(fn ($d) => ['nombre' => $d->nombre, 'ip' => $d->ip, 'comunidad' => $d->comunidadEfectiva()])->values();
+        $oui = database_path(self::OUI);
 
         // Las comunidades viajan por entorno: no quedan en la línea de comandos ni en la salida
         $proceso = new Process([Python::binario(), base_path('worker/buscar_camaras.py'), $oui], base_path(),
-            Python::entorno(['NM_OBJETIVOS' => json_encode($objetivos)]));
+            Python::entorno(['NM_OBJETIVOS' => json_encode(self::objetivosArp())]));
         $proceso->setTimeout(600);
         $proceso->run();
         $res = json_decode(trim($proceso->getOutput()), true);
@@ -72,5 +65,13 @@ class BuscarCamarasCommand extends Command
         $this->info(count($camaras) . ' cámaras en ' . self::RED_CAMARAS . " ({$nuevas} nuevas) en las tablas ARP de {$conTabla} de "
             . count($res['equipos']) . ' equipos' . ($fuera ? "; se quitaron {$fuera} de otras redes" : '') . '.');
         return self::SUCCESS;
+    }
+
+    /** Equipos en línea a los que se les lee la tabla ARP (también los usa la búsqueda de equipos nuevos). */
+    public static function objetivosArp(): array
+    {
+        return Dispositivo::with('telemetriaChasis')->where('estado', '!=', 'offline')->whereNotNull('ip')->get()
+            ->filter(fn ($d) => in_array($d->tipo_dispositivo, self::TIPOS_CON_ARP, true))
+            ->map(fn ($d) => ['nombre' => $d->nombre, 'ip' => $d->ip, 'comunidad' => $d->comunidadEfectiva()])->values()->all();
     }
 }

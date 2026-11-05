@@ -1,0 +1,12 @@
+[Unit]
+Description=Network Monitor - equipos nuevos en la red 10.4 (tablas ARP)
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+User=@USUARIO@
+Group=@USUARIO@
+WorkingDirectory=@APP_DIR@
+ExecStart=/usr/bin/php @APP_DIR@/artisan red:vigilar
+UMask=0002
+TimeoutStartSec=600
