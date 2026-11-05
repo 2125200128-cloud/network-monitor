@@ -1,0 +1,9 @@
+[Unit]
+Description=Network Monitor - búsqueda de cámaras cada noche a las 03:15
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

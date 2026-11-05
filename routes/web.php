@@ -88,6 +88,8 @@ Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'ind
         Route::post('/api/dispositivos/{id}/tipo', [DispositivoController::class, 'corregirTipo'])->whereNumber('id')->name('dispositivos.corregir_tipo');
         Route::post('/api/dispositivos/{id}/snmp', [DispositivoController::class, 'guardarSnmp'])->whereNumber('id')->name('dispositivos.snmp.guardar');
         Route::post('/api/dispositivos/{id}/snmp/probar', [DispositivoController::class, 'probarSnmp'])->whereNumber('id')->middleware('throttle:20,1')->name('dispositivos.snmp.probar');
+        // Cámaras de seguridad en las tablas ARP (solo inventario)
+        Route::post('/api/camaras/buscar', [\App\Http\Controllers\EquiposController::class, 'buscarCamaras'])->middleware('throttle:6,1')->name('camaras.buscar');
         // Alta por IP (descubrimiento o manual) y enlaces a mano
         Route::post('/api/dispositivos/descubrir', [\App\Http\Controllers\AltaDispositivoController::class, 'descubrir'])->middleware('throttle:20,1')->name('dispositivos.descubrir');
         Route::post('/api/dispositivos', [\App\Http\Controllers\AltaDispositivoController::class, 'guardar'])->name('dispositivos.store');
