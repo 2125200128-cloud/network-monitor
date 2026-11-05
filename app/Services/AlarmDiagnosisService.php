@@ -630,7 +630,12 @@ class AlarmDiagnosisService
                 $fechaFalla = $dt->format('d/m/Y H:i:s');
                 $horaFalla = $dt->format('h:i:s A');
                 $isOffline = ($web->estado === 'offline');
-                $codeStr = $web->codigo_http ? "HTTP {$web->codigo_http}" : "SIN RESPUESTA";
+                // Falla intermitente: el porcentaje de error de las últimas peticiones dice más que el código de la última
+                $muestras = (string) $web->muestras;
+                $intermitente = $isOffline && $web->falla_parcial && strlen($muestras);
+                $pctError = $intermitente ? (int) round(substr_count($muestras, '0') / strlen($muestras) * 100) : null;
+                $codeStr = $intermitente ? "falla intermitente, {$pctError} % de error"
+                    : ($web->codigo_http ? "HTTP {$web->codigo_http}" : "SIN RESPUESTA");
                 $latenciaStr = $web->tiempo_respuesta_ms ? " ({$web->tiempo_respuesta_ms} ms)" : "";
                 // VM(s) que atienden el sitio (leídas de los ESXi): dónde corre y si la VM o su host tienen un problema
                 $vmsWeb = \App\Services\VmsServiciosWeb::para($web);
@@ -644,19 +649,25 @@ class AlarmDiagnosisService
                     'tipo' => $isOffline ? 'critica' : 'advertencia',
                     'severidad' => $isOffline ? 'critica' : 'advertencia',
                     'categoria' => 'servicio_web',
-                    'codigo_evento' => $isOffline ? 'WEB_SERVICE_DOWN' : 'WEB_SERVICE_DEGRADED',
-                    'titulo' => ($isOffline ? "Servicio Web Caído: " : "Degradación en Web: ") . $web->nombre,
+                    'codigo_evento' => $intermitente ? 'WEB_SERVICE_INTERMITTENT' : ($isOffline ? 'WEB_SERVICE_DOWN' : 'WEB_SERVICE_DEGRADED'),
+                    // Misma clave (web-off-) que la caída: pasar de caído a intermitente no resuelve ni abre otra alarma
+                    'titulo' => $intermitente ? "Falla intermitente: {$web->nombre} — {$pctError} % de las peticiones con error"
+                        : ($isOffline ? "Servicio Web Caído: " : "Degradación en Web: ") . $web->nombre,
                     'dispositivo' => $web->nombre,
                     'ip' => parse_url($web->url, PHP_URL_HOST) ?? $web->url,
                     'ubicacion' => "Módulo Servicios Web [{$web->categoria}]",
-                    'mensaje' => ($isOffline ? 'Página inaccesible o con error' : 'Página degradada (lenta, con error de contenido o 4xx)')
-                        . ". Estado: {$codeStr}{$latenciaStr}. URL: {$web->url}.{$servidorStr}",
+                    'mensaje' => ($intermitente ? 'La página responde unas veces sí y otras no: parte de los usuarios ven error'
+                        : ($isOffline ? 'Página inaccesible o con error' : 'Página degradada (lenta, con error de contenido o 4xx)'))
+                        . ". Estado: {$codeStr}" . ($intermitente ? '' : $latenciaStr) . ". URL: {$web->url}.{$servidorStr}",
                     'causa_raiz' => ($web->detalles_error ?: ($isOffline ? 'El servidor web no respondió a la solicitud o se agotó el tiempo de espera.' : 'La página devolvió un error de cliente o latencia elevada.'))
                         . ($avisosVm ? ' En su servidor: ' . implode('; ', $avisosVm) . '.' : ''),
                     'impacto' => "Interrupción en la atención a usuarios / trámites digitales en línea.",
-                    'accion_sugerida' => ($avisosVm
-                        ? '1. Revisar la VM en Virtualización / vCenter (' . implode('; ', $avisosVm) . '). 2. '
-                        : '1. Verificar servicio Apache/IIS/Tomcat o balanceador en el servidor. 2. ')
+                    'accion_sugerida' => $intermitente
+                        ? '1. Revisar qué servidores detrás del balanceador no responden y levantarlos o sacarlos de la rotación. '
+                            . '2. Revisar que la verificación de salud (health check) del balanceador esté activa.'
+                        : ($avisosVm
+                            ? '1. Revisar la VM en Virtualización / vCenter (' . implode('; ', $avisosVm) . '). 2. '
+                            : '1. Verificar servicio Apache/IIS/Tomcat o balanceador en el servidor. 2. ')
                         . "Probar conectividad hacia la URL: {$web->url}.",
                     'fecha_falla' => $fechaFalla,
                     'hora_falla' => $horaFalla,

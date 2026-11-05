@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Http;
  * solo se marca caído si falla FALLOS_PARA_CAIDO rondas seguidas (la lentitud y los errores de contenido,
  * LENTOS_PARA_AVISO rondas). Si fallan casi todos a la vez, el problema es del monitor o de su red: se avisa
  * una sola vez y esa ronda no cuenta contra la disponibilidad de cada sitio.
+ * Un sitio que responde unas veces sí y otras no (falla intermitente) se mide por su porcentaje de error en las
+ * últimas peticiones y queda caído mientras dure, en lugar de caer y "resolverse" a cada ronda.
  */
 class WebServicePoller
 {
@@ -29,6 +31,20 @@ class WebServicePoller
 
     public const FALLOS_PARA_CAIDO = 2;
     public const LENTOS_PARA_AVISO = 2;
+
+    /**
+     * Falla intermitente (p. ej. un balanceador que sigue mandando visitas a servidores caídos): se guarda el
+     * resultado de las últimas VENTANA_MUESTRAS rondas (~5 min); con ERROR_ENTRA_INTERMITENTE o más de error el sitio
+     * queda "caído por falla intermitente" y no sale hasta bajar de ERROR_SALE_INTERMITENTE (así no va y viene).
+     */
+    public const VENTANA_MUESTRAS = 20;
+    private const MIN_MUESTRAS_INTERMITENTE = 10;
+    public const ERROR_ENTRA_INTERMITENTE = 0.20;
+    private const ERROR_SALE_INTERMITENTE = 0.05;
+    /** También sale de la falla intermitente con estas rondas buenas seguidas (con 45 % de error casi nunca pasa por azar). */
+    private const BUENAS_PARA_SALIR = 8;
+    /** Peticiones extra a un sitio que falló: confirman la caída y miden mejor el porcentaje de error. */
+    private const REINTENTOS = 2;
 
     /** Si a la vez falla al menos esta fracción de los sitios (y 5 o más), el problema es del monitor o de su red. */
     private const FRACCION_FALLA_MASIVA = 0.8;
@@ -64,13 +80,13 @@ class WebServicePoller
      */
     public function checkService(ServicioWeb $servicio): array
     {
-        $eval = $this->evaluar($servicio, $this->sondear($servicio));
-        if ($eval['tipo'] === 'caido') {
+        $evals = [$this->evaluar($servicio, $this->sondear($servicio))];
+        for ($i = 0; $i < self::REINTENTOS && $evals[0]['tipo'] === 'caido'; $i++) {
             usleep(500_000);
-            $eval = $this->evaluar($servicio, $this->sondear($servicio));
+            $evals[] = $this->evaluar($servicio, $this->sondear($servicio));
         }
 
-        return $this->registrar($servicio, $eval, true);
+        return $this->registrar($servicio, $evals, true);
     }
 
     /**
@@ -84,19 +100,23 @@ class WebServicePoller
             return [];
         }
 
-        $evals = [];
-        foreach ($this->sondearLote($servicios) as $id => $res) {
-            $evals[$id] = $this->evaluar($servicios[$id], $res);
+        // Todas las peticiones de la ronda por sitio: la primera y, si falló, los reintentos
+        $muestras = [];
+        foreach ($this->sondearLote($servicios) as $id => [$res]) {
+            $muestras[$id] = [$this->evaluar($servicios[$id], $res)];
         }
 
         // Confirmación inmediata: los que fallaron se prueban otra vez antes de contarles la falla
-        $fallidos = $servicios->filter(fn ($s) => $evals[$s->id]['tipo'] === 'caido');
+        $fallidos = $servicios->filter(fn ($s) => $muestras[$s->id][0]['tipo'] === 'caido');
         if ($fallidos->isNotEmpty()) {
             usleep(500_000);
-            foreach ($this->sondearLote($fallidos) as $id => $res) {
-                $evals[$id] = $this->evaluar($servicios[$id], $res);
+            foreach ($this->sondearLote($fallidos, self::REINTENTOS) as $id => $respuestas) {
+                foreach ($respuestas as $res) {
+                    $muestras[$id][] = $this->evaluar($servicios[$id], $res);
+                }
             }
         }
+        $evals = array_map(fn ($m) => $this->resultadoRonda($m), $muestras);
 
         // ¿Falla casi todo a la vez, sin respuesta HTTP? Entonces el que no llega es el monitor
         $sinRespuesta = collect($evals)->filter(fn ($e) => $e['tipo'] === 'caido' && $e['codigo'] === 0);
@@ -117,7 +137,7 @@ class WebServicePoller
 
         $resultados = [];
         foreach ($servicios as $servicio) {
-            $resultados[] = $this->registrar($servicio, $evals[$servicio->id], false);
+            $resultados[] = $this->registrar($servicio, $muestras[$servicio->id], false);
         }
 
         $this->purgarHistorico();
@@ -152,23 +172,41 @@ class WebServicePoller
         }
     }
 
-    /** @return array<int, Response|\Throwable|null> por id de servicio */
-    private function sondearLote($servicios): array
+    /**
+     * $veces peticiones en paralelo a cada sitio (tras un balanceador, cada una puede caer en otro servidor).
+     * @return array<int, array<int, Response|\Throwable|null>> por id de servicio
+     */
+    private function sondearLote($servicios, int $veces = 1): array
     {
-        $responses = Http::pool(function (Pool $pool) use ($servicios) {
+        $responses = Http::pool(function (Pool $pool) use ($servicios, $veces) {
             $requests = [];
             foreach ($servicios as $servicio) {
-                $requests[] = $this->request($pool->as((string) $servicio->id))
-                    ->send(strtoupper($servicio->metodo ?: 'GET'), $servicio->url);
+                for ($k = 0; $k < $veces; $k++) {
+                    $requests[] = $this->request($pool->as("{$servicio->id}:{$k}"))
+                        ->send(strtoupper($servicio->metodo ?: 'GET'), $servicio->url);
+                }
             }
             return $requests;
         });
 
         $salida = [];
         foreach ($servicios as $servicio) {
-            $salida[$servicio->id] = $responses[(string) $servicio->id] ?? null;
+            for ($k = 0; $k < $veces; $k++) {
+                $salida[$servicio->id][] = $responses["{$servicio->id}:{$k}"] ?? null;
+            }
         }
         return $salida;
+    }
+
+    /** Resultado de la ronda de un sitio: la primera petición que respondió o, si fallaron todas, la última. */
+    private function resultadoRonda(array $evals): array
+    {
+        foreach ($evals as $e) {
+            if ($e['tipo'] !== 'caido') {
+                return $e;
+            }
+        }
+        return end($evals);
     }
 
     /**
@@ -334,10 +372,28 @@ class WebServicePoller
     // ===================== Registro =====================
 
     /**
-     * Aplica la evaluación con la regla de confirmación, guarda estado e histórico y devuelve el resultado.
+     * Aplica la evaluación con la regla de confirmación y la de falla intermitente, guarda estado e histórico y
+     * devuelve el resultado. $evals: todas las peticiones de la ronda (la primera y sus reintentos).
      */
-    private function registrar(ServicioWeb $servicio, array $eval, bool $inmediato): array
+    private function registrar(ServicioWeb $servicio, array $evals, bool $inmediato): array
     {
+        $eval = $this->resultadoRonda($evals);
+
+        // Ventana de las últimas rondas (1 = respondió, 0 = falló). Solo cuenta la primera petición de cada ronda:
+        // los reintentos se hacen únicamente tras una falla y contarlos inflaría el porcentaje de error.
+        $ventana = substr(($servicio->muestras ?? '') . ($evals[0]['tipo'] === 'caido' ? '0' : '1'), -self::VENTANA_MUESTRAS);
+        $errores = substr_count($ventana, '0');
+        $tasa = strlen($ventana) ? $errores / strlen($ventana) : 0;
+        $recientes = substr($ventana, -self::MIN_MUESTRAS_INTERMITENTE);
+        $parcial = $servicio->falla_parcial
+            ? $tasa > self::ERROR_SALE_INTERMITENTE && !str_ends_with($ventana, str_repeat('1', self::BUENAS_PARA_SALIR))
+            // Para entrar, mezcla de éxitos y fallas: un sitio caído del todo es "caído", no intermitente
+            : strlen($ventana) >= self::MIN_MUESTRAS_INTERMITENTE && $tasa >= self::ERROR_ENTRA_INTERMITENTE
+                && str_contains($recientes, '1') && str_contains($recientes, '0');
+        // El error más reciente: el de esta ronda o, si esta respondió, el que ya se había anotado
+        $ultimoError = collect($evals)->where('tipo', 'caido')->last()['mensaje']
+            ?? (preg_match('/Último error: (.+)$/', (string) $servicio->detalles_error, $m) ? $m[1] : null);
+
         $fallos = $eval['tipo'] === 'caido' ? $servicio->fallos_consecutivos + 1 : 0;
         $lentos = $eval['tipo'] === 'degradado' ? $servicio->lentos_consecutivos + 1 : 0;
         $medido = ['ok' => 'online', 'degradado' => 'warning', 'caido' => 'offline'][$eval['tipo']];
@@ -364,6 +420,14 @@ class WebServicePoller
             $detalle = "Sin confirmar (1 de {$limite}): " . $eval['mensaje'];
         }
 
+        // Falla intermitente: responde unas veces sí y otras no. Cuenta como caído (los usuarios ven errores) con el
+        // porcentaje real, salvo que en esta ronda haya fallado todo y ya esté confirmado como caída completa.
+        if ($parcial && !($eval['tipo'] === 'caido' && $confirmado)) {
+            $estado = 'offline';
+            $detalle = sprintf('Falla intermitente: %d de %d revisiones fallaron en los últimos minutos (%d %%).',
+                $errores, strlen($ventana), round($tasa * 100)) . ($ultimoError ? " Último error: {$ultimoError}" : '');
+        }
+
         $datos = [
             'estado' => $estado,
             'codigo_http' => $eval['codigo'],
@@ -383,6 +447,8 @@ class WebServicePoller
             'ultimo_chequeo' => now(),
             'fallos_consecutivos' => min($fallos, 1000),
             'lentos_consecutivos' => min($lentos, 1000),
+            'muestras' => $ventana,
+            'falla_parcial' => $parcial,
         ] + (!empty($eval['ip']) ? ['ip_servidor' => $eval['ip']] : []);
         ServicioWeb::whereKey($servicio->getKey())->update($actualizacion);
         $servicio->forceFill($actualizacion)->syncOriginal();
