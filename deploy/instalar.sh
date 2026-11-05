@@ -187,7 +187,7 @@ chown postgres:postgres /var/backups/network-monitor
 chmod 750 /var/backups/network-monitor
 systemctl daemon-reload
 systemctl enable --now nm-poller.service nm-detalle.service nm-clasificador.service nm-esxi.service \
-    nm-noc-sync.timer nm-web-poll.timer nm-respaldo.timer nm-tendencias.timer
+    nm-noc-sync.timer nm-web-poll.timer nm-respaldo.timer nm-tendencias.timer nm-camaras.timer
 systemctl restart nm-poller.service nm-detalle.service nm-clasificador.service nm-esxi.service
 
 if command -v ufw >/dev/null && ufw status | grep -q "Status: active"; then

@@ -1,0 +1,12 @@
+[Unit]
+Description=Network Monitor - búsqueda de cámaras de seguridad en las tablas ARP
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+User=@USUARIO@
+Group=@USUARIO@
+WorkingDirectory=@APP_DIR@
+ExecStart=/usr/bin/php @APP_DIR@/artisan camaras:buscar
+UMask=0002
+TimeoutStartSec=600
