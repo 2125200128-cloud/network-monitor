@@ -239,7 +239,7 @@ class AlertasTelegram
         $criticas = $alarmas->where('severidad', 'critica')->count();
         $lineas = ['🚨 <b>' . $alarmas->count() . ' alarmas nuevas</b>' . ($criticas ? " ({$criticas} críticas)" : '')];
         foreach ($alarmas->take(self::MAX_LINEAS_RESUMEN) as $a) {
-            $lineas[] = $this->icono($a->severidad) . ' ' . $e($a->titulo);
+            $lineas[] = $this->icono($a->severidad) . ' ' . $e($a->titulo) . $this->deQueEquipo($a);
         }
         if ($alarmas->count() > self::MAX_LINEAS_RESUMEN) {
             $lineas[] = '… y ' . ($alarmas->count() - self::MAX_LINEAS_RESUMEN) . ' más.';
@@ -254,12 +254,26 @@ class AlertasTelegram
         $lineas = ['✅ <b>' . ($alarmas->count() === 1 ? 'Alarma resuelta' : $alarmas->count() . ' alarmas resueltas') . '</b>'];
         foreach ($alarmas->take(self::MAX_LINEAS_RESUMEN) as $a) {
             $duracion = $a->fecha_inicio && $a->fecha_resolucion ? $this->duracion($a->fecha_inicio->diffInSeconds($a->fecha_resolucion)) : null;
-            $lineas[] = '• ' . $e($a->titulo) . ($duracion ? " — duró {$duracion}" : '');
+            $lineas[] = '• ' . $e($a->titulo) . $this->deQueEquipo($a) . ($duracion ? " — duró {$duracion}" : '');
         }
         if ($alarmas->count() > self::MAX_LINEAS_RESUMEN) {
             $lineas[] = '… y ' . ($alarmas->count() - self::MAX_LINEAS_RESUMEN) . ' más.';
         }
         return implode("\n", $lineas);
+    }
+
+    /**
+     * " · equipo (IP)" para las líneas de resumen y de resueltas: hay alarmas cuyo título no nombra el equipo
+     * (p. ej. "Sin respuesta con enlace físico activo"). Nada si el título ya lo dice o la alarma no es de un equipo.
+     */
+    private function deQueEquipo(AlarmaRed $a): string
+    {
+        $d = $a->dispositivo;
+        if (!$d || str_contains((string) $a->titulo, (string) $d->nombre) || ($d->ip && str_contains((string) $a->titulo, $d->ip))) {
+            return '';
+        }
+        $e = fn ($t) => htmlspecialchars((string) $t, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        return ' · <b>' . $e($d->nombre) . '</b>' . ($d->ip ? ' (<code>' . $e($d->ip) . '</code>)' : '');
     }
 
     private function icono(?string $severidad): string
