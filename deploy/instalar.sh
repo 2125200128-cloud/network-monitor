@@ -187,7 +187,7 @@ chown postgres:postgres /var/backups/network-monitor
 chmod 750 /var/backups/network-monitor
 systemctl daemon-reload
 systemctl enable --now nm-poller.service nm-detalle.service nm-clasificador.service nm-esxi.service \
-    nm-noc-sync.timer nm-web-poll.timer nm-respaldo.timer nm-tendencias.timer nm-camaras.timer nm-camaras-estado.timer
+    nm-noc-sync.timer nm-web-poll.timer nm-respaldo.timer nm-tendencias.timer nm-camaras.timer nm-camaras-estado.timer nm-vigilar-red.timer
 systemctl restart nm-poller.service nm-detalle.service nm-clasificador.service nm-esxi.service
 # Video de las cámaras: si no se puede descargar go2rtc, el resto queda instalado igual
 if APP_DIR="$APP_DIR" bash "$APP_DIR/deploy/go2rtc.sh"; then

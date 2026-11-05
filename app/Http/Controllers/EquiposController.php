@@ -54,6 +54,8 @@ class EquiposController extends Controller
             'totalPCs' => $dispositivos->where('tipo_dispositivo', 'pc')->count(),
             'totalRouters' => $dispositivos->where('tipo_dispositivo', 'router')->count(),
             'totalAPs' => $dispositivos->where('tipo_dispositivo', 'access_point')->count(),
+            // Aparatos nuevos en la red 10.4 con MAC de fábrica sin revisar (red:vigilar)
+            'nuevosPendientes' => \Illuminate\Support\Facades\DB::table('equipos_vistos')->where('estado', 'nuevo')->where('mac_aleatoria', false)->count(),
         ]);
     }
 }

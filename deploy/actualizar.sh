@@ -78,7 +78,7 @@ done
 systemctl daemon-reload
 systemctl enable nm-esxi.service
 # Unidades agregadas después de la instalación: se activan aquí
-systemctl enable --now nm-tendencias.timer nm-camaras.timer nm-camaras-estado.timer
+systemctl enable --now nm-tendencias.timer nm-camaras.timer nm-camaras-estado.timer nm-vigilar-red.timer
 if [[ -x /usr/local/bin/go2rtc ]]; then
     systemctl enable nm-go2rtc.service
     systemctl restart nm-go2rtc.service

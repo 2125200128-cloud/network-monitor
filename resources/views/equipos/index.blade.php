@@ -32,6 +32,13 @@
                 <p class="text-xs" style="color: var(--nm-text-muted)">Salud operativa, diagnóstico por pestañas e inventario · se actualiza cada 15 s</p>
             </div>
         </div>
+        <div class="flex flex-wrap items-center gap-3">
+        {{-- Aparatos nunca vistos en la red 10.4 (red:vigilar) pendientes de revisar --}}
+        <a href="{{ route('equipos.nuevos') }}" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border transition hover:shadow-sm"
+           style="border-color: var(--nm-border); background: var(--nm-surface); color: var(--nm-text)" title="Aparatos que nunca se habían visto en la red 10.4">
+            Equipos nuevos en la red
+            <span class="px-1.5 py-0.5 rounded-full text-[11px] {{ $nuevosPendientes ? 'bg-blue-600 text-white' : 'opacity-60' }}">{{ $nuevosPendientes }}</span>
+        </a>
         <a href="{{ route('reportes.inventario_pdf') }}" target="_blank" class="fancy fancy-sm" style="--fancy-fondo: var(--nm-bg)" title="Descargar reporte de inventario en PDF">
             <span class="top-key"></span>
             <span class="text">
@@ -41,6 +48,7 @@
             <span class="bottom-key-1"></span>
             <span class="bottom-key-2"></span>
         </a>
+        </div>
     </div>
 
     <div data-refrescar="salud">
