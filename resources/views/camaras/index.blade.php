@@ -52,7 +52,7 @@
         'lista' => $c->usuario && $c->tiene_password && ($c->ruta_rtsp || \App\Services\VideoCamaras::marca($c->fabricante)),
         'vieja' => $ultima && \Carbon\Carbon::parse($c->ultima_vez)->lt($ultima->copy()->subMinutes(30)),
         'ultima' => \Carbon\Carbon::parse($c->ultima_vez)->format('d/m/Y H:i'),
-    ])->values();
+    ] + \App\Http\Controllers\CamarasController::estado($c))->values();
     $configuradas = $lista->where('lista', true)->count();
 @endphp
 <div class="flex flex-col space-y-4 pb-6" x-data="camaras()">
@@ -78,21 +78,23 @@
         @endif
     </div>
 
+    {{-- Totales (los de estado se recalculan con cada actualización de la lista) --}}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div class="cm-kpi"><span>Cámaras encontradas</span><b>{{ $camaras->count() }}</b></div>
-        <div class="cm-kpi"><span>Con video (RTSP)</span><b>{{ $lista->where('rtsp', true)->count() }}</b></div>
+        <div class="cm-kpi"><span>Cámaras</span><b>{{ $camaras->count() }}</b></div>
+        {{-- El color va en style: la regla .cm-kpi b fija el color del número y le gana a las clases de color --}}
+        <div class="cm-kpi"><span>En línea</span><b style="color: #059669" x-text="lista.filter(c => c.vigente && c.estado === 'online').length"></b></div>
+        <div class="cm-kpi"><span>Caídas</span><b :style="lista.some(c => c.vigente && c.estado === 'offline') && 'color: #dc2626'" x-text="lista.filter(c => c.vigente && c.estado === 'offline').length"></b></div>
         <div class="cm-kpi"><span>Con acceso configurado</span><b>{{ $configuradas }}</b></div>
-        <div class="cm-kpi"><span>No vistas en la última búsqueda</span><b>{{ $lista->where('vieja', true)->count() }}</b></div>
     </div>
 
-    {{-- Visor: hasta 4 cámaras en vivo --}}
+    {{-- Visor: una cámara en vivo --}}
     @if($puedeVer)
         <div class="floating-card p-5">
             <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
-                <h2 class="cm-titulo">Visor en vivo · hasta 4 a la vez</h2>
+                <h2 class="cm-titulo">Visor en vivo</h2>
                 <p class="text-[11px]" style="color: var(--nm-text-muted)">Pulsa «Ver» en una cámara de la lista. Se muestra en calidad ligera; «HD» la pasa a resolución completa.</p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="max-w-4xl mx-auto">
                 <template x-for="(p, i) in pantallas" :key="i">
                     <div class="cm-pantalla" :id="'pantalla' + i">
                         <template x-if="p">
@@ -108,7 +110,7 @@
                             </div>
                         </template>
                         <div class="cm-vacia" x-show="!p || p.error || p.cargando">
-                            <span x-text="!p ? 'Libre' : (p.error || 'Conectando con la cámara…')"></span>
+                            <span x-text="!p ? 'Elige una cámara de la lista y pulsa «Ver»' : (p.error || 'Conectando con la cámara…')"></span>
                         </div>
                         {{-- Aquí se inserta el reproductor (fuera de Alpine: el reproductor maneja su propio video) --}}
                         <div class="w-full h-full" :data-pantalla="i"></div>
@@ -131,6 +133,11 @@
                 <option value="">Todos los switches</option>
                 @foreach($lista->pluck('visto')->unique()->sort() as $v)<option>{{ $v }}</option>@endforeach
             </select>
+            <select x-model="fEstado" class="cm-campo" aria-label="Estado">
+                <option value="">Todos los estados</option>
+                <option value="online">En línea</option>
+                <option value="offline">Caídas</option>
+            </select>
             <label class="text-xs flex items-center gap-1.5" style="color: var(--nm-text)"><input type="checkbox" x-model="soloListas"> Solo con acceso configurado</label>
         </div>
         @if($camaras->isEmpty())
@@ -138,10 +145,18 @@
         @else
             <div class="max-h-[520px] overflow-auto">
                 <table class="cm-tabla">
-                    <thead><tr><th>Cámara</th><th>IP</th><th>Marca</th><th>Vista en</th><th>Video</th><th>Acceso</th><th>Última vez</th><th></th></tr></thead>
+                    <thead><tr><th>Estado</th><th>Cámara</th><th>IP</th><th>Marca</th><th>Vista en</th><th>Video</th><th>Acceso</th><th>En tabla ARP</th><th></th></tr></thead>
                     <tbody>
                         <template x-for="c in filas" :key="c.id">
-                            <tr :class="c.vieja && 'opacity-60'">
+                            <tr>
+                                <td>
+                                    <span class="inline-flex items-center gap-1.5 font-bold"
+                                          :class="!c.vigente || !c.estado ? 'opacity-60' : (c.estado === 'online' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400')"
+                                          :title="c.estado && c.desde ? (c.estado === 'online' ? 'En línea' : 'Caída') + ' desde ' + c.desde + ' (' + c.hace + ')' : ''">
+                                        <span class="w-2 h-2 rounded-full" :class="!c.vigente || !c.estado ? 'bg-gray-400' : (c.estado === 'online' ? 'bg-emerald-500' : 'bg-red-500 animate-pulse')"></span>
+                                        <span x-text="!c.estado ? 'Sin revisar' : (!c.vigente ? 'Sin revisión reciente' : (c.estado === 'online' ? 'En línea' + (c.ms !== null ? ' · ' + c.ms + ' ms' : '') : 'Caída desde ' + c.desde))"></span>
+                                    </span>
+                                </td>
                                 <td class="font-semibold" x-text="c.nombre || '—'"></td>
                                 <td class="font-mono" x-text="c.ip"></td>
                                 <td :title="c.fabricante" x-text="c.marca"></td>
@@ -221,20 +236,31 @@
         };
         return {
             lista: JSON.parse(document.getElementById('camarasDatos').textContent),
-            q: '', fMarca: '', fVisto: '', soloListas: false,
-            pantallas: [null, null, null, null],
+            q: '', fMarca: '', fVisto: '', fEstado: '', soloListas: false,
+            pantallas: [null],   // un solo recuadro: «Ver» en otra cámara la cambia ahí
+            init() {
+                // El estado de las cámaras se revisa cada minuto en el servidor: aquí se vuelve a pedir cada 30 s
+                setInterval(async () => {
+                    if (document.hidden) return;
+                    try {
+                        const estados = await pedir('GET', @json(route('camaras.estados')));
+                        const porId = Object.fromEntries(estados.map(e => [e.id, e]));
+                        this.lista.forEach(c => porId[c.id] && Object.assign(c, porId[c.id]));
+                    } catch (e) { /* sin red o sesión vencida: se reintenta en la siguiente vuelta */ }
+                }, 30000);
+            },
             edicion: null, form: {}, error: '', guardando: false, buscando: false,
             get filas() {
                 const q = this.q.toLowerCase().trim();
                 return this.lista.filter(c => (!this.fMarca || c.marca === this.fMarca) && (!this.fVisto || c.visto === this.fVisto)
-                    && (!this.soloListas || c.lista)
+                    && (!this.fEstado || (c.vigente && c.estado === this.fEstado)) && (!this.soloListas || c.lista)
                     && (!q || [c.nombre, c.ip, c.mac, c.visto, c.fabricante].join(' ').toLowerCase().includes(q)));
             },
-            // Pone la cámara en la primera pantalla libre (o en la primera si están todas ocupadas)
+            // La cámara se muestra en el recuadro (si ya había otra, la reemplaza)
             ver(c) {
-                if (this.pantallas.some(p => p && p.id === c.id)) return;
-                const i = Math.max(0, this.pantallas.findIndex(p => !p));
-                this.abrir(i, c, 'sub');
+                if (this.pantallas[0]?.id === c.id) return;
+                this.abrir(0, c, 'sub');
+                document.getElementById('pantalla0')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             },
             async abrir(i, c, calidad) {
                 this.detener(i);

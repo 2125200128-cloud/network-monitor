@@ -21,7 +21,8 @@ class CamarasController extends Controller
     {
         $camaras = DB::table('camaras_detectadas')->orderBy('visto_en')->orderByRaw('inet(ip)')
             ->get(['id', 'mac', 'ip', 'fabricante', 'visto_en', 'visto_en_ip', 'rtsp', 'http', 'https', 'primera_vez', 'ultima_vez',
-                'nombre', 'usuario', 'ruta_rtsp', DB::raw('password IS NOT NULL AS tiene_password')]);
+                'nombre', 'usuario', 'ruta_rtsp', DB::raw('password IS NOT NULL AS tiene_password'),
+                'estado', 'estado_desde', 'latencia_ms', 'ultimo_chequeo']);
 
         return view('camaras.index', [
             'camaras' => $camaras,
@@ -29,6 +30,28 @@ class CamarasController extends Controller
             'puedeVer' => self::puedeVer(),
             'go2rtc' => rtrim(config('noc.go2rtc_publico'), '/'),
         ]);
+    }
+
+    /** Estado de todas las cámaras (la página lo vuelve a pedir cada 30 s sin recargarse). */
+    public function estados()
+    {
+        return response()->json(DB::table('camaras_detectadas')->get(['id', 'estado', 'estado_desde', 'latencia_ms', 'ultimo_chequeo'])
+            ->map(fn ($c) => self::estado($c))->values());
+    }
+
+    /** Lo que muestra la lista del estado de una cámara (también lo usa la vista al cargar). */
+    public static function estado(object $c): array
+    {
+        $desde = $c->estado_desde ? \Carbon\Carbon::parse($c->estado_desde) : null;
+        return [
+            'id' => $c->id,
+            'estado' => $c->estado,
+            'ms' => $c->latencia_ms !== null ? round((float) $c->latencia_ms, 1) : null,
+            'desde' => $desde ? ($desde->isToday() ? $desde->format('H:i') : $desde->format('d/m H:i')) : null,
+            'hace' => $desde?->locale('es')->diffForHumans(null, true),
+            // Sin revisión reciente (el temporizador no corre): el estado ya no se presenta como actual
+            'vigente' => $c->ultimo_chequeo && \Carbon\Carbon::parse($c->ultimo_chequeo)->gt(now()->subMinutes(5)),
+        ];
     }
 
     /** Botón "Buscar cámaras": la misma búsqueda que corre cada noche (camaras:buscar), en el momento. */

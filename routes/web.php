@@ -21,6 +21,7 @@ Route::get('/api/camaras/autorizar', [\App\Http\Controllers\CamarasController::c
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/camaras', [\App\Http\Controllers\CamarasController::class, 'index'])->name('camaras.index');
+    Route::get('/api/camaras/estados', [\App\Http\Controllers\CamarasController::class, 'estados'])->name('camaras.estados');
     Route::get('/alertas', [AlertasController::class, 'index'])->name('alertas.index');
     Route::get('/alertas/exportar', [AlertasController::class, 'exportar'])->middleware('throttle:20,1')->name('alertas.exportar');
     Route::get('/parciales/alertas',fn () => view('partials.alertas-refresco'))->name('parciales.alertas');
