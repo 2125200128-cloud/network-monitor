@@ -121,6 +121,14 @@ class TarjetaAlarma
                 'umbral_pct' => $aviso / $escala, 'umbral_texto' => "Umbral {$fmt($aviso)} {$unidad}"];
         };
 
+        // Falla intermitente de un sitio (también si la alarma empezó como caída y la clave se conservó)
+        if ($a->codigo_evento === 'WEB_SERVICE_INTERMITTENT' || str_starts_with((string) $a->titulo, 'Falla intermitente')) {
+            $v = $num('/(\d+) % de las peticiones/');
+            if ($v !== null) {
+                return $barra('Peticiones con error', $v, '%', WebServicePoller::ERROR_ENTRA_INTERMITENTE * 100, 100);
+            }
+        }
+
         switch ($a->codigo_evento) {
             case 'TEMP_CRITICAL':
                 $v = $num('/([\d.]+)\s*°C/');
