@@ -208,11 +208,15 @@ class AlertasTelegram
     {
         $e = fn ($t) => htmlspecialchars((string) $t, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $disp = $a->dispositivo;
+        // El equipo va en la primera línea (la que se ve en la notificación del celular) si el título no lo nombra
         $lineas = [
-            $this->icono($a->severidad) . ' <b>' . ($a->severidad === 'critica' ? 'CRÍTICA' : 'ADVERTENCIA') . '</b> · ' . $e($a->titulo),
+            $this->icono($a->severidad) . ' <b>' . ($a->severidad === 'critica' ? 'CRÍTICA' : 'ADVERTENCIA') . '</b> · ' . $e($a->titulo) . $this->deQueEquipo($a),
         ];
         if ($disp) {
-            $lineas[] = '<b>Equipo:</b> ' . $e($disp->nombre) . ($disp->ip ? ' (<code>' . $e($disp->ip) . '</code>)' : '');
+            // La ubicación solo si es real: "Auto-Descubierto por Crawler" o "Alta manual" son etiquetas del alta
+            $ubicacion = preg_match('/descubierto|alta manual/i', (string) $disp->ubicacion) ? null : $disp->ubicacion;
+            $lineas[] = '<b>Equipo:</b> ' . $e($disp->nombre) . ($disp->ip ? ' (<code>' . $e($disp->ip) . '</code>)' : '')
+                . ($ubicacion ? ' · ' . $e($ubicacion) : '');
         }
         if ($a->mensaje) {
             $lineas[] = $e($a->mensaje);
@@ -269,11 +273,13 @@ class AlertasTelegram
     private function deQueEquipo(AlarmaRed $a): string
     {
         $d = $a->dispositivo;
-        if (!$d || str_contains((string) $a->titulo, (string) $d->nombre) || ($d->ip && str_contains((string) $a->titulo, $d->ip))) {
+        if (!$d || str_contains((string) $a->titulo, (string) $d->nombre)) {
             return '';
         }
         $e = fn ($t) => htmlspecialchars((string) $t, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        return ' · <b>' . $e($d->nombre) . '</b>' . ($d->ip ? ' (<code>' . $e($d->ip) . '</code>)' : '');
+        // Si el título ya trae la IP (p. ej. "Equipo inaccesible (10.204.1.15)"), solo falta el nombre
+        $conIp = $d->ip && !str_contains((string) $a->titulo, $d->ip);
+        return ' · <b>' . $e($d->nombre) . '</b>' . ($conIp ? ' (<code>' . $e($d->ip) . '</code>)' : '');
     }
 
     private function icono(?string $severidad): string
