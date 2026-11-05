@@ -66,7 +66,7 @@
             </div>
             <div>
                 <h1 class="text-lg font-black leading-tight" style="color: var(--nm-text)">Cámaras de seguridad</h1>
-                <p class="text-xs" style="color: var(--nm-text-muted)">Encontradas en las tablas ARP de los switches y routers por el fabricante de su tarjeta de red · última búsqueda {{ $ultima ? $ultima->format('d/m/Y H:i') : 'nunca' }} (se repite cada noche)</p>
+                <p class="text-xs" style="color: var(--nm-text-muted)">Red 10.4.x.x · encontradas en las tablas ARP de los switches y routers por el fabricante de su tarjeta de red · última búsqueda {{ $ultima ? $ultima->format('d/m/Y H:i') : 'nunca' }} (se repite cada noche)</p>
             </div>
         </div>
         @if($puedeVer)
