@@ -1,0 +1,12 @@
+[Unit]
+Description=Network Monitor - estado de las cámaras (en línea / caídas)
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+User=@USUARIO@
+Group=@USUARIO@
+WorkingDirectory=@APP_DIR@
+ExecStart=/usr/bin/php @APP_DIR@/artisan camaras:revisar
+UMask=0002
+TimeoutStartSec=120
