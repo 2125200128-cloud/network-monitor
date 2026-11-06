@@ -32,8 +32,8 @@
         <div>
             <h1 class="text-lg font-black leading-tight" style="color: var(--nm-text)">Equipos nuevos en la red 10.4</h1>
             <p class="text-xs" style="color: var(--nm-text-muted)">
-                Aparatos que aparecen en las tablas ARP de los switches y routers y que nunca se habían visto. Se revisa cada 30 min;
-                los nuevos con MAC de fábrica se avisan al grupo de redes de Telegram.
+                Aparatos que aparecen en las tablas ARP de los switches y routers y que nunca se habían visto. Se revisa cada 30 min
+                y solo se listan aquí (no se avisan por Telegram).
                 · Línea base: {{ $lineaBase ? \Carbon\Carbon::parse($lineaBase)->format('d/m/Y H:i') : '—' }}
                 · Última lectura: {{ $ultimaLectura ? \Carbon\Carbon::parse($ultimaLectura)->format('d/m/Y H:i') : '—' }}
             </p>
@@ -126,8 +126,8 @@
             lista: JSON.parse(document.getElementById('equiposVistos').textContent),
             grupo: 'pendientes', q: '', ocupado: false,
             grupos: [
-                { clave: 'pendientes', nombre: 'Pendientes de revisar', color: '#1d4ed8', ayuda: 'Nuevos con MAC de fábrica: los que se avisan por Telegram.' },
-                { clave: 'aleatoria', nombre: 'Nuevos con MAC aleatoria', ayuda: 'Celulares y laptops que inventan su MAC: aparecen como nuevos a menudo y no se avisan.' },
+                { clave: 'pendientes', nombre: 'Pendientes de revisar', color: '#1d4ed8', ayuda: 'Nuevos con MAC de fábrica, pendientes de revisar.' },
+                { clave: 'aleatoria', nombre: 'Nuevos con MAC aleatoria', ayuda: 'Celulares y laptops que inventan su MAC: aparecen como nuevos a menudo.' },
                 { clave: 'sospechosos', nombre: 'Sospechosos', color: '#dc2626', ayuda: 'Marcados como sospechosos al revisarlos.' },
                 { clave: 'conocidos', nombre: 'Conocidos', color: '#059669', ayuda: 'Revisados como conocidos y los de la línea base (los que ya estaban cuando empezó la vigilancia).' },
                 { clave: 'todos', nombre: 'Todos', ayuda: 'Todos los aparatos vistos en la red 10.4.' },
