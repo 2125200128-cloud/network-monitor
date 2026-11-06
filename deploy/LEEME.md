@@ -17,7 +17,7 @@ Guía para instalar la aplicación en **Ubuntu Server 24.04 LTS** y traer los da
 | `nm-respaldo.timer` | Respaldo de la base todos los días a las 02:30 (se guardan 14 días) |
 | `nm-tendencias.timer` | Cada 2 h (00:00, 02:00…): tendencias de la última hora a Telegram (si está activo) |
 | `nm-camaras.timer` | Cada noche a las 03:15: busca cámaras de seguridad en las tablas ARP (página Cámaras) |
-| `nm-vigilar-red.timer` | Cada 30 min (:05 y :35): aparatos nunca vistos en la red 10.4 (tablas ARP). La primera vez guarda la línea base; después avisa de los nuevos con MAC de fábrica al grupo de redes de Telegram (Equipos → Equipos nuevos) |
+| `nm-vigilar-red.timer` | Cada 30 min (:05 y :35): aparatos nunca vistos en la red 10.4 (tablas ARP). La primera vez guarda la línea base; después marca los nuevos en Equipos → Equipos nuevos (sin avisar por Telegram) |
 | `nm-camaras-estado.timer` | Cada minuto: si cada cámara responde (ping o su puerto de video/web); caída tras 2 revisiones sin respuesta. Solo se ve en la página Cámaras |
 | `nm-go2rtc` | Video en vivo de las cámaras (go2rtc v1.9.14, solo en 127.0.0.1:1984; Nginx lo publica en `/go2rtc/` solo con sesión). Lo instala `deploy/go2rtc.sh` verificando su SHA-256; su configuración (`/etc/network-monitor/go2rtc.yaml`) es de solo lectura para que nunca guarde credenciales de cámaras |
 
