@@ -22,6 +22,9 @@ class TopologiaCentroDatos
         'inalambrico' => ['titulo' => 'Inalámbrico', 'esperado' => ['wlc']],
     ];
 
+    /** Antigüedad máxima de la lectura del puerto vecino para dar por vivo a un equipo que no responde. */
+    private const MINUTOS_PUERTO_VIVO = 5;
+
     /** Franjas del diagrama (de arriba abajo); agrupan capas para que todo quepa en una pantalla de 1080 px. */
     public const FRANJAS = [
         'borde' => ['titulo' => 'Perímetro y balanceo', 'capas' => ['perimetro', 'balanceo']],
@@ -49,11 +52,12 @@ class TopologiaCentroDatos
         $porNombre = $disp->keyBy(fn ($d) => $identidad($d->nombre));
         $buscar = fn (Collection $miembros) => $porIp->get($miembros->first()->ip)
             ?? $miembros->pluck('hostname')->filter()->map(fn ($h) => $porNombre->get($identidad($h)))->filter()->first();
+        $vivos = $this->vivosPorEnlaces($disp->where('estado', 'offline')->pluck('id'));
 
-        $nodos = $filas->groupBy('nodo')->map(fn (Collection $miembros, string $nodo) => $this->nodo($nodo, $miembros, $buscar($miembros)));
+        $nodos = $filas->groupBy('nodo')->map(fn (Collection $miembros, string $nodo) => $this->nodo($nodo, $miembros, $buscar($miembros), $vivos));
         $porDispositivo = $nodos->filter(fn ($n) => $n['dispositivo_id'])->mapWithKeys(fn ($n) => [$n['dispositivo_id'] => $n['id']]);
 
-        [$enlaces, $externos] = $this->enlaces($porDispositivo);
+        [$enlaces, $externos] = $this->enlaces($porDispositivo, $vivos);
         $nodos = $nodos->map(function ($n) use ($externos) {
             $n['enlaces_externos'] = $externos[$n['id']] ?? 0;
             return $n;
@@ -77,6 +81,7 @@ class TopologiaCentroDatos
                 'online' => $monitoreados->where('estado', 'online')->count(),
                 'warning' => $monitoreados->where('estado', 'warning')->count(),
                 'offline' => $monitoreados->where('estado', 'offline')->count(),
+                'sin_gestion' => $monitoreados->where('estado', 'sin_gestion')->count(),
                 'sin_monitoreo' => $nodos->whereNull('dispositivo_id')->count(),
                 'enlaces' => count($enlaces),
                 'actualizado' => now()->format('H:i:s'),
@@ -84,13 +89,18 @@ class TopologiaCentroDatos
         ];
     }
 
-    private function nodo(string $nodo, Collection $miembros, ?object $d): array
+    private function nodo(string $nodo, Collection $miembros, ?object $d, array $vivos): array
     {
         $p = $miembros->first();
         $tipo = $miembros->count() > 1 ? ($miembros->every(fn ($m) => $m->rol === 'miembro') ? 'stack' : 'ha') : 'unico';
         $versionSnmp = $d && preg_match('/Version\s+([^,\s]+)/i', (string) $d->model_name, $m) ? $m[1] : null;
+        $puertosVivos = $d ? ($vivos[$d->id] ?? 0) : 0;
 
         $avisos = [];
+        if ($puertosVivos) {
+            $avisos[] = "No responde en su IP de gestión ({$d->ip}), pero {$puertosVivos} " . ($puertosVivos === 1 ? 'puerto de sus vecinos hacia él está activo' : 'puertos de sus vecinos hacia él están activos')
+                . ': el equipo funciona y el monitor no tiene acceso a su red de gestión.';
+        }
         if ($d) {
             $esperado = self::CAPAS[$p->capa]['esperado'];
             if ($d->tipo_detectado && !in_array($d->tipo_detectado, $esperado, true)) {
@@ -123,7 +133,7 @@ class TopologiaCentroDatos
             ])->values(),
             'dispositivo_id' => $d->id ?? null,
             'nombre_monitoreo' => $d->nombre ?? null,
-            'estado' => $d->estado ?? null,
+            'estado' => $puertosVivos ? 'sin_gestion' : ($d->estado ?? null),
             'tipo_detectado' => $d->tipo_detectado ?? null,
             'cpu' => $cpu !== null ? (float) $cpu : null,
             'ram' => $ram !== null ? (float) $ram : null,
@@ -139,7 +149,7 @@ class TopologiaCentroDatos
      * Enlaces descubiertos entre equipos del centro de datos, uno por par de nodos (los paralelos se cuentan),
      * y cuántos enlaces tiene cada nodo hacia equipos fuera de esta vista.
      */
-    private function enlaces(Collection $porDispositivo): array
+    private function enlaces(Collection $porDispositivo, array $vivos): array
     {
         $ids = $porDispositivo->keys()->all();
         if (!$ids) {
@@ -171,6 +181,12 @@ class TopologiaCentroDatos
             if ($a === $b) {
                 continue;
             }
+            // Un equipo sin gestión pero con puertos vivos no tumba el enlace: manda el puerto del vecino
+            foreach (['origen', 'destino'] as $lado) {
+                if (isset($vivos[$f->{"{$lado}_dispositivo_id"}])) {
+                    $f->{"estado_{$lado}"} = null;
+                }
+            }
             [$x, $y, $ifx, $ify] = strcmp($a, $b) < 0
                 ? [$a, $b, $f->if_origen, $f->if_destino]
                 : [$b, $a, $f->if_destino, $f->if_origen];
@@ -189,6 +205,31 @@ class TopologiaCentroDatos
             $p['trafico_mbps'] = round($p['trafico_mbps'], 2);
             return $p;
         }, $pares)), $externos];
+    }
+
+    /**
+     * De los equipos que no responden, los que siguen vivos según sus vecinos: [dispositivo_id => puertos], contando
+     * los enlaces CDP/LLDP cuyo puerto del lado vecino está "up" en una lectura reciente (el vecino sí se sondea).
+     */
+    private function vivosPorEnlaces(Collection $ids): array
+    {
+        if ($ids->isEmpty()) {
+            return [];
+        }
+        $vivos = [];
+        foreach (['origen' => 'destino', 'destino' => 'origen'] as $propio => $vecino) {
+            DB::table('enlaces_red as e')
+                ->join('telemetria_interfaces as t', 't.interfaz_id', '=', "e.{$vecino}_interfaz_id")
+                ->whereIn("e.{$propio}_dispositivo_id", $ids)
+                ->where('t.oper_status', 'up')
+                ->where('t.updated_at', '>=', now()->subMinutes(self::MINUTOS_PUERTO_VIVO))
+                ->distinct()
+                ->get(["e.{$propio}_dispositivo_id as id", "e.{$vecino}_interfaz_id as puerto"])
+                ->each(function ($f) use (&$vivos) {
+                    $vivos[$f->id] = ($vivos[$f->id] ?? 0) + 1;
+                });
+        }
+        return $vivos;
     }
 
     /** Misma regla que la topología general: puertos SNMP de cada extremo y, sin ellos, el estado de los equipos. */

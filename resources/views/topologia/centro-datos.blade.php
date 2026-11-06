@@ -81,6 +81,7 @@
             <span class="dc-chip" title="En línea"><i class="dc-punto" style="background: var(--nm-success)"></i><b id="kOnline">{{ $datos['resumen']['online'] }}</b></span>
             <span class="dc-chip" title="Advertencia"><i class="dc-punto" style="background: var(--nm-warning)"></i><b id="kWarning">{{ $datos['resumen']['warning'] }}</b></span>
             <span class="dc-chip" title="Sin respuesta"><i class="dc-punto" style="background: var(--nm-danger)"></i><b id="kOffline">{{ $datos['resumen']['offline'] }}</b></span>
+            <span class="dc-chip" title="No responde en su IP de gestión, pero los puertos de sus vecinos hacia él están activos"><i class="dc-punto" style="background: var(--nm-info)"></i><b id="kSinGestion">{{ $datos['resumen']['sin_gestion'] }}</b> sin gestión</span>
             <span class="dc-chip" title="IP del inventario que no está en el monitoreo"><i class="dc-punto" style="border: 1.5px dashed var(--nm-text-muted)"></i><b id="kSinMon">{{ $datos['resumen']['sin_monitoreo'] }}</b> sin monitoreo</span>
             <span class="dc-chip" title="Enlaces descubiertos por CDP/LLDP entre estos equipos"><b id="kEnlaces">{{ $datos['resumen']['enlaces'] }}</b> enlaces</span>
             <span class="font-mono text-[12px]" style="color: var(--nm-text-muted)" title="Se actualiza cada 30 s">Act. <span id="kHora">{{ $datos['resumen']['actualizado'] }}</span></span>
@@ -131,7 +132,7 @@
     const COLOR_ENLACE = { up: '#10b981', degraded: '#f59e0b', down: '#ef4444', unknown: '#94a3b8' };
     const ESTADO = {
         online: ['En línea', 'var(--nm-success)'], warning: ['Advertencia', 'var(--nm-warning)'],
-        offline: ['Sin respuesta', 'var(--nm-danger)'], null: ['Sin monitoreo', 'var(--nm-border-strong)'],
+        offline: ['Sin respuesta', 'var(--nm-danger)'], sin_gestion: ['Sin gestión', 'var(--nm-info)'], null: ['Sin monitoreo', 'var(--nm-border-strong)'],
     };
     const ICONO_GENERICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="6" rx="1.5"/><rect x="2" y="14" width="20" height="6" rx="1.5"/><path d="M6 7h.01M6 17h.01M10 7h8M10 17h8"/></svg>';
 
@@ -390,7 +391,7 @@
     // ---------- Actualización en vivo ----------
     function pintarResumen() {
         const r = datos.resumen;
-        for (const [id, v] of Object.entries({ kNodos: r.nodos, kFisicos: r.equipos_fisicos, kOnline: r.online, kWarning: r.warning, kOffline: r.offline, kSinMon: r.sin_monitoreo, kEnlaces: r.enlaces, kHora: r.actualizado })) {
+        for (const [id, v] of Object.entries({ kNodos: r.nodos, kFisicos: r.equipos_fisicos, kOnline: r.online, kWarning: r.warning, kOffline: r.offline, kSinGestion: r.sin_gestion, kSinMon: r.sin_monitoreo, kEnlaces: r.enlaces, kHora: r.actualizado })) {
             document.getElementById(id).textContent = v;
         }
     }
