@@ -33,7 +33,8 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'index'])->name('firewalls.index');
     Route::get('/virtualizacion', [\App\Http\Controllers\VirtualizacionController::class, 'index'])->name('virtualizacion.index');
     Route::get('/virtualizacion/pdf', [\App\Http\Controllers\VirtualizacionController::class, 'pdf'])->middleware('throttle:20,1')->name('virtualizacion.pdf');
-    Route::post('/pantalla/mantener-sesion',[PantallaController::class, 'mantener'])->middleware('throttle:30,1')->name('pantalla.mantener');
+    // GET: sin chequeo CSRF, así el latido también funciona si la sesión se restauró con la cookie recordada (token nuevo)
+    Route::get('/pantalla/mantener-sesion',[PantallaController::class, 'mantener'])->middleware('throttle:60,1')->name('pantalla.mantener');
 
     // ==========================================
     // RUTAS ADMINISTRATIVAS

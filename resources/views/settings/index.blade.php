@@ -1118,10 +1118,11 @@
                                 </div>
                                 <div>
                                     <div class="settings-row-label">Tiempo de Expiración de Sesión</div>
-                                    <div class="settings-row-desc">Duración máxima de inactividad antes de requerir reautenticación</div>
+                                    <div class="settings-row-desc">Duración máxima de inactividad antes de requerir reautenticación (las páginas abiertas la renuevan cada 5 min)</div>
                                 </div>
                             </div>
-                            <span class="text-xs font-bold text-slate-800 dark:text-slate-200 font-mono bg-slate-200/80 dark:bg-slate-800 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700">120 min</span>
+                            @php $minSesion = (int) config('session.lifetime'); @endphp
+                            <span class="text-xs font-bold text-slate-800 dark:text-slate-200 font-mono bg-slate-200/80 dark:bg-slate-800 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700">{{ $minSesion >= 1440 ? intdiv($minSesion, 1440) . ' días' : $minSesion . ' min' }}</span>
                         </div>
 
                         {{-- Row: Password Confirmation --}}
