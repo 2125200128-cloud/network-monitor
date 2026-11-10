@@ -1,6 +1,6 @@
 # Network Monitor NOC en un servidor Ubuntu
 
-Guía para instalar la aplicación en **Ubuntu Server 24.04 LTS** y traer los datos del equipo Windows actual.
+Guía para instalar la aplicación en **Ubuntu Server 24.04 LTS** (o reinstalarla a partir de un respaldo) y operarla.
 
 ## Qué queda instalado
 
@@ -30,19 +30,9 @@ Todos arrancan solos con el servidor y se reinician si fallan. Equivalen a las v
 - Desde el servidor hacia la red: **ICMP** y **SNMP (UDP 161)** a todos los equipos, **SSH (TCP 22)** para la consola y los respaldos de configuración, **HTTPS** saliente hacia `api.telegram.org` si se usan las alertas de Telegram.
 - **Autorizar la IP del nuevo servidor en el SNMP de los equipos** (ACL de los switches, *trusted hosts* de los FortiGate). Si no, el monitoreo mostrará los equipos como "sin respuesta SNMP".
 
-## 1. En el equipo Windows actual: exportar los datos
+## 1. Descargar el código
 
-En PowerShell, dentro de la carpeta del proyecto:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File deploy\exportar-datos-windows.ps1
-```
-
-Genera `network_monitor.dump`. Cópialo al servidor (WinSCP, o `scp network_monitor.dump usuario@servidor:/tmp/`).
-
-Anota también la línea **`APP_KEY=`** del archivo `.env` de Windows. Es obligatoria: con ella se cifraron el token de Telegram, las contraseñas SNMPv3 y las credenciales SSH. Trátala como una contraseña.
-
-## 2. En el servidor: descargar el código
+Si vas a reinstalar con los datos de otro servidor, anota antes la línea **`APP_KEY=`** de su `.env`. Es obligatoria: con ella se cifraron el token de Telegram, las contraseñas SNMPv3 y las credenciales SSH. Trátala como una contraseña.
 
 ```bash
 sudo mkdir -p /var/www && cd /var/www
@@ -51,17 +41,19 @@ sudo chown -R "$USER" network-monitor
 cd network-monitor
 ```
 
-## 3. Instalar
+## 2. Instalar
 
 ```bash
-sudo APP_KEY_ORIGEN='base64:...la APP_KEY de Windows...' DOMINIO=noc.ejemplo.gob.mx bash deploy/instalar.sh
+sudo APP_KEY_ORIGEN='base64:...la APP_KEY del servidor anterior...' DOMINIO=noc.ejemplo.gob.mx bash deploy/instalar.sh
 ```
 
 - `DOMINIO` es el nombre o IP con el que se abrirá la web; si se omite, se usa la IP del servidor.
 - Para una instalación desde cero, sin datos previos: `sudo NUEVA_INSTALACION=1 bash deploy/instalar.sh`.
 - El script se puede volver a ejecutar sin problema; instala lo que falte y no borra datos.
 
-## 4. Importar los datos de Windows
+## 3. Restaurar los datos
+
+Con un respaldo del servidor anterior (`/var/backups/network-monitor/*.dump`, copiado a este con WinSCP o `scp`):
 
 ```bash
 sudo bash deploy/importar-datos.sh /tmp/network_monitor.dump
@@ -69,9 +61,9 @@ sudo bash deploy/importar-datos.sh /tmp/network_monitor.dump
 
 Detiene los workers, restaura la base, aplica migraciones pendientes y los vuelve a arrancar. Al final muestra cuántos equipos, enlaces y alarmas se importaron.
 
-Al terminar, **apaga los workers en Windows** (cierra las ventanas de `iniciar_monitor.bat`) para que no haya dos servidores sondeando la red ni enviando avisos de Telegram duplicados.
+Si el servidor anterior sigue encendido, **detén sus workers** para que no haya dos servidores sondeando la red ni enviando avisos de Telegram duplicados.
 
-## 5. Comprobar
+## 4. Comprobar
 
 ```bash
 systemctl status 'nm-*'                 # todos "active"

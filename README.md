@@ -71,8 +71,7 @@ network-monitor/
 |-- worker/
 |   |-- snmp_poller.py          # Worker asincrono de sondeo continuo
 |   |-- snmp_detail_collector.py# Colector detallado de hardware y tablas MAC/ARP
-|   |-- network_discovery.py    # Crawler de auto-descubrimiento CDP/LLDP y CIDR
-|   `-- metrics_collector.py    # Agregador de metricas historicas
+|   `-- network_discovery.py    # Crawler de auto-descubrimiento CDP/LLDP y CIDR
 |-- public/
 |   `-- images/topology/        # Iconos de hardware (Nexus, Core, Access, Routers, VoIP, Servers)
 `-- iniciar_monitor.bat         # Lanzador de todos los servicios del NOC

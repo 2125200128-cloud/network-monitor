@@ -72,13 +72,26 @@ class TelegramBot
     private function llamar(string $metodo, array $datos = [], ?string $foto = null): mixed
     {
         $url = "https://api.telegram.org/bot{$this->token}/{$metodo}";
-        try {
-            $peticion = Http::timeout(20)->connectTimeout(8);
-            $respuesta = $foto !== null
-                ? $peticion->attach('photo', $foto, 'grafica.png')->post($url, $datos)
-                : $peticion->asForm()->post($url, $datos);
-        } catch (\Throwable $e) {
-            $error = 'Sin conexión con Telegram: ' . $this->ocultarToken($e->getMessage());
+        // Subir una imagen tarda más que un texto. Un corte o una respuesta lenta de Telegram (cURL 28) se reintenta;
+        // un rechazo de Telegram (token, chat, formato) no, porque fallaría igual. Solo en segundo plano (alarmas,
+        // tendencias): desde la web (Enviar prueba) el error se muestra enseguida en vez de dejar la página esperando.
+        $esperas = $metodo === 'getUpdates' || !app()->runningInConsole() ? [] : [3, 10];
+        for ($intento = 0; ; $intento++) {
+            try {
+                $peticion = Http::timeout($foto !== null ? 60 : 20)->connectTimeout(10);
+                $respuesta = $foto !== null
+                    ? $peticion->attach('photo', $foto, 'grafica.png')->post($url, $datos)
+                    : $peticion->asForm()->post($url, $datos);
+                break;
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                if ($intento < count($esperas)) {
+                    sleep($esperas[$intento]);
+                    continue;
+                }
+                $error = 'Sin conexión con Telegram (' . ($intento + 1) . ' intentos): ' . $this->ocultarToken($e->getMessage());
+            } catch (\Throwable $e) {
+                $error = 'Sin conexión con Telegram: ' . $this->ocultarToken($e->getMessage());
+            }
             $this->registrar($metodo, $datos, $foto, $error);
             throw new RuntimeException($error);
         }
