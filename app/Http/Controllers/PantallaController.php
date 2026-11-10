@@ -6,14 +6,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Pantallas NOC (TV): mantiene la sesión abierta en los navegadores que muestran el monitoreo.
+ * Latido de sesión: lo llaman todas las páginas (y el modo TV) para que la sesión nunca se cierre.
  */
 class PantallaController extends Controller
 {
     /**
-     * Latido del modo TV. La primera vez deja la sesión "recordada" (cookie persistente de Laravel) para el
-     * mismo usuario ya autenticado: si la sesión vence (PC suspendida, corte de red), el siguiente acceso la
-     * restaura sin pedir contraseña. Cada latido además renueva la sesión.
+     * La primera vez deja la sesión "recordada" (cookie persistente de Laravel, 400 días) para el mismo usuario
+     * ya autenticado: si la sesión se pierde (servidor reiniciado, sesiones borradas), el siguiente acceso la
+     * restaura sin pedir contraseña. Cada latido además renueva la sesión. Devuelve el token CSRF vigente para que
+     * la página se recargue si cambió (una página con el token viejo recibiría 419 al guardar).
      */
     public function mantener(Request $request)
     {
@@ -22,6 +23,11 @@ class PantallaController extends Controller
             $guard->login($guard->user(), true);
         }
 
-        return response()->json(['ok' => true, 'usuario' => $guard->user()->name, 'hora' => now()->format('H:i:s')]);
+        return response()->json([
+            'ok' => true,
+            'usuario' => $guard->user()->name,
+            'hora' => now()->format('H:i:s'),
+            'csrf' => csrf_token(),
+        ]);
     }
 }

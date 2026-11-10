@@ -51,7 +51,7 @@
         </div>
 
         <div class="flex items-center mb-6">
-            <input id="remember_me" type="checkbox" name="remember" class="h-4 w-4 accent-[#667d93] border-gray-300 rounded">
+            <input id="remember_me" type="checkbox" name="remember" checked class="h-4 w-4 accent-[#667d93] border-gray-300 rounded">
             <label for="remember_me" class="ml-2 block text-sm text-gray-900">Recordar dispositivo</label>
         </div>
 

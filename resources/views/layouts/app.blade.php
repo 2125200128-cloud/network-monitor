@@ -530,7 +530,7 @@
         window.nocPantallas = (function () {
             const URL_MANTENER = @json(route('pantalla.mantener'));
             const CSRF = @json(csrf_token());
-            const LATIDO_MS = 5 * 60 * 1000;          // renueva la sesión cada 5 min
+            const LATIDO_MS = 5 * 60 * 1000;          // renueva la sesión cada 5 min (en todas las páginas)
             const RECARGA_MS = 6 * 60 * 60 * 1000;    // recarga completa cada 6 h (libera memoria de pestañas que nunca se cierran)
             const esModoTV = () => document.documentElement.classList.contains('modo-tv');
 
@@ -544,15 +544,20 @@
                 const estado = document.getElementById('estadoSesionTV');
                 try {
                     const r = await fetch(URL_MANTENER, {
-                        method: 'POST', credentials: 'same-origin', redirect: 'manual',
-                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF, 'X-Requested-With': 'XMLHttpRequest' },
+                        method: 'GET', credentials: 'same-origin', redirect: 'manual', cache: 'no-store',
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                     });
+                    const sesionPerdida = r.type === 'opaqueredirect' || r.status === 401 || r.status === 419;
+                    if (!r.ok && !sesionPerdida) return;   // 429/500…: el siguiente latido reintenta
                     if (r.ok) {
                         const j = await r.json();
-                        if (estado) estado.textContent = 'Sesión activa · ' + j.hora;
-                        return;
+                        if (j.csrf === CSRF) {
+                            if (estado) estado.textContent = 'Sesión activa · ' + j.hora;
+                            return;
+                        }
+                        // La sesión se restauró con la cookie recordada: el token de esta página ya no sirve
                     }
-                    // 401/419/redirección al login: la sesión venció; recargar la restaura con la cookie recordada
+                    // 401/redirección al login o token nuevo: recargar restaura la sesión con la cookie recordada
                     if (estado) estado.textContent = 'Reconectando sesión…';
                     setTimeout(() => location.reload(), 3000);
                 } catch (e) {
@@ -583,18 +588,25 @@
                 document.addEventListener('mousemove', mostrar);
                 document.addEventListener('touchstart', mostrar, { passive: true });
 
-                latido();
-                setInterval(latido, LATIDO_MS);
                 mantenerPantallaEncendida();
                 document.addEventListener('visibilitychange', () => {
-                    if (document.visibilityState === 'visible') { latido(); mantenerPantallaEncendida(); }
+                    if (document.visibilityState === 'visible') mantenerPantallaEncendida();
                 });
                 setTimeout(() => location.reload(), RECARGA_MS);
             }
 
-            if (esModoTV()) {
-                document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', iniciarModoTV) : iniciarModoTV();
+            // Latido en todas las páginas: la sesión nunca se cierra mientras haya una pestaña abierta, y al volver a
+            // una pestaña dormida (PC suspendida, pestaña en segundo plano) se renueva enseguida.
+            function iniciarLatido() {
+                latido();
+                setInterval(latido, LATIDO_MS);
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') latido();
+                });
+                if (esModoTV()) iniciarModoTV();
             }
+
+            document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', iniciarLatido) : iniciarLatido();
 
             return {
                 conTV,
