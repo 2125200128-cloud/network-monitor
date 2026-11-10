@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  Restaura en este servidor la base exportada del servidor anterior (exportar-datos-windows.ps1).
+#  Restaura en este servidor un respaldo de la base (deploy/respaldo.sh, pg_dump en formato custom).
 #  Reemplaza el contenido actual de la base network_monitor.
 #
 #  Uso:  sudo bash deploy/importar-datos.sh /ruta/network_monitor.dump
