@@ -30,6 +30,8 @@ class ConfiguracionGeneral extends Model
         'telegram_severidad_min',
         'telegram_resueltas',
         'telegram_imagenes',
+        'telegram_recordatorio_min',
+        'redes_prioritarias',
         'snmpv3_usuario',
         'snmpv3_nivel',
         'snmpv3_auth_proto',

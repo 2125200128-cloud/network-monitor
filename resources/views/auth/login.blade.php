@@ -26,7 +26,7 @@
         <div class="mb-5 bg-red-50 border-l-4 border-red-500 p-4 rounded-md" role="alert">
             <div class="flex items-center">
                 <svg class="h-5 w-5 text-red-500 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="m15 9-6 6" /> <path d="m9 9 6 6" /></svg>
-                <p class="ml-3 text-sm text-red-700">El correo o la contraseña no son correctos.</p>
+                <p class="ml-3 text-sm text-red-700">El usuario o la contraseña no son correctos.</p>
             </div>
         </div>
     @endif
@@ -35,9 +35,10 @@
         @csrf
 
         <div class="mb-5">
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Correo Institucional</label>
-            <input id="email" type="email" name="email" value="{{ old('email') }}" required autocomplete="username"
-                   @if(! old('email')) autofocus @endif
+            <label for="usuario" class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+            <input id="usuario" type="text" name="usuario" value="{{ old('usuario') }}" required autocomplete="username"
+                   autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="50"
+                   @if(! old('usuario')) autofocus @endif
                    @if($credencialesInvalidas) aria-invalid="true" @endif
                    class="login-input">
         </div>
@@ -46,7 +47,7 @@
             @include('auth.partials.campo-clave', [
                 'id' => 'password',
                 'etiqueta' => 'Contraseña',
-                'autofocus' => (bool) old('email'),
+                'autofocus' => (bool) old('usuario'),
             ])
         </div>
 

@@ -1,0 +1,12 @@
+[Unit]
+Description=Network Monitor - ruta de red de cada recaudadora (traceroute) para la topologia
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+User=@USUARIO@
+Group=@USUARIO@
+WorkingDirectory=@APP_DIR@
+ExecStart=/usr/bin/php @APP_DIR@/artisan recaudadoras:rutas
+UMask=0002
+TimeoutStartSec=1000

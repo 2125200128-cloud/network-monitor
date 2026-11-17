@@ -57,6 +57,7 @@ class AlertasController extends Controller
                     'inicio_ts' => $inicio?->timestamp ?? 0,
                     'duracion' => $inicio ? HistorialAlertas::duracion($inicio->diffInSeconds(now())) : '—',
                     'cascada' => ($a['codigo_evento'] ?? '') === 'CASCADE_FAILURE',
+                    'prioritaria' => (bool) ($a['prioritaria'] ?? false),
                 ];
             })
             ->values()->all();

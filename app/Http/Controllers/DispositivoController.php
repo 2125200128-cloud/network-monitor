@@ -40,7 +40,7 @@ class DispositivoController extends Controller
 
         \Illuminate\Support\Facades\Log::info('Comunidad SNMP de la ficha ' . ($comunidad ? 'fijada' : 'eliminada'), [
             'dispositivo' => $dispositivo->id . ' ' . $dispositivo->nombre,
-            'usuario' => auth()->user()?->email,
+            'usuario' => auth()->user()?->usuario,
         ]);
 
         return response()->json(['success' => true, 'origen' => $dispositivo->fresh()->comunidadConOrigen()[1]]);
@@ -61,11 +61,11 @@ class DispositivoController extends Controller
         $dispositivo->delete();
         \App\Http\Controllers\TopologiaController::olvidarCacheGrafo();
         \Illuminate\Support\Facades\Cache::forget('dashboard_ids_firewalls_v1');
-        \Illuminate\Support\Facades\Cache::forget('dashboard_sectores_v1');
+        \Illuminate\Support\Facades\Cache::forget(\App\Services\ResumenSectores::CACHE);
 
         \Illuminate\Support\Facades\Log::warning('Dispositivo eliminado', [
             'dispositivo' => $dispositivo->id . ' ' . $dispositivo->nombre . ' (' . $dispositivo->ip . ')',
-            'usuario' => auth()->user()?->email,
+            'usuario' => auth()->user()?->usuario,
         ]);
 
         return response()->json(['success' => true]);

@@ -717,7 +717,7 @@
                                 </h3>
                                 <span class="text-[11px] font-black px-3 py-1 rounded-full bg-blue-600 text-white uppercase tracking-wider">{{ auth()->user()->role }}</span>
                             </div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">{{ auth()->user()->email }} · <span class="text-emerald-600 dark:text-emerald-400 font-bold">● Sesión Activa</span></p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">{{ auth()->user()->usuario }} · <span class="text-emerald-600 dark:text-emerald-400 font-bold">● Sesión Activa</span></p>
                         </div>
                     </div>
                 </div>
@@ -783,10 +783,12 @@
                                 </div>
                                 <div>
                                     <label class="form-label">
-                                        <svg class="w-3.5 h-3.5 text-black dark:text-white" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2" /> <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>
-                                        Correo electrónico
+                                        <svg class="w-3.5 h-3.5 text-black dark:text-white" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5" /> <path d="M20 21a8 8 0 0 0-16 0" /></svg>
+                                        Usuario de acceso
                                     </label>
-                                    <input type="email" name="email" required placeholder="usuario@dominio.com" class="form-input" value="{{ old('email') }}">
+                                    <input type="text" name="usuario" required minlength="3" maxlength="50" pattern="[A-Za-z0-9._\-]+" title="Letras sin acentos, números, punto, guion o guion bajo (sin espacios)"
+                                           autocapitalize="none" autocomplete="off" spellcheck="false" placeholder="Ej. jperez" class="form-input font-mono lowercase" value="{{ old('usuario') }}">
+                                    @error('usuario')<p class="text-xs text-rose-600 mt-1 font-semibold">{{ $message }}</p>@enderror
                                 </div>
                             </div>
                         </div>
@@ -848,7 +850,7 @@
                             <thead>
                                 <tr>
                                     <th style="border-radius:0;">Usuario</th>
-                                    <th>Correo</th>
+                                    <th>Usuario de acceso</th>
                                     <th>Rol</th>
                                     <th class="text-center" style="border-radius:0;">Acciones</th>
                                 </tr>
@@ -869,7 +871,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="font-mono text-slate-600 dark:text-slate-400 text-xs font-semibold">{{ $user->email }}</td>
+                                    <td class="font-mono text-slate-600 dark:text-slate-400 text-xs font-semibold">{{ $user->usuario }}</td>
                                     <td>
                                         <span class="text-xs font-extrabold rounded-lg py-1 px-3 inline-block {{ strtolower($user->role) === 'admin' ? 'role-admin' : (strtolower($user->role) === 'operador' ? 'role-operador' : 'role-auditor') }}">
                                             {{ $user->role }}
@@ -911,7 +913,7 @@
                                         id: {{ $user->id }},
                                         name: @json($user->name),
                                         prefijo: @json($user->prefijo ?? ''),
-                                        email: @json($user->email),
+                                        usuario: @json($user->usuario),
                                         role: @json($user->role),
                                         avatar: @json($user->avatar_url),
                                         avatarRaw: @json($user->avatar ?? ''),
@@ -946,8 +948,8 @@
                             <div class="space-y-4">
                                 <div class="settings-group" style="margin-bottom: 0;">
                                     <div class="settings-row">
-                                        <div class="settings-row-label">Correo</div>
-                                        <span id="viewEmail" class="text-sm font-mono text-slate-600 dark:text-slate-300"></span>
+                                        <div class="settings-row-label">Usuario de acceso</div>
+                                        <span id="viewUsuario" class="text-sm font-mono text-slate-600 dark:text-slate-300"></span>
                                     </div>
                                     <div class="settings-row">
                                         <div class="settings-row-label">Prefijo</div>
@@ -1041,10 +1043,11 @@
                                     </div>
                                 </div>
 
-                                {{-- Email --}}
+                                {{-- Usuario de acceso --}}
                                 <div>
-                                    <label class="form-label">Correo electrónico</label>
-                                    <input type="email" name="email" id="editEmail" required class="form-input">
+                                    <label class="form-label">Usuario de acceso</label>
+                                    <input type="text" name="usuario" id="editUsuario" required minlength="3" maxlength="50" pattern="[A-Za-z0-9._\-]+" title="Letras sin acentos, números, punto, guion o guion bajo (sin espacios)"
+                                           autocapitalize="none" autocomplete="off" spellcheck="false" class="form-input font-mono lowercase">
                                 </div>
 
                                 {{-- Role --}}
@@ -1334,6 +1337,27 @@
                         <select name="telegram_severidad_min" class="settings-input font-bold" style="width: 240px;">
                             <option value="critica" @selected(old('telegram_severidad_min', $settings->telegram_severidad_min) === 'critica')>Solo críticas</option>
                             <option value="advertencia" @selected(old('telegram_severidad_min', $settings->telegram_severidad_min) === 'advertencia')>Críticas y advertencias</option>
+                        </select>
+                    </div>
+
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Red prioritaria</div>
+                            <div class="settings-row-desc">Sus fallas se marcan como «Prioritaria» en Telegram, en Alertas y en el dashboard, y van primero. Una o varias redes separadas por coma.</div>
+                        </div>
+                        <input type="text" name="redes_prioritarias" value="{{ old('redes_prioritarias', $settings->redes_prioritarias ?? \App\Support\RedesPrioritarias::POR_OMISION) }}"
+                               placeholder="10.4.0.0/16" autocomplete="off" class="settings-input font-mono font-bold" style="width: 240px;">
+                    </div>
+
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Recordar fallas de la red prioritaria</div>
+                            <div class="settings-row-desc">Mientras una falla de esa red siga activa, se vuelve a avisar en un solo mensaje con todo lo pendiente y cuánto lleva (también las recaudadoras).</div>
+                        </div>
+                        <select name="telegram_recordatorio_min" class="settings-input font-bold" style="width: 240px;">
+                            @foreach([15 => 'Cada 15 minutos', 30 => 'Cada 30 minutos', 60 => 'Cada hora', 120 => 'Cada 2 horas', 240 => 'Cada 4 horas', 0 => 'No recordar'] as $min => $txt)
+                                <option value="{{ $min }}" @selected((int) old('telegram_recordatorio_min', $settings->telegram_recordatorio_min ?? 30) === $min)>{{ $txt }}</option>
+                            @endforeach
                         </select>
                     </div>
 
@@ -1971,7 +1995,7 @@
             const avatarImg = document.getElementById('viewAvatar');
             const fullName = document.getElementById('viewFullName');
             const roleBadge = document.getElementById('viewRoleBadge');
-            const email = document.getElementById('viewEmail');
+            const usuario = document.getElementById('viewUsuario');
             const prefijo = document.getElementById('viewPrefijo');
             const role = document.getElementById('viewRole');
             const created = document.getElementById('viewCreated');
@@ -1993,7 +2017,7 @@
                 user.role.toLowerCase() === 'operador' ? 'role-operador' : 'role-auditor'
             );
 
-            email.textContent = user.email;
+            usuario.textContent = user.usuario;
             prefijo.textContent = user.prefijo ? user.prefijo : '— Sin prefijo —';
             role.textContent = user.role;
             created.textContent = user.created;
@@ -2034,7 +2058,7 @@
             const form = document.getElementById('editUserForm');
             const nameInput = document.getElementById('editName');
             const prefijoSelect = document.getElementById('editPrefijo');
-            const emailInput = document.getElementById('editEmail');
+            const usuarioInput = document.getElementById('editUsuario');
             const roleSelect = document.getElementById('editRole');
             const avatarPreview = document.getElementById('editAvatarPreview');
             const removeAvatarCheckbox = document.getElementById('editRemoveAvatar');
@@ -2056,7 +2080,7 @@
             // Populate form values
             nameInput.value = user.name;
             prefijoSelect.value = user.prefijo || '';
-            emailInput.value = user.email;
+            usuarioInput.value = user.usuario;
             roleSelect.value = user.role;
 
             // Avatar Preview

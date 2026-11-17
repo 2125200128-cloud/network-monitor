@@ -293,14 +293,24 @@ class SettingController extends Controller
             'telegram_chat_id' => ['nullable', 'string', 'max:64', 'regex:/^(-?\d+|@[A-Za-z0-9_]{5,})$/'],
             'telegram_chat_id_servidores' => ['nullable', 'string', 'max:64', 'regex:/^(-?\d+|@[A-Za-z0-9_]{5,})$/'],
             'telegram_severidad_min' => 'required|in:critica,advertencia',
+            'telegram_recordatorio_min' => 'required|in:0,15,30,60,120,240',
+            'redes_prioritarias' => 'nullable|string|max:255',
         ], [
             'telegram_bot_token.regex' => 'El token no tiene el formato de BotFather (números:letras).',
             'telegram_chat_id.regex' => 'El chat ID debe ser un número (p. ej. -1001234567890) o @nombre_del_canal.',
             'telegram_chat_id_servidores.regex' => 'El chat de servidores debe ser un número (p. ej. -1001234567890) o @nombre_del_canal.',
         ]);
 
+        [$redes, $errorRedes] = \App\Support\RedesPrioritarias::normalizar($request->input('redes_prioritarias'));
+        if ($errorRedes) {
+            return redirect()->route('settings.index', ['section' => 'notificaciones'])
+                ->withInput($request->except('telegram_bot_token'))->with('error', 'Red prioritaria: ' . $errorRedes);
+        }
+
         $cfg = ConfiguracionGeneral::firstOrFail();
         $datos = [
+            'redes_prioritarias' => $redes,
+            'telegram_recordatorio_min' => (int) $request->input('telegram_recordatorio_min'),
             'telegram_chat_id' => trim((string) $request->input('telegram_chat_id')) ?: null,
             'telegram_chat_id_servidores' => trim((string) $request->input('telegram_chat_id_servidores')) ?: null,
             'telegram_severidad_min' => $request->input('telegram_severidad_min'),
@@ -323,6 +333,7 @@ class SettingController extends Controller
         }
 
         $cfg->update($datos);
+        \App\Support\RedesPrioritarias::olvidar();
         return redirect()->route('settings.index', ['section' => 'notificaciones'])
             ->with('success', $datos['telegram_activo'] ? 'Alertas de Telegram activadas.' : 'Configuración de Telegram guardada (alertas desactivadas).');
     }
@@ -380,16 +391,29 @@ class SettingController extends Controller
         return redirect()->route('settings.index', ['section' => 'cuentas'])->with('success', 'Rol de "' . $user->name . '" actualizado a ' . $newRole . '.');
     }
 
+    /** Usuario de acceso: minúsculas, sin espacios (al iniciar sesión Fortify también lo pasa a minúsculas). */
+    private const REGLA_USUARIO = 'required|string|min:3|max:50|regex:/^[a-z0-9._-]+$/';
+    private const MENSAJES_USUARIO = [
+        'usuario.regex' => 'El usuario solo puede llevar letras sin acentos, números, punto, guion o guion bajo (sin espacios).',
+        'usuario.unique' => 'Ese usuario ya existe.',
+    ];
+
+    private function normalizarUsuario(Request $request): void
+    {
+        $request->merge(['usuario' => mb_strtolower(trim((string) $request->input('usuario')))]);
+    }
+
     public function register(Request $request)
     {
+        $this->normalizarUsuario($request);
         $request->validate([
             'name' => 'required|string|max:255',
             'prefijo' => 'nullable|string|in:Ing.,Lic.,Tec.,TSU.,Dr.,Mtro.,Mtra.,C.P.,Arq.',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'email' => 'required|string|email|max:255|unique:users',
+            'usuario' => self::REGLA_USUARIO . '|unique:users,usuario',
             'password' => ['required', 'confirmed', Password::min(8)],
             'role' => 'required|in:Admin,Operador,Auditor',
-        ]);
+        ], self::MENSAJES_USUARIO);
 
         $avatarPath = null;
         if ($request->hasFile('avatar')) {
@@ -400,7 +424,7 @@ class SettingController extends Controller
             'name' => $request->name,
             'prefijo' => $request->prefijo,
             'avatar' => $avatarPath,
-            'email' => $request->email,
+            'usuario' => $request->usuario,
             'password' => Hash::make($request->password),
             'role' => $request->role,
         ]);
@@ -431,11 +455,12 @@ class SettingController extends Controller
             return redirect()->route('settings.index', ['section' => 'cuentas'])->with('error', 'No puedes quitarte el rol de Administrador a ti mismo.');
         }
 
+        $this->normalizarUsuario($request);
         $rules = [
             'name' => 'required|string|max:255',
             'prefijo' => 'nullable|string|in:Ing.,Lic.,Tec.,TSU.,Dr.,Mtro.,Mtra.,C.P.,Arq.',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'usuario' => self::REGLA_USUARIO . '|unique:users,usuario,' . $user->id,
             'role' => 'required|in:Admin,Operador,Auditor',
         ];
 
@@ -443,12 +468,12 @@ class SettingController extends Controller
             $rules['password'] = ['required', 'confirmed', Password::min(8)];
         }
 
-        $request->validate($rules);
+        $request->validate($rules, self::MENSAJES_USUARIO);
 
         $data = [
             'name' => $request->name,
             'prefijo' => $request->prefijo,
-            'email' => $request->email,
+            'usuario' => $request->usuario,
             'role' => $request->role,
         ];
 

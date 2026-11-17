@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Kiosco de cobro de recaudadora: gabinete vertical con pantalla táctil, lector de tarjeta e impresora de tickets -->
+  <defs>
+    <linearGradient id="kGab" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6f84"/>
+      <stop offset=".45" stop-color="#8aa0b6"/>
+      <stop offset="1" stop-color="#465868"/>
+    </linearGradient>
+    <linearGradient id="kPant" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1e3a5f"/>
+      <stop offset="1" stop-color="#0f1f33"/>
+    </linearGradient>
+    <linearGradient id="kBrillo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".28"/>
+      <stop offset=".5" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="100" cy="188" rx="46" ry="7" fill="#0f172a" opacity=".18"/>
+  <!-- base -->
+  <rect x="62" y="170" width="76" height="16" rx="4" fill="#334155"/>
+  <!-- gabinete -->
+  <path d="M66 26 Q66 14 78 14 H122 Q134 14 134 26 V172 H66 Z" fill="url(#kGab)"/>
+  <path d="M66 26 Q66 14 78 14 H122 Q134 14 134 26 V172 H66 Z" fill="none" stroke="#2f3d4a" stroke-width="2"/>
+  <!-- franja institucional -->
+  <rect x="66" y="22" width="68" height="6" fill="#ff8300"/>
+  <!-- pantalla -->
+  <rect x="74" y="36" width="52" height="64" rx="4" fill="url(#kPant)" stroke="#0b1320" stroke-width="2"/>
+  <rect x="80" y="44" width="40" height="7" rx="2" fill="#38bdf8" opacity=".85"/>
+  <rect x="80" y="56" width="28" height="5" rx="2" fill="#94a3b8" opacity=".7"/>
+  <rect x="80" y="66" width="18" height="12" rx="2" fill="#22c55e" opacity=".9"/>
+  <rect x="102" y="66" width="18" height="12" rx="2" fill="#f59e0b" opacity=".9"/>
+  <rect x="80" y="84" width="40" height="9" rx="2" fill="#3b82f6" opacity=".9"/>
+  <path d="M74 36 H126 L74 92 Z" fill="url(#kBrillo)"/>
+  <!-- lector de tarjeta -->
+  <rect x="80" y="110" width="40" height="14" rx="3" fill="#1f2937"/>
+  <rect x="86" y="115.5" width="28" height="3" rx="1.5" fill="#64748b"/>
+  <circle cx="117" cy="113.5" r="1.8" fill="#22c55e"/>
+  <!-- impresora de tickets -->
+  <rect x="80" y="132" width="40" height="10" rx="2" fill="#1f2937"/>
+  <path d="M88 137 H112 V150 L108 147 L104 150 L100 147 L96 150 L92 147 L88 150 Z" fill="#f8fafc"/>
+</svg>

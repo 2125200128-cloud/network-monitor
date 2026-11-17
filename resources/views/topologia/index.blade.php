@@ -566,8 +566,18 @@
                     </div>
                 </div>
 
+                {{-- Recaudadoras: por dónde llega la sede al core (traceroute de recaudadoras:rutas) --}}
+                <div id="drawerSeccionRuta" class="hidden border-t border-gray-100 dark:border-slate-800 pt-3">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <p class="text-[11px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Ruta hasta el core</p>
+                        <span id="drawerRutaMedida" class="text-[11px] font-mono text-slate-400"></span>
+                    </div>
+                    <ol id="drawerRutaSaltos" class="text-[12px] font-mono text-slate-700 dark:text-slate-200 space-y-0.5 list-decimal pl-5"></ol>
+                    <p id="drawerRutaNota" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5"></p>
+                </div>
+
                 {{-- Tipo de equipo: de dónde sale y qué tan seguro es --}}
-                <div class="border-t border-gray-100 dark:border-slate-800 pt-3">
+                <div id="drawerSeccionTipo" class="border-t border-gray-100 dark:border-slate-800 pt-3">
                     <div class="flex items-center justify-between mb-1.5">
                         <p class="text-[11px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Tipo de equipo</p>
                         <span id="drawerTipoConfianza" class="text-[11px] font-black px-1.5 py-0.5 rounded"></span>
@@ -596,7 +606,7 @@
                 </div>
 
                 {{-- Notas del equipo --}}
-                <div class="border-t border-gray-100 dark:border-slate-800 pt-3">
+                <div id="drawerSeccionNotas" class="border-t border-gray-100 dark:border-slate-800 pt-3">
                     <div class="flex items-center justify-between mb-2">
                         <p class="text-[11px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Notas del equipo</p>
                         <button type="button" id="btnNuevaNota" onclick="abrirFormNota()" class="hidden text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline">+ Agregar</button>
@@ -1632,7 +1642,9 @@
                             && delSeleccionado;
                         if (animar) {
                             hacesDibujados++;
-                            const seed = ((edge.from * 23 + edge.to * 47) % 100) / 100;
+                            // Ids de texto (nodos de recaudadoras): se convierten a número para que la semilla no sea NaN
+                            const num = v => typeof v === 'number' ? v : [...String(v)].reduce((a, c) => a + c.charCodeAt(0), 0);
+                            const seed = ((num(edge.from) * 23 + num(edge.to) * 47) % 100) / 100;
                             const speed = 0.22 + Math.min(util, 100) / 100 * 0.55;
                             // Con la red completa en pantalla (cientos de enlaces) un pulso delgado por enlace y sin
                             // retorno; al acercarse, todos los pulsos a tamaño completo
@@ -1756,18 +1768,23 @@
                     const ledX = pos.x + (nodeSize * 0.92);
                     const ledY = pos.y - (nodeSize * 0.55);
                     const ledRadius = 6;
-                    const online = estado === 'online';
+                    // Verde en línea, ámbar advertencia (recaudadora con falla de red interna), gris sin revisión, rojo caído
+                    const [ledColor, ledHalo] = {
+                        online: ['#10b981', 'rgba(16, 185, 129, 0.3)'],
+                        warning: ['#f59e0b', 'rgba(245, 158, 11, 0.35)'],
+                        pendiente: ['#94a3b8', 'rgba(148, 163, 184, 0.35)'],
+                    }[estado] || ['#ef4444', 'rgba(239, 68, 68, 0.35)'];
 
                     ctx.save();
                     // Halo translúcido en lugar de shadowBlur
                     ctx.beginPath();
                     ctx.arc(ledX, ledY, ledRadius + 4, 0, 2 * Math.PI, false);
-                    ctx.fillStyle = online ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.35)';
+                    ctx.fillStyle = ledHalo;
                     ctx.fill();
 
                     ctx.beginPath();
                     ctx.arc(ledX, ledY, ledRadius, 0, 2 * Math.PI, false);
-                    ctx.fillStyle = online ? '#10b981' : '#ef4444';
+                    ctx.fillStyle = ledColor;
                     ctx.fill();
                     ctx.strokeStyle = '#ffffff';
                     ctx.lineWidth = 1.5;
@@ -1888,11 +1905,14 @@
             document.getElementById('drawerDeviceLink').href = d.url;
 
             const badge = document.getElementById('drawerDeviceStatusBadge');
-            badge.textContent = d.estado.toUpperCase();
+            // Nodos de recaudadoras: estado del módulo en palabras («Sin comunicación desde hace 2 h»)
+            badge.textContent = (d.estado_txt || d.estado).toUpperCase();
             if (d.estado === 'online') {
                 badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700';
             } else if (d.estado === 'warning') {
                 badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-100 text-[#ff8300]';
+            } else if (d.estado === 'pendiente') {
+                badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-slate-100 text-slate-600';
             } else {
                 badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-red-100 text-red-700';
             }
@@ -2003,10 +2023,37 @@
                 }
             }
 
-            renderTipoDrawer(d);
+            // Nodos de recaudadoras (no son equipos del sondeo): sin tipo ni notas; con la ruta medida hasta el core
+            const externo = !!d.externo;
+            document.getElementById('drawerSeccionTipo')?.classList.toggle('hidden', externo);
+            document.getElementById('drawerSeccionNotas')?.classList.toggle('hidden', externo);
+            renderRutaDrawer(d);
+            if (!externo) {
+                renderTipoDrawer(d);
+                cargarNotas(nodeId);
+            }
             renderEndpointsDrawer(nodeId);
-            cargarNotas(nodeId);
             openDrawer();
+        }
+
+        function renderRutaDrawer(d) {
+            const sec = document.getElementById('drawerSeccionRuta');
+            if (!sec) return;
+            const esSede = d.tipo === 'recaudadora';
+            sec.classList.toggle('hidden', !esSede);
+            if (!esSede) return;
+            // Cada salto con el nombre del equipo del mapa si lo es (el núcleo por el que entra, p. ej. GEJ-CORE01)
+            const porIp = {};
+            nodesDataSet.get().forEach(n => { if (n.customData?.ip && !n.customData.externo) porIp[n.customData.ip] = n.customData.nombre; });
+            const saltos = d.ruta || [];
+            document.getElementById('drawerRutaMedida').textContent = d.ruta_medida ? 'medida ' + d.ruta_medida : '';
+            document.getElementById('drawerRutaSaltos').innerHTML = saltos.length
+                ? saltos.map(h => `<li>${h ? escHtml(h) + (porIp[h] ? ` <span class="font-sans font-bold text-hacienda-blue dark:text-blue-300">${escHtml(porIp[h])}</span>` : '') : '<span class="text-slate-400">* sin respuesta</span>'}</li>`).join('')
+                : '<li class="list-none -ml-5 font-sans text-slate-400">Aún sin medir (se mide cada 6 h)</li>';
+            const lb = d.loopback_ok === null || d.loopback_ok === undefined ? 'sin dato' : (d.loopback_ok ? 'responde' : 'no responde');
+            const ad = d.admin_ok === null || d.admin_ok === undefined ? 'sin dato' : (d.admin_ok ? 'responde' : 'no responde');
+            document.getElementById('drawerRutaNota').textContent =
+                `Loopback ${d.ip_loopback || '—'}: ${lb} · IP administrativa ${d.ip || '—'}: ${ad} · ${d.equipos || 0} equipos en la oficina.`;
         }
 
         const CONF_ESTILO = {
@@ -4044,7 +4091,8 @@
                     return;
                 }
 
-                const campos = ['estado', 'statusColor', 'cpu', 'memoria', 'ping', 'uptime', 'conexiones', 'notas'];
+                const campos = ['estado', 'statusColor', 'cpu', 'memoria', 'ping', 'uptime', 'conexiones', 'notas',
+                    'estado_txt', 'admin_ok', 'loopback_ok', 'ruta', 'ruta_medida'];   // los últimos, de los nodos de recaudadoras
                 const nodosUpd = [];
                 (data.nodes || []).forEach(n => {
                     const cur = nodesDataSet.get(n.id);

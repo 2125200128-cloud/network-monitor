@@ -14,9 +14,10 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         User::updateOrCreate(
-            ['email' => 'admin@hacienda.gob.mx'],
+            ['usuario' => 'admin'],
             [
                 'name' => 'Administrador NOC',
+                'email' => 'admin@hacienda.gob.mx',
                 'role' => 'Admin',
                 // Contraseña inicial desde .env (SEED_ADMIN_PASSWORD); si falta se genera una aleatoria.
                 'password' => Hash::make(env('SEED_ADMIN_PASSWORD') ?: tap(\Illuminate\Support\Str::password(16), fn ($p) => $this->command?->warn("Contraseña inicial del admin: {$p}"))),

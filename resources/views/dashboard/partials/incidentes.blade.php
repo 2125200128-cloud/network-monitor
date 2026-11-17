@@ -6,6 +6,7 @@
         'firewalls' => 'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300',
         'virtualizacion' => 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300',
         'web' => 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+        'recaudadoras' => 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
     ];
 @endphp
 <div class="floating-card p-5 sm:p-6 mb-6">
@@ -31,7 +32,7 @@
             @foreach($inc['lista'] as $i)
                 <li>
                     <a href="{{ $i['link'] ?? route('alertas.index') }}"
-                       class="flex items-start gap-3 p-3 rounded-xl border transition hover:bg-gray-50 dark:hover:bg-slate-800/40 {{ $i['severidad'] === 'critica' ? 'border-red-100 dark:border-red-900/40' : 'border-amber-100 dark:border-amber-900/40' }}">
+                       class="flex items-start gap-3 p-3 rounded-xl border transition hover:bg-gray-50 dark:hover:bg-slate-800/40 {{ $i['severidad'] === 'critica' ? 'border-red-100 dark:border-red-900/40' : 'border-amber-100 dark:border-amber-900/40' }} {{ ($i['prioritaria'] ?? false) ? 'shadow-[inset_3px_0_0_#d97706]' : '' }}">
                         <span class="mt-1 w-2 h-2 rounded-full shrink-0 {{ $i['severidad'] === 'critica' ? 'bg-red-500' : 'bg-amber-500' }}" title="{{ $i['severidad'] === 'critica' ? 'Crítica' : 'Advertencia' }}"></span>
                         <span class="min-w-0 flex-1">
                             <span class="block text-sm font-semibold text-gray-900 dark:text-white truncate">{{ $i['titulo'] }}</span>
@@ -40,7 +41,12 @@
                             </span>
                         </span>
                         <span class="flex flex-col items-end gap-1 shrink-0">
-                            <span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide {{ $chip[$i['sector']] }}">{{ \App\Services\ResumenSectores::SECTORES[$i['sector']]['nombre'] }}</span>
+                            <span class="flex items-center gap-1.5">
+                                @if($i['prioritaria'] ?? false)
+                                    <span class="nm-prioritaria" style="font-size: 10px; padding: 0 6px 0 5px" title="Red prioritaria: se recuerda por Telegram mientras siga activa"><i class="nm-prioritaria-punto" aria-hidden="true"></i>Prioritaria</span>
+                                @endif
+                                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide {{ $chip[$i['sector']] }}">{{ \App\Services\ResumenSectores::SECTORES[$i['sector']]['nombre'] }}</span>
+                            </span>
                             @if($i['hace'])<span class="text-[11px] font-mono text-gray-400" title="Tiempo desde que empezó">{{ $i['hace'] }}</span>@endif
                         </span>
                     </a>
@@ -50,7 +56,7 @@
     @else
         <div class="flex items-center gap-3 p-4 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 text-sm text-emerald-700 dark:text-emerald-400">
             <svg class="w-5 h-5 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>
-            Sin incidentes activos en red, firewalls, virtualización ni sitios web.
+            Sin incidentes activos en red, firewalls, virtualización, sitios web ni recaudadoras.
         </div>
     @endif
 </div>

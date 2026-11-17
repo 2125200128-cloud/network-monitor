@@ -33,6 +33,26 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'index'])->name('firewalls.index');
     Route::get('/virtualizacion', [\App\Http\Controllers\VirtualizacionController::class, 'index'])->name('virtualizacion.index');
     Route::get('/virtualizacion/pdf', [\App\Http\Controllers\VirtualizacionController::class, 'pdf'])->middleware('throttle:20,1')->name('virtualizacion.pdf');
+
+    // Recaudadoras: tablero, mapa y ficha (todos); equipos (Admin y Operador); importar el Excel y editar datos (Admin)
+    Route::get('/recaudadoras', [\App\Http\Controllers\RecaudadorasController::class, 'index'])->name('recaudadoras.index');
+    Route::get('/api/recaudadoras/estados', [\App\Http\Controllers\RecaudadorasController::class, 'estados'])->name('recaudadoras.estados');
+    Route::get('/recaudadoras/reporte', [\App\Http\Controllers\RecaudadorasController::class, 'reporte'])->middleware('throttle:20,1,recas-reporte')->name('recaudadoras.reporte');
+    Route::get('/recaudadoras/{recaudadora}', [\App\Http\Controllers\RecaudadorasController::class, 'show'])->whereNumber('recaudadora')->name('recaudadoras.show');
+    Route::middleware(['check.role:Admin,Operador'])->group(function () {
+        Route::post('/recaudadoras/kioscos', [\App\Http\Controllers\RecaudadorasController::class, 'loteKioscos'])->middleware('throttle:10,1,recas-kioscos')->name('recaudadoras.kioscos');
+        Route::post('/recaudadoras/{recaudadora}/equipos', [\App\Http\Controllers\RecaudadorasController::class, 'guardarEquipo'])->whereNumber('recaudadora')->name('recaudadoras.equipos.guardar');
+        Route::post('/recaudadoras/{recaudadora}/escanear', [\App\Http\Controllers\RecaudadorasController::class, 'escanear'])->whereNumber('recaudadora')->middleware('throttle:6,1,recas-escanear')->name('recaudadoras.escanear');
+        Route::delete('/recaudadoras/{recaudadora}/equipos/{equipo}', [\App\Http\Controllers\RecaudadorasController::class, 'borrarEquipo'])->whereNumber(['recaudadora', 'equipo'])->name('recaudadoras.equipos.borrar');
+    });
+    Route::middleware(['check.admin'])->group(function () {
+        Route::post('/recaudadoras/importar', [\App\Http\Controllers\RecaudadorasController::class, 'importar'])->middleware('throttle:10,1')->name('recaudadoras.importar');
+        Route::get('/recaudadoras/nueva', [\App\Http\Controllers\RecaudadorasController::class, 'crear'])->name('recaudadoras.crear');
+        Route::post('/recaudadoras', [\App\Http\Controllers\RecaudadorasController::class, 'guardar'])->name('recaudadoras.guardar');
+        Route::get('/recaudadoras/{recaudadora}/editar', [\App\Http\Controllers\RecaudadorasController::class, 'editar'])->whereNumber('recaudadora')->name('recaudadoras.editar');
+        Route::put('/recaudadoras/{recaudadora}', [\App\Http\Controllers\RecaudadorasController::class, 'actualizar'])->whereNumber('recaudadora')->name('recaudadoras.actualizar');
+        Route::delete('/recaudadoras/{recaudadora}', [\App\Http\Controllers\RecaudadorasController::class, 'borrar'])->whereNumber('recaudadora')->name('recaudadoras.borrar');
+    });
     // GET: sin chequeo CSRF, así el latido también funciona si la sesión se restauró con la cookie recordada (token nuevo)
     Route::get('/pantalla/mantener-sesion',[PantallaController::class, 'mantener'])->middleware('throttle:60,1')->name('pantalla.mantener');
 
@@ -69,8 +89,7 @@ Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'ind
 
     Route::get('/topologia', [TopologiaController::class, 'index'])->name('topologia.index');
     Route::get('/topologia/centro-datos', [CentroDatosController::class, 'index'])->name('topologia.centro_datos');
-    Route::get('/api/topologia/centro-datos', [CentroDatosController::class, 'datos'])->name('topologia.centro_datos.datos');
-    Route::get('/api/topologia/nodos-enlaces', [TopologiaController::class, 'datosGrafos'])->name('topologia.datos');
+    Route::get('/api/topologia/centro-datos', [CentroDatosController::class, 'datos'])->name('topologia.centro_datos.datos');    Route::get('/api/topologia/nodos-enlaces', [TopologiaController::class, 'datosGrafos'])->name('topologia.datos');
     Route::get('/api/topologia/sitios', [TopologiaController::class, 'sitios'])->name('topologia.sitios');
     Route::get('/api/dispositivos/{id}/notas', [NotaDispositivoController::class, 'index'])->whereNumber('id')->name('notas.index');
 

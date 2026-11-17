@@ -45,7 +45,7 @@ return [
     |
     */
 
-    'username' => 'email',
+    'username' => 'usuario',   // se inicia sesión con usuario y contraseña (no con correo)
 
     'email' => 'email',
 

@@ -105,8 +105,10 @@ class TopologiaController extends Controller
 
         $guardados = 0;
         foreach ($posiciones as $nodeId => $pos) {
-            if (is_numeric($nodeId) && is_array($pos) && is_numeric($pos['x'] ?? null) && is_numeric($pos['y'] ?? null)) {
-                $actuales[(int) $nodeId] = [
+            // Equipos del sondeo (id numérico) y nodos de recaudadoras (mpls-…, rc-…, rq-…)
+            $valido = is_numeric($nodeId) || preg_match('/^(mpls|rc|rq)-[A-Za-z0-9-]{1,60}$/', (string) $nodeId);
+            if ($valido && is_array($pos) && is_numeric($pos['x'] ?? null) && is_numeric($pos['y'] ?? null)) {
+                $actuales[is_numeric($nodeId) ? (int) $nodeId : (string) $nodeId] = [
                     'x' => round((float) $pos['x'], 2),
                     'y' => round((float) $pos['y'], 2),
                 ];
@@ -500,6 +502,16 @@ class TopologiaController extends Controller
                     'vlans' => $enlace->vlans_permitidas
                 ]
             ];
+        }
+
+        // Recaudadoras: por dónde llega cada sede al core (ruta medida) y sus kioscos, terminales y antenas.
+        // Si algo falla ahí, el mapa de la red se muestra igual.
+        try {
+            $recas = app(\App\Services\Recaudadoras\TopologiaRecaudadoras::class)->paraGrafo($dispositivos, $userPosiciones);
+            $nodes = array_merge($nodes, $recas['nodes']);
+            $edges = array_merge($edges, $recas['edges']);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Topología: no se pudieron agregar las recaudadoras: ' . $e->getMessage());
         }
 
         return [
