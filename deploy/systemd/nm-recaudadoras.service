@@ -1,0 +1,12 @@
+[Unit]
+Description=Network Monitor - comunicación de las recaudadoras y sus equipos
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+User=@USUARIO@
+Group=@USUARIO@
+WorkingDirectory=@APP_DIR@
+ExecStart=/usr/bin/php @APP_DIR@/artisan recaudadoras:revisar
+UMask=0002
+TimeoutStartSec=150

@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Log;
  *  - Una alarma que reaparece poco después de resolverse (equipo intermitente) solo se vuelve a avisar
  *    si sigue activa pasados MINUTOS_INTERMITENTE.
  *  - Solo se avisa la resolución de alarmas cuyo inicio sí se notificó.
+ *  - Red prioritaria (por omisión 10.4.0.0/16): sus alarmas van marcadas y, mientras sigan activas, se recuerdan cada
+ *    telegram_recordatorio_min minutos en un solo mensaje por grupo (incluidas las de recaudadoras).
  * Nunca lanza excepciones: un fallo de Telegram no debe detener noc:sync.
  */
 class AlertasTelegram
@@ -69,9 +71,15 @@ class AlertasTelegram
         };
 
         // Cada grupo recibe solo las alarmas de su sector (el resumen de caída masiva también se arma por grupo)
+        $recordar = $this->porRecordar($cfg, $severidades);
         foreach ($this->destinos($cfg) as $chat => $sectores) {
             $deEste = fn (AlarmaRed $a) => in_array(self::sector($a), $sectores, true);
             $this->enviarAChat($bot, $cfg, (string) $chat, $nuevas->filter($deEste)->values(), $resueltas->filter($deEste)->values(), $enviar);
+            $suyas = $recordar->filter($deEste)->values();
+            if ($suyas->isNotEmpty() && $enviar(fn () => $bot->enviarMensaje((string) $chat, $this->mensajeRecordatorio($suyas)))) {
+                AlarmaRed::whereIn('id', $suyas->pluck('id'))->update(['recordada_telegram_at' => now()]);
+                AlarmaRed::whereIn('id', $suyas->pluck('id'))->increment('recordatorios');
+            }
         }
 
         if ($res['enviados'] && !$res['errores']) {
@@ -80,10 +88,58 @@ class AlertasTelegram
         return $res;
     }
 
-    /** Alarma de un tipo de equipo que no se avisa por Telegram (teléfonos IP). */
+    /**
+     * Fallas de la red prioritaria (por omisión 10.4.0.0/16) que siguen activas y a las que ya les toca recordatorio:
+     * se avisaron (o, las de recaudadoras, las avisó su propio módulo) hace al menos telegram_recordatorio_min minutos,
+     * o se recordaron por última vez hace eso. Mismas severidades que los avisos; 0 minutos = sin recordatorios.
+     */
+    private function porRecordar(ConfiguracionGeneral $cfg, array $severidades): Collection
+    {
+        $minutos = (int) $cfg->telegram_recordatorio_min;
+        if ($minutos <= 0) {
+            return collect();
+        }
+        $limite = now()->subMinutes($minutos);
+        return AlarmaRed::with('dispositivo')->where('estado', '!=', 'resuelta')->whereIn('severidad', $severidades)->get()
+            ->filter(function (AlarmaRed $a) use ($limite) {
+                // Desde cuándo cuenta: el último recordatorio, el aviso inicial o (recaudadoras) su registro
+                $base = $a->recordada_telegram_at ?? $a->notificada_telegram_at ?? ($a->categoria === 'recaudadora' ? $a->created_at : null);
+                return $base && $base->lte($limite);
+            })
+            ->reject(fn (AlarmaRed $a) => $a->dispositivo && in_array($a->dispositivo->tipo_dispositivo, self::TIPOS_SIN_TELEGRAM, true))
+            ->filter(fn (AlarmaRed $a) => $a->esPrioritaria())
+            ->sortBy(fn (AlarmaRed $a) => [$a->severidad === 'critica' ? 0 : 1, $a->fecha_inicio?->timestamp ?? 0])
+            ->values();
+    }
+
+    private function mensajeRecordatorio(Collection $alarmas): string
+    {
+        $e = fn ($t) => htmlspecialchars((string) $t, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $n = $alarmas->count();
+        $lineas = ['🔁 <b>RECORDATORIO · RED PRIORITARIA</b> (' . $e(\App\Support\RedesPrioritarias::texto()) . ')',
+            ($n === 1 ? 'Sigue sin resolverse <b>1 falla</b>:' : "Siguen sin resolverse <b>{$n} fallas</b>:")];
+        foreach ($alarmas->take(self::MAX_LINEAS_RESUMEN) as $a) {
+            $lleva = $a->fecha_inicio ? $this->duracion($a->fecha_inicio->diffInSeconds(now())) : null;
+            $ip = $a->ipDe();
+            $lineas[] = $this->icono($a->severidad) . ' ' . $e($a->titulo) . $this->deQueEquipo($a)
+                . ($ip && !str_contains((string) $a->titulo, $ip) && !$a->dispositivo ? ' (<code>' . $e($ip) . '</code>)' : '')
+                . ($lleva ? " — lleva <b>{$lleva}</b>" : '');
+        }
+        if ($n > self::MAX_LINEAS_RESUMEN) {
+            $lineas[] = '… y ' . ($n - self::MAX_LINEAS_RESUMEN) . ' más (ver Alertas).';
+        }
+        $lineas[] = '🕒 ' . now()->format('d/m/Y H:i');
+        return implode("\n", $lineas);
+    }
+
+    /**
+     * Alarma que no se avisa desde aquí: teléfonos IP, y las de recaudadoras, que ya avisa recaudadoras:revisar con su
+     * propio mensaje agrupado (detecta caídas masivas y trae la referencia del enlace) para no mandar todo dos veces.
+     */
     private function excluida(AlarmaRed $a): bool
     {
-        return $a->dispositivo && in_array($a->dispositivo->tipo_dispositivo, self::TIPOS_SIN_TELEGRAM, true);
+        return $a->categoria === 'recaudadora'
+            || ($a->dispositivo && in_array($a->dispositivo->tipo_dispositivo, self::TIPOS_SIN_TELEGRAM, true));
     }
 
     /** Sector de la alarma: 'servidores' (servidores, virtualización y sitios web) o 'redes' (todo lo demás). */
@@ -169,7 +225,11 @@ class AlertasTelegram
             $bot->enviarMensaje((string) $chat, "✅ <b>NOC Network Monitor</b>\nLas alertas de Telegram están configuradas correctamente.\n"
                 . "Este chat recibe {$recibe}.\n"
                 . 'Se enviarán: ' . ($cfg->telegram_severidad_min === 'advertencia' ? 'críticas y advertencias' : 'solo críticas')
-                . ($cfg->telegram_resueltas ? ', y avisos de resolución.' : '.'));
+                . ($cfg->telegram_resueltas ? ', y avisos de resolución.' : '.')
+                . ((int) $cfg->telegram_recordatorio_min > 0 && \App\Support\RedesPrioritarias::texto() !== ''
+                    ? "\nLas fallas de la red prioritaria (" . htmlspecialchars(\App\Support\RedesPrioritarias::texto()) . ') se recuerdan cada '
+                        . (int) $cfg->telegram_recordatorio_min . ' minutos mientras sigan activas.'
+                    : ''));
             if ($png) {
                 $bot->enviarFoto((string) $chat, $png, 'Ejemplo de la tarjeta que acompaña a cada alerta (con una alarma activa real).');
             }
@@ -210,7 +270,8 @@ class AlertasTelegram
         $disp = $a->dispositivo;
         // El equipo va en la primera línea (la que se ve en la notificación del celular) si el título no lo nombra
         $lineas = [
-            $this->icono($a->severidad) . ' <b>' . ($a->severidad === 'critica' ? 'CRÍTICA' : 'ADVERTENCIA') . '</b> · ' . $e($a->titulo) . $this->deQueEquipo($a),
+            $this->icono($a->severidad) . ' <b>' . ($a->severidad === 'critica' ? 'CRÍTICA' : 'ADVERTENCIA') . '</b>'
+                . ($a->esPrioritaria() ? ' · <b>[RED PRIORITARIA]</b>' : '') . ' · ' . $e($a->titulo) . $this->deQueEquipo($a),
         ];
         if ($disp) {
             // La ubicación solo si es real: "Auto-Descubierto por Crawler" o "Alta manual" son etiquetas del alta
@@ -242,8 +303,9 @@ class AlertasTelegram
         $e = fn ($t) => htmlspecialchars((string) $t, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $criticas = $alarmas->where('severidad', 'critica')->count();
         $lineas = ['🚨 <b>' . $alarmas->count() . ' alarmas nuevas</b>' . ($criticas ? " ({$criticas} críticas)" : '')];
-        foreach ($alarmas->take(self::MAX_LINEAS_RESUMEN) as $a) {
-            $lineas[] = $this->icono($a->severidad) . ' ' . $e($a->titulo) . $this->deQueEquipo($a);
+        // Las de la red prioritaria primero y marcadas
+        foreach ($alarmas->sortBy(fn (AlarmaRed $a) => $a->esPrioritaria() ? 0 : 1)->take(self::MAX_LINEAS_RESUMEN) as $a) {
+            $lineas[] = $this->icono($a->severidad) . ' ' . ($a->esPrioritaria() ? '<b>[PRIORITARIA]</b> ' : '') . $e($a->titulo) . $this->deQueEquipo($a);
         }
         if ($alarmas->count() > self::MAX_LINEAS_RESUMEN) {
             $lineas[] = '… y ' . ($alarmas->count() - self::MAX_LINEAS_RESUMEN) . ' más.';

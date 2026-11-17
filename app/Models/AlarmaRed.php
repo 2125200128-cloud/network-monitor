@@ -29,13 +29,35 @@ class AlarmaRed extends Model
         'fecha_resolucion',
         'reconocido_por',
         'notificada_telegram_at',
+        'ip',
+        'recordada_telegram_at',
+        'recordatorios',
     ];
 
     protected $casts = [
         'fecha_inicio' => 'datetime',
         'fecha_resolucion' => 'datetime',
         'notificada_telegram_at' => 'datetime',
+        'recordada_telegram_at' => 'datetime',
     ];
+
+    /** IP de la alarma: la guardada, la del equipo o la que venga en el título («Equipo inaccesible (10.4.2.1)»). */
+    public function ipDe(): ?string
+    {
+        if ($this->ip) {
+            return $this->ip;
+        }
+        if ($this->dispositivo?->ip) {
+            return $this->dispositivo->ip;
+        }
+        return preg_match('/(?<![\d.])(\d{1,3}(?:\.\d{1,3}){3})(?![\d.])/', (string) $this->titulo, $m) ? $m[1] : null;
+    }
+
+    /** ¿Es de la red prioritaria (Configuración → Notificaciones, por omisión 10.4.0.0/16)? */
+    public function esPrioritaria(): bool
+    {
+        return \App\Support\RedesPrioritarias::contiene($this->ipDe());
+    }
 
     public function dispositivo()
     {

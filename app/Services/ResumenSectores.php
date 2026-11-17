@@ -4,13 +4,15 @@ namespace App\Services;
 
 use App\Http\Controllers\VirtualizacionController;
 use App\Models\Dispositivo;
+use App\Models\Recaudadora;
+use App\Services\Recaudadoras\DisponibilidadRecaudadoras;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Vista general del dashboard: estado de cada sector (red, firewalls, virtualización y sitios web), los incidentes
+ * Vista general del dashboard: estado de cada sector (red, firewalls, virtualización, sitios web y recaudadoras), los incidentes
  * activos de todos juntos y lo que más requiere atención. Solo lecturas reales: lo que no tiene lectura vigente
  * queda en null y la vista dice "sin dato".
  *
@@ -24,6 +26,7 @@ class ResumenSectores
         'firewalls' => ['nombre' => 'Firewalls', 'ruta' => 'firewalls.index'],
         'virtualizacion' => ['nombre' => 'Virtualización', 'ruta' => 'virtualizacion.index'],
         'web' => ['nombre' => 'Servicios web', 'ruta' => 'servicios_web.index'],
+        'recaudadoras' => ['nombre' => 'Recaudadoras', 'ruta' => 'recaudadoras.index'],
     ];
     /** Lectura de la API de un ESXi más vieja que esto ya no es estado actual (igual que en Virtualización). */
     private const MINUTOS_ESXI_VIGENTE = 5;
@@ -31,6 +34,8 @@ class ResumenSectores
     private const MINUTOS_DETALLE_FW_VIGENTE = 15;
     /** Incidentes que caben en el dashboard; el resto, en Alertas. */
     private const MAX_INCIDENTES = 8;
+    /** Llave del resumen en caché (v2: con el sector Recaudadoras). */
+    public const CACHE = 'dashboard_sectores_v2';
 
     public function __construct(private DashboardMetricsService $metricas)
     {
@@ -39,7 +44,7 @@ class ResumenSectores
     /** ['sectores' => [...], 'incidentes' => [...], 'atencion' => [...]], compartido unos segundos entre pantallas. */
     public function resumen(): array
     {
-        return Cache::remember('dashboard_sectores_v1', 10, fn () => $this->calcular($this->metricas->paneles()));
+        return Cache::remember(self::CACHE, 10, fn () => $this->calcular($this->metricas->paneles()));
     }
 
     /** IDs de los FortiGate (también los usa la gráfica de tendencias). */
@@ -56,6 +61,10 @@ class ResumenSectores
         $virt = $equipos->where('ubicacion', VirtualizacionController::UBICACION)->diffKeys($fw);
         $red = $equipos->reject(fn ($d) => $fw->contains('id', $d->id) || $virt->contains('id', $d->id));
 
+        // Recaudadoras: su propio monitoreo (recaudadoras:revisar); sus caídas entran como incidentes del sector
+        $recas = Recaudadora::with('equipos')->where('activo', true)->get();
+        $disp24 = DisponibilidadRecaudadoras::porRecaudadora(now()->subDay(), now(), $recas->pluck('id')->all());
+
         $incidentes = $this->incidentes(array_flip($fw->pluck('id')->all()), array_flip($virt->pluck('id')->all()));
         $esxi = $this->esxi($virt);
 
@@ -64,6 +73,7 @@ class ResumenSectores
             'firewalls' => $this->firewalls($fw),
             'virtualizacion' => $this->virtualizacion($virt, $esxi),
             'web' => $this->web($paneles['servicios_web']),
+            'recaudadoras' => $this->recaudadoras($recas, $disp24),
         ];
         // Semáforo de cada sector: lo deciden sus alarmas activas (las mismas de Alertas y de Telegram)
         foreach ($sectores as $k => &$s) {
@@ -81,7 +91,7 @@ class ResumenSectores
                 'criticas' => $incidentes->where('severidad', 'critica')->count(),
                 'lista' => $incidentes->take(self::MAX_INCIDENTES)->values()->all(),
             ],
-            'atencion' => $this->atencion($paneles, $esxi),
+            'atencion' => $this->atencion($paneles, $esxi, $recas, $disp24),
         ];
     }
 
@@ -156,9 +166,36 @@ class ResumenSectores
         ];
     }
 
+    /**
+     * Sedes con IP que se monitorean: cuántas con comunicación, sin ella o con falla de red interna, su disponibilidad
+     * promedio en 24 h y sus equipos (kioscos, terminales…). De los equipos solo cuentan los que han respondido alguna
+     * vez: un kiosco que nunca contestó (ping bloqueado) no es una caída.
+     */
+    private function recaudadoras(Collection $recas, array $disp24): array
+    {
+        $conIp = $recas->filter(fn ($r) => $r->ip_administrativa || $r->ip_loopback);
+        $estados = $conIp->map(fn ($r) => $r->estadoVisible())->countBy();
+        $disp = collect($disp24)->only($conIp->pluck('id')->all())->filter(fn ($v) => $v !== null);
+        $equipos = $recas->flatMap(fn ($r) => $r->equipos);
+        $vistos = $equipos->filter(fn ($e) => $e->alguna_vez);
+        return [
+            'con_datos' => ($estados['online'] ?? 0) + ($estados['offline'] ?? 0) + ($estados['lan'] ?? 0) > 0,
+            'total' => $conIp->count(),
+            'en_servicio' => $estados['online'] ?? 0,
+            'sin_comunicacion' => $estados['offline'] ?? 0,
+            'red_interna' => $estados['lan'] ?? 0,
+            'sin_revisar' => $estados['pendiente'] ?? 0,
+            'disponibilidad_24h' => $disp->isEmpty() ? null : round($disp->avg(), 2),
+            'equipos_vistos' => $vistos->count(),
+            'equipos_responden' => $vistos->filter(fn ($e) => $e->estadoVisible() === 'online')->count(),
+            'equipos_nunca' => $equipos->count() - $vistos->count(),
+        ];
+    }
+
     // =====================================================================
-    //  Incidentes activos de todos los sectores
+    //  Incidentes activos de todos los sectores (las recaudadoras llegan con categoría «recaudadora»)
     // =====================================================================
+
     private function incidentes(array $fwIds, array $virtIds): Collection
     {
         return collect(AlarmDiagnosisService::diagnosticoCompartido())
@@ -173,6 +210,7 @@ class ResumenSectores
                 $cat = $a['categoria'] ?? '';
                 return [
                     'sector' => match (true) {
+                        $cat === 'recaudadora' => 'recaudadoras',
                         $cat === 'servicio_web' => 'web',
                         $cat === 'virtualizacion' || isset($virtIds[$id]) => 'virtualizacion',
                         isset($fwIds[$id]) => 'firewalls',
@@ -185,10 +223,11 @@ class ResumenSectores
                     'link' => $a['link'] ?? null,
                     'inicio_ts' => $inicio?->timestamp ?? 0,
                     'hace' => $inicio ? $this->duracion((int) $inicio->diffInSeconds(now())) : null,
+                    'prioritaria' => (bool) ($a['prioritaria'] ?? false),
                 ];
             })
-            // Lo crítico primero; dentro de cada severidad, lo más reciente
-            ->sortBy(fn ($a) => [$a['severidad'] === 'critica' ? 0 : 1, -$a['inicio_ts']])
+            // La red prioritaria primero (atención especial); luego lo crítico y, dentro de cada severidad, lo más reciente
+            ->sortBy(fn ($a) => [$a['prioritaria'] ? 0 : 1, $a['severidad'] === 'critica' ? 0 : 1, -$a['inicio_ts']])
             ->values();
     }
 
@@ -196,7 +235,7 @@ class ResumenSectores
     //  Lo que más preocupa ahora: lo más cargado de cada sector, aunque aún no sea alarma
     //  (las fallas ya están en los incidentes). Cada grupo: hasta 3 lecturas, de la más alta a la más baja.
     // =====================================================================
-    private function atencion(array $paneles, Collection $esxi): array
+    private function atencion(array $paneles, Collection $esxi, Collection $recas, array $disp24): array
     {
         // Tono por umbral: [advertencia, crítico]; en los certificados, menos días es peor
         $tono = fn (?float $v, array $u, bool $menorEsPeor = false) => $v === null ? null
@@ -230,6 +269,14 @@ class ResumenSectores
                 ->map(fn ($s) => $item($s->nombre, null, $s->ssl_dias_expiracion,
                     $s->ssl_dias_expiracion < 0 ? 'Vencido' : $s->ssl_dias_expiracion . ' días', $tono($s->ssl_dias_expiracion, [30, 7], true),
                     max(0, min(100, (90 - $s->ssl_dias_expiracion) / 90 * 100)), route('servicios_web.index')))->all()];
+        // Sedes que hoy tienen comunicación pero se cayeron en las últimas 24 h (las caídas actuales ya son incidentes)
+        $grupos[] = ['sector' => 'recaudadoras', 'titulo' => 'Menor disponibilidad en 24 h', 'vacio' => 'Todas con 100 % en las últimas 24 h',
+            'items' => $recas->filter(fn ($r) => $r->estadoVisible() === 'online' && ($disp24[$r->id] ?? 100) < 100)
+                ->sortBy(fn ($r) => $disp24[$r->id])->take(3)
+                // Barra: lo que le faltó para el 100 %, a escala de 5 puntos (95 % o menos = llena)
+                ->map(fn ($r) => $item($r->titulo(), $r->municipio, $disp24[$r->id], number_format($disp24[$r->id], 2) . '%',
+                    $tono($disp24[$r->id], [99.5, 97], true), min(100, (100 - $disp24[$r->id]) * 20), route('recaudadoras.show', $r->id)))
+                ->values()->all()];
         return $grupos;
     }
 

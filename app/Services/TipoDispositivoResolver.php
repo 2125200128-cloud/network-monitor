@@ -31,6 +31,10 @@ class TipoDispositivoResolver
         'access_point' => ['label' => 'Access Point Wi-Fi', 'rol' => 'ACCESS POINT / WLC', 'image' => 'images/topology/access-point.svg', 'size' => 125,
             'badge' => 'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/40',
             'icon' => 'bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400'],
+        // Radioenlaces punto a punto de las recaudadoras (sección Antenas del Excel de Enlaces)
+        'antena' => ['label' => 'Antena / radioenlace', 'rol' => 'ANTENA / RADIOENLACE', 'image' => 'images/topology/access-point.svg', 'size' => 120,
+            'badge' => 'bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800/40',
+            'icon' => 'bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400'],
         'servidor' => ['label' => 'Servidor', 'rol' => 'SERVIDOR', 'image' => 'images/topology/server.png', 'size' => 200,
             'badge' => 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/40',
             'icon' => 'bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400'],

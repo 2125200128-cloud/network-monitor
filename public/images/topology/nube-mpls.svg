@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 200" width="240" height="200">
+  <!-- Red MPLS de los proveedores (Uninet / Red Jalisco) por la que llegan las recaudadoras al core -->
+  <defs>
+    <linearGradient id="nNube" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fa6bd"/>
+      <stop offset="1" stop-color="#566c82"/>
+    </linearGradient>
+    <linearGradient id="nBrillo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".35"/>
+      <stop offset=".6" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="120" cy="178" rx="78" ry="9" fill="#0f172a" opacity=".16"/>
+  <path d="M62 160 Q22 160 22 124 Q22 92 56 88 Q60 48 100 44 Q128 20 158 40 Q196 38 204 78 Q226 86 222 118 Q220 160 180 160 Z"
+        fill="url(#nNube)" stroke="#3f5163" stroke-width="3"/>
+  <path d="M62 160 Q22 160 22 124 Q22 92 56 88 Q60 48 100 44 Q128 20 158 40 Q196 38 204 78 Q226 86 222 118 Q220 160 180 160 Z" fill="url(#nBrillo)"/>
+  <!-- enlaces dentro de la nube -->
+  <g stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity=".9">
+    <path d="M70 128 L110 96 L150 128 L190 102"/>
+    <path d="M110 96 L130 70"/>
+  </g>
+  <g fill="#ff8300" stroke="#ffffff" stroke-width="2.5">
+    <circle cx="70" cy="128" r="7"/><circle cx="110" cy="96" r="7"/><circle cx="150" cy="128" r="7"/><circle cx="190" cy="102" r="7"/><circle cx="130" cy="70" r="7"/>
+  </g>
+  <text x="120" y="152" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="800" fill="#ffffff" letter-spacing="2">MPLS</text>
+</svg>

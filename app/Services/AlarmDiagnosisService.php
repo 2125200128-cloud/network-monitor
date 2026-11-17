@@ -39,6 +39,12 @@ class AlarmDiagnosisService
     public function diagnosticarAlarmasRed(bool $aplicarEstadoUsuario = true): array
     {
         $alarmas = $this->ordenarRecientesPrimero($this->compilarAlarmas());
+        // Red prioritaria (por omisión 10.4.0.0/16): se marca para destacarla en Alertas, el dashboard y Telegram
+        foreach ($alarmas as &$a) {
+            $ip = filter_var($a['ip'] ?? null, FILTER_VALIDATE_IP) ? $a['ip'] : ($a['titulo'] ?? '');
+            $a['prioritaria'] = \App\Support\RedesPrioritarias::contiene($ip);
+        }
+        unset($a);
         return $aplicarEstadoUsuario ? $this->aplicarEstadoUsuario($alarmas) : $alarmas;
     }
 
@@ -1001,6 +1007,12 @@ class AlarmDiagnosisService
             \Illuminate\Support\Facades\Log::warning('Alarmas de virtualización: ' . $e->getMessage());
         }
 
+        try {
+            $alarmas = array_merge($alarmas, $this->alarmasRecaudadoras());
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Alarmas de recaudadoras: ' . $e->getMessage());
+        }
+
         // Ordenar por severidad (crítica -> advertencia -> informativa)
         usort($alarmas, function ($a, $b) {
             $peso = ['critica' => 1, 'advertencia' => 2, 'sistema' => 3, 'informativa' => 3];
@@ -1020,6 +1032,95 @@ class AlarmDiagnosisService
     // VMs: CPU ≥ 90 % de sus vCPU (lo marca esxi_collector.py) sostenida estos minutos; pasa a crítica si dura la hora.
     // Una VM que se apagó alarma este tiempo; si sigue apagada después, se da por apagado intencional.
     public const VM_CPU_MINUTOS = 15, VM_CPU_MINUTOS_CRITICO = 60, VM_APAGADA_HORAS = 24;
+
+    /**
+     * Recaudadoras (recaudadoras:revisar, cada minuto): sede sin comunicación (crítica), falla de red interna
+     * (advertencia) y equipo de una sede con comunicación que dejó de responder (advertencia: kiosco, terminal de pago,
+     * antena…). Se usa el último estado aunque la revisión sea vieja, aclarándolo, para que una pausa del temporizador no
+     * dé por resueltas fallas que siguen; esa pausa la avisa RECAUDADORAS_MONITOREO_DETENIDO.
+     * Telegram: estas alarmas no salen por AlertasTelegram; el módulo manda su propio aviso agrupado al grupo de redes.
+     */
+    private function alarmasRecaudadoras(): array
+    {
+        $recas = \App\Models\Recaudadora::with('equipos')->where('activo', true)
+            ->where(fn ($q) => $q->whereNotNull('ip_administrativa')->orWhereNotNull('ip_loopback'))->get();
+        if ($recas->isEmpty()) {
+            return [];
+        }
+        $alarmas = [];
+        $ahora = now();
+        $nueva = function (string $id, string $sev, string $codigo, string $titulo, string $equipo, ?string $ip, $desde, \App\Models\Recaudadora $r,
+                           string $mensaje, string $causa, string $impacto, string $accion) use (&$alarmas, $ahora) {
+            $desde = $desde ?: $ahora;
+            $viejo = $r->ultimo_chequeo && $r->ultimo_chequeo->lt($ahora->copy()->subMinutes(5))
+                ? ' (última revisión ' . $r->ultimo_chequeo->locale('es')->diffForHumans() . ')' : '';
+            $alarmas[] = [
+                'id' => $id, 'tipo' => $sev, 'severidad' => $sev, 'categoria' => 'recaudadora', 'codigo_evento' => $codigo,
+                'titulo' => $titulo, 'dispositivo' => $equipo, 'ip' => $ip ?: '—',
+                'ubicacion' => trim('Recaudadoras · ' . ($r->municipio ?: $r->nombre)),
+                'mensaje' => $mensaje . $viejo, 'causa_raiz' => $causa, 'impacto' => $impacto, 'accion_sugerida' => $accion,
+                'fecha_falla' => $desde->format('d/m/Y H:i:s'), 'hora_falla' => $desde->format('h:i:s A'),
+                'hace_cuanto' => $desde->locale('es')->diffForHumans(), 'tiempo' => $desde->format('h:i:s A'),
+                'leida' => false, 'link' => route('recaudadoras.show', $r->id), 'accion' => 'Ver la recaudadora',
+            ];
+        };
+
+        foreach ($recas as $r) {
+            $ip = $r->ip_administrativa ?: $r->ip_loopback;
+            $enlace = trim(implode(' ', array_filter([$r->tipo_enlace, $r->uninet ? "Uninet {$r->uninet}" : null,
+                $r->referencia ? "referencia {$r->referencia}" : null])));
+            if ($r->estado === 'offline') {
+                $nueva("reca-{$r->id}-sin-comunicacion", 'critica', 'RECAUDADORA_SIN_COMUNICACION', "{$r->titulo()} sin comunicación",
+                    $r->titulo(), $ip, $r->estado_desde, $r,
+                    'No responde ni su IP administrativa (' . ($r->ip_administrativa ?: '—') . ') ni su loopback (' . ($r->ip_loopback ?: '—') . ').',
+                    'Falla del enlace del proveedor, corte de energía en la oficina o FortiGate apagado.',
+                    'La oficina no puede cobrar ni consultar los sistemas de Hacienda.',
+                    '1. Confirmar por teléfono con la oficina si tienen luz e internet. 2. Levantar reporte con el proveedor'
+                    . ($enlace ? " ({$enlace})" : '') . '. 3. Si varias caen a la vez, revisar el core o el MPLS.');
+            } elseif ($r->estado === 'lan') {
+                $nueva("reca-{$r->id}-red-interna", 'advertencia', 'RECAUDADORA_RED_INTERNA', "{$r->titulo()}: falla de red interna",
+                    $r->titulo(), $ip, $r->estado_desde, $r,
+                    "El FortiGate responde por su loopback ({$r->ip_loopback}) pero no su IP administrativa ({$r->ip_administrativa}).",
+                    'El enlace funciona, pero falla la red local de la oficina: switch, cableado o la interfaz LAN del FortiGate.',
+                    'Las cajas y equipos de la oficina pueden estar sin red aunque el enlace esté arriba.',
+                    '1. Pedir a la oficina que revise el switch y el cableado. 2. Revisar la interfaz LAN del FortiGate.');
+            }
+            // Equipos: solo los que han respondido alguna vez, y solo si la sede tiene comunicación (si no, ya hay alarma de la sede)
+            if ($r->estado === 'online') {
+                foreach ($r->equipos as $e) {
+                    if ($e->estado !== 'offline' || !$e->alguna_vez) {
+                        continue;
+                    }
+                    $tipo = \App\Models\RecaudadoraEquipo::TIPOS[$e->tipo] ?? 'Equipo';
+                    $nueva("reca-equipo-{$e->id}", 'advertencia', 'RECAUDADORA_EQUIPO_SIN_RESPUESTA', "{$tipo} sin respuesta en {$r->titulo()}",
+                        "{$e->nombre} · {$r->titulo()}", $e->ip, $e->estado_desde, $r,
+                        "{$e->nombre} ({$e->ip}) dejó de responder; la recaudadora sí tiene comunicación.",
+                        'Equipo apagado, desconectado del switch o con la IP cambiada.',
+                        $e->tipo === 'kiosco' || $e->tipo === 'terminal' ? 'Los contribuyentes no pueden pagar en ese kiosco.' : 'La oficina pierde ese servicio.',
+                        '1. Pedir a la oficina que revise que esté encendido y conectado. 2. Si cambió de IP, corregirla en la ficha de la recaudadora.');
+                }
+            }
+        }
+
+        // El temporizador nm-recaudadoras dejó de revisar: los estados de arriba se quedan congelados
+        $ultima = $recas->max('ultimo_chequeo');
+        if (!$ultima || $ultima->lt($ahora->copy()->subMinutes(5))) {
+            $desde = $ultima ?: $ahora;
+            $alarmas[] = [
+                'id' => 'recaudadoras-monitoreo-detenido', 'tipo' => 'advertencia', 'severidad' => 'advertencia', 'categoria' => 'sistema',
+                'codigo_evento' => 'RECAUDADORAS_MONITOREO_DETENIDO', 'titulo' => 'El monitoreo de recaudadoras no está revisando',
+                'dispositivo' => 'Monitoreo de recaudadoras', 'ip' => '—', 'ubicacion' => 'Servidor del NOC',
+                'mensaje' => 'Sin revisiones de las recaudadoras ' . ($ultima ? 'desde ' . $ultima->format('d/m H:i') . " ({$ultima->locale('es')->diffForHumans()})" : 'todavía') . '.',
+                'causa_raiz' => 'El temporizador nm-recaudadoras.timer está detenido o el comando recaudadoras:revisar falla.',
+                'impacto' => 'Las caídas de las recaudadoras y sus kioscos no se detectan ni se avisan.',
+                'accion_sugerida' => 'En el servidor: systemctl status nm-recaudadoras.timer y journalctl -u nm-recaudadoras -n 30.',
+                'fecha_falla' => $desde->format('d/m/Y H:i:s'), 'hora_falla' => $desde->format('h:i:s A'),
+                'hace_cuanto' => $desde->locale('es')->diffForHumans(), 'tiempo' => $desde->format('h:i:s A'),
+                'leida' => false, 'link' => route('recaudadoras.index'), 'accion' => 'Ver Recaudadoras',
+            ];
+        }
+        return $alarmas;
+    }
 
     /**
      * Hosts ESXi y datastores, con lo que leyó worker/esxi_collector.py (tabla esxi_estado). Se usa la última

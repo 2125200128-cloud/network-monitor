@@ -49,7 +49,7 @@ class NotaDispositivoController extends Controller
 
         if ($n->es_secreto) {
             Log::notice('Nota secreta revelada', [
-                'usuario' => auth()->user()?->email,
+                'usuario' => auth()->user()?->usuario,
                 'dispositivo_id' => $id,
                 'nota_id' => $n->id,
                 'titulo' => $n->titulo,

@@ -34,6 +34,8 @@ echo "==> Parches de PHP"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 # Solo los instalados ("ii"): dpkg también recuerda paquetes virtuales como php8.3-json, que apt no puede instalar
+# tracepath: ruta de cada recaudadora para la topología (recaudadoras:rutas); ya instalado no hace nada
+apt-get install -y -qq iputils-tracepath >/dev/null || echo "[!] No se pudo instalar tracepath: la ruta de las recaudadoras usará traceroute si existe"
 apt-get install -y -qq --only-upgrade $(dpkg-query -W -f='${db:Status-Abbrev} ${binary:Package}\n' "php${PHP_V}*" 2>/dev/null | awk '$1 == "ii" {print $2}')
 zgrep -qs 'CVE-2026-109618' /usr/share/doc/php${PHP_V}-*/changelog.Debian.gz \
     || echo "[!] PHP ${PHP_V} todavía sin el parche de PHP2Shell (CVE-2026-109618): Ubuntu aún no lo publica o falta el repositorio de seguridad"
@@ -78,7 +80,7 @@ done
 systemctl daemon-reload
 systemctl enable nm-esxi.service
 # Unidades agregadas después de la instalación: se activan aquí
-systemctl enable --now nm-tendencias.timer nm-camaras.timer nm-camaras-estado.timer nm-vigilar-red.timer
+systemctl enable --now nm-tendencias.timer nm-camaras.timer nm-camaras-estado.timer nm-vigilar-red.timer nm-recaudadoras.timer nm-recaudadoras-rutas.timer
 if [[ -x /usr/local/bin/go2rtc ]]; then
     systemctl enable nm-go2rtc.service
     systemctl restart nm-go2rtc.service

@@ -16,6 +16,9 @@
     .al-kpi { padding: 12px 14px; border-radius: var(--nm-radius-lg); background: var(--nm-surface); border: 1px solid var(--nm-border); }
     .al-kpi span { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--nm-text-muted); }
     .al-kpi b { display: block; font-size: 22px; font-family: ui-monospace, Consolas, monospace; color: var(--nm-text); margin-top: 2px; }
+    /* Red prioritaria (10.4 por omisión): marca .nm-prioritaria del layout y franja ámbar a la izquierda de la fila */
+    .al-kpi-sel { border-color: #d97706; box-shadow: 0 0 0 1px #d97706; }
+    .al-tabla tr.al-prioritaria td:first-child { box-shadow: inset 3px 0 0 #d97706; }
     .al-accion { font-size: 12px; font-weight: 700; color: var(--nm-primary); white-space: nowrap; }
     .al-accion:hover { text-decoration: underline; }
 </style>
@@ -53,11 +56,16 @@
     <script type="application/json" id="alertasActivasJson" data-refrescar="alertas-activas" data-refrescar-cada="5">{!! $jsonActivas !!}</script>
 
     <div x-data="alertasActivas()" class="space-y-4">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div class="al-kpi"><span>Activas</span><b x-text="alarmas.length"></b></div>
             <div class="al-kpi"><span>Críticas</span><b style="color:#dc2626" x-text="alarmas.filter(a => a.severidad === 'critica').length"></b></div>
             <div class="al-kpi"><span>Advertencias</span><b style="color:#d97706" x-text="alarmas.filter(a => a.severidad !== 'critica').length"></b></div>
             <div class="al-kpi"><span>Equipos afectados</span><b x-text="new Set(alarmas.filter(a => a.equipo).map(a => a.equipo)).size"></b></div>
+            {{-- Red prioritaria (Configuración → Notificaciones): siempre arriba en la tabla; al pulsar, muestra solo esas --}}
+            <button type="button" class="al-kpi text-left" :class="soloPrioritaria && 'al-kpi-sel'" @click="soloPrioritaria = !soloPrioritaria"
+                    title="Fallas de la red prioritaria ({{ \App\Support\RedesPrioritarias::texto() ?: 'sin definir' }}): van primero y se recuerdan por Telegram mientras sigan activas. Pulsa para ver solo estas.">
+                <span style="display: flex; align-items: center; gap: 7px"><i class="nm-prioritaria-punto" aria-hidden="true"></i>Red prioritaria</span><b style="color:#b45309" x-text="alarmas.filter(a => a.prioritaria).length"></b>
+            </button>
         </div>
 
         {{-- Caídas en cascada: el diagnóstico detectó que sus vecinos tampoco responden (falla aguas arriba) --}}
@@ -113,8 +121,11 @@
                                 </td>
                             </tr>
                             <template x-for="a in grupo.items" :key="a.id">
-                                <tr class="al-fila cursor-pointer" @click="abierta = abierta === a.id ? null : a.id">
-                                    <td><span class="al-pill" :class="a.severidad === 'critica' ? 'al-critica' : 'al-advertencia'" x-text="a.severidad === 'critica' ? 'Crítica' : 'Advertencia'"></span></td>
+                                <tr class="al-fila cursor-pointer" :class="a.prioritaria && 'al-prioritaria'" @click="abierta = abierta === a.id ? null : a.id">
+                                    <td>
+                                        <span class="al-pill" :class="a.severidad === 'critica' ? 'al-critica' : 'al-advertencia'" x-text="a.severidad === 'critica' ? 'Crítica' : 'Advertencia'"></span>
+                                        <span x-show="a.prioritaria" class="nm-prioritaria mt-1" title="Red prioritaria: se recuerda por Telegram mientras siga activa"><i class="nm-prioritaria-punto" aria-hidden="true"></i>Prioritaria</span>
+                                    </td>
                                     <td>
                                         <div class="font-bold" x-text="a.titulo"></div>
                                         <div class="text-xs mt-0.5" style="color: var(--nm-text-muted)" x-text="a.mensaje"></div>
@@ -155,7 +166,7 @@
         function alertasActivas() {
             const leer = () => { try { return JSON.parse(document.getElementById('alertasActivasJson').textContent); } catch (e) { return []; } };
             return {
-                alarmas: leer(), buscar: '', severidad: '', categoria: '', agrupar: '', soloCascada: false, abierta: null,
+                alarmas: leer(), buscar: '', severidad: '', categoria: '', agrupar: '', soloCascada: false, soloPrioritaria: false, abierta: null,
                 orden: 'inicio_ts', desc: true,   // por defecto: la más reciente arriba
                 // Primer clic en una columna: fechas y severidad de mayor a menor, textos de A a Z; otro clic invierte
                 ordenar(col) {
@@ -172,8 +183,11 @@
                         .filter(a => !this.severidad || a.severidad === this.severidad)
                         .filter(a => !this.categoria || a.categoria === this.categoria)
                         .filter(a => !this.soloCascada || a.cascada)
+                        .filter(a => !this.soloPrioritaria || a.prioritaria)
                         .filter(a => !q || [a.titulo, a.equipo, a.ip, a.mensaje].join(' ').toLowerCase().includes(q))
                         .sort((x, y) => {
+                            // La red prioritaria siempre arriba; dentro de cada parte, el orden elegido
+                            if (!!x.prioritaria !== !!y.prioritaria) return x.prioritaria ? -1 : 1;
                             const valor = a => this.orden === 'severidad' ? (a.severidad === 'critica' ? 2 : 1)
                                 // Duración = tiempo desde el inicio: más antigua, más larga
                                 : this.orden === 'duracion' ? -a.inicio_ts

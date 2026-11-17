@@ -1,4 +1,4 @@
-{{-- Pestañas de Topología: red completa y centro de datos --}}
+{{-- Pestañas de Topología: red completa (con las recaudadoras y su ruta al core) y centro de datos --}}
 <nav class="nm-seg" aria-label="Vistas de topología" style="display: inline-flex; gap: 2px; padding: 2px; border-radius: calc(var(--nm-radius-sm) + 2px); background: var(--nm-sunken); border: 1px solid var(--nm-border);">
     @foreach([
         'red' => ['Red completa', route('topologia.index')],

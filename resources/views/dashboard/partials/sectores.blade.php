@@ -38,6 +38,17 @@
                 ['SSL más próximo', $s['web']['ssl_proximo'] === null ? 'Sin dato' : ($s['web']['ssl_proximo'] < 0 ? 'Vencido' : $s['web']['ssl_proximo'] . ' días'),
                     $s['web']['ssl_proximo'] === null ? null : ($s['web']['ssl_proximo'] <= 7 ? 'crit' : ($s['web']['ssl_proximo'] <= 30 ? 'warn' : 'ok'))],
             ], null],
+        'recaudadoras' => ['ondas', '<path d="M10 18v-7M14 18v-7M18 18v-7M6 18v-7M3 22h18M2 11h20M12 2 2 7v4h20V7z"/>',
+            $s['recaudadoras']['en_servicio'] . ' / ' . $s['recaudadoras']['total'], 'recaudadoras con comunicación', [
+                ['Sin comunicación', $s['recaudadoras']['sin_comunicacion'], $s['recaudadoras']['sin_comunicacion'] ? 'crit' : 'ok'],
+                ['Falla red interna', $s['recaudadoras']['red_interna'], $s['recaudadoras']['red_interna'] ? 'warn' : 'ok'],
+                ['Disponibilidad 24 h', $pct($s['recaudadoras']['disponibilidad_24h']), $s['recaudadoras']['disponibilidad_24h'] === null ? null
+                    : ($s['recaudadoras']['disponibilidad_24h'] >= 99.5 ? 'ok' : ($s['recaudadoras']['disponibilidad_24h'] >= 97 ? 'warn' : 'crit'))],
+                ['Kioscos y equipos', $s['recaudadoras']['equipos_vistos'] ? $s['recaudadoras']['equipos_responden'] . ' / ' . $s['recaudadoras']['equipos_vistos'] . ' responden' : 'Sin dato',
+                    $s['recaudadoras']['equipos_vistos'] ? ($s['recaudadoras']['equipos_responden'] < $s['recaudadoras']['equipos_vistos'] ? 'warn' : 'ok') : null,
+                    'Kioscos, terminales de pago, antenas y demás equipos registrados que han respondido alguna vez'
+                    . ($s['recaudadoras']['equipos_nunca'] ? ' (' . $s['recaudadoras']['equipos_nunca'] . ' nunca han respondido y no cuentan)' : '')],
+            ], $s['recaudadoras']['sin_revisar'] ? $s['recaudadoras']['sin_revisar'] . ' sin revisión reciente' : null],
     ];
     $tonoTexto = ['ok' => 'text-emerald-600 dark:text-emerald-400', 'warn' => 'text-amber-600 dark:text-amber-400', 'crit' => 'text-red-600 dark:text-red-400'];
     $semaforo = [
@@ -47,7 +58,8 @@
         'sin_dato' => ['bg-slate-400', 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'],
     ];
 @endphp
-<div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-4 mb-6">
+{{-- 5 sectores: en 2 y 3 columnas la última tarjeta (Recaudadoras) ocupa el espacio que sobra para no dejar un hueco --}}
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-4 mb-6">
     @foreach($tarjetas as $k => [$escena, $icono, $cifra, $cifraTexto, $lecturas, $nota])
         @php
             $sec = $s[$k];
@@ -57,17 +69,18 @@
                 'crit' => $sec['criticas'] . ($sec['criticas'] === 1 ? ' crítica' : ' críticas') . ($sec['advertencias'] ? ' · ' . $sec['advertencias'] . ' adv.' : ''),
                 'warn' => $sec['advertencias'] . ($sec['advertencias'] === 1 ? ' advertencia' : ' advertencias'),
                 'ok' => 'Sin alarmas',
-                default => 'Sin equipos',
+                default => $k === 'recaudadoras' ? 'Sin revisión' : 'Sin equipos',
             };
         @endphp
-        <a href="{{ route($meta['ruta']) }}" class="floating-card relative overflow-hidden p-5 flex flex-col gap-4 group hover:-translate-y-0.5 transition">
+        <a href="{{ route($meta['ruta']) }}" class="floating-card relative overflow-hidden p-5 flex flex-col gap-4 group hover:-translate-y-0.5 transition {{ $loop->last ? 'md:col-span-2 xl:col-span-2 2xl:col-span-1' : '' }}">
             <x-kpi-escena :tipo="$escena" :tono="$sec['tono'] === 'crit' ? 'crit' : null" />
-            <div class="relative flex items-start justify-between gap-3">
+            {{-- Con 5 tarjetas por fila la pastilla puede no caber junto al título: pasa abajo y todas reservan ese alto para que las cifras queden alineadas --}}
+            <div class="relative flex flex-wrap items-center justify-between gap-x-3 gap-y-2 2xl:min-h-[68px] 2xl:content-start">
                 <div class="flex items-center gap-2.5">
                     <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0" style="background: var(--nm-metal-sheen), var(--nm-metal-azure)">
                         <svg class="w-[18px] h-[18px]" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">{!! $icono !!}</svg>
                     </span>
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-gray-700 dark:text-slate-200">{{ $meta['nombre'] }}</h3>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-gray-700 dark:text-slate-200 whitespace-nowrap">{{ $meta['nombre'] }}</h3>
                 </div>
                 <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-bold whitespace-nowrap {{ $pastilla }}" title="Alarmas activas del sector">
                     <span class="w-2 h-2 rounded-full {{ $punto }}"></span>{{ $estado }}
@@ -79,7 +92,7 @@
                 <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">{{ $cifraTexto }}</p>
             </div>
 
-            <dl class="relative grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
+            <dl class="relative grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs {{ $loop->last ? 'md:grid-cols-4 2xl:grid-cols-2' : '' }}">
                 @foreach($lecturas as $l)
                     @php [$etiqueta, $valor, $tono] = $l; @endphp
                     <div class="min-w-0" @isset($l[3]) title="{{ $l[3] }}" @endisset>

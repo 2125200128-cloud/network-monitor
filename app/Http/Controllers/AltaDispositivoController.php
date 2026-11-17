@@ -71,7 +71,7 @@ class AltaDispositivoController extends Controller
         $vecinosNuevos = collect($estado['devices'])->where('role', 'vecino')->where('new', true)
             ->map(fn ($d) => "{$d['name']} ({$d['ip']})")->values()->all();
         Log::info('Dispositivo agregado por descubrimiento', ['dispositivo' => "{$dispositivo->id} {$dispositivo->nombre} ({$dispositivo->ip})",
-            'vecinos_nuevos' => count($vecinosNuevos), 'usuario' => auth()->user()?->email]);
+            'vecinos_nuevos' => count($vecinosNuevos), 'usuario' => auth()->user()?->usuario]);
 
         return response()->json(['ok' => true, 'dispositivo' => $this->resumen($dispositivo), 'modelo' => $semilla['model'] ?? null,
             'vecinos_nuevos' => $vecinosNuevos, 'enlaces' => $this->listaEnlaces($dispositivo->id)]);
@@ -100,7 +100,7 @@ class AltaDispositivoController extends Controller
         TopologiaController::olvidarCacheGrafo();
         Cache::forget('dashboard_ids_firewalls_v1');
         Log::info('Dispositivo agregado a mano', ['dispositivo' => "{$dispositivo->id} {$dispositivo->nombre} ({$dispositivo->ip})",
-            'usuario' => auth()->user()?->email]);
+            'usuario' => auth()->user()?->usuario]);
 
         return response()->json(['ok' => true, 'dispositivo' => $this->resumen($dispositivo), 'enlaces' => []]);
     }

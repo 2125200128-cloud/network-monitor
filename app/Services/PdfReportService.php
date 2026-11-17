@@ -746,4 +746,116 @@ class PdfReportService
 
         return $this->responder($pdf, 'Historial_alertas_' . $f['desde']->format('Ymd') . '_' . $f['hasta']->format('Ymd') . '.pdf');
     }
+
+    /**
+     * Disponibilidad de comunicación de las recaudadoras en un periodo: totales, por proveedor, por coordinadora,
+     * detalle por sede y cada caída. $resumen viene de DisponibilidadRecaudadoras::resumen().
+     */
+    public function descargarReporteRecaudadoras($recas, array $resumen, $caidas, Carbon $desde, Carbon $hasta, string $periodo)
+    {
+        $P = InstitutionalPdf::class;
+        $dur = fn (int $s) => $s > 0 ? \App\Console\Commands\RevisarRecaudadorasCommand::duracion($s) : '—';
+        $pct = fn (?float $v) => $v === null ? ['—', $P::TENUE] : [number_format($v, 2) . ' %', $v >= 99.5 ? $P::VERDE : ($v >= 97 ? $P::AMBAR : $P::ROJO), true];   // mismos cortes que el tablero
+        $coord = fn (?string $c) => $c === null || $c === '' ? 'Sin coordinadora' : (ctype_digit($c) ? "Coordinadora {$c}" : $c);
+        $prom = fn ($grupo) => $grupo->isEmpty() ? null : round($grupo->avg(fn ($r) => $resumen[$r->id]['disponibilidad']), 2);
+
+        $medidas = $recas->filter(fn ($r) => ($resumen[$r->id]['disponibilidad'] ?? null) !== null)->values();
+        $sinMedir = $recas->reject(fn ($r) => ($resumen[$r->id]['disponibilidad'] ?? null) !== null)->values();
+        $total = fn ($grupo, $campo) => $grupo->sum(fn ($r) => $resumen[$r->id][$campo]);
+
+        $pdf = $this->nuevoPdf('L', 'Disponibilidad de las recaudadoras',
+            $periodo . ' · del ' . $desde->format('d/m/Y H:i') . ' al ' . $hasta->format('d/m/Y H:i')
+            . ' · ' . $medidas->count() . ' de ' . $recas->count() . ' sedes con monitoreo');
+
+        $promedio = $prom($medidas);
+        $pdf->tarjetasKpi([
+            ['Sedes monitoreadas', $medidas->count() . ' de ' . $recas->count(), $P::AZUL_OSCURO],
+            ['Disponibilidad promedio', $promedio === null ? '—' : number_format($promedio, 2) . ' %', $pct($promedio)[1]],
+            ['Caídas', number_format($total($medidas, 'caidas')), $P::ROJO],
+            ['Tiempo sin comunicación', $dur($total($medidas, 'segundos_caida')), $P::ROJO],
+            ['Sedes debajo de 99.5 %', $medidas->filter(fn ($r) => $resumen[$r->id]['disponibilidad'] < 99.5)->count(), $P::AMBAR],
+        ]);
+
+        if ($medidas->isEmpty()) {
+            $pdf->aviso('No hay sedes con monitoreo en este periodo.');
+            return $this->responder($pdf, 'Recaudadoras_' . $desde->format('Ymd') . '.pdf');
+        }
+
+        // Tabla de grupos (proveedor o coordinadora) con las mismas columnas
+        $w = $pdf->ancho();
+        $colsGrupo = [['', $w * 0.27, 'L'], ['Sedes', $w * 0.09, 'C'], ['Disponibilidad promedio', $w * 0.15, 'C'], ['Caídas', $w * 0.09, 'C'],
+            ['Tiempo sin comunicación', $w * 0.15, 'C'], ['Sede con menor disponibilidad', $w * 0.25, 'L']];
+        $tablaGrupos = function (string $titulo, $grupos) use ($pdf, $colsGrupo, $resumen, $prom, $pct, $dur, $total) {
+            $cols = $colsGrupo;
+            $cols[0][0] = $titulo;
+            $pdf->encabezadoTabla($cols);
+            $i = 0;
+            foreach ($grupos as $nombre => $grupo) {
+                $peor = $grupo->sortBy(fn ($r) => $resumen[$r->id]['disponibilidad'])->first();
+                $peorDisp = $resumen[$peor->id]['disponibilidad'];
+                $pdf->filaTabla($cols, [[$nombre, InstitutionalPdf::TEXTO, true], $grupo->count(), $pct($prom($grupo)),
+                    number_format($total($grupo, 'caidas')), $dur($total($grupo, 'segundos_caida')),
+                    $peorDisp < 100 ? $peor->titulo() . ' (' . number_format($peorDisp, 2) . ' %)' : 'Todas al 100 %'], $i++ % 2 === 1);
+            }
+        };
+
+        $proveedores = [];
+        foreach ($medidas as $r) {
+            foreach ($r->proveedores() ?: ['Sin proveedor registrado'] as $p) {
+                $proveedores[$p][] = $r;
+            }
+        }
+        uksort($proveedores, fn ($a, $b) => count($proveedores[$b]) <=> count($proveedores[$a]) ?: strcmp($a, $b));
+        $pdf->seccion('Por proveedor', 'Una sede con varios proveedores cuenta en cada uno. El monitoreo mide la comunicación de la sede, '
+            . 'no de cada enlace: una caída indica que ningún enlace dio servicio, no cuál proveedor falló.');
+        $tablaGrupos('Proveedor', collect($proveedores)->map(fn ($g) => collect($g)));
+
+        $porCoord = $medidas->groupBy(fn ($r) => $coord($r->coordinadora))
+            ->sortKeysUsing(fn ($a, $b) => strnatcmp($a, $b));
+        $pdf->seccion('Por coordinadora');
+        $tablaGrupos('Coordinadora', $porCoord);
+
+        // Detalle: primero las de menor disponibilidad
+        $cols = [['Sede', $w * 0.22, 'L'], ['Municipio', $w * 0.13, 'L'], ['Coordinadora', $w * 0.1, 'L'], ['Proveedores', $w * 0.17, 'L'],
+            ['Disponib.', $w * 0.08, 'C'], ['Caídas', $w * 0.06, 'C'], ['Sin comunicación', $w * 0.09, 'C'],
+            ['Más larga', $w * 0.08, 'C'], ['Red interna', $w * 0.07, 'C']];
+        $pdf->seccion('Detalle por sede', 'Ordenadas de menor a mayor disponibilidad. «Red interna»: tiempo en que el equipo de la sede '
+            . 'respondía pero no su red local (no cuenta como caída).');
+        $pdf->encabezadoTabla($cols);
+        // Empates: más caídas primero y luego el orden por número en que llegan las sedes
+        $orden = $medidas->sortBy(fn ($r, $i) => [$resumen[$r->id]['disponibilidad'], -$resumen[$r->id]['caidas'], $i])->values();
+        foreach ($orden as $i => $r) {
+            $x = $resumen[$r->id];
+            $pdf->filaTabla($cols, [[$r->titulo(), $P::TEXTO, true], $r->municipio ?? '—', $coord($r->coordinadora),
+                implode(', ', $r->proveedores()) ?: '—', $pct($x['disponibilidad']),
+                $x['caidas'] ? [number_format($x['caidas']), $P::ROJO, true] : '0', $dur($x['segundos_caida']), $dur($x['mas_larga']),
+                $x['segundos_lan'] ? [$dur($x['segundos_lan']), $P::AMBAR] : '—'], $i % 2 === 1);
+        }
+
+        $pdf->seccion('Caídas del periodo', $caidas->count() >= 1000 ? 'Se muestran las 1 000 más recientes.' : 'De la más reciente a la más antigua; la duración es la de la caída completa.');
+        if ($caidas->isEmpty()) {
+            $pdf->aviso('Ninguna sede se quedó sin comunicación en el periodo.');
+        } else {
+            $cols = [['Sede', $w * 0.3, 'L'], ['Municipio', $w * 0.18, 'L'], ['Inicio', $w * 0.16, 'C'], ['Fin', $w * 0.16, 'C'], ['Duración', $w * 0.2, 'C']];
+            $pdf->encabezadoTabla($cols);
+            $fecha = fn ($v) => Carbon::parse($v)->format('d/m/Y H:i');
+            foreach ($caidas->values() as $i => $c) {
+                $sede = $c->tipo === 'recaudadora' && $c->numero !== null && $c->numero !== '' ? "Reca {$c->numero} · {$c->nombre}" : $c->nombre;
+                // Abierta: sigue caída si se revisó hace poco; si el monitoreo se detuvo se dice desde cuándo no hay dato
+                $hastaDato = Carbon::createFromTimestamp(\App\Services\Recaudadoras\DisponibilidadRecaudadoras::hastaRevisado($c->ultimo_chequeo));
+                $fin = $c->fin ? Carbon::parse($c->fin) : null;
+                $pdf->filaTabla($cols, [[$sede, $P::TEXTO, true], $c->municipio ?? '—', $fecha($c->inicio),
+                    $fin ? $fecha($fin) : ($hastaDato->gte(now()->subMinutes(5)) ? ['Sigue sin comunicación', $P::ROJO, true]
+                        : ['Sin dato desde ' . Carbon::parse($c->ultimo_chequeo)->format('d/m H:i'), $P::TENUE]),
+                    $dur((int) Carbon::parse($c->inicio)->diffInSeconds($fin ?? $hastaDato, true))], $i % 2 === 1);
+            }
+        }
+
+        if ($sinMedir->isNotEmpty()) {
+            $pdf->seccion('Sedes sin monitoreo en el periodo', 'No tienen IP registrada o aún no se habían revisado: no entran en las cifras. '
+                . $sinMedir->map(fn ($r) => $r->titulo() . ($r->ip_administrativa || $r->ip_loopback ? '' : ' (sin IP)'))->implode(' · ') . '.');
+        }
+
+        return $this->responder($pdf, 'Disponibilidad_recaudadoras_' . $desde->format('Ym') . '.pdf');
+    }
 }

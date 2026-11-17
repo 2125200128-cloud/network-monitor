@@ -85,7 +85,7 @@ class CamarasController extends Controller
             $cambios['password'] = Crypt::encryptString($datos['password']);
         }
         DB::table('camaras_detectadas')->where('id', $id)->update($cambios);
-        Log::info('Acceso de cámara actualizado', ['camara' => $id, 'usuario' => auth()->user()?->email]);
+        Log::info('Acceso de cámara actualizado', ['camara' => $id, 'usuario' => auth()->user()?->usuario]);
 
         return response()->json(['ok' => true]);
     }
@@ -101,7 +101,7 @@ class CamarasController extends Controller
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
-        Log::info('Video de cámara abierto', ['camara' => "{$cam->id} {$cam->ip}", 'calidad' => $calidad, 'usuario' => auth()->user()?->email]);
+        Log::info('Video de cámara abierto', ['camara' => "{$cam->id} {$cam->ip}", 'calidad' => $calidad, 'usuario' => auth()->user()?->usuario]);
 
         return response()->json(['stream' => $stream]);
     }

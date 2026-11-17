@@ -100,6 +100,30 @@
         .dark .nm-nav-item[aria-current="page"]::before { background: var(--nm-primary-2); }
         @keyframes nmIndicador { from { height: 0; opacity: 0; } to { height: 22px; opacity: 1; } }
 
+        /* Barra lateral: los espacios se encogen con el alto de la pantalla en vez de dejar fuera el último icono.
+           En pantallas altas queda como siempre (24 px entre iconos); la lista nunca crece más que eso y, si ni con
+           espacios mínimos cabe, se desliza sin mostrar barra. */
+        #navLateral { padding-block: clamp(12px, 2.5vh, 32px); }
+        #navLateral .nm-logo-lateral { margin-bottom: clamp(10px, 3vh, 48px); }
+        #navLateral .nm-nav-lista {
+            flex: 1 1 auto; min-height: 0; justify-content: space-between; gap: 4px; padding-block: 4px;
+            max-height: calc(var(--nm-nav-n) * 48px + (var(--nm-nav-n) - 1) * 24px + 8px);
+            overflow-y: auto; scrollbar-width: none;
+        }
+        #navLateral .nm-nav-lista::-webkit-scrollbar { display: none; }
+        #navLateral .nm-pantallas-lateral { padding-top: clamp(6px, 2vh, 24px); }
+
+        /* Marca de la red prioritaria (10.4 por omisión): punto ámbar con una onda que se expande, como un radar.
+           Se usa en Alertas y en el dashboard; sin emojis para que se vea igual en todos los equipos. */
+        .nm-prioritaria { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; line-height: 1.5;
+            padding: 1px 8px 1px 7px; border-radius: 9999px; color: #92400e; background: #fef3c7; border: 1px solid #fcd34d; white-space: nowrap; }
+        .dark .nm-prioritaria { color: #fcd34d; background: rgb(120 53 15 / 0.35); border-color: rgb(217 119 6 / 0.5); }
+        .nm-prioritaria-punto { position: relative; display: inline-block; width: 7px; height: 7px; border-radius: 9999px; background: #d97706; flex-shrink: 0; }
+        .nm-prioritaria-punto::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #d97706;
+            animation: nmRadar 1.8s cubic-bezier(0, 0, .2, 1) infinite; }
+        @keyframes nmRadar { 0% { transform: scale(1); opacity: .65; } 80%, 100% { transform: scale(3); opacity: 0; } }
+        @media (prefers-reduced-motion: reduce) { .nm-prioritaria-punto::after { animation: none; opacity: 0; } }
+
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
             .floating-card:hover { transform: none !important; }
@@ -346,6 +370,13 @@
                 'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path stroke-linecap="round" stroke-linejoin="round" d="m9 12 2 2 4-4"></path>',
             ],
             [
+                'href'   => route('recaudadoras.index'),
+                'active' => request()->is('recaudadoras*'),
+                'title'  => 'Recaudadoras: comunicación, enlaces, equipos y disponibilidad',
+                'label'  => 'Recaudadoras',
+                'svg'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M10 18v-7M14 18v-7M18 18v-7M6 18v-7M3 22h18M2 11h20M12 2 2 7v4h20V7z"></path>',
+            ],
+            [
                 'href'   => route('virtualizacion.index'),
                 'active' => request()->is('virtualizacion*'),
                 'title'  => 'Virtualización VMware: hosts ESXi, VMs y datastores',
@@ -402,15 +433,15 @@
         </header>
 
         <!-- ==================== DESKTOP SIDEBAR ==================== -->
-        <aside id="navLateral" class="w-24 nm-sidebar rounded-2xl flex flex-col items-center py-8 shadow-2xl flex-shrink-0 z-30 relative hidden md:flex transition-colors duration-200">
+        <aside id="navLateral" class="w-24 nm-sidebar rounded-2xl flex flex-col items-center shadow-2xl flex-shrink-0 z-30 relative hidden md:flex transition-colors duration-200">
             <!-- Logo/Brand -->
             {{-- Logo SHP a su tamaño original (50 × 50): árbol blanco y arco naranja sobre la barra azul --}}
-            <div class="mb-12">
+            <div class="nm-logo-lateral shrink-0">
                 <img src="{{ asset('images/logo_shp.png') }}" alt="Secretaría de la Hacienda Pública" width="50" height="50" class="w-[50px] h-[50px] object-contain">
             </div>
 
             <!-- Nav Icons (generados desde $navItems) -->
-            <nav class="flex-1 flex flex-col gap-6 items-center w-full">
+            <nav class="nm-nav-lista flex flex-col items-center w-full" style="--nm-nav-n: {{ count($navItems) }}">
                 @foreach($navItems as $item)
                 <a href="{{ $item['href'] }}"
                    class="nm-nav-item w-12 h-12 {{ $item['active'] ? 'bg-white dark:bg-slate-800/90 text-hacienda-blue dark:text-blue-300 shadow-md dark:shadow-none border border-transparent dark:border-slate-700/50' : 'text-white/85 hover:bg-white/15 dark:hover:bg-slate-800/50 hover:text-white dark:hover:text-slate-200' }} rounded-xl flex items-center justify-center"
@@ -421,7 +452,7 @@
             </nav>
 
             <!-- Pantallas NOC: ventanas para otras TV, pantalla completa y modo TV -->
-            <div class="relative mt-6" x-data="pantallasNoc()" @keydown.escape.window="abierto = false">
+            <div class="nm-pantallas-lateral relative mt-auto shrink-0" x-data="pantallasNoc()" @keydown.escape.window="abierto = false">
                 <button type="button" @click="abrirPanel()" title="Pantallas: abrir vistas en otras TV" aria-label="Pantallas"
                         class="nm-nav-item w-12 h-12 rounded-xl flex items-center justify-center text-white/85 hover:bg-white/15 dark:hover:bg-slate-800/50 hover:text-white"
                         :class="abierto ? 'bg-white/10 text-white' : ''">
@@ -641,6 +672,7 @@
                     { nombre: 'Centro de datos', url: @json(route('topologia.centro_datos')) },
                     { nombre: 'Servicios web', url: @json(route('servicios_web.index')) },
                     { nombre: 'Firewalls', url: @json(route('firewalls.index')) },
+                    { nombre: 'Recaudadoras', url: @json(route('recaudadoras.index')) },
                     { nombre: 'Virtualización', url: @json(route('virtualizacion.index')) },
                     { nombre: 'Equipos', url: @json(route('equipos.index')) },
                     { nombre: 'Cámaras', url: @json(route('camaras.index')) },

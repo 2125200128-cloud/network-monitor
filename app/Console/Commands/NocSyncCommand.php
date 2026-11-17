@@ -59,8 +59,11 @@ class NocSyncCommand extends Command
 
         foreach ($alarmas as $clave => $a) {
             $severidad = in_array($a['severidad'], ['critica', 'advertencia'], true) ? $a['severidad'] : 'advertencia';
+            // IP de la alarma (también de las que no son de un equipo del sondeo): decide si es de la red prioritaria
+            $ip = filter_var($a['ip'] ?? null, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ?: null;
             if ($abierta = $abiertas->get($clave)) {
-                $abierta->update(['severidad' => $severidad, 'titulo' => Str::limit($a['titulo'], 250, ''), 'mensaje' => $a['mensaje']]);
+                $abierta->update(['severidad' => $severidad, 'titulo' => Str::limit($a['titulo'], 250, ''), 'mensaje' => $a['mensaje']]
+                    + ($ip && !$abierta->ip ? ['ip' => $ip] : []));
                 continue;
             }
 
@@ -87,6 +90,7 @@ class NocSyncCommand extends Command
                 'causa_raiz' => $a['causa_raiz'] ?? null,
                 'impacto' => isset($a['impacto']) ? Str::limit($a['impacto'], 250, '') : null,
                 'accion_sugerida' => $a['accion_sugerida'] ?? null,
+                'ip' => $ip,
                 'estado' => 'activa',
                 'fecha_inicio' => $inicio,
             ]);
