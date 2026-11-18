@@ -130,6 +130,7 @@ if [[ $CA_PROPIA == 1 ]]; then
     2. En PowerShell como administrador, en la carpeta de Descargas:
          Import-Certificate -FilePath .\\noc-ca.crt -CertStoreLocation Cert:\\LocalMachine\\Root
     3. Cierra y abre el navegador.
+  En PCs Ubuntu (pantallas): copia deploy/instalar-ca-linux.sh a la PC y ejecuta  sudo bash instalar-ca-linux.sh ${PRINCIPAL}
   Para todas las PCs de la institución: pide que la distribuyan por GPO (Entidades de certificación raíz de confianza).
   Si cambias el nombre o la IP del servidor, vuelve a ejecutar este script con NOMBRES="nombre ip"; la CA no cambia.
 EOF

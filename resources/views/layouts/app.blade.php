@@ -398,6 +398,13 @@
                 'svg'    => '<rect x="3" y="3" width="18" height="18" rx="2.5"></rect><path stroke-linecap="round" stroke-linejoin="round" d="m7.5 9.5 2.5 2.5-2.5 2.5M12.5 14.5h4"></path>',
             ],
             [
+                'href'   => route('notas.index'),
+                'active' => request()->is('notas*'),
+                'title'  => 'Notas: portapapeles temporal para pasar comandos de una PC a otra',
+                'label'  => 'Notas',
+                'svg'    => '<rect x="8" y="2" width="8" height="4" rx="1"></rect><path stroke-linecap="round" stroke-linejoin="round" d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M12 11h4M12 16h4M8 11h.01M8 16h.01"></path>',
+            ],
+            [
                 'href'   => route('settings.index'),
                 'active' => request()->is('settings*'),
                 'title'  => 'Configuraciones Generales',

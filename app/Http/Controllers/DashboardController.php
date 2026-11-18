@@ -228,7 +228,7 @@ class DashboardController extends Controller
                         'dispositivo' => $core->nombre,
                         'ip'          => $core->ip,
                         'medido_en'   => (string) $m->fecha_registro,
-                    ];
+                    ] + $this->historiaTrafico('core', $core->id);
                 }
             }
 
@@ -246,7 +246,7 @@ class DashboardController extends Controller
                     'dispositivo' => 'Suma de puertos físicos de todos los equipos',
                     'ip'          => null,
                     'medido_en'   => (string) $g->recorded_at,
-                ];
+                ] + $this->historiaTrafico('global');
             }
 
             return [
@@ -256,6 +256,40 @@ class DashboardController extends Controller
         });
 
         return response()->json($data);
+    }
+
+    /**
+     * Últimos 30 minutos de la misma fuente que los medidores, un punto por minuto (promedio), y el promedio y el
+     * pico del periodo. Las lecturas en 0 no cuentan: en un core no son reales, eran contadores SNMP que el equipo
+     * aún no refrescaba (snmp_poller.py ya no las genera; quedan en el historial anterior).
+     *
+     * @return array{historia: array{t: int[], in: float[], out: float[]}, resumen: array<string, float|null>}
+     */
+    private function historiaTrafico(string $fuente, ?int $dispositivoId = null): array
+    {
+        return \Illuminate\Support\Facades\Cache::remember("snmp_live_traffic_historia_{$fuente}_{$dispositivoId}", 30, function () use ($fuente, $dispositivoId) {
+            $desde = now()->subMinutes(30);
+            [$tabla, $fecha, $where] = $fuente === 'core'
+                ? ['metricas_red', 'fecha_registro', fn ($q) => $q->where('dispositivo_id', $dispositivoId)]
+                : ['global_metrics', 'recorded_at', fn ($q) => $q];
+            $filas = DB::table($tabla)->tap($where)->where($fecha, '>=', $desde)
+                ->whereNotNull('traffic_in_mbps')->where('traffic_in_mbps', '>', 0)->where('traffic_out_mbps', '>', 0)
+                ->orderBy($fecha)->get([$fecha . ' as f', 'traffic_in_mbps as i', 'traffic_out_mbps as o']);
+
+            $porMinuto = $filas->groupBy(fn ($r) => Carbon::parse($r->f)->startOfMinute()->getTimestampMs());
+            $r = fn ($v) => $v === null ? null : round((float) $v, 1);
+            return [
+                'historia' => [
+                    't' => $porMinuto->keys()->map(fn ($k) => (int) $k)->values(),
+                    'in' => $porMinuto->map(fn ($g) => round($g->avg('i'), 1))->values(),
+                    'out' => $porMinuto->map(fn ($g) => round($g->avg('o'), 1))->values(),
+                ],
+                'resumen' => [
+                    'in_prom' => $r($filas->avg('i')), 'out_prom' => $r($filas->avg('o')),
+                    'in_pico' => $r($filas->max('i')), 'out_pico' => $r($filas->max('o')),
+                ],
+            ];
+        });
     }
 
     /**

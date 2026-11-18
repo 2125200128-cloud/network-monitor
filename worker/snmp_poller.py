@@ -568,6 +568,14 @@ async def poll_device(dev, engine, sem, thresholds, pings, conn):
                     # no se pueden restar: se descarta esta muestra
                     if p and p.get('hc', is_hc) != is_hc:
                         p = None
+                    # Contadores idénticos a la lectura anterior: el agente SNMP aún no los refresca (los Nexus y
+                    # otros equipos los actualizan cada 10-30 s, más lento que este ciclo). Restarlos daba un falso
+                    # 0 Mbps y la lectura siguiente salía al doble. Se conserva la lectura anterior (con su hora) para
+                    # que la próxima diferencia abarque todo el intervalo real, y el puerto conserva su último uso.
+                    if p and cur_in is not None and cur_in == p['in'] and cur_out == p['out']:
+                        new_prev[idx] = p
+                        iface_rows[idx] = (oper, cur_in, cur_out, p.get('util'), idx)
+                        continue
                     if p:
                         dt = now_ts - p['ts']
                         d_in = counter_delta(cur_in, p['in'], is_hc)
@@ -596,6 +604,7 @@ async def poll_device(dev, engine, sem, thresholds, pings, conn):
                         d_err = counter_delta(cur_err, p.get('err'), False) if cur_err is not None else None
                         if d_err is not None and physical:
                             err_delta_total = (err_delta_total or 0) + d_err
+                    new_prev[idx]['util'] = util
                     iface_rows[idx] = (oper, cur_in, cur_out, util, idx)
                 _prev_counters[dev_id] = new_prev
 
