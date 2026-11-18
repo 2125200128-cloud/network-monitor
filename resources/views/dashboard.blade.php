@@ -122,6 +122,13 @@
     }
     @keyframes nmLatido { 0% { transform: scale(.35); opacity: .9; } 100% { transform: scale(1.5); opacity: 0; } }
     @media (prefers-reduced-motion: reduce) { .nm-punto-vivo::after { animation: none; opacity: 0; } }
+
+    /* Gráfica de los últimos 30 min del tráfico (colores validados: claro sobre blanco, oscuro sobre #111827) */
+    .st-hist-muestra { width: 16px; height: 3px; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .st-hist-down { background: #2f6fae; }
+    .st-hist-up { background: repeating-linear-gradient(90deg, #ea580c 0 5px, transparent 5px 8px); }
+    .dark .st-hist-down { background: #1fa5b5; }
+    .dark .st-hist-up { background: repeating-linear-gradient(90deg, #d946ef 0 5px, transparent 5px 8px); }
 </style>
 @endsection
 
@@ -402,7 +409,7 @@
             {{-- Tráfico de la red en vivo | lo que más preocupa --}}
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
                 <div class="xl:col-span-2 min-w-0">
-            <div class="traffic-gauge-card p-6 sm:p-8 h-full" id="snmpTrafficCard">
+            <div class="traffic-gauge-card p-6 sm:p-8 h-full flex flex-col" id="snmpTrafficCard">
                 {{-- Header: Título Institucional + Status SNMP --}}
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-white/10">
                     <div class="flex items-center gap-3">
@@ -455,14 +462,14 @@
                                 <path id="stDownProgressArc" d="M 78.7 241.3 A 115 115 0 1 1 241.3 241.3" class="st-gauge-arc-progress" stroke="url(#stDownGradLight)" stroke-dasharray="541.92" stroke-dashoffset="541.92" filter="url(#stDownGlow)" />
 
                                 <text x="102" y="218" class="st-tick-label">0</text>
-                                <text x="84"  y="191" class="st-tick-label">5</text>
-                                <text x="78"  y="153" class="st-tick-label">10</text>
-                                <text x="99"  y="105" class="st-tick-label">50</text>
-                                <text x="160" y="78"  class="st-tick-label font-black text-gray-900 dark:text-white" style="font-size: 12px;">100</text>
-                                <text x="221" y="105" class="st-tick-label">250</text>
-                                <text x="242" y="153" class="st-tick-label">500</text>
-                                <text x="236" y="191" class="st-tick-label">750</text>
-                                <text x="218" y="218" class="st-tick-label">1000</text>
+                                
+                                <text x="78"  y="153" class="st-tick-label">50M</text>
+                                <text x="96"  y="105" class="st-tick-label">100M</text>
+                                <text x="160" y="78"  class="st-tick-label font-black text-gray-900 dark:text-white" style="font-size: 12px;">500M</text>
+                                <text x="224" y="105" class="st-tick-label">1G</text>
+                                <text x="240" y="153" class="st-tick-label">2.5G</text>
+                                
+                                <text x="220" y="218" class="st-tick-label">10G</text>
 
                                 {{-- Prominent Visible Needle Pointer --}}
                                 <g id="stDownNeedleWedge" class="st-needle-wedge" style="transform: rotate(-135deg);">
@@ -513,14 +520,14 @@
                                 <path id="stUpProgressArc" d="M 78.7 241.3 A 115 115 0 1 1 241.3 241.3" class="st-gauge-arc-progress" stroke="url(#stUpGradLight)" stroke-dasharray="541.92" stroke-dashoffset="541.92" filter="url(#stUpGlow)" />
 
                                 <text x="102" y="218" class="st-tick-label">0</text>
-                                <text x="84"  y="191" class="st-tick-label">5</text>
-                                <text x="78"  y="153" class="st-tick-label">10</text>
-                                <text x="99"  y="105" class="st-tick-label">50</text>
-                                <text x="160" y="78"  class="st-tick-label font-black text-gray-900 dark:text-white" style="font-size: 12px;">100</text>
-                                <text x="221" y="105" class="st-tick-label">250</text>
-                                <text x="242" y="153" class="st-tick-label">500</text>
-                                <text x="236" y="191" class="st-tick-label">750</text>
-                                <text x="218" y="218" class="st-tick-label">1000</text>
+                                
+                                <text x="78"  y="153" class="st-tick-label">50M</text>
+                                <text x="96"  y="105" class="st-tick-label">100M</text>
+                                <text x="160" y="78"  class="st-tick-label font-black text-gray-900 dark:text-white" style="font-size: 12px;">500M</text>
+                                <text x="224" y="105" class="st-tick-label">1G</text>
+                                <text x="240" y="153" class="st-tick-label">2.5G</text>
+                                
+                                <text x="220" y="218" class="st-tick-label">10G</text>
 
                                 {{-- Prominent Visible Needle Pointer --}}
                                 <g id="stUpNeedleWedge" class="st-needle-wedge" style="transform: rotate(-135deg);">
@@ -538,6 +545,36 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {{-- Últimos 30 minutos de la misma fuente que los medidores: ocupa el alto que sobra junto a «Lo que más preocupa» --}}
+                <div class="traffic-gauge-box flex-1 flex flex-col min-h-[230px] mb-5 rounded-2xl p-4 sm:p-5">
+                    <div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 mb-3">
+                        <div>
+                            <h4 class="text-xs font-black tracking-widest uppercase text-gray-600 dark:text-slate-300">Últimos 30 minutos</h4>
+                            <p class="text-[11px] text-gray-500 dark:text-slate-400">Promedio por minuto · misma fuente que los medidores</p>
+                        </div>
+                        <dl class="flex flex-wrap gap-x-6 gap-y-1.5 text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="st-hist-muestra st-hist-down" aria-hidden="true"></span>
+                                <dt class="font-semibold text-gray-700 dark:text-slate-200">Descarga</dt>
+                                <dd class="font-mono text-gray-500 dark:text-slate-400">prom <b class="text-gray-800 dark:text-slate-100" id="stHistInProm">—</b> · pico <b class="text-gray-800 dark:text-slate-100" id="stHistInPico">—</b></dd>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="st-hist-muestra st-hist-up" aria-hidden="true"></span>
+                                <dt class="font-semibold text-gray-700 dark:text-slate-200">Subida</dt>
+                                <dd class="font-mono text-gray-500 dark:text-slate-400">prom <b class="text-gray-800 dark:text-slate-100" id="stHistOutProm">—</b> · pico <b class="text-gray-800 dark:text-slate-100" id="stHistOutPico">—</b></dd>
+                            </div>
+                        </dl>
+                    </div>
+                    <div class="relative flex-1 min-h-[150px]">
+                        <canvas id="stHistCanvas" role="img" aria-label="Tráfico de descarga y subida de los últimos 30 minutos (la tabla con los datos está a continuación)"></canvas>
+                        <p id="stHistVacio" class="hidden absolute inset-0 flex items-center justify-center text-xs text-gray-500 dark:text-slate-400">Aún sin lecturas de tráfico en los últimos 30 minutos</p>
+                    </div>
+                    <table class="sr-only" aria-label="Tráfico por minuto, últimos 30 minutos">
+                        <thead><tr><th>Hora</th><th>Descarga</th><th>Subida</th></tr></thead>
+                        <tbody id="stHistTabla"></tbody>
+                    </table>
                 </div>
 
                 {{-- Footer: Metadata Institucional --}}
@@ -982,15 +1019,16 @@
         function speedtestValueToRatio(mbps) {
             const val = Math.max(0, parseFloat(mbps) || 0);
             const scale = [
-                { limit: 0,    ratio: 0.000 },
-                { limit: 5,    ratio: 0.125 },
-                { limit: 10,   ratio: 0.250 },
-                { limit: 50,   ratio: 0.375 },
-                { limit: 100,  ratio: 0.500 },
-                { limit: 250,  ratio: 0.625 },
-                { limit: 500,  ratio: 0.750 },
-                { limit: 750,  ratio: 0.875 },
-                { limit: 1000, ratio: 1.000 }
+                // Escala de un core (varios Gbps): 0, 10 M, 50 M, 100 M, 500 M, 1 G, 2.5 G, 5 G, 10 G
+                { limit: 0,     ratio: 0.000 },
+                { limit: 10,    ratio: 0.125 },
+                { limit: 50,    ratio: 0.250 },
+                { limit: 100,   ratio: 0.375 },
+                { limit: 500,   ratio: 0.500 },
+                { limit: 1000,  ratio: 0.625 },
+                { limit: 2500,  ratio: 0.750 },
+                { limit: 5000,  ratio: 0.875 },
+                { limit: 10000, ratio: 1.000 }
             ];
             for (let i = 0; i < scale.length - 1; i++) {
                 let current = scale[i];
@@ -1100,6 +1138,86 @@
             updateDualSpeedtestGauges(latestDownMbps, latestUpMbps);
         });
 
+        // Últimos 30 minutos (un punto por minuto) de la misma fuente que los medidores. Solo se redibuja cuando
+        // llega un minuto nuevo; los colores salen del tema (validados para claro y oscuro).
+        const stHistoria = (function () {
+            const COLORES = { claro: { down: '#2f6fae', up: '#ea580c' }, oscuro: { down: '#1fa5b5', up: '#d946ef' } };
+            const fmt = v => v === null || v === undefined ? '—' : (v >= 1000 ? (v / 1000).toFixed(2) + ' Gbps' : Math.round(v) + ' Mbps');
+            const hora = ms => new Date(ms).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+            let grafica = null, ultimo = null;
+
+            function colores() {
+                const oscuro = document.documentElement.classList.contains('dark');
+                return { ...(oscuro ? COLORES.oscuro : COLORES.claro),
+                    eje: oscuro ? '#94a3b8' : '#64748b', reja: oscuro ? 'rgba(148,163,184,0.10)' : 'rgba(100,116,139,0.12)' };
+            }
+
+            function crear(h) {
+                const c = colores();
+                const serie = (label, ys, color) => ({ label, data: h.t.map((x, i) => ({ x, y: ys[i] })), borderColor: color, backgroundColor: color,
+                    borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, pointHoverBorderWidth: 2, pointHoverBorderColor: '#ffffff', tension: 0.3, fill: false });
+                // En un core la subida suele ir casi igual que la descarga: punteada para que no quede oculta debajo
+                grafica = new Chart(document.getElementById('stHistCanvas'), {
+                    type: 'line',
+                    data: { datasets: [serie('Descarga', h.in, c.down), { ...serie('Subida', h.out, c.up), borderDash: [6, 4] }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, animation: false, normalized: true,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            x: { type: 'linear', min: h.t[0], max: h.t[h.t.length - 1], grid: { display: false }, border: { display: false },
+                                 ticks: { color: c.eje, font: { family: 'monospace', size: 10 }, maxTicksLimit: 7, maxRotation: 0, callback: v => hora(v) } },
+                            y: { beginAtZero: true, grid: { color: c.reja }, border: { display: false },
+                                 ticks: { color: c.eje, font: { family: 'monospace', size: 10 }, maxTicksLimit: 5, callback: v => fmt(v) } },
+                        },
+                        plugins: {
+                            legend: { display: false },   // la leyenda va arriba, con promedio y pico
+                            tooltip: { callbacks: { title: items => items.length ? hora(items[0].parsed.x) : '', label: i => ` ${i.dataset.label}: ${fmt(i.parsed.y)}` } },
+                        },
+                    },
+                    // Línea vertical en el minuto bajo el cursor (lectura de las dos series a la vez)
+                    plugins: [{ id: 'cruz', afterDatasetsDraw(chart) {
+                        const a = chart.tooltip?.getActiveElements?.() || [];
+                        if (!a.length) return;
+                        const { ctx, chartArea } = chart;
+                        ctx.save();
+                        ctx.strokeStyle = colores().eje; ctx.globalAlpha = 0.45; ctx.lineWidth = 1;
+                        ctx.beginPath(); ctx.moveTo(a[0].element.x, chartArea.top); ctx.lineTo(a[0].element.x, chartArea.bottom); ctx.stroke();
+                        ctx.restore();
+                    } }],
+                });
+            }
+
+            function pintar(data) {
+                const h = data.historia, r = data.resumen || {};
+                if (!h) return;
+                const vacio = !h.t.length;
+                document.getElementById('stHistVacio')?.classList.toggle('hidden', !vacio);
+                [['stHistInProm', r.in_prom], ['stHistInPico', r.in_pico], ['stHistOutProm', r.out_prom], ['stHistOutPico', r.out_pico]]
+                    .forEach(([id, v]) => { const el = document.getElementById(id); if (el) el.textContent = fmt(v); });
+                const marca = h.t.length ? h.t[h.t.length - 1] + ':' + h.t.length : 'vacio';
+                if (marca === ultimo || typeof Chart === 'undefined') return;
+                ultimo = marca;
+                document.getElementById('stHistTabla').innerHTML = h.t.map((t, i) => `<tr><td>${hora(t)}</td><td>${fmt(h.in[i])}</td><td>${fmt(h.out[i])}</td></tr>`).join('');
+                if (!grafica) { crear(h); return; }
+                grafica.data.datasets[0].data = h.t.map((x, i) => ({ x, y: h.in[i] }));
+                grafica.data.datasets[1].data = h.t.map((x, i) => ({ x, y: h.out[i] }));
+                grafica.options.scales.x.min = h.t[0];
+                grafica.options.scales.x.max = h.t[h.t.length - 1];
+                grafica.update('none');
+            }
+
+            window.addEventListener('theme-changed', () => {
+                if (!grafica) return;
+                const c = colores();
+                grafica.data.datasets[0].borderColor = grafica.data.datasets[0].backgroundColor = c.down;
+                grafica.data.datasets[1].borderColor = grafica.data.datasets[1].backgroundColor = c.up;
+                grafica.options.scales.x.ticks.color = grafica.options.scales.y.ticks.color = c.eje;
+                grafica.options.scales.y.grid.color = c.reja;
+                grafica.update('none');
+            });
+            return { pintar };
+        })();
+
         (function () {
             const ENDPOINT  = '{{ route("snmp.live_traffic") }}';
             const INTERVAL  = 3000; // ms
@@ -1132,6 +1250,7 @@
                         latestUpMbps   = parseFloat(data.out_mbps);
 
                         updateDualSpeedtestGauges(latestDownMbps, latestUpMbps);
+                        stHistoria.pintar(data);
                         stAgujas.vivas(true);
                         setStatus(true, data.fuente === 'core' ? 'Switch core · SNMP' : 'Suma global · SNMP');
                         if (elDevice) elDevice.textContent = data.ip ? `${data.dispositivo} (${data.ip})` : data.dispositivo;

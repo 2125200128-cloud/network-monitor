@@ -27,6 +27,11 @@
     .rc-mun.con { fill: color-mix(in srgb, var(--nm-primary) 9%, transparent); }
     .rc-pin { cursor: pointer; stroke: var(--nm-surface); }
     .rc-pin:hover { stroke: var(--nm-text); }
+    /* Recaudadora con kiosco: recuadro índigo alrededor del punto (no es un color de estado) */
+    .rc-kiosco { fill: rgb(79 70 229 / 0.10); stroke: #4f46e5; cursor: pointer; }
+    .dark .rc-kiosco { fill: rgb(165 180 252 / 0.12); stroke: #a5b4fc; }
+    .rc-muestra-kiosco { width: 12px; height: 12px; border-radius: 3px; border: 2px solid #4f46e5; background: rgb(79 70 229 / 0.10); display: inline-block; }
+    .dark .rc-muestra-kiosco { border-color: #a5b4fc; background: rgb(165 180 252 / 0.12); }
     .rc-pulso { animation: rcPulso 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
     @keyframes rcPulso { 0% { opacity: .55; transform: scale(1); } 100% { opacity: 0; transform: scale(3.2); } }
     @media (prefers-reduced-motion: reduce) { .rc-pulso { animation: none; opacity: 0; } }
@@ -124,7 +129,12 @@
         <div class="floating-card p-4 xl:col-span-2">
             <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <h2 class="rc-titulo">Mapa de Jalisco</h2>
-                <div class="flex gap-1">
+                <div class="flex flex-wrap gap-1">
+                    <button type="button" class="rc-btn flex items-center gap-1.5" :class="filtro.kioscos && 'sel'" @click="filtro.kioscos = !filtro.kioscos"
+                            :aria-pressed="filtro.kioscos.toString()" title="Mostrar solo las recaudadoras que tienen kiosco (en el mapa y en la tabla)">
+                        <span class="rc-muestra-kiosco" aria-hidden="true"></span>
+                        Con kioscos <span class="font-mono" x-text="'(' + lista.filter(r => r.kioscos > 0).length + ')'"></span>
+                    </button>
                     <button type="button" class="rc-btn" :class="vista === 'jalisco' && 'sel'" @click="vista = 'jalisco'">Jalisco</button>
                     <button type="button" class="rc-btn" :class="vista === 'zmg' && 'sel'" @click="vista = 'zmg'">Zona metropolitana</button>
                 </div>
@@ -144,6 +154,10 @@
                             <div x-text="tip.r.municipio || ''" class="opacity-80"></div>
                             <div class="mt-1"><span x-text="etiqueta(tip.r.estado)"></span><span x-show="tip.r.hace" x-text="' · desde hace ' + tip.r.hace"></span></div>
                             <div class="opacity-80 font-mono text-[11px]" x-text="tip.r.ip || tip.r.loopback || ''"></div>
+                            <div class="mt-1 flex items-center gap-1.5" x-show="tip.r.kioscos > 0">
+                                <span class="rc-muestra-kiosco" aria-hidden="true" style="width: 10px; height: 10px"></span>
+                                <span x-text="tip.r.kioscos + (tip.r.kioscos === 1 ? ' kiosco' : ' kioscos') + ' · ' + (tip.r.kioscos_ok ? tip.r.kioscos_ok + ' responde' + (tip.r.kioscos_ok === 1 ? '' : 'n') : 'ninguno responde aún')"></span>
+                            </div>
                         </div>
                     </template>
                 </div>
@@ -152,6 +166,7 @@
                 @foreach($estados as $e => $info)
                     <span class="flex items-center gap-1.5"><span class="rc-punto" style="background: {{ $info['color'] }}"></span>{{ $info['etiqueta'] }}</span>
                 @endforeach
+                <span class="flex items-center gap-1.5"><span class="rc-muestra-kiosco" aria-hidden="true" style="width: 11px; height: 11px"></span>Con kiosco</span>
                 <span>· Punto chico: otra oficina de Hacienda · Varias en un municipio se agrupan alrededor de su cabecera</span>
             </div>
         </div>
@@ -265,7 +280,7 @@
 
         return {
             lista: JSON.parse(document.getElementById('recasDatos').textContent),
-            filtro: { texto: '', estado: '', coord: '', tipo: '' },
+            filtro: { texto: '', estado: '', coord: '', tipo: '', kioscos: false },
             vista: 'jalisco',
             mapa: { listo: false, error: '', cabeceras: {}, cajas: {} },
             tip: null,
@@ -338,7 +353,10 @@
                     const [bx, by] = this.mapa.cabeceras[r.cve];
                     const x = (bx + (r.ox || 0) * rad * 2.3).toFixed(2), y = (by + (r.oy || 0) * rad * 2.3).toFixed(2);
                     const c = this.color(r.estado), radio = (r.tipo === 'oficina' ? rad * .75 : rad).toFixed(3);
+                    // Con kiosco: recuadro alrededor del punto (forma, no color: el color sigue siendo el estado de la sede)
+                    const k = r.kioscos > 0 ? rad * 1.75 : 0;
                     return `<g data-id="${r.id}">`
+                        + (k ? `<rect class="rc-kiosco" x="${(x - k).toFixed(2)}" y="${(y - k).toFixed(2)}" width="${(k * 2).toFixed(2)}" height="${(k * 2).toFixed(2)}" rx="${(rad * .45).toFixed(2)}" stroke-width="${(rad / 2.6).toFixed(3)}"/>` : '')
                         + (r.estado === 'offline' ? `<circle class="rc-pulso" cx="${x}" cy="${y}" r="${radio}" fill="${c}"/>` : '')
                         + `<circle class="rc-pin" cx="${x}" cy="${y}" r="${radio}" fill="${c}" stroke-width="${(rad / 3).toFixed(3)}"/></g>`;
                 }).join('');
@@ -365,6 +383,7 @@
                     (!this.filtro.estado || r.estado === this.filtro.estado)
                     && (!this.filtro.coord || r.coordinadora === this.filtro.coord)
                     && (!this.filtro.tipo || r.tipo === this.filtro.tipo)
+                    && (!this.filtro.kioscos || r.kioscos > 0)
                     && (!t || [r.numero, r.nombre, r.municipio, r.ip, r.loopback, r.enlace].some(v => (v || '').toLowerCase().includes(t))));
             },
             problemas() {
@@ -389,7 +408,8 @@
                     const porId = Object.fromEntries((await r.json()).map(x => [x.id, x]));
                     this.lista.forEach(f => {
                         const n = porId[f.id];
-                        if (n) Object.assign(f, { estado: n.estado, ms: n.ms, desde: n.desde, hace: n.hace, porLoopback: n.porLoopback, equipos: n.equipos });
+                        if (n) Object.assign(f, { estado: n.estado, ms: n.ms, desde: n.desde, hace: n.hace, porLoopback: n.porLoopback, equipos: n.equipos,
+                            kioscos: n.kioscos, kioscos_ok: n.kioscos_ok });
                     });
                     this.ultima = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
                 } catch (e) { /* sin conexión: se reintenta en 30 s */ }

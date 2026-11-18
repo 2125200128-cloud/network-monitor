@@ -27,7 +27,7 @@ class RecaudadorasController extends Controller
 {
     public function index()
     {
-        $recas = Recaudadora::withCount('equipos')->orderBy('tipo')->get();
+        $recas = self::conConteos(Recaudadora::query())->orderBy('tipo')->get();
         $disp24 = DisponibilidadRecaudadoras::porRecaudadora(now()->subDay(), now());
         $disp30 = DisponibilidadRecaudadoras::porRecaudadora(now()->subDays(30), now());
 
@@ -49,7 +49,17 @@ class RecaudadorasController extends Controller
     /** Estado de todas (el tablero lo vuelve a pedir cada 30 s sin recargarse). */
     public function estados()
     {
-        return response()->json(Recaudadora::withCount('equipos')->get()->map(fn ($r) => self::fila($r))->values());
+        return response()->json(self::conConteos(Recaudadora::query())->get()->map(fn ($r) => self::fila($r))->values());
+    }
+
+    /** Equipos registrados, kioscos y kioscos que responden (revisión de los últimos 5 min), para el tablero y el mapa. */
+    private static function conConteos($q)
+    {
+        return $q->withCount(['equipos',
+            'equipos as kioscos_count' => fn ($e) => $e->where('tipo', 'kiosco'),
+            'equipos as kioscos_ok_count' => fn ($e) => $e->where('tipo', 'kiosco')->where('estado', 'online')
+                ->where('ultimo_chequeo', '>=', now()->subMinutes(5)),
+        ]);
     }
 
     public function show(Recaudadora $recaudadora)
@@ -307,6 +317,8 @@ class RecaudadorasController extends Controller
             'hace' => $r->estado_desde && in_array($estado, ['offline', 'lan'], true)
                 ? RevisarRecaudadorasCommand::duracion((int) $r->estado_desde->diffInSeconds(now(), true)) : null,
             'equipos' => $r->equipos_count ?? 0,
+            'kioscos' => $r->kioscos_count ?? 0,
+            'kioscos_ok' => $r->kioscos_ok_count ?? 0,
             'activo' => $r->activo,
         ];
     }
