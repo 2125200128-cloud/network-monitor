@@ -398,7 +398,7 @@
                 'svg'    => '<rect x="3" y="3" width="18" height="18" rx="2.5"></rect><path stroke-linecap="round" stroke-linejoin="round" d="m7.5 9.5 2.5 2.5-2.5 2.5M12.5 14.5h4"></path>',
             ],
             [
-                'href'   => route('notas.index'),
+                'href'   => route('notas_noc.index'),
                 'active' => request()->is('notas*'),
                 'title'  => 'Notas: portapapeles temporal para pasar comandos de una PC a otra',
                 'label'  => 'Notas',

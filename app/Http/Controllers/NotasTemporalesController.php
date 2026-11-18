@@ -53,7 +53,7 @@ class NotasTemporalesController extends Controller
         ]);
         Log::info('Nota temporal creada', ['id' => $nota->id, 'privada' => $nota->privada, 'fija' => $nota->esFija(), 'usuario' => $request->user()->usuario]);
 
-        return redirect()->route('notas.index')->with('success', $nota->esFija()
+        return redirect()->route('notas_noc.index')->with('success', $nota->esFija()
             ? 'Nota fija guardada: no se borra sola.'
             : 'Nota guardada: se borra sola ' . $nota->expira_en->locale('es')->diffForHumans() . '.');
     }
@@ -66,6 +66,6 @@ class NotasTemporalesController extends Controller
         abort_if($nota->privada && $nota->user_id !== $u->id, 404);
         $nota->delete();
 
-        return redirect()->route('notas.index')->with('success', 'Nota borrada.');
+        return redirect()->route('notas_noc.index')->with('success', 'Nota borrada.');
     }
 }
