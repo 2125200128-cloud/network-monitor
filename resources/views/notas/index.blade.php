@@ -36,7 +36,7 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
         {{-- Nueva nota --}}
-        <form method="POST" action="{{ route('notas.guardar') }}" class="floating-card p-4 space-y-3" id="ntForm">
+        <form method="POST" action="{{ route('notas_noc.guardar') }}" class="floating-card p-4 space-y-3" id="ntForm">
             @csrf
             <h2 class="nt-titulo">Nueva nota</h2>
             <label class="block text-[11px] font-bold" style="color: var(--nm-text-muted)">Título (opcional)
@@ -86,7 +86,7 @@
                         <div class="flex items-center gap-2">
                             <button type="button" class="nt-btn" data-copiar="#nt-todo-{{ $n->id }}">Copiar todo</button>
                             @if($puedeBorrar)
-                                <form method="POST" action="{{ route('notas.borrar', $n->id) }}"
+                                <form method="POST" action="{{ route('notas_noc.borrar', $n->id) }}"
                                       onsubmit="event.preventDefault(); nmConfirmar('¿Borrar esta nota? Ya no se podrá copiar en ninguna PC.', { titulo: 'Borrar nota', boton: 'Borrar' }).then(ok => ok && this.submit());">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="nt-btn" style="color: #dc2626">Borrar</button>
