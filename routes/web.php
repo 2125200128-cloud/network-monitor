@@ -83,10 +83,6 @@ Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'ind
     // ==========================================
     Route::get('/consola', [ConsolaSeguraController::class, 'index'])->name('consola.index');
 
-    // Notas: portapapeles temporal del NOC (pegar en una PC, copiar en otra); cada nota se borra sola al caducar
-    Route::get('/notas', [\App\Http\Controllers\NotasTemporalesController::class, 'index'])->name('notas_noc.index');
-    Route::post('/notas', [\App\Http\Controllers\NotasTemporalesController::class, 'guardar'])->middleware('throttle:30,1,notas')->name('notas_noc.guardar');
-    Route::delete('/notas/{nota}', [\App\Http\Controllers\NotasTemporalesController::class, 'borrar'])->whereNumber('nota')->name('notas_noc.borrar');
     // Admin y Operador: cualquier comando; Auditor: solo lectura (lista en el controlador). Todo se audita.
     Route::post('/consola/ejecutar', [ConsolaSeguraController::class, 'ejecutar'])->name('consola.ejecutar');
     Route::get('/dispositivos/{id}', [DispositivoShowController::class, 'show'])->whereNumber('id')->name('dispositivos.show');
