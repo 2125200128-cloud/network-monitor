@@ -20,7 +20,8 @@
     .rc-tabla tbody tr { cursor: pointer; }
     .rc-tabla tbody tr:hover td { background: color-mix(in srgb, var(--nm-primary) 6%, transparent); }
     .rc-punto { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-    .rc-mapa { width: 100%; height: auto; display: block; }
+    /* El alto se limita al de la pantalla (TVs del NOC): el mapa se reduce sin deformarse y queda centrado */
+    .rc-mapa { width: 100%; height: auto; display: block; max-height: clamp(400px, calc(100vh - 260px), 760px); }
     .rc-lista-atencion { max-height: 460px; }
     @media (min-width: 1280px) { .rc-lista-atencion { position: absolute; inset: 0; max-height: none; } }
     .rc-mun { fill: color-mix(in srgb, var(--nm-text-muted) 9%, transparent); stroke: color-mix(in srgb, var(--nm-text-muted) 45%, transparent); stroke-linejoin: round; }
