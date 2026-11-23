@@ -210,14 +210,67 @@ class RevisarRecaudadorasCommand extends Command
         }
         $cfg = ConfiguracionGeneral::first();
         $bot = $cfg && $cfg->telegram_activo && $cfg->telegram_chat_id ? TelegramBot::desdeConfiguracion($cfg) : null;
-        if (!$bot) {
-            return;
+        if ($bot) {
+            try {
+                $bot->enviarMensaje((string) $cfg->telegram_chat_id, $this->mensaje());
+            } catch (\Throwable $e) {
+                $this->warn('No se pudo avisar por Telegram: ' . $e->getMessage());
+            }
         }
-        try {
-            $bot->enviarMensaje((string) $cfg->telegram_chat_id, $this->mensaje());
-        } catch (\Throwable $e) {
-            $this->warn('No se pudo avisar por Telegram: ' . $e->getMessage());
+        // Por correo, al grupo de redes (AlertasCorreo no lanza excepciones y no hace nada si el correo no está activado)
+        [$asunto, $secciones] = $this->correo();
+        app(\App\Services\AlertasCorreo::class)->avisoRecaudadoras($asunto, $secciones);
+    }
+
+    /** Mismo aviso que el de Telegram, en secciones de texto para la plantilla del correo. @return array{0: string, 1: array} */
+    private function correo(): array
+    {
+        $linea = fn (Recaudadora $r) => $r->titulo() . ' · ' . ($r->ip_administrativa ?: $r->ip_loopback)
+            . ($r->municipio && !str_contains($r->nombre, $r->municipio) ? ' · ' . $r->municipio : '')
+            . (($enlace = $this->enlace($r)) ? ' · ' . $enlace : '');
+        $lista = function (array $items, callable $fmt) {
+            $lineas = array_map($fmt, array_slice($items, 0, self::MAX_EN_AVISO));
+            if (count($items) > self::MAX_EN_AVISO) {
+                $lineas[] = '… y ' . (count($items) - self::MAX_EN_AVISO) . ' más (ver la página Recaudadoras)';
+            }
+            return $lineas;
+        };
+        $a = $this->avisos;
+        $secciones = [];
+        if ($a['caidas']) {
+            $secciones[] = ['titulo' => 'Sin comunicación', 'color' => '#dc2626', 'lineas' => $lista($a['caidas'], $linea),
+                'nota' => count($a['caidas']) >= self::CAIDA_MASIVA
+                    ? count($a['caidas']) . ' recaudadoras perdieron comunicación a la vez: probable falla general del enlace del proveedor (MPLS) o del core, no de cada oficina.'
+                    : 'No responden ni su IP administrativa ni su loopback.'];
         }
+        if ($a['lan']) {
+            $secciones[] = ['titulo' => 'Falla de red interna', 'color' => '#d97706', 'nota' => 'El equipo responde por su loopback, su red no.', 'lineas' => $lista($a['lan'], $linea)];
+        }
+        if ($a['equipos_caidos']) {
+            $secciones[] = ['titulo' => 'Equipos sin respuesta', 'color' => '#dc2626',
+                'lineas' => $lista($a['equipos_caidos'], fn ($q) => $q->nombre . ' · ' . $q->ip . ' en ' . $q->recaudadora->titulo())];
+        }
+        if ($a['recuperadas']) {
+            $secciones[] = ['titulo' => 'Recuperadas', 'color' => '#059669',
+                'lineas' => $lista($a['recuperadas'], fn ($x) => $x[0]->titulo() . ($x[1] ? ' · estuvo caída ' . self::duracion($x[1]) : ''))];
+        }
+        if ($a['equipos_recuperados']) {
+            $secciones[] = ['titulo' => 'Equipos recuperados', 'color' => '#059669',
+                'lineas' => $lista($a['equipos_recuperados'], fn ($x) => $x[0]->nombre . ' en ' . $x[0]->recaudadora->titulo() . ($x[1] ? ' · ' . self::duracion($x[1]) : ''))];
+        }
+
+        $n = fn (string $k) => count($a[$k]);
+        $partes = array_filter([
+            $n('caidas') ? $n('caidas') . ' sin comunicación' : null,
+            $n('lan') ? $n('lan') . ' con falla de red interna' : null,
+            $n('equipos_caidos') ? $n('equipos_caidos') . ($n('equipos_caidos') === 1 ? ' equipo sin respuesta' : ' equipos sin respuesta') : null,
+            $n('recuperadas') ? $n('recuperadas') . ($n('recuperadas') === 1 ? ' recuperada' : ' recuperadas') : null,
+            $n('equipos_recuperados') ? $n('equipos_recuperados') . ($n('equipos_recuperados') === 1 ? ' equipo recuperado' : ' equipos recuperados') : null,
+        ]);
+        // Con una sola recaudadora afectada, el asunto la nombra
+        $sola = $n('caidas') + $n('lan') === 1 && !$n('recuperadas') && !$n('equipos_caidos') && !$n('equipos_recuperados') ?($a['caidas'][0] ?? $a['lan'][0]) : null;
+        $asunto = $sola ? ($n('caidas') ? 'Sin comunicación: ' : 'Falla de red interna: ') . $sola->titulo() : implode(', ', $partes);
+        return [$asunto, $secciones];
     }
 
     private function mensaje(): string

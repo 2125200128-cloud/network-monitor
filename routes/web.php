@@ -72,6 +72,8 @@ Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'ind
         Route::post('/settings/telegram',[SettingController::class, 'guardarTelegram'])->name('settings.telegram');
         Route::post('/settings/telegram/chats', [SettingController::class, 'chatsTelegram'])->middleware('throttle:20,1')->name('settings.telegram.chats');
         Route::post('/settings/telegram/probar', [SettingController::class, 'probarTelegram'])->middleware('throttle:10,1')->name('settings.telegram.probar');
+        Route::post('/settings/correo', [SettingController::class, 'guardarCorreo'])->name('settings.correo');
+        Route::post('/settings/correo/probar', [SettingController::class, 'probarCorreo'])->middleware('throttle:6,1,correo-prueba')->name('settings.correo.probar');
         Route::post('/settings/role/{user}', [SettingController::class, 'updateRole'])->name('settings.update_role');
         Route::post('/settings/register', [SettingController::class, 'register'])->name('settings.register');
         Route::put('/settings/user/{user}', [SettingController::class, 'updateUser'])->name('settings.update_user');

@@ -44,11 +44,29 @@ class ConfiguracionGeneral extends Model
         'esxi_usuario',
         'esxi_password',
         'esxi_datastores_ignorados',
+        'correo_activo',
+        'correo_host',
+        'correo_puerto',
+        'correo_seguridad',
+        'correo_verificar_certificado',
+        'correo_usuario',
+        'correo_password',
+        'correo_remitente',
+        'correo_remitente_nombre',
+        'correo_destinos_redes',
+        'correo_destinos_servidores',
+        'correo_severidad_min',
+        'correo_resueltas',
+        'correo_recordatorio_min',
     ];
 
-    protected $hidden = ['telegram_bot_token', 'snmpv3_auth_pass', 'snmpv3_priv_pass', 'vcenter_password', 'esxi_password'];
+    protected $hidden = ['telegram_bot_token', 'snmpv3_auth_pass', 'snmpv3_priv_pass', 'vcenter_password', 'esxi_password', 'correo_password'];
 
     protected $casts = [
+        'correo_activo' => 'boolean',
+        'correo_verificar_certificado' => 'boolean',
+        'correo_resueltas' => 'boolean',
+        'correo_password' => 'encrypted',
         'telegram_activo' => 'boolean',
         'telegram_bot_token' => 'encrypted',
         'snmpv3_auth_pass' => 'encrypted',

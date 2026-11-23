@@ -32,6 +32,8 @@ class AlarmaRed extends Model
         'ip',
         'recordada_telegram_at',
         'recordatorios',
+        'notificada_correo_at',
+        'recordada_correo_at',
     ];
 
     protected $casts = [
@@ -39,6 +41,8 @@ class AlarmaRed extends Model
         'fecha_resolucion' => 'datetime',
         'notificada_telegram_at' => 'datetime',
         'recordada_telegram_at' => 'datetime',
+        'notificada_correo_at' => 'datetime',
+        'recordada_correo_at' => 'datetime',
     ];
 
     /** IP de la alarma: la guardada, la del equipo o la que venga en el título («Equipo inaccesible (10.4.2.1)»). */

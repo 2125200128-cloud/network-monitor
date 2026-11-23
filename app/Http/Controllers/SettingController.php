@@ -56,7 +56,14 @@ class SettingController extends Controller
                 ->where('nombre', 'not like', '%vCenter%')->orderBy('nombre')->value('ip'),
         ];
 
-        return view('settings.index', compact('settings', 'users', 'section', 'retencion', 'telegram', 'snmpv3', 'vcenter', 'esxi'));
+        $correo = [
+            'clave_guardada' => $settings->getRawOriginal('correo_password') !== null,
+            'ultimo_error' => Cache::get('correo_ultimo_error'),
+            'en_pausa' => \App\Services\AlertasCorreo::enPausa(),
+            'notificadas_24h' => \App\Models\AlarmaRed::where('notificada_correo_at', '>=', now()->subDay())->count(),
+        ];
+
+        return view('settings.index', compact('settings', 'users', 'section', 'retencion', 'telegram', 'snmpv3', 'vcenter', 'esxi', 'correo'));
     }
 
     /** Filas para la sección de retención: días efectivos, rango permitido y lo que hay guardado hoy. */
@@ -369,6 +376,87 @@ class SettingController extends Controller
                 . ($r['imagen'] ? ' con gráfica de ejemplo.' : '.')]);
         } catch (\Throwable $e) {
             return response()->json(['ok' => false, 'mensaje' => $e->getMessage()], 422);
+        }
+    }
+
+    /** Alertas por correo: servidor SMTP y destinatarios de cada grupo. Contraseña vacía = se conserva la guardada. */
+    public function guardarCorreo(Request $request)
+    {
+        $request->validate([
+            'correo_host' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9.\-]+$/'],
+            'correo_puerto' => 'required|integer|min:1|max:65535',
+            'correo_seguridad' => 'required|in:' . implode(',', array_keys(\App\Services\AlertasCorreo::SEGURIDAD)),
+            'correo_usuario' => 'nullable|string|max:255',
+            'correo_password' => 'nullable|string|max:255',
+            'correo_remitente' => 'nullable|email|max:255',
+            'correo_remitente_nombre' => 'nullable|string|max:120',
+            'correo_destinos_redes' => 'nullable|string|max:4000',
+            'correo_destinos_servidores' => 'nullable|string|max:4000',
+            'correo_severidad_min' => 'required|in:critica,advertencia',
+            'correo_recordatorio_min' => 'required|in:0,15,30,60,120,240',
+        ], [
+            'correo_host.regex' => 'El servidor SMTP debe ser un nombre o una IP, sin smtp:// ni puerto (p. ej. smtp.office365.com).',
+            'correo_remitente.email' => 'El remitente debe ser una dirección de correo válida.',
+        ]);
+
+        $volver = fn (string $error) => redirect()->route('settings.index', ['section' => 'notificaciones'])
+            ->withInput($request->except('correo_password'))->with('error', $error);
+        foreach (['correo_destinos_redes' => 'redes', 'correo_destinos_servidores' => 'servidores'] as $campo => $grupo) {
+            if ($malas = \App\Services\AlertasCorreo::invalidas($request->input($campo))) {
+                return $volver("Destinatarios de {$grupo}: no son direcciones de correo válidas: " . implode(', ', array_slice($malas, 0, 5)) . '.');
+            }
+        }
+        // Se guardan limpias: una por línea, sin repetidas
+        $lista = fn (string $campo) => implode("\n", \App\Services\AlertasCorreo::direcciones($request->input($campo))) ?: null;
+
+        $cfg = ConfiguracionGeneral::firstOrFail();
+        $datos = [
+            'correo_activo' => $request->boolean('correo_activo'),
+            'correo_host' => trim((string) $request->input('correo_host')) ?: null,
+            'correo_puerto' => (int) $request->input('correo_puerto'),
+            'correo_seguridad' => $request->input('correo_seguridad'),
+            'correo_verificar_certificado' => $request->boolean('correo_verificar_certificado'),
+            'correo_usuario' => trim((string) $request->input('correo_usuario')) ?: null,
+            'correo_remitente' => mb_strtolower(trim((string) $request->input('correo_remitente'))) ?: null,
+            'correo_remitente_nombre' => trim((string) $request->input('correo_remitente_nombre')) ?: null,
+            'correo_destinos_redes' => $lista('correo_destinos_redes'),
+            'correo_destinos_servidores' => $lista('correo_destinos_servidores'),
+            'correo_severidad_min' => $request->input('correo_severidad_min'),
+            'correo_resueltas' => $request->boolean('correo_resueltas'),
+            'correo_recordatorio_min' => (int) $request->input('correo_recordatorio_min'),
+        ];
+        if ($request->boolean('correo_borrar_password') || !$datos['correo_usuario']) {
+            $datos['correo_password'] = null;
+        } elseif ($request->filled('correo_password')) {
+            $datos['correo_password'] = $request->input('correo_password');
+        }
+
+        if ($datos['correo_activo'] && (!$datos['correo_host'] || !$datos['correo_remitente'] || !$datos['correo_destinos_redes'])) {
+            return $volver('Para activar las alertas por correo se necesitan el servidor SMTP, el remitente y al menos un destinatario de redes.');
+        }
+        $tieneClave = array_key_exists('correo_password', $datos) ? $datos['correo_password'] !== null : $cfg->getRawOriginal('correo_password') !== null;
+        if ($datos['correo_usuario'] && !$tieneClave) {
+            return $volver('Escribe la contraseña del usuario SMTP (o deja el usuario vacío si el servidor no pide autenticación).');
+        }
+
+        $cfg->update($datos);
+        Cache::forget('correo_pausa_hasta');
+        return redirect()->route('settings.index', ['section' => 'notificaciones'])
+            ->with('success', $datos['correo_activo'] ? 'Alertas por correo activadas. Usa «Enviar prueba» para confirmar que llegan.' : 'Configuración de correo guardada (alertas desactivadas).');
+    }
+
+    public function probarCorreo(\App\Services\AlertasCorreo $alertas)
+    {
+        $cfg = ConfiguracionGeneral::firstOrFail();
+        if (!$cfg->correo_host || !$cfg->correo_remitente || !\App\Services\AlertasCorreo::direcciones($cfg->correo_destinos_redes)) {
+            return response()->json(['ok' => false, 'mensaje' => 'Guarda primero el servidor SMTP, el remitente y los destinatarios.'], 422);
+        }
+        try {
+            $r = $alertas->probar($cfg);
+            return response()->json(['ok' => true, 'mensaje' => 'Correo de prueba enviado a ' . $r['correos'] . ($r['correos'] === 1 ? ' destinatario' : ' destinatarios')
+                . ($r['grupos'] > 1 ? " de los {$r['grupos']} grupos" : '') . '. Revisa la bandeja (y la de correo no deseado).']);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'mensaje' => 'No se pudo enviar: ' . \Illuminate\Support\Str::limit(trim($e->getMessage()), 300)], 422);
         }
     }
 

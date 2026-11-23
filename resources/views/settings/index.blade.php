@@ -1219,10 +1219,17 @@
                             </div>
                             <div>
                                 <div class="settings-row-label">Alertas por Correo Electrónico (SMTP)</div>
-                                <div class="settings-row-desc">Envío de resumen y alertas cuando un equipo cae a estado OFFLINE</div>
+                                <div class="settings-row-desc">Alarmas nuevas, resueltas y recordatorios, a los destinatarios de redes y de servidores (se configura abajo)</div>
                             </div>
                         </div>
-                        <span class="text-xs font-bold px-3 py-1 rounded-full bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400">Próximamente</span>
+                        @if(\App\Services\AlertasCorreo::listo($settings))
+                            <span class="text-xs font-black px-3.5 py-1 rounded-full bg-blue-600 text-white flex items-center gap-1.5 shadow-xs">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                Activo
+                            </span>
+                        @else
+                            <span class="text-xs font-bold px-3 py-1 rounded-full bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400">Desactivado</span>
+                        @endif
                     </div>
 
                     <div class="settings-row">
@@ -1418,6 +1425,174 @@
                             async probar() {
                                 this.cargando = true; this.aviso = 'Enviando…'; this.ok = true;
                                 const j = await llamar(@json(route('settings.telegram.probar')));
+                                this.cargando = false; this.ok = !!j.ok; this.aviso = j.mensaje;
+                            },
+                        };
+                    }
+                </script>
+
+                {{-- Alertas por correo: mismos dos grupos que Telegram (redes y servidores) --}}
+                <form action="{{ route('settings.correo') }}" method="POST" class="settings-group" x-data="correoAjustes()">
+                    @csrf
+                    <h4 class="settings-group-title">
+                        <svg class="w-4 h-4 text-black dark:text-white" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2" /> <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>
+                        Alertas por correo
+                        @if(\App\Services\AlertasCorreo::listo($settings))
+                            <span class="ml-auto text-[11px] font-black px-3 py-0.5 rounded-full bg-blue-600 text-white flex items-center gap-1.5 normal-case tracking-normal">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Activo
+                            </span>
+                        @endif
+                    </h4>
+
+                    @if($correo['ultimo_error'])
+                        <div class="mb-3 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-300 text-xs font-semibold">
+                            Último envío fallido ({{ \Carbon\Carbon::parse($correo['ultimo_error']['fecha'])->format('d/m/Y H:i') }}): {{ $correo['ultimo_error']['mensaje'] }}
+                            @if($correo['en_pausa'])<br>Se reintenta solo en unos minutos; lo que no salió se manda en cuanto el servidor responda.@endif
+                        </div>
+                    @endif
+
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Enviar alertas por correo</div>
+                            <div class="settings-row-desc">Como mucho un correo por grupo en cada revisión (cada minuto), con todo lo nuevo junto. Alarmas avisadas por correo en las últimas 24 h: {{ $correo['notificadas_24h'] }}</div>
+                        </div>
+                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="correo_activo" value="1" class="w-5 h-5 accent-black" @checked(old('correo_activo', $settings->correo_activo))>
+                            <span class="text-sm font-bold">Activar</span>
+                        </label>
+                    </div>
+
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Servidor SMTP</div>
+                            <div class="settings-row-desc">El servidor de correo de la institución. Office 365: <span class="font-mono">smtp.office365.com</span>, puerto 587, STARTTLS.</div>
+                        </div>
+                        <div class="flex items-center justify-end gap-2 shrink-0">
+                            <input type="text" name="correo_host" value="{{ old('correo_host', $settings->correo_host) }}" autocomplete="off" placeholder="smtp.ejemplo.gob.mx" class="settings-input font-mono font-bold" style="width: 200px;">
+                            <input type="number" name="correo_puerto" x-model="puerto" min="1" max="65535" class="settings-input font-mono font-bold" style="width: 90px;" aria-label="Puerto">
+                        </div>
+                    </div>
+
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Cifrado</div>
+                            <div class="settings-row-desc">Al cambiarlo se pone el puerto habitual. Con un certificado propio (servidor interno) desmarca «Verificar certificado».</div>
+                        </div>
+                        <div class="flex flex-col items-end gap-1.5">
+                            <select name="correo_seguridad" x-model="seguridad" @change="puerto = { tls: 587, ssl: 465, ninguna: 25 }[seguridad]" class="settings-input font-bold" style="width: 260px;">
+                                @foreach(\App\Services\AlertasCorreo::SEGURIDAD as $valor => $etiqueta)
+                                    <option value="{{ $valor }}">{{ $etiqueta }}</option>
+                                @endforeach
+                            </select>
+                            <label class="text-[11px] text-slate-500 flex items-center gap-1.5" x-show="seguridad !== 'ninguna'">
+                                <input type="checkbox" name="correo_verificar_certificado" value="1" @checked(old('correo_verificar_certificado', $settings->correo_verificar_certificado ?? true))> Verificar certificado del servidor
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Usuario y contraseña</div>
+                            <div class="settings-row-desc">
+                                La cuenta que envía (vacío si el servidor acepta correo sin autenticación desde la IP del NOC). La contraseña se guarda cifrada y no se vuelve a mostrar.
+                                @if($correo['clave_guardada'])<br>Hay una contraseña guardada · deja el campo vacío para conservarla.@endif
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-1.5">
+                            <input type="text" name="correo_usuario" value="{{ old('correo_usuario', $settings->correo_usuario) }}" autocomplete="off" placeholder="noc@ejemplo.gob.mx" class="settings-input font-mono" style="width: 260px;">
+                            <input type="password" name="correo_password" autocomplete="new-password" placeholder="{{ $correo['clave_guardada'] ? 'Sin cambios' : 'Contraseña' }}" class="settings-input font-mono" style="width: 260px;">
+                            @if($correo['clave_guardada'])
+                                <label class="text-[11px] text-slate-500 flex items-center gap-1.5"><input type="checkbox" name="correo_borrar_password" value="1"> Borrar contraseña guardada</label>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Remitente</div>
+                            <div class="settings-row-desc">La dirección y el nombre con que llegan los correos. Muchos servidores exigen que sea la misma cuenta del usuario.</div>
+                        </div>
+                        <div class="flex flex-col items-end gap-1.5">
+                            <input type="email" name="correo_remitente" value="{{ old('correo_remitente', $settings->correo_remitente) }}" autocomplete="off" placeholder="noc@ejemplo.gob.mx" class="settings-input font-mono" style="width: 260px;">
+                            <input type="text" name="correo_remitente_nombre" value="{{ old('correo_remitente_nombre', $settings->correo_remitente_nombre ?? 'NOC Network Monitor') }}" maxlength="120" class="settings-input" style="width: 260px;" aria-label="Nombre del remitente">
+                        </div>
+                    </div>
+
+                    @foreach([
+                        ['nombre' => 'correo_destinos_redes', 'etiqueta' => 'Destinatarios de redes', 'ejemplo' => 'equipo-redes',
+                         'desc' => 'Switches, firewalls, routers, APs y recaudadoras. Si no hay destinatarios de servidores, aquí llega todo.'],
+                        ['nombre' => 'correo_destinos_servidores', 'etiqueta' => 'Destinatarios de servidores y webs (opcional)', 'ejemplo' => 'equipo-servidores',
+                         'desc' => 'Servidores, virtualización (ESXi, VMs, datastores) y sitios web. Vacío = estas alarmas también van a los de redes.'],
+                    ] as $fila)
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">{{ $fila['etiqueta'] }}</div>
+                            <div class="settings-row-desc">{{ $fila['desc'] }}<br>Una dirección por línea (o separadas por coma). Sirve también la dirección de una lista o grupo de correo del equipo.</div>
+                        </div>
+                        <textarea name="{{ $fila['nombre'] }}" rows="3" autocomplete="off" placeholder="persona@ejemplo.gob.mx&#10;{{ $fila['ejemplo'] }}@ejemplo.gob.mx" class="settings-input font-mono text-xs" style="width: 300px; resize: vertical;">{{ old($fila['nombre'], $settings->{$fila['nombre']}) }}</textarea>
+                    </div>
+                    @endforeach
+
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Qué alarmas enviar</div>
+                            <div class="settings-row-desc">Hasta 5 alarmas nuevas van con su diagnóstico completo; más que eso (una caída masiva), en una tabla.</div>
+                        </div>
+                        <select name="correo_severidad_min" class="settings-input font-bold" style="width: 240px;">
+                            <option value="critica" @selected(old('correo_severidad_min', $settings->correo_severidad_min) === 'critica')>Solo críticas</option>
+                            <option value="advertencia" @selected(old('correo_severidad_min', $settings->correo_severidad_min) === 'advertencia')>Críticas y advertencias</option>
+                        </select>
+                    </div>
+
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Recordar fallas de la red prioritaria</div>
+                            <div class="settings-row-desc">La misma red prioritaria de Telegram ({{ \App\Support\RedesPrioritarias::texto() ?: 'ninguna' }}). Mientras una falla siga activa, se vuelve a avisar por correo con todo lo pendiente.</div>
+                        </div>
+                        <select name="correo_recordatorio_min" class="settings-input font-bold" style="width: 240px;">
+                            @foreach([15 => 'Cada 15 minutos', 30 => 'Cada 30 minutos', 60 => 'Cada hora', 120 => 'Cada 2 horas', 240 => 'Cada 4 horas', 0 => 'No recordar'] as $min => $txt)
+                                <option value="{{ $min }}" @selected((int) old('correo_recordatorio_min', $settings->correo_recordatorio_min ?? 60) === $min)>{{ $txt }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="settings-row">
+                        <div>
+                            <div class="settings-row-label">Opciones</div>
+                            <div class="settings-row-desc">Solo se avisa la resolución de alarmas cuyo inicio sí se avisó por correo.</div>
+                        </div>
+                        <label class="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" name="correo_resueltas" value="1" class="w-4 h-4 accent-black" @checked(old('correo_resueltas', $settings->correo_resueltas ?? true))> Avisar cuando se resuelvan</label>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-end gap-3 mt-5">
+                        <span class="text-xs font-semibold mr-auto" :class="ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'" x-text="aviso"></span>
+                        <button type="button" @click="probar()" :disabled="cargando" class="text-sm font-bold px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
+                                title="Envía un correo de prueba a cada grupo con la configuración guardada" aria-label="Envía un correo de prueba a cada grupo con la configuración guardada">Enviar prueba</button>
+                        <button type="submit" class="fancy">
+                            <span class="top-key"></span>
+                            <span class="text">
+                                <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                                Guardar correo
+                            </span>
+                            <span class="bottom-key-1"></span>
+                            <span class="bottom-key-2"></span>
+                        </button>
+                    </div>
+                </form>
+                <script>
+                    function correoAjustes() {
+                        return {
+                            seguridad: @json(old('correo_seguridad', $settings->correo_seguridad ?? 'tls')),
+                            puerto: @json((int) old('correo_puerto', $settings->correo_puerto ?? 587)),
+                            aviso: '', ok: true, cargando: false,
+                            async probar() {
+                                this.cargando = true; this.ok = true; this.aviso = 'Conectando con el servidor de correo…';
+                                const r = await fetch(@json(route('settings.correo.probar')), {
+                                    method: 'POST',
+                                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token()) },
+                                });
+                                const j = await r.json().catch(() => ({ ok: false, mensaje: 'Respuesta inválida del servidor (HTTP ' + r.status + ').' }));
+                                if (r.status === 429) j.mensaje = 'Demasiados intentos, espera un minuto.';
                                 this.cargando = false; this.ok = !!j.ok; this.aviso = j.mensaje;
                             },
                         };

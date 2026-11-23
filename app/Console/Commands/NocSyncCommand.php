@@ -31,16 +31,18 @@ class NocSyncCommand extends Command
 
     protected $description = 'Registra el historial de alarmas y consolida métricas por hora para el dashboard.';
 
-    public function handle(AlarmDiagnosisService $diagnostico, SslCertificateChecker $ssl, AlertasTelegram $telegram): int
+    public function handle(AlarmDiagnosisService $diagnostico, SslCertificateChecker $ssl, AlertasTelegram $telegram, \App\Services\AlertasCorreo $correo): int
     {
         $certificados = $ssl->revisarPendientes();
         [$nuevas, $resueltas] = $this->registrarAlarmas($diagnostico);
         $avisos = $telegram->notificar($nuevas, $resueltas);
+        $correos = $correo->notificar($resueltas);
         $horas = $this->consolidarMetricas();
         $borradas = Cache::add('noc_retencion_hecha', true, now()->addHour()) ? $this->aplicarRetencion() : null;
         Cache::forever('noc_sync_ultimo', now()->toDateTimeString());
         $this->info("SSL: {$certificados} revisados. Alarmas: {$nuevas->count()} nuevas, {$resueltas->count()} resueltas. "
             . ($avisos['enviados'] || $avisos['errores'] ? "Telegram: {$avisos['enviados']} enviados" . ($avisos['errores'] ? ", {$avisos['errores']} con error" : '') . '. ' : '')
+            . ($correos['enviados'] || $correos['errores'] ? "Correo: {$correos['enviados']} enviados" . ($correos['errores'] ? ", {$correos['errores']} con error" : '') . '. ' : '')
             . "Consolidado: {$horas} filas equipo/hora."
             . ($borradas === null ? '' : ' Retención: ' . ($borradas ? collect($borradas)->map(fn ($n, $t) => "{$t} -{$n}")->implode(', ') : 'nada que borrar') . '.'));
 
