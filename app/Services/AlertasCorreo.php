@@ -229,9 +229,32 @@ class AlertasCorreo
         return $hasta && now()->lt(\Carbon\Carbon::parse($hasta));
     }
 
+    /**
+     * El error del servidor con una explicación de qué hacer. Los de Microsoft 365 (Exchange Online) traen un código
+     * 5.7.x que solo dice qué se rechazó: aquí se traduce a la causa habitual.
+     */
+    public static function explicar(\Throwable $e): string
+    {
+        $original = \Illuminate\Support\Str::limit(trim(preg_replace('/\s+/', ' ', $e->getMessage())), 300);
+        $causa = match (true) {
+            str_contains($original, '5.7.139') => 'Microsoft 365 no permite enviar con usuario y contraseña (SMTP AUTH) para esta cuenta: '
+                . 'el administrador de Microsoft 365 debe activar «SMTP autenticado» en el buzón y que la cuenta no tenga MFA ni la bloqueen los «valores predeterminados de seguridad».',
+            str_contains($original, '5.7.3') || str_contains($original, '535') => 'Usuario o contraseña incorrectos (o la contraseña cambió).',
+            str_contains($original, '5.7.60') || stripos($original, 'SendAsDenied') !== false => 'El remitente no coincide con la cuenta: en Microsoft 365 el remitente debe ser la misma dirección del usuario (o la cuenta necesita permiso «Enviar como»).',
+            str_contains($original, '5.7.57') => 'El servidor exige iniciar sesión: escribe el usuario y la contraseña de la cuenta.',
+            str_contains($original, '5.7.708') || str_contains($original, '5.7.750') => 'Microsoft 365 bloqueó el envío desde esta cuenta (reputación o cuenta no verificada): revísalo con el administrador.',
+            stripos($original, 'Connection could not be established') !== false || stripos($original, 'timed out') !== false || stripos($original, 'Connection refused') !== false
+                => 'No hay conexión con el servidor de correo: revisa el nombre y el puerto, y que el firewall deje salir al servidor del NOC por ese puerto.',
+            stripos($original, 'certificate') !== false || stripos($original, 'SSL') !== false
+                => 'Falló la verificación del certificado del servidor de correo: si es un servidor interno con certificado propio, desmarca «Verificar certificado».',
+            default => null,
+        };
+        return $causa ? "{$causa} (Detalle: {$original})" : $original;
+    }
+
     private static function registrarError(\Throwable $e): void
     {
-        $mensaje = \Illuminate\Support\Str::limit(trim($e->getMessage()), 400);
+        $mensaje = self::explicar($e);
         Cache::put('correo_ultimo_error', ['mensaje' => $mensaje, 'fecha' => now()->toDateTimeString()], now()->addDay());
         Cache::put('correo_pausa_hasta', now()->addMinutes(self::ESPERA_TRAS_ERROR_MIN)->toDateTimeString(), now()->addMinutes(self::ESPERA_TRAS_ERROR_MIN));
         Log::warning('Alertas por correo: ' . $mensaje);

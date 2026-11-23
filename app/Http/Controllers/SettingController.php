@@ -425,6 +425,10 @@ class SettingController extends Controller
             'correo_resueltas' => $request->boolean('correo_resueltas'),
             'correo_recordatorio_min' => (int) $request->input('correo_recordatorio_min'),
         ];
+        // Sin remitente: la misma cuenta que inicia sesión (Microsoft 365 lo exige así)
+        if (!$datos['correo_remitente'] && filter_var($datos['correo_usuario'], FILTER_VALIDATE_EMAIL)) {
+            $datos['correo_remitente'] = mb_strtolower($datos['correo_usuario']);
+        }
         if ($request->boolean('correo_borrar_password') || !$datos['correo_usuario']) {
             $datos['correo_password'] = null;
         } elseif ($request->filled('correo_password')) {
@@ -456,7 +460,7 @@ class SettingController extends Controller
             return response()->json(['ok' => true, 'mensaje' => 'Correo de prueba enviado a ' . $r['correos'] . ($r['correos'] === 1 ? ' destinatario' : ' destinatarios')
                 . ($r['grupos'] > 1 ? " de los {$r['grupos']} grupos" : '') . '. Revisa la bandeja (y la de correo no deseado).']);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'mensaje' => 'No se pudo enviar: ' . \Illuminate\Support\Str::limit(trim($e->getMessage()), 300)], 422);
+            return response()->json(['ok' => false, 'mensaje' => 'No se pudo enviar. ' . \App\Services\AlertasCorreo::explicar($e)], 422);
         }
     }
 

@@ -1465,11 +1465,22 @@
                     <div class="settings-row">
                         <div>
                             <div class="settings-row-label">Servidor SMTP</div>
-                            <div class="settings-row-desc">El servidor de correo de la institución. Office 365: <span class="font-mono">smtp.office365.com</span>, puerto 587, STARTTLS.</div>
+                            <div class="settings-row-desc">
+                                El servidor de correo de la institución. Con Microsoft 365 (Outlook / Teams) pulsa «Usar Microsoft 365».
+                                <template x-if="esMicrosoft">
+                                    <span class="block mt-1.5 text-amber-700 dark:text-amber-400">
+                                        Microsoft 365: la cuenta debe tener activado «SMTP autenticado» y no tener MFA, y el remitente debe ser esa misma cuenta.
+                                        Microsoft desactiva por omisión este tipo de envío a fines de diciembre de 2026; después, su administrador lo puede volver a activar o cambiar a una aplicación registrada.
+                                    </span>
+                                </template>
+                            </div>
                         </div>
-                        <div class="flex items-center justify-end gap-2 shrink-0">
-                            <input type="text" name="correo_host" value="{{ old('correo_host', $settings->correo_host) }}" autocomplete="off" placeholder="smtp.ejemplo.gob.mx" class="settings-input font-mono font-bold" style="width: 200px;">
-                            <input type="number" name="correo_puerto" x-model="puerto" min="1" max="65535" class="settings-input font-mono font-bold" style="width: 90px;" aria-label="Puerto">
+                        <div class="flex flex-col items-end gap-1.5 shrink-0">
+                            <div class="flex items-center gap-2">
+                                <input type="text" name="correo_host" x-model="host" autocomplete="off" placeholder="smtp.ejemplo.gob.mx" class="settings-input font-mono font-bold" style="width: 200px;">
+                                <input type="number" name="correo_puerto" x-model="puerto" min="1" max="65535" class="settings-input font-mono font-bold" style="width: 90px;" aria-label="Puerto">
+                            </div>
+                            <button type="button" @click="host = 'smtp.office365.com'; puerto = 587; seguridad = 'tls'" class="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800">Usar Microsoft 365</button>
                         </div>
                     </div>
 
@@ -1582,6 +1593,8 @@
                 <script>
                     function correoAjustes() {
                         return {
+                            host: @json(old('correo_host', $settings->correo_host) ?? ''),
+                            get esMicrosoft() { return /office365\.com|outlook\.com/i.test(this.host); },
                             seguridad: @json(old('correo_seguridad', $settings->correo_seguridad ?? 'tls')),
                             puerto: @json((int) old('correo_puerto', $settings->correo_puerto ?? 587)),
                             aviso: '', ok: true, cargando: false,
