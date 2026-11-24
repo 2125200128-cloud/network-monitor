@@ -15,6 +15,10 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    // Crédito del desarrollo: se muestra en la pantalla de acceso y en Ajustes → Acerca de
+    'desarrollador' => env('NM_DESARROLLADOR', 'Ing. adahir mendez'),
+    'desarrollo_desde' => 'septiembre de 2026',
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

@@ -1954,6 +1954,45 @@
                             @endforeach
                         </div>
                     </div>
+
+                    @if (config('app.desarrollador'))
+                        <div class="settings-group mb-0">
+                            <h4 class="settings-group-title">
+                                <svg class="w-4 h-4 text-black dark:text-white" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6" /> <polyline points="8 6 2 12 8 18" /></svg>
+                                Desarrollo
+                            </h4>
+
+                            <div class="settings-row">
+                                <div class="flex items-center gap-4">
+                                    <div class="icon-black-pill">
+                                        <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /> <circle cx="12" cy="7" r="4" /></svg>
+                                    </div>
+                                    <div class="settings-row-label">Desarrollado por</div>
+                                </div>
+                                <span class="text-sm font-extrabold text-slate-800 dark:text-slate-200">{{ config('app.desarrollador') }}</span>
+                            </div>
+
+                            <div class="settings-row">
+                                <div class="flex items-center gap-4">
+                                    <div class="icon-black-pill">
+                                        <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 18v-7M14 18v-7M18 18v-7M6 18v-7M3 22h18M2 11h20M12 2 2 7v4h20V7z" /></svg>
+                                    </div>
+                                    <div class="settings-row-label">Desarrollado para</div>
+                                </div>
+                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300 text-right">Dirección de Tecnología de la Información Financiera</span>
+                            </div>
+
+                            <div class="settings-row">
+                                <div class="flex items-center gap-4">
+                                    <div class="icon-black-pill">
+                                        <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" /> <path d="M16 2v4M8 2v4M3 10h18" /></svg>
+                                    </div>
+                                    <div class="settings-row-label">En desarrollo desde</div>
+                                </div>
+                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">{{ ucfirst(config('app.desarrollo_desde')) }}</span>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
 

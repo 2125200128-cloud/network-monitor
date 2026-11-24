@@ -213,7 +213,12 @@
                     <p class="mt-2 text-sm text-white/75 leading-relaxed">@yield('panel_texto', 'Monitoreo continuo de la infraestructura de red institucional.')</p>
                 </div>
 
-                <p class="hidden md:block text-[11px] text-white/55 relative z-10">&copy; {{ date('Y') }} Secretaría de la Hacienda Pública</p>
+                <div class="hidden md:block text-[11px] text-white/55 relative z-10 leading-relaxed">
+                    <p>&copy; {{ date('Y') }} Secretaría de la Hacienda Pública</p>
+                    @if (config('app.desarrollador'))
+                        <p>Desarrollado por {{ config('app.desarrollador') }}</p>
+                    @endif
+                </div>
             </aside>
 
             {{-- Contenido: logo DTIF como marca principal --}}
