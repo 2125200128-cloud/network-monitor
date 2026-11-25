@@ -13,6 +13,8 @@ use Carbon\Carbon;
  */
 class TarjetaAlarma
 {
+    use Concerns\DibujoGd;
+
     private const ANCHO = 960;
     private const ALTO = 400;
     private const M = 44;   // margen lateral
@@ -161,65 +163,4 @@ class TarjetaAlarma
         return null;
     }
 
-    /** Parte el texto en líneas que quepan en el ancho dado (px). */
-    private function partir(string $txt, int $tam, bool $negrita, int $ancho): array
-    {
-        $fuente = $this->fuente($negrita);
-        $lineas = [];
-        $actual = '';
-        foreach (preg_split('/\s+/', trim($txt)) as $palabra) {
-            $prueba = $actual === '' ? $palabra : "{$actual} {$palabra}";
-            $w = $fuente ? (imagettfbbox($tam, 0, $fuente, $prueba)[2] ?? 0) : strlen($prueba) * imagefontwidth(3);
-            if ($w > $ancho && $actual !== '') {
-                $lineas[] = $actual;
-                $actual = $palabra;
-            } else {
-                $actual = $prueba;
-            }
-        }
-        if ($actual !== '') {
-            $lineas[] = $actual;
-        }
-        return $lineas;
-    }
-
-    private function rectRedondo($img, int $x0, int $y0, int $x1, int $y1, int $r, int $color): void
-    {
-        $r = min($r, intdiv($y1 - $y0, 2), intdiv($x1 - $x0, 2));
-        imagefilledrectangle($img, $x0 + $r, $y0, $x1 - $r, $y1, $color);
-        imagefilledrectangle($img, $x0, $y0 + $r, $x1, $y1 - $r, $color);
-        foreach ([[$x0 + $r, $y0 + $r], [$x1 - $r, $y0 + $r], [$x0 + $r, $y1 - $r], [$x1 - $r, $y1 - $r]] as [$cx, $cy]) {
-            imagefilledellipse($img, $cx, $cy, $r * 2, $r * 2, $color);
-        }
-    }
-
-    private function fuente(bool $negrita): ?string
-    {
-        if (!function_exists('imagettftext')) {
-            return null;
-        }
-        foreach ($negrita ? ['segoeuib.ttf', 'arialbd.ttf'] : ['segoeui.ttf', 'arial.ttf'] as $f) {
-            foreach ([getenv('WINDIR') . '\\Fonts\\' . $f, '/usr/share/fonts/truetype/dejavu/DejaVuSans' . ($negrita ? '-Bold' : '') . '.ttf'] as $ruta) {
-                if (is_file($ruta)) {
-                    return $ruta;
-                }
-            }
-        }
-        return null;
-    }
-
-    private function texto($img, int $tam, float $x, float $y, string $txt, int $color, bool $negrita = false, string $alinear = 'izquierda'): void
-    {
-        $fuente = $this->fuente($negrita);
-        if (!$fuente) {
-            $ancho = imagefontwidth(5) * strlen($txt);
-            $dx = $alinear === 'derecha' ? -$ancho : ($alinear === 'centro' ? -$ancho / 2 : 0);
-            imagestring($img, 5, (int) ($x + $dx), (int) ($y - 14), $txt, $color);
-            return;
-        }
-        $caja = imagettfbbox($tam, 0, $fuente, $txt);
-        $ancho = $caja[2] - $caja[0];
-        $dx = $alinear === 'derecha' ? -$ancho : ($alinear === 'centro' ? -$ancho / 2 : 0);
-        imagettftext($img, $tam, 0, (int) ($x + $dx), (int) $y, $color, $fuente, $txt);
-    }
 }

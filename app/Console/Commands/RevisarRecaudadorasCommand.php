@@ -209,17 +209,52 @@ class RevisarRecaudadorasCommand extends Command
             return;
         }
         $cfg = ConfiguracionGeneral::first();
+        $imagen = $this->imagen();
         $bot = $cfg && $cfg->telegram_activo && $cfg->telegram_chat_id ? TelegramBot::desdeConfiguracion($cfg) : null;
         if ($bot) {
+            $chat = (string) $cfg->telegram_chat_id;
+            $mensaje = $this->mensaje();
+            $foto = $cfg->telegram_imagenes ? $imagen : null;
+            $enviado = false;
             try {
-                $bot->enviarMensaje((string) $cfg->telegram_chat_id, $this->mensaje());
+                // Si el texto cabe como pie de la foto va todo en un solo mensaje; si no, el texto y luego la foto
+                if ($foto && mb_strlen($mensaje) <= TelegramBot::MAX_PIE_FOTO) {
+                    $bot->enviarFoto($chat, $foto, $mensaje);
+                    $enviado = true;
+                } else {
+                    $bot->enviarMensaje($chat, $mensaje);
+                    $enviado = true;
+                    if ($foto) {
+                        $bot->enviarFoto($chat, $foto, 'Mapa y datos de las recaudadoras afectadas');
+                    }
+                }
             } catch (\Throwable $e) {
                 $this->warn('No se pudo avisar por Telegram: ' . $e->getMessage());
+                if (!$enviado) {   // falló la foto: que al menos llegue el texto
+                    try {
+                        $bot->enviarMensaje($chat, $mensaje);
+                    } catch (\Throwable) {
+                    }
+                }
             }
         }
         // Por correo, al grupo de redes (AlertasCorreo no lanza excepciones y no hace nada si el correo no está activado)
         [$asunto, $secciones] = $this->correo();
-        app(\App\Services\AlertasCorreo::class)->avisoRecaudadoras($asunto, $secciones);
+        app(\App\Services\AlertasCorreo::class)->avisoRecaudadoras($asunto, $secciones, $imagen);
+    }
+
+    /** Mapa con las recaudadoras de este aviso y su ficha (solo si alguna cayó o tiene falla de red interna). */
+    private function imagen(): ?string
+    {
+        if (!$this->avisos['caidas'] && !$this->avisos['lan']) {
+            return null;
+        }
+        try {
+            return app(\App\Services\Recaudadoras\ImagenRecaudadoras::class)->png($this->avisos['caidas'], $this->avisos['lan']);
+        } catch (\Throwable $e) {
+            $this->warn('No se pudo generar la imagen de recaudadoras: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /** Mismo aviso que el de Telegram, en secciones de texto para la plantilla del correo. @return array{0: string, 1: array} */

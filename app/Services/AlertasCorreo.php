@@ -168,7 +168,8 @@ class AlertasCorreo
      * Aviso agrupado del módulo de recaudadoras (recaudadoras:revisar), al grupo de redes.
      * @param list<array{titulo: string, color: string, nota?: string, lineas: string[]}> $secciones
      */
-    public function avisoRecaudadoras(string $asunto, array $secciones): void
+    /** @param string|null $imagen PNG con el mapa y la ficha de las recaudadoras afectadas (va dentro del correo) */
+    public function avisoRecaudadoras(string $asunto, array $secciones, ?string $imagen = null): void
     {
         $cfg = ConfiguracionGeneral::first();
         if (!self::listo($cfg) || self::enPausa()) {
@@ -177,7 +178,7 @@ class AlertasCorreo
         $d = self::destinos($cfg)[0];   // el de redes (o el único)
         try {
             $this->enviar(self::mailer($cfg), $cfg, $d['correos'], '[NOC · Recaudadoras] ' . $asunto,
-                ['grupo' => self::GRUPOS[$d['grupo']], 'secciones' => $secciones, 'enlaceModulo' => $this->enlace('recaudadoras')]);
+                ['grupo' => self::GRUPOS[$d['grupo']], 'secciones' => $secciones, 'enlaceModulo' => $this->enlace('recaudadoras'), 'imagen' => $imagen]);
             Cache::forget('correo_ultimo_error');
         } catch (\Throwable $e) {
             self::registrarError($e);

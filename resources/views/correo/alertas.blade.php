@@ -123,6 +123,14 @@
     </td></tr>
     @endif
 
+    {{-- Imagen del aviso (mapa de recaudadoras): va incrustada en el correo, no como enlace --}}
+    @if(!empty($imagen) && isset($message))
+    <tr><td style="padding: 16px 22px 0;">
+        <img src="{{ $message->embedData($imagen, 'recaudadoras.png', 'image/png') }}" width="596" alt="Mapa de Jalisco con las recaudadoras afectadas y sus datos"
+             style="display:block; width:100%; max-width:596px; height:auto; border:1px solid {{ $borde }}; border-radius:6px;">
+    </td></tr>
+    @endif
+
     {{-- Secciones libres (recaudadoras, prueba) --}}
     @foreach($secciones as $s)
     <tr><td style="padding: 16px 22px 6px;">

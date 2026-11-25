@@ -1371,10 +1371,10 @@
                     <div class="settings-row">
                         <div>
                             <div class="settings-row-label">Opciones</div>
-                            <div class="settings-row-desc">La tarjeta resume la alarma: equipo, desde cuándo y el valor que la disparó contra su umbral.</div>
+                            <div class="settings-row-desc">La tarjeta resume la alarma: equipo, desde cuándo y el valor que la disparó contra su umbral. En los avisos de recaudadoras va el mapa de Jalisco con las caídas y sus datos (enlace, IPs y referencia).</div>
                         </div>
                         <div class="flex flex-col gap-2 text-sm font-semibold">
-                            <label class="flex items-center gap-2"><input type="checkbox" name="telegram_imagenes" value="1" class="w-4 h-4 accent-black" @checked(old('telegram_imagenes', $settings->telegram_imagenes))> Adjuntar tarjeta resumen</label>
+                            <label class="flex items-center gap-2"><input type="checkbox" name="telegram_imagenes" value="1" class="w-4 h-4 accent-black" @checked(old('telegram_imagenes', $settings->telegram_imagenes))> Adjuntar imágenes (tarjeta y mapa de recaudadoras)</label>
                             <label class="flex items-center gap-2"><input type="checkbox" name="telegram_resueltas" value="1" class="w-4 h-4 accent-black" @checked(old('telegram_resueltas', $settings->telegram_resueltas))> Avisar cuando se resuelvan</label>
                         </div>
                     </div>
