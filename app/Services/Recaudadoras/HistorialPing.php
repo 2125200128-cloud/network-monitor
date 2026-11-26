@@ -16,9 +16,13 @@ class HistorialPing
     public const DIAS_DETALLE = 8;
     public const DIAS_HORA = 400;
 
-    /** Periodo → [segundos que abarca, segundos de cada intervalo de la gráfica, fuente]. */
+    /**
+     * Periodo → [segundos que abarca, segundos de cada intervalo de la gráfica, fuente]. El intervalo más corto es de
+     * 2 min: la revisión corre cada minuto pero no siempre en el mismo segundo (tarda en hacer los pings), así que con
+     * intervalos de 1 min algunos quedarían vacíos y la gráfica mostraría cortes que no existen.
+     */
     public const RANGOS = [
-        '6h' => [6 * 3600, 60, 'detalle'],
+        '6h' => [6 * 3600, 120, 'detalle'],
         '24h' => [86400, 300, 'detalle'],
         '7d' => [7 * 86400, 1800, 'detalle'],
         '30d' => [30 * 86400, 7200, 'hora'],
@@ -69,6 +73,17 @@ class HistorialPing
         [$abarca, $paso, $fuente] = self::RANGOS[$rango] ?? self::RANGOS['24h'];
         $hasta = now();
         $desde = Carbon::createFromTimestamp(intdiv($hasta->getTimestamp() - $abarca, $paso) * $paso + $paso, $hasta->getTimezone());
+        // Si el historial de esta recaudadora empezó dentro del periodo, la gráfica empieza ahí (sin un tramo vacío
+        // que parezca monitoreo detenido)
+        // (el resumen por hora es el que llega más atrás; el detalle por minuto solo afina el minuto de esa primera hora)
+        $primera = DB::table('recaudadora_mediciones_hora')->where('recaudadora_id', $r->id)->min('hora');
+        $primeraDetalle = DB::table('recaudadora_mediciones')->where('recaudadora_id', $r->id)->min('medido_en');
+        if ($primera && $primeraDetalle && Carbon::parse($primeraDetalle)->copy()->startOfHour()->eq(Carbon::parse($primera))) {
+            $primera = $primeraDetalle;
+        }
+        if ($primera && Carbon::parse($primera)->gt($desde)) {
+            $desde = Carbon::createFromTimestamp(intdiv(Carbon::parse($primera)->getTimestamp(), $paso) * $paso, $hasta->getTimezone());
+        }
 
         // Cada fila, a la forma del resumen por hora: muestras, ok y mín/suma/máx de cada IP
         if ($fuente === 'detalle') {
