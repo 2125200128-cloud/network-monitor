@@ -56,11 +56,17 @@ Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'ind
     // GET: sin chequeo CSRF, así el latido también funciona si la sesión se restauró con la cookie recordada (token nuevo)
     Route::get('/pantalla/mantener-sesion',[PantallaController::class, 'mantener'])->middleware('throttle:60,1')->name('pantalla.mantener');
 
+    // Ajustes: todos entran. El Operador y el Auditor solo ven Mi cuenta, Apariencia y Acerca de; al Administrador
+    // el controlador le pide su contraseña (como password.confirm) antes de mostrarle el resto.
+    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+    // Cada quien edita su propia cuenta (nombre, título, foto y contraseña con la actual); nunca su usuario ni su rol
+    Route::post('/settings/perfil', [SettingController::class, 'actualizarPerfil'])->middleware('throttle:10,1')->name('settings.perfil');
+
     // ==========================================
     // RUTAS ADMINISTRATIVAS
     // ==========================================
-    Route::middleware(['password.confirm:password.confirm,900', 'check.admin'])->group(function () {
-        Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+    // Primero el rol (un Operador recibe 403 de entrada) y después la contraseña confirmada del Administrador
+    Route::middleware(['check.admin', 'password.confirm:password.confirm,900'])->group(function () {
         Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
         Route::post('/settings/snmpv3', [SettingController::class, 'guardarSnmpv3'])->name('settings.snmpv3');
         Route::post('/settings/snmpv3/detectar', [SettingController::class, 'detectarSnmpv3'])->middleware('throttle:10,1')->name('settings.snmpv3.detectar');

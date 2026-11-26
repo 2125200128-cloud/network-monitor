@@ -145,6 +145,18 @@
 
             {{-- Navigation Items with Black Animated SVG Icons --}}
             <div class="py-3 space-y-1" id="navItemsList">
+                <a href="#" class="settings-nav-item {{ $section === 'perfil' ? 'active' : '' }}" data-section="perfil">
+                    <div class="icon-black-pill-sm anim-bounce-hover">
+                        <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /> <circle cx="12" cy="7" r="4" /></svg>
+                    </div>
+                    <span>Mi cuenta</span>
+                    <span class="nav-match-count hidden ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white"></span>
+                </a>
+
+                <div class="nav-separator"></div>
+
+                {{-- Configuración del sistema: solo Administrador --}}
+                @if($esAdmin)
                 <a href="#" class="settings-nav-item {{ $section === 'general' ? 'active' : '' }}" data-section="general">
                     <div class="icon-black-pill-sm anim-flash-hover">
                         <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
@@ -180,6 +192,7 @@
                 </a>
 
                 <div class="nav-separator"></div>
+                @endif
 
                 <a href="#" class="settings-nav-item {{ $section === 'apariencia' ? 'active' : '' }}" data-section="apariencia">
                     <div class="icon-black-pill-sm anim-float-loop">
@@ -264,6 +277,8 @@
                 <p class="text-xs text-slate-400 mt-1">Intenta con otros términos como "SNMP", "CPU", "Sesión", "Tema", o "Contraseña".</p>
             </div>
 
+            {{-- ========== Secciones solo de Administrador: Motor SNMP, Cuentas, Seguridad y Notificaciones ========== --}}
+            @if($esAdmin)
             {{-- ========== SECTION: General / Motor SNMP ========== --}}
             <div class="settings-section {{ $section === 'general' ? 'active' : '' }}" id="section-general" data-section-name="Motor SNMP">
                 <div class="flex items-center gap-3.5 mb-2">
@@ -1611,6 +1626,92 @@
                         };
                     }
                 </script>
+            </div>
+
+            @endif
+
+            {{-- ========== SECTION: Mi cuenta (todos los roles) ========== --}}
+            @php($yo = auth()->user())
+            <div class="settings-section {{ $section === 'perfil' ? 'active' : '' }}" id="section-perfil" data-section-name="Mi cuenta">
+                <div class="flex items-center gap-3.5 mb-2">
+                    <div class="icon-black-badge anim-bounce-hover">
+                        <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /> <circle cx="12" cy="7" r="4" /></svg>
+                    </div>
+                    <div>
+                        <h1 class="settings-section-title mb-0">Mi cuenta</h1>
+                        <p class="settings-section-subtitle mb-0">Tu nombre, tu foto y tu contraseña. El usuario de acceso y el rol los cambia un Administrador.</p>
+                    </div>
+                </div>
+
+                <form action="{{ route('settings.perfil') }}" method="POST" enctype="multipart/form-data" class="mt-6" x-data="{ foto: null, quitar: false }">
+                    @csrf
+                    <div class="settings-group">
+                        <h4 class="settings-group-title">Datos de la cuenta</h4>
+                        <div class="flex flex-col md:flex-row gap-6">
+                            {{-- Foto --}}
+                            <div class="flex flex-col items-center gap-2 shrink-0">
+                                <img :src="foto || (quitar ? 'https://ui-avatars.com/api/?name={{ urlencode($yo->name) }}&background=09090b&color=fff&size=128' : @js($yo->avatar_url))" alt="Tu foto"
+                                     class="w-24 h-24 rounded-full object-cover border-2 border-slate-300 dark:border-slate-700">
+                                <label class="text-xs font-bold text-blue-600 dark:text-blue-400 cursor-pointer hover:underline">
+                                    Cambiar foto
+                                    <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" class="hidden"
+                                           @change="const f = $event.target.files[0]; if (f) { foto = URL.createObjectURL(f); quitar = false; }">
+                                </label>
+                                @if($yo->avatar)
+                                    <label class="flex items-center gap-1.5 text-xs text-slate-500"><input type="checkbox" name="remove_avatar" value="1" x-model="quitar" class="w-3.5 h-3.5"> Quitar foto</label>
+                                @endif
+                                <p class="text-[11px] text-slate-400">JPG, PNG o WEBP · máx. 2 MB</p>
+                            </div>
+
+                            <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5 register-card" style="padding: 1.25rem; background: transparent; border: none;">
+                                <div>
+                                    <label class="form-label" for="perfilNombre">Nombre completo</label>
+                                    <input type="text" id="perfilNombre" name="name" required maxlength="255" class="form-input" value="{{ old('name', $yo->name) }}">
+                                </div>
+                                <div>
+                                    <label class="form-label" for="perfilPrefijo">Prefijo / Título</label>
+                                    <select id="perfilPrefijo" name="prefijo" class="form-input">
+                                        <option value="">— Sin prefijo —</option>
+                                        @foreach(['Ing.', 'Lic.', 'Tec.', 'TSU.', 'Dr.', 'Mtro.', 'Mtra.', 'C.P.', 'Arq.'] as $p)
+                                            <option value="{{ $p }}" @selected(old('prefijo', $yo->prefijo) === $p)>{{ $p }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <span class="form-label">Usuario de acceso</span>
+                                    <div class="form-input font-mono text-slate-500" style="cursor: default; background: var(--nm-sunken);" title="Solo un Administrador lo cambia">{{ $yo->usuario }}</div>
+                                </div>
+                                <div>
+                                    <span class="form-label">Rol</span>
+                                    <div class="form-input text-slate-500" style="cursor: default; background: var(--nm-sunken);" title="Solo un Administrador lo cambia">{{ $yo->role }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h4 class="settings-group-title">Cambiar contraseña</h4>
+                        <p class="settings-row-desc mb-4">Déjalo vacío si no quieres cambiarla. La nueva debe tener al menos 8 caracteres.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 register-card" style="padding: 0; background: transparent; border: none;">
+                            <div>
+                                <label class="form-label" for="perfilActual">Contraseña actual</label>
+                                <input type="password" id="perfilActual" name="password_actual" autocomplete="current-password" class="form-input">
+                            </div>
+                            <div>
+                                <label class="form-label" for="perfilNueva">Contraseña nueva</label>
+                                <input type="password" id="perfilNueva" name="password" autocomplete="new-password" minlength="8" class="form-input">
+                            </div>
+                            <div>
+                                <label class="form-label" for="perfilConfirmar">Confirmar contraseña nueva</label>
+                                <input type="password" id="perfilConfirmar" name="password_confirmation" autocomplete="new-password" minlength="8" class="form-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-sm transition">Guardar mi cuenta</button>
+                    </div>
+                </form>
             </div>
 
             {{-- ========== SECTION: Apariencia ========== --}}

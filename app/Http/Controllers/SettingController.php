@@ -15,8 +15,31 @@ use Illuminate\Validation\Rules\Password;
 
 class SettingController extends Controller
 {
+    /** Secciones que ve quien no es Administrador: solo lo suyo (cuenta y tema) y la información del sistema. */
+    private const SECCIONES_TODOS = ['perfil', 'apariencia', 'acerca'];
+
+    /** Minutos que vale la contraseña confirmada para entrar a lo administrativo (igual que password.confirm). */
+    private const CONFIRMACION_SEGUNDOS = 900;
+
+    public static function esAdmin(?User $user): bool
+    {
+        return $user && strtolower((string) $user->role) === 'admin';
+    }
+
     public function index(Request $request)
     {
+        if (!self::esAdmin($request->user())) {
+            // Sin datos de configuración: la comunidad SNMP, Telegram, el correo y las cuentas no salen de aquí
+            $section = in_array($request->query('section'), self::SECCIONES_TODOS, true) ? $request->query('section') : 'perfil';
+            return view('settings.index', ['esAdmin' => false, 'section' => $section, 'settings' => null, 'users' => collect(),
+                'retencion' => [], 'telegram' => [], 'snmpv3' => [], 'vcenter' => [], 'esxi' => [], 'correo' => []]);
+        }
+        // El Administrador confirma su contraseña antes de ver la configuración (lo que hacía password.confirm en la ruta)
+        if (time() - (int) $request->session()->get('auth.password_confirmed_at', 0) > self::CONFIRMACION_SEGUNDOS) {
+            return redirect()->guest(route('password.confirm'));
+        }
+        $esAdmin = true;
+
         $settings = ConfiguracionGeneral::firstOrCreate([], [
             'intervalo_sondeo_segundos' => 60,
             'comunidad_snmp_default' => 'public',
@@ -63,7 +86,44 @@ class SettingController extends Controller
             'notificadas_24h' => \App\Models\AlarmaRed::where('notificada_correo_at', '>=', now()->subDay())->count(),
         ];
 
-        return view('settings.index', compact('settings', 'users', 'section', 'retencion', 'telegram', 'snmpv3', 'vcenter', 'esxi', 'correo'));
+        return view('settings.index', compact('esAdmin', 'settings', 'users', 'section', 'retencion', 'telegram', 'snmpv3', 'vcenter', 'esxi', 'correo'));
+    }
+
+    /**
+     * Mi cuenta: cada usuario cambia su nombre, título, foto y contraseña. Para cambiar la contraseña pide la actual.
+     * El usuario de acceso y el rol no se tocan aquí (solo el Administrador, en Cuentas).
+     */
+    public function actualizarPerfil(Request $request)
+    {
+        $user = $request->user();
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'prefijo' => 'nullable|string|in:Ing.,Lic.,Tec.,TSU.,Dr.,Mtro.,Mtra.,C.P.,Arq.',
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'password_actual' => 'nullable|required_with:password|current_password:web',
+            'password' => ['nullable', 'confirmed', Password::min(8)],
+        ], [
+            'password_actual.required_with' => 'Para cambiar la contraseña escribe también la actual.',
+            'password_actual.current_password' => 'La contraseña actual no es correcta.',
+            'password.confirmed' => 'La contraseña nueva y su confirmación no coinciden.',
+        ], ['name' => 'nombre', 'password' => 'contraseña nueva']);
+
+        $data = ['name' => $request->name, 'prefijo' => $request->prefijo];
+        $borrarFoto = fn () => $user->avatar && Storage::disk('public')->exists($user->avatar) ? Storage::disk('public')->delete($user->avatar) : null;
+        if ($request->hasFile('avatar')) {
+            $borrarFoto();
+            $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        } elseif ($request->boolean('remove_avatar')) {
+            $borrarFoto();
+            $data['avatar'] = null;
+        }
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+        $user->update($data);
+
+        return redirect()->route('settings.index', ['section' => 'perfil'])
+            ->with('success', $request->filled('password') ? 'Tu cuenta y tu contraseña se actualizaron.' : 'Tu cuenta se actualizó.');
     }
 
     /** Filas para la sección de retención: días efectivos, rango permitido y lo que hay guardado hoy. */
