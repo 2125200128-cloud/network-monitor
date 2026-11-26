@@ -46,6 +46,25 @@ class DispositivoController extends Controller
         return response()->json(['success' => true, 'origen' => $dispositivo->fresh()->comunidadConOrigen()[1]]);
     }
 
+    /** Da de baja el equipo desde su ficha: deja de generar alertas y avisos (se cierran las abiertas). */
+    public function darDeBaja(Request $request, int $id)
+    {
+        $motivo = $request->validate(['motivo' => 'nullable|string|max:255'])['motivo'] ?? null;
+        $d = Dispositivo::findOrFail($id);
+        if ($d->baja_at) {
+            return back()->with('error', 'Ese equipo ya estaba dado de baja.');
+        }
+        $n = \App\Services\Bajas::darDeBajaEquipo($d, $request->user(), $motivo ? trim($motivo) : null);
+        return back()->with('success', "{$d->nombre} quedó dado de baja: ya no genera alertas ni avisos" . ($n ? ($n === 1 ? ' (se cerró 1 alerta abierta).' : " (se cerraron {$n} alertas abiertas).") : '.'));
+    }
+
+    public function reactivar(Request $request, int $id)
+    {
+        $d = Dispositivo::findOrFail($id);
+        \App\Services\Bajas::reactivarEquipo($d, $request->user());
+        return back()->with('success', "{$d->nombre} vuelve a generar alertas y avisos.");
+    }
+
     /**
      * Elimina el equipo del monitoreo. La base borra en cascada todo lo suyo (métricas, interfaces, enlaces,
      * alarmas, notas, telemetría, ESXi). Ningún proceso automático lo vuelve a dar de alta: solo un

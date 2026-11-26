@@ -471,6 +471,49 @@
         </div>
     </div>
 
+    {{-- ==================== Dar de baja / dado de baja ==================== --}}
+    @php
+        $puedeBaja = in_array(strtolower((string) auth()->user()?->role), ['admin', 'operador'], true);
+        $enRojo = !in_array($dispositivo->estado, ['online', 'warning'], true)
+            || \App\Models\AlarmaRed::where('dispositivo_id', $dispositivo->id)->where('severidad', 'critica')->where('estado', '!=', 'resuelta')->exists();
+    @endphp
+    @if(session('success') || session('error') || $errors->has('motivo'))
+        <div class="rounded-2xl px-5 py-3 text-sm font-semibold border {{ session('success') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200' }}">
+            {{ session('success') ?? session('error') ?? $errors->first('motivo') }}
+        </div>
+    @endif
+    @if($dispositivo->baja_at)
+        <div class="rounded-2xl px-5 py-4 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/60 flex flex-wrap items-center justify-between gap-3">
+            <div class="text-sm text-slate-700 dark:text-slate-200">
+                <b>Dado de baja</b> el {{ $dispositivo->baja_at->format('d/m/Y H:i') }}@if($dispositivo->baja_por) por {{ $dispositivo->baja_por }}@endif.
+                No genera alertas ni avisos de Telegram o correo.
+                @if($dispositivo->baja_motivo)<div class="text-xs mt-1 text-slate-500 dark:text-slate-400">Motivo: {{ $dispositivo->baja_motivo }}</div>@endif
+            </div>
+            @if($puedeBaja)
+                <form method="POST" action="{{ route('dispositivos.reactivar', $dispositivo->id) }}">
+                    @csrf
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-nm-primary hover:bg-[#505b61] text-white text-xs font-bold">Reactivar alertas</button>
+                </form>
+            @endif
+        </div>
+    @elseif($enRojo && $puedeBaja)
+        <div class="rounded-2xl px-5 py-4 border border-red-200 dark:border-red-900/60 bg-red-50/60 dark:bg-red-950/20" x-data="{ abierto: false }">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <p class="text-sm text-red-800 dark:text-red-200">Este equipo está en rojo. Si ya no está en servicio (se retiró, se reemplazó o se apagó a propósito), dalo de baja para que deje de generar alertas y avisos.</p>
+                <button type="button" x-show="!abierto" @click="abierto = true" class="px-4 py-2 rounded-xl border border-red-300 text-red-700 dark:text-red-300 bg-white dark:bg-transparent text-xs font-bold hover:bg-red-100 dark:hover:bg-red-900/30">Dar de baja</button>
+            </div>
+            <form x-show="abierto" x-cloak method="POST" action="{{ route('dispositivos.baja', $dispositivo->id) }}" class="mt-3 flex flex-wrap items-end gap-2">
+                @csrf
+                <label class="flex-1 min-w-[240px] text-xs font-bold text-red-800 dark:text-red-200">Motivo (opcional)
+                    <input type="text" name="motivo" maxlength="255" placeholder="Ej. equipo retirado, reemplazado por otro…" class="mt-1 w-full px-3 py-2 rounded-lg border border-red-200 bg-white dark:bg-nm-sunken text-sm font-normal text-gray-800 dark:text-slate-100">
+                </label>
+                <button type="submit" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold">Confirmar baja</button>
+                <button type="button" @click="abierto = false" class="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-slate-300">Cancelar</button>
+                <p class="w-full text-[11px] text-red-700/80 dark:text-red-300/80">Se cierran sus alertas abiertas sin aviso de «resuelta». Se puede reactivar desde esta misma ficha.</p>
+            </form>
+        </div>
+    @endif
+
     {{-- ==================== 2. PHYSICAL FACEPLATE & HARDWARE MORPHOLOGY ==================== --}}
     @php
         $rol = $deviceHardware['rol'] ?? '';

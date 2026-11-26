@@ -30,6 +30,7 @@ class ConfiguracionGeneral extends Model
         'telegram_severidad_min',
         'telegram_resueltas',
         'telegram_imagenes',
+        'avisar_solo_prioritaria',
         'telegram_recordatorio_min',
         'redes_prioritarias',
         'snmpv3_usuario',
@@ -75,6 +76,7 @@ class ConfiguracionGeneral extends Model
         'esxi_password' => 'encrypted',
         'telegram_resueltas' => 'boolean',
         'telegram_imagenes' => 'boolean',
+        'avisar_solo_prioritaria' => 'boolean',
     ];
 
     /**

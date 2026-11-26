@@ -39,6 +39,14 @@ class AlarmDiagnosisService
     public function diagnosticarAlarmasRed(bool $aplicarEstadoUsuario = true): array
     {
         $alarmas = $this->ordenarRecientesPrimero($this->compilarAlarmas());
+        // Equipos dados de baja desde su ficha: sin alarmas (ni en Alertas ni en los avisos)
+        $baja = \App\Services\Bajas::equipos();
+        if ($baja['ids'] || $baja['ips']) {
+            $ids = array_flip($baja['ids']);
+            $ips = array_flip($baja['ips']);
+            $alarmas = array_values(array_filter($alarmas, fn ($a) => !isset($ids[$a['dispositivo_id'] ?? 0])
+                && !(isset($a['ip']) && is_string($a['ip']) && isset($ips[$a['ip']]))));
+        }
         // Red prioritaria (por omisión 10.4.0.0/16): se marca para destacarla en Alertas, el dashboard y Telegram
         foreach ($alarmas as &$a) {
             $ip = filter_var($a['ip'] ?? null, FILTER_VALIDATE_IP) ? $a['ip'] : ($a['titulo'] ?? '');

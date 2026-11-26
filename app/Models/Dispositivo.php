@@ -31,6 +31,7 @@ class Dispositivo extends Model
 
     protected $casts = [
         'tipo_evidencia' => 'array',
+        'baja_at' => 'datetime',
     ];
 
     private ?array $tipoInfoCache = null;

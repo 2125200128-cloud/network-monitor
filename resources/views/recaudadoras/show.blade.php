@@ -72,6 +72,43 @@
 
     @include('recaudadoras.partials.mensajes')
 
+    {{-- Dar de baja (en rojo: sin comunicación o falla de red interna) / dada de baja --}}
+    @if(!$r->activo)
+        <div class="floating-card px-5 py-4 flex flex-wrap items-center justify-between gap-3" style="border-left: 4px solid var(--nm-text-muted)">
+            <div class="text-sm" style="color: var(--nm-text)">
+                @if($r->baja_at)
+                    <b>Dada de baja</b> el {{ $r->baja_at->format('d/m/Y H:i') }}@if($r->baja_por) por {{ $r->baja_por }}@endif.
+                @else
+                    <b>Sin monitoreo</b> (se desactivó en sus datos).
+                @endif
+                No se revisa ni genera alertas o avisos de Telegram y correo.
+                @if($r->baja_motivo)<div class="text-xs mt-1" style="color: var(--nm-text-muted)">Motivo: {{ $r->baja_motivo }}</div>@endif
+            </div>
+            @if($puedeEditarEquipos)
+                <form method="POST" action="{{ route('recaudadoras.reactivar', $r->id) }}">
+                    @csrf
+                    <button type="submit" class="rc-btn rc-btn-p">Reactivar monitoreo</button>
+                </form>
+            @endif
+        </div>
+    @elseif(in_array($estado, ['offline', 'lan'], true) && $puedeEditarEquipos)
+        <div class="floating-card px-5 py-4" style="border-left: 4px solid #dc2626" x-data="{ abierto: false }">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <p class="text-sm" style="color: var(--nm-text)">Esta recaudadora está en rojo. Si la oficina cerró, se reubicó o ya no se debe monitorear, dala de baja para que deje de revisarse y de mandar alertas y avisos.</p>
+                <button type="button" x-show="!abierto" @click="abierto = true" class="rc-btn" style="color: #dc2626; border-color: #fca5a5">Dar de baja</button>
+            </div>
+            <form x-show="abierto" x-cloak method="POST" action="{{ route('recaudadoras.baja', $r->id) }}" class="mt-3 flex flex-wrap items-end gap-2">
+                @csrf
+                <label class="flex-1 text-xs font-bold" style="min-width: 240px; color: var(--nm-text)">Motivo (opcional)
+                    <input type="text" name="motivo" maxlength="255" placeholder="Ej. oficina cerrada, enlace dado de baja…" class="rc-campo mt-1 w-full font-normal">
+                </label>
+                <button type="submit" class="rc-btn" style="color: #fff; background: #dc2626; border-color: #dc2626">Confirmar baja</button>
+                <button type="button" @click="abierto = false" class="rc-btn">Cancelar</button>
+                <p class="w-full text-[11px]" style="color: var(--nm-text-muted)">Se cierran su caída abierta y sus alertas sin aviso de «resuelta». Se puede reactivar desde esta misma ficha.</p>
+            </form>
+        </div>
+    @endif
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {{-- Comunicación --}}
         <div class="floating-card p-4">

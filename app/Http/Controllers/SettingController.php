@@ -384,6 +384,8 @@ class SettingController extends Controller
             'telegram_resueltas' => $request->boolean('telegram_resueltas'),
             'telegram_imagenes' => $request->boolean('telegram_imagenes'),
             'telegram_activo' => $request->boolean('telegram_activo'),
+            // Vale para Telegram y correo
+            'avisar_solo_prioritaria' => $request->boolean('avisar_solo_prioritaria'),
         ];
         // Token vacío = se conserva el guardado (nunca se muestra en la página)
         if ($request->boolean('telegram_borrar_token')) {

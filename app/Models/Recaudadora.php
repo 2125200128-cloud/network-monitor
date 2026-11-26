@@ -28,6 +28,7 @@ class Recaudadora extends Model
         'latencia_ms' => 'float',
         'ruta' => 'array',
         'ruta_medida_en' => 'datetime',
+        'baja_at' => 'datetime',
     ];
 
     public const TIPOS = ['recaudadora' => 'Recaudadora', 'oficina' => 'Otra oficina'];

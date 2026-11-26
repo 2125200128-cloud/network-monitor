@@ -49,9 +49,12 @@ class AlertasTelegram
         $pospuestas = AlarmaRed::where('estado', '!=', 'resuelta')->whereNull('notificada_telegram_at')
             ->whereBetween('created_at', [now()->subDay(), now()->subMinutes(self::MINUTOS_INTERMITENTE)])
             ->get()->filter(fn (AlarmaRed $a) => $this->esIntermitente($a));
+        // Con «avisar solo la red prioritaria» (Ajustes → Notificaciones) solo salen las de 10.4.x.x (o las redes que se definan)
+        $soloPrioritaria = fn (AlarmaRed $a) => !$cfg->avisar_solo_prioritaria || $a->esPrioritaria();
         $nuevas = $nuevas->reject(fn (AlarmaRed $a) => $this->esIntermitente($a))->merge($pospuestas)
             ->filter(fn (AlarmaRed $a) => in_array($a->severidad, $severidades, true))
             ->reject(fn (AlarmaRed $a) => $this->excluida($a))
+            ->filter($soloPrioritaria)
             ->sortBy(fn (AlarmaRed $a) => $a->severidad === 'critica' ? 0 : 1)->values();
         $resueltas = $cfg->telegram_resueltas
             ? $resueltas->filter(fn (AlarmaRed $a) => $a->notificada_telegram_at !== null)->reject(fn (AlarmaRed $a) => $this->excluida($a))->values()

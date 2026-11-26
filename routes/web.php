@@ -45,6 +45,9 @@ Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'ind
         Route::post('/recaudadoras/{recaudadora}/equipos', [\App\Http\Controllers\RecaudadorasController::class, 'guardarEquipo'])->whereNumber('recaudadora')->name('recaudadoras.equipos.guardar');
         Route::post('/recaudadoras/{recaudadora}/escanear', [\App\Http\Controllers\RecaudadorasController::class, 'escanear'])->whereNumber('recaudadora')->middleware('throttle:6,1,recas-escanear')->name('recaudadoras.escanear');
         Route::delete('/recaudadoras/{recaudadora}/equipos/{equipo}', [\App\Http\Controllers\RecaudadorasController::class, 'borrarEquipo'])->whereNumber(['recaudadora', 'equipo'])->name('recaudadoras.equipos.borrar');
+        // Dar de baja (sin alertas ni avisos) y reactivar, desde la ficha
+        Route::post('/recaudadoras/{recaudadora}/baja', [\App\Http\Controllers\RecaudadorasController::class, 'darDeBaja'])->whereNumber('recaudadora')->name('recaudadoras.baja');
+        Route::post('/recaudadoras/{recaudadora}/reactivar', [\App\Http\Controllers\RecaudadorasController::class, 'reactivar'])->whereNumber('recaudadora')->name('recaudadoras.reactivar');
     });
     Route::middleware(['check.admin'])->group(function () {
         Route::post('/recaudadoras/importar', [\App\Http\Controllers\RecaudadorasController::class, 'importar'])->middleware('throttle:10,1')->name('recaudadoras.importar');
@@ -137,6 +140,9 @@ Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'ind
         Route::get('/api/dispositivos/{id}/enlaces', [\App\Http\Controllers\AltaDispositivoController::class, 'enlaces'])->whereNumber('id')->name('dispositivos.enlaces');
         Route::post('/api/dispositivos/{id}/enlaces', [\App\Http\Controllers\AltaDispositivoController::class, 'agregarEnlace'])->whereNumber('id')->name('dispositivos.enlaces.store');
         Route::delete('/api/dispositivos/{id}/enlaces/{enlace}', [\App\Http\Controllers\AltaDispositivoController::class, 'quitarEnlace'])->whereNumber(['id', 'enlace'])->name('dispositivos.enlaces.destroy');
+        // Dar de baja un equipo (sin alertas ni avisos) y reactivarlo, desde su ficha
+        Route::post('/dispositivos/{id}/baja', [DispositivoController::class, 'darDeBaja'])->whereNumber('id')->name('dispositivos.baja');
+        Route::post('/dispositivos/{id}/reactivar', [DispositivoController::class, 'reactivar'])->whereNumber('id')->name('dispositivos.reactivar');
         // Borrar un equipo: solo Administrador
         Route::delete('/api/dispositivos/{id}', [DispositivoController::class, 'destroy'])->whereNumber('id')->middleware('check.admin')->name('dispositivos.destroy');
 

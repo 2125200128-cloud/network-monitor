@@ -112,6 +112,8 @@ class AlertasCorreo
             $nuevas = AlarmaRed::with('dispositivo')->where('estado', '!=', 'resuelta')->whereNull('notificada_correo_at')
                 ->whereIn('severidad', $severidades)->where('created_at', '>=', now()->subMinutes(self::VENTANA_MIN))->get()
                 ->reject(fn (AlarmaRed $a) => $this->excluida($a))
+                // Con «avisar solo la red prioritaria» (Ajustes → Notificaciones), solo las de esa red
+                ->filter(fn (AlarmaRed $a) => !$cfg->avisar_solo_prioritaria || $a->esPrioritaria())
                 ->reject(fn (AlarmaRed $a) => $a->created_at->gt(now()->subMinutes(self::MINUTOS_INTERMITENTE)) && $this->esIntermitente($a))
                 ->sortBy(fn (AlarmaRed $a) => [$a->esPrioritaria() ? 0 : 1, $a->severidad === 'critica' ? 0 : 1, $a->fecha_inicio?->timestamp ?? 0])
                 ->values();

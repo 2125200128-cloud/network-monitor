@@ -1373,6 +1373,17 @@
 
                     <div class="settings-row">
                         <div>
+                            <div class="settings-row-label">Avisar solo la red prioritaria</div>
+                            <div class="settings-row-desc">Telegram y correo solo mandan las alarmas de la red prioritaria; las demás se siguen viendo en Alertas y en el dashboard, sin aviso. Los avisos de recaudadoras salen siempre.</div>
+                        </div>
+                        <label class="flex items-center gap-2 text-sm font-semibold shrink-0">
+                            <input type="hidden" name="avisar_solo_prioritaria" value="0">
+                            <input type="checkbox" name="avisar_solo_prioritaria" value="1" class="w-5 h-5 accent-black" @checked(old('avisar_solo_prioritaria', $settings->avisar_solo_prioritaria ?? true))> Solo red prioritaria
+                        </label>
+                    </div>
+
+                    <div class="settings-row">
+                        <div>
                             <div class="settings-row-label">Recordar fallas de la red prioritaria</div>
                             <div class="settings-row-desc">Mientras una falla de esa red siga activa, se vuelve a avisar en un solo mensaje con todo lo pendiente y cuánto lleva (también las recaudadoras).</div>
                         </div>

@@ -16,9 +16,14 @@
     .al-kpi { padding: 12px 14px; border-radius: var(--nm-radius-lg); background: var(--nm-surface); border: 1px solid var(--nm-border); }
     .al-kpi span { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--nm-text-muted); }
     .al-kpi b { display: block; font-size: 22px; font-family: ui-monospace, Consolas, monospace; color: var(--nm-text); margin-top: 2px; }
-    /* Red prioritaria (10.4 por omisión): marca .nm-prioritaria del layout y franja ámbar a la izquierda de la fila */
-    .al-kpi-sel { border-color: #d97706; box-shadow: 0 0 0 1px #d97706; }
-    .al-tabla tr.al-prioritaria td:first-child { box-shadow: inset 3px 0 0 #d97706; }
+    /* Rojo = red prioritaria (10.4 por omisión): franja y fondo rojos en su fila. Las críticas de otras redes llevan
+       su insignia en gris: siguen siendo críticas, pero no se avisan por Telegram ni correo y no compiten con las rojas. */
+    .al-kpi-sel { border-color: #dc2626; box-shadow: 0 0 0 1px #dc2626; }
+    .al-tabla tr.al-prioritaria td { background: rgb(220 38 38 / 0.06); }
+    .al-tabla tr.al-prioritaria td:first-child { box-shadow: inset 4px 0 0 #dc2626; }
+    .al-tabla tr.al-prioritaria.al-fila:hover td { background: rgb(220 38 38 / 0.10); }
+    .al-critica-otra { color: #475569; background: #e2e8f0; }
+    .dark .al-critica-otra { color: #cbd5e1; background: rgb(51 65 85 / 0.6); }
     .al-accion { font-size: 12px; font-weight: 700; color: var(--nm-primary); white-space: nowrap; }
     .al-accion:hover { text-decoration: underline; }
 </style>
@@ -63,8 +68,8 @@
             <div class="al-kpi"><span>Equipos afectados</span><b x-text="new Set(alarmas.filter(a => a.equipo).map(a => a.equipo)).size"></b></div>
             {{-- Red prioritaria (Configuración → Notificaciones): siempre arriba en la tabla; al pulsar, muestra solo esas --}}
             <button type="button" class="al-kpi text-left" :class="soloPrioritaria && 'al-kpi-sel'" @click="soloPrioritaria = !soloPrioritaria"
-                    title="Fallas de la red prioritaria ({{ \App\Support\RedesPrioritarias::texto() ?: 'sin definir' }}): van primero y se recuerdan por Telegram mientras sigan activas. Pulsa para ver solo estas.">
-                <span style="display: flex; align-items: center; gap: 7px"><i class="nm-prioritaria-punto" aria-hidden="true"></i>Red prioritaria</span><b style="color:#b45309" x-text="alarmas.filter(a => a.prioritaria).length"></b>
+                    title="Fallas de la red prioritaria ({{ \App\Support\RedesPrioritarias::texto() ?: 'sin definir' }}): van primero, en rojo, y son las que se avisan por Telegram y correo. Pulsa para ver solo estas.">
+                <span style="display: flex; align-items: center; gap: 7px"><i class="nm-prioritaria-punto" aria-hidden="true"></i>Red prioritaria</span><b style="color:#dc2626" x-text="alarmas.filter(a => a.prioritaria).length"></b>
             </button>
         </div>
 
@@ -123,8 +128,8 @@
                             <template x-for="a in grupo.items" :key="a.id">
                                 <tr class="al-fila cursor-pointer" :class="a.prioritaria && 'al-prioritaria'" @click="abierta = abierta === a.id ? null : a.id">
                                     <td>
-                                        <span class="al-pill" :class="a.severidad === 'critica' ? 'al-critica' : 'al-advertencia'" x-text="a.severidad === 'critica' ? 'Crítica' : 'Advertencia'"></span>
-                                        <span x-show="a.prioritaria" class="nm-prioritaria mt-1" title="Red prioritaria: se recuerda por Telegram mientras siga activa"><i class="nm-prioritaria-punto" aria-hidden="true"></i>Prioritaria</span>
+                                        <span class="al-pill" :class="a.severidad === 'critica' ? (a.prioritaria ? 'al-critica' : 'al-critica-otra') : 'al-advertencia'" x-text="a.severidad === 'critica' ? 'Crítica' : 'Advertencia'"></span>
+                                        <span x-show="a.prioritaria" class="nm-prioritaria mt-1" title="Red prioritaria: se avisa por Telegram y correo, y se recuerda mientras siga activa"><i class="nm-prioritaria-punto" aria-hidden="true"></i>Prioritaria</span>
                                     </td>
                                     <td>
                                         <div class="font-bold" x-text="a.titulo"></div>

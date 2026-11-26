@@ -78,6 +78,23 @@ class RecaudadorasController extends Controller
         ]);
     }
 
+    /** Da de baja la recaudadora desde su ficha: deja de revisarse, sin alertas ni avisos (se cierran sus caídas abiertas). */
+    public function darDeBaja(Request $request, Recaudadora $recaudadora)
+    {
+        $motivo = $request->validate(['motivo' => 'nullable|string|max:255'])['motivo'] ?? null;
+        if ($recaudadora->baja_at) {
+            return back()->with('error', 'Esa recaudadora ya estaba dada de baja.');
+        }
+        $n = \App\Services\Bajas::darDeBajaRecaudadora($recaudadora, $request->user(), $motivo ? trim($motivo) : null);
+        return back()->with('success', "{$recaudadora->titulo()} quedó dada de baja: ya no se revisa ni avisa" . ($n ? ($n === 1 ? ' (se cerró 1 alerta abierta).' : " (se cerraron {$n} alertas abiertas).") : '.'));
+    }
+
+    public function reactivar(Request $request, Recaudadora $recaudadora)
+    {
+        \App\Services\Bajas::reactivarRecaudadora($recaudadora, $request->user());
+        return back()->with('success', "{$recaudadora->titulo()} vuelve a revisarse cada minuto. La primera revisión solo toma su estado, sin avisar.");
+    }
+
     /** Historial de ping para las gráficas de la ficha (?rango=6h|24h|7d|30d|90d). */
     public function historial(Request $request, Recaudadora $recaudadora)
     {

@@ -113,13 +113,13 @@
         #navLateral .nm-nav-lista::-webkit-scrollbar { display: none; }
         #navLateral .nm-pantallas-lateral { padding-top: clamp(6px, 2vh, 24px); }
 
-        /* Marca de la red prioritaria (10.4 por omisión): punto ámbar con una onda que se expande, como un radar.
-           Se usa en Alertas y en el dashboard; sin emojis para que se vea igual en todos los equipos. */
+        /* Marca de la red prioritaria (10.4 por omisión): en rojo, que en Alertas queda reservado para esta red; punto con
+           una onda que se expande, como un radar. Se usa en Alertas y en el dashboard; sin emojis para que se vea igual en todos los equipos. */
         .nm-prioritaria { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; line-height: 1.5;
-            padding: 1px 8px 1px 7px; border-radius: 9999px; color: #92400e; background: #fef3c7; border: 1px solid #fcd34d; white-space: nowrap; }
-        .dark .nm-prioritaria { color: #fcd34d; background: rgb(120 53 15 / 0.35); border-color: rgb(217 119 6 / 0.5); }
-        .nm-prioritaria-punto { position: relative; display: inline-block; width: 7px; height: 7px; border-radius: 9999px; background: #d97706; flex-shrink: 0; }
-        .nm-prioritaria-punto::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #d97706;
+            padding: 1px 8px 1px 7px; border-radius: 9999px; color: #991b1b; background: #fee2e2; border: 1px solid #fca5a5; white-space: nowrap; }
+        .dark .nm-prioritaria { color: #fca5a5; background: rgb(127 29 29 / 0.4); border-color: rgb(220 38 38 / 0.5); }
+        .nm-prioritaria-punto { position: relative; display: inline-block; width: 7px; height: 7px; border-radius: 9999px; background: #dc2626; flex-shrink: 0; }
+        .nm-prioritaria-punto::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #dc2626;
             animation: nmRadar 1.8s cubic-bezier(0, 0, .2, 1) infinite; }
         @keyframes nmRadar { 0% { transform: scale(1); opacity: .65; } 80%, 100% { transform: scale(3); opacity: 0; } }
         @media (prefers-reduced-motion: reduce) { .nm-prioritaria-punto::after { animation: none; opacity: 0; } }
