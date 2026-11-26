@@ -51,16 +51,20 @@ class HistorialPing
     {
         DB::statement(<<<'SQL'
             INSERT INTO recaudadora_mediciones_hora
-                (recaudadora_id, hora, muestras, ok_muestras, admin_min, admin_avg, admin_max, loopback_min, loopback_avg, loopback_max)
+                (recaudadora_id, hora, muestras, ok_muestras, admin_min, admin_avg, admin_max, loopback_min, loopback_avg, loopback_max,
+                 admin_perdida_avg, admin_perdida_max, loopback_perdida_avg, loopback_perdida_max)
             SELECT recaudadora_id, date_trunc('hour', medido_en), count(*), count(*) FILTER (WHERE ok),
-                   min(admin_ms), avg(admin_ms), max(admin_ms), min(loopback_ms), avg(loopback_ms), max(loopback_ms)
+                   min(admin_ms), avg(admin_ms), max(admin_ms), min(loopback_ms), avg(loopback_ms), max(loopback_ms),
+                   avg(admin_perdida), max(admin_perdida), avg(loopback_perdida), max(loopback_perdida)
             FROM recaudadora_mediciones
             WHERE medido_en >= ?
             GROUP BY 1, 2
             ON CONFLICT (recaudadora_id, hora) DO UPDATE SET
                 muestras = EXCLUDED.muestras, ok_muestras = EXCLUDED.ok_muestras,
                 admin_min = EXCLUDED.admin_min, admin_avg = EXCLUDED.admin_avg, admin_max = EXCLUDED.admin_max,
-                loopback_min = EXCLUDED.loopback_min, loopback_avg = EXCLUDED.loopback_avg, loopback_max = EXCLUDED.loopback_max
+                loopback_min = EXCLUDED.loopback_min, loopback_avg = EXCLUDED.loopback_avg, loopback_max = EXCLUDED.loopback_max,
+                admin_perdida_avg = EXCLUDED.admin_perdida_avg, admin_perdida_max = EXCLUDED.admin_perdida_max,
+                loopback_perdida_avg = EXCLUDED.loopback_perdida_avg, loopback_perdida_max = EXCLUDED.loopback_perdida_max
             SQL, [$desde]);
     }
 
@@ -85,69 +89,72 @@ class HistorialPing
             $desde = Carbon::createFromTimestamp(intdiv(Carbon::parse($primera)->getTimestamp(), $paso) * $paso, $hasta->getTimezone());
         }
 
-        // Cada fila, a la forma del resumen por hora: muestras, ok y mín/suma/máx de cada IP
+        // Cada fila, a la forma del resumen por hora: muestras, ok y, por métrica, [mín, suma, máx, cuántas con dato].
+        // Métricas: a/l = latencia (ms) de la IP administrativa / loopback; pa/pl = su pérdida de paquetes (%).
+        $metricas = ['a' => 'admin', 'l' => 'loopback', 'pa' => 'admin_perdida', 'pl' => 'loopback_perdida'];
+        $uno = fn ($v) => $v === null ? [null, 0.0, null, 0] : [(float) $v, (float) $v, (float) $v, 1];
+        // De una hora: el promedio pesa por las muestras de la hora (aproximación suficiente para la gráfica)
+        $hora = fn ($min, $avg, $max, int $n) => $avg === null ? [null, 0.0, null, 0] : [(float) ($min ?? $avg), (float) $avg * $n, (float) $max, $n];
         if ($fuente === 'detalle') {
             $filas = DB::table('recaudadora_mediciones')->where('recaudadora_id', $r->id)->where('medido_en', '>=', $desde)
-                ->orderBy('medido_en')->get(['medido_en as t', 'ok', 'admin_ms', 'loopback_ms'])
+                ->orderBy('medido_en')->get(['medido_en as t', 'ok', 'admin_ms', 'loopback_ms', 'admin_perdida', 'loopback_perdida'])
                 ->map(fn ($f) => ['t' => Carbon::parse($f->t), 'n' => 1, 'ok' => (int) $f->ok,
-                    'a' => [$f->admin_ms, $f->admin_ms, $f->admin_ms, $f->admin_ms === null ? 0 : 1],
-                    'l' => [$f->loopback_ms, $f->loopback_ms, $f->loopback_ms, $f->loopback_ms === null ? 0 : 1]]);
+                    'a' => $uno($f->admin_ms), 'l' => $uno($f->loopback_ms), 'pa' => $uno($f->admin_perdida), 'pl' => $uno($f->loopback_perdida)]);
         } else {
             $filas = DB::table('recaudadora_mediciones_hora')->where('recaudadora_id', $r->id)->where('hora', '>=', $desde->copy()->startOfHour())
                 ->orderBy('hora')->get()
                 ->map(fn ($f) => ['t' => Carbon::parse($f->hora), 'n' => (int) $f->muestras, 'ok' => (int) $f->ok_muestras,
-                    // el promedio de la hora pesa por sus muestras con respuesta (aprox.: las muestras de la hora)
-                    'a' => [$f->admin_min, $f->admin_avg === null ? null : $f->admin_avg * $f->muestras, $f->admin_max, $f->admin_avg === null ? 0 : (int) $f->muestras],
-                    'l' => [$f->loopback_min, $f->loopback_avg === null ? null : $f->loopback_avg * $f->muestras, $f->loopback_max, $f->loopback_avg === null ? 0 : (int) $f->muestras]]);
+                    'a' => $hora($f->admin_min, $f->admin_avg, $f->admin_max, (int) $f->muestras),
+                    'l' => $hora($f->loopback_min, $f->loopback_avg, $f->loopback_max, (int) $f->muestras),
+                    'pa' => $hora(null, $f->admin_perdida_avg, $f->admin_perdida_max, (int) $f->muestras),
+                    'pl' => $hora(null, $f->loopback_perdida_avg, $f->loopback_perdida_max, (int) $f->muestras)]);
         }
+
+        // Suma una fila (o un intervalo) a un acumulado
+        $vacio = fn () => ['n' => 0, 'ok' => 0] + array_fill_keys(array_keys($metricas), [null, 0.0, null, 0]);
+        $sumar = function (array &$acc, array $f) use ($metricas) {
+            $acc['n'] += $f['n'];
+            $acc['ok'] += $f['ok'];
+            foreach (array_keys($metricas) as $q) {
+                [$min, $suma, $max, $cuantas] = $f[$q];
+                if ($cuantas) {
+                    $acc[$q][0] = $acc[$q][0] === null ? $min : min($acc[$q][0], $min);
+                    $acc[$q][1] += $suma;
+                    $acc[$q][2] = $acc[$q][2] === null ? $max : max($acc[$q][2], $max);
+                    $acc[$q][3] += $cuantas;
+                }
+            }
+        };
 
         // Intervalos parejos de $paso segundos
         $cubos = [];
         foreach ($filas as $f) {
             $k = intdiv($f['t']->getTimestamp(), $paso) * $paso;
-            $c = &$cubos[$k];
-            $c ??= ['n' => 0, 'ok' => 0, 'a' => [null, 0.0, null, 0], 'l' => [null, 0.0, null, 0]];
-            $c['n'] += $f['n'];
-            $c['ok'] += $f['ok'];
-            foreach (['a', 'l'] as $ip) {
-                [$min, $suma, $max, $cuantas] = $f[$ip];
-                if ($cuantas) {
-                    $c[$ip][0] = $c[$ip][0] === null ? $min : min($c[$ip][0], $min);
-                    $c[$ip][1] += $suma;
-                    $c[$ip][2] = $c[$ip][2] === null ? $max : max($c[$ip][2], $max);
-                    $c[$ip][3] += $cuantas;
-                }
-            }
-            unset($c);
+            $cubos[$k] ??= $vacio();
+            $sumar($cubos[$k], $f);
         }
 
-        $puntos = [];
-        $tot = ['n' => 0, 'ok' => 0, 'a' => [null, 0.0, null, 0], 'l' => [null, 0.0, null, 0]];
         $r1 = fn ($v) => $v === null ? null : round((float) $v, 1);
+        $prom = fn (array $m) => $m[3] ? $r1($m[1] / $m[3]) : null;
+        $puntos = [];
+        $tot = $vacio();
         for ($k = $desde->getTimestamp(); $k <= $hasta->getTimestamp(); $k += $paso) {
             $c = $cubos[$k] ?? null;
-            $ip = fn (string $q) => $c && $c[$q][3] ? ['min' => $r1($c[$q][0]), 'avg' => $r1($c[$q][1] / $c[$q][3]), 'max' => $r1($c[$q][2])] : null;
+            $lat = fn (string $q) => $c && $c[$q][3] ? ['min' => $r1($c[$q][0]), 'avg' => $prom($c[$q]), 'max' => $r1($c[$q][2])] : null;
+            $per = fn (string $q) => $c && $c[$q][3] ? ['avg' => $prom($c[$q]), 'max' => $r1($c[$q][2])] : null;
             $puntos[] = ['t' => Carbon::createFromTimestamp($k, $hasta->getTimezone())->format('Y-m-d\TH:i'),
-                'disp' => $c && $c['n'] ? round($c['ok'] * 100 / $c['n'], 1) : null, 'admin' => $ip('a'), 'loopback' => $ip('l')];
+                'disp' => $c && $c['n'] ? round($c['ok'] * 100 / $c['n'], 1) : null,
+                'admin' => $lat('a'), 'loopback' => $lat('l'),
+                'perdida' => ['admin' => $per('pa'), 'loopback' => $per('pl')]];
             if ($c) {
-                $tot['n'] += $c['n'];
-                $tot['ok'] += $c['ok'];
-                foreach (['a', 'l'] as $q) {
-                    if ($c[$q][3]) {
-                        $tot[$q][0] = $tot[$q][0] === null ? $c[$q][0] : min($tot[$q][0], $c[$q][0]);
-                        $tot[$q][1] += $c[$q][1];
-                        $tot[$q][2] = $tot[$q][2] === null ? $c[$q][2] : max($tot[$q][2], $c[$q][2]);
-                        $tot[$q][3] += $c[$q][3];
-                    }
-                }
+                $sumar($tot, $c);
             }
         }
 
         $ultima = DB::table('recaudadora_mediciones')->where('recaudadora_id', $r->id)->orderByDesc('medido_en')->first();
-        $resumenIp = fn (string $q, string $campo) => [
-            'ultimo' => $ultima ? $r1($ultima->{$campo}) : null,
-            'min' => $r1($tot[$q][0]), 'avg' => $tot[$q][3] ? $r1($tot[$q][1] / $tot[$q][3]) : null, 'max' => $r1($tot[$q][2]),
-        ];
+        $resumen = fn (string $q, string $campo) => ['ultimo' => $ultima ? $r1($ultima->{$campo}) : null,
+            'min' => $r1($tot[$q][0]), 'avg' => $prom($tot[$q]), 'max' => $r1($tot[$q][2])];
+        $conPerdida = $tot['pa'][3] || $tot['pl'][3];
 
         return [
             'rango' => $rango,
@@ -156,8 +163,13 @@ class HistorialPing
             'resumen' => [
                 'muestras' => $tot['n'],
                 'disponibilidad' => $tot['n'] ? round($tot['ok'] * 100 / $tot['n'], 2) : null,
-                'admin' => $r->ip_administrativa ? $resumenIp('a', 'admin_ms') : null,
-                'loopback' => $r->ip_loopback ? $resumenIp('l', 'loopback_ms') : null,
+                'admin' => $r->ip_administrativa ? $resumen('a', 'admin_ms') : null,
+                'loopback' => $r->ip_loopback ? $resumen('l', 'loopback_ms') : null,
+                // Pérdida de paquetes (%); null mientras no haya revisiones con el dato
+                'perdida' => $conPerdida ? [
+                    'admin' => $r->ip_administrativa ? $resumen('pa', 'admin_perdida') : null,
+                    'loopback' => $r->ip_loopback ? $resumen('pl', 'loopback_perdida') : null,
+                ] : null,
                 'desde_registro' => DB::table('recaudadora_mediciones_hora')->where('recaudadora_id', $r->id)->min('hora'),
             ],
         ];

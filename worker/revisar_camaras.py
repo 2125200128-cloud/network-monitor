@@ -3,8 +3,9 @@ worker/revisar_camaras.py — ¿Responde cada cámara? Primero ping (la misma fu
 contesta, una conexión TCP a su puerto de video (554) o web (80/443) por si bloquea el ping. Solo lectura: no pide
 video ni usa credenciales.
 
-Entrada (stdin): JSON [{"id": 1, "ip": "10.4.9.20", "puertos": [554, 80]}, ...]
-Salida (stdout): JSON [{"id": 1, "ok": true, "ms": 3.2, "por": "ping"}, ...]
+Entrada (stdin): JSON [{"id": 1, "ip": "10.4.9.20", "puertos": [554, 80], "pings": 5}, ...]   ("pings" opcional, 2 por omisión)
+Salida (stdout): JSON [{"id": 1, "ok": true, "ms": 3.2, "por": "ping", "enviados": 5, "recibidos": 5}, ...]
+                 (enviados/recibidos: paquetes ICMP de esta revisión, para la pérdida de paquetes)
 """
 import asyncio
 import json
@@ -39,15 +40,17 @@ async def por_puerto(camara):
 async def main():
     camaras = json.load(sys.stdin)
     with ThreadPoolExecutor(max_workers=max(1, min(HILOS_PING, len(camaras)))) as ex:
-        pings = list(ex.map(lambda c: icmp_probe(c['ip'], PINGS), camaras))
+        pings = list(ex.map(lambda c: icmp_probe(c['ip'], max(1, min(int(c.get('pings') or PINGS), 10))), camaras))
 
     resultados, sin_ping = [], []
-    for c, (_, recibidos, ms) in zip(camaras, pings):
+    for c, (enviados, recibidos, ms) in zip(camaras, pings):
+        icmp = {'enviados': enviados, 'recibidos': recibidos}
         if recibidos:
-            resultados.append({'id': c['id'], 'ok': True, 'ms': ms, 'por': 'ping'})
+            resultados.append({'id': c['id'], 'ok': True, 'ms': ms, 'por': 'ping', **icmp})
         else:
-            sin_ping.append(c)
-    resultados += await asyncio.gather(*(por_puerto(c) for c in sin_ping))
+            sin_ping.append((c, icmp))
+    for (c, icmp), r in zip(sin_ping, await asyncio.gather(*(por_puerto(c) for c, _ in sin_ping))):
+        resultados.append({**r, **icmp})
     print(json.dumps(resultados))
 
 

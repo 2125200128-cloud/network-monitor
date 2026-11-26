@@ -182,6 +182,27 @@
                     </template>
                 </tbody>
             </table>
+            {{-- Pérdida de paquetes: 5 paquetes ICMP por IP en cada revisión --}}
+            <template x-if="datos?.resumen.perdida">
+                <div>
+                    <h3 class="text-[11px] font-bold uppercase tracking-wider mt-5" style="color: var(--nm-text-muted)">Pérdida de paquetes</h3>
+                    <div style="height: 150px" class="mt-1"><canvas x-ref="per" aria-label="Pérdida de paquetes del ping" role="img"></canvas></div>
+                    <table class="rc-tabla mt-3">
+                        <thead><tr><th></th><th style="text-align: right">Último</th><th style="text-align: right">Media</th><th style="text-align: right">Máximo</th></tr></thead>
+                        <tbody>
+                            <template x-for="fila in filasPerdida()" :key="fila.nombre">
+                                <tr>
+                                    <td><span class="flex items-center gap-1.5"><span class="rc-punto" :style="`background: ${fila.color}`"></span><span x-text="fila.nombre"></span></span></td>
+                                    <td class="text-right font-mono" x-text="fmtPerdida(fila.d.ultimo)"></td>
+                                    <td class="text-right font-mono" x-text="fmtPerdida(fila.d.avg)"></td>
+                                    <td class="text-right font-mono" x-text="fmtPerdida(fila.d.max)"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+
             <p class="text-[11px] mt-2" style="color: var(--nm-text-muted)" x-text="nota()"></p>
         </div>
     </div>
@@ -373,7 +394,7 @@
     function historialPing() {
         const URL = @json(route('recaudadoras.historial', $r->id));
         const VERDE = '#059669', ROJO = '#dc2626', AMBAR = '#d97706', AZUL = '#2563eb', GRIS = '#64748b';
-        let graficaDisp = null, graficaLat = null, temporizador = null;
+        let graficaDisp = null, graficaLat = null, graficaPer = null, temporizador = null;
         const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
         const dosDig = (n) => String(n).padStart(2, '0');
         const fecha = (t) => new Date(t);   // 'YYYY-MM-DDTHH:mm' en hora local
@@ -447,7 +468,38 @@
                                 return `${c.dataset.label}: ${c.parsed.y} ms`;
                             } } } } },
                 });
+
+                // Pérdida de paquetes: promedio de cada intervalo (0 % = llegaron todos)
+                graficaPer?.destroy();
+                graficaPer = null;
+                const rp = this.datos.resumen.perdida;
+                if (rp && this.$refs.per) {
+                    const per = (ip) => p.map(x => x.perdida && x.perdida[ip] ? x.perdida[ip].avg : null);
+                    const dsP = [];
+                    if (rp.admin) dsP.push({ label: 'IP administrativa', ip: 'admin', data: per('admin'), borderColor: AZUL, backgroundColor: AZUL + '1f', fill: 'origin', borderWidth: 2, spanGaps: false });
+                    if (rp.loopback) dsP.push({ label: 'Loopback', ip: 'loopback', data: per('loopback'), borderColor: GRIS, backgroundColor: GRIS, borderWidth: 1.5, borderDash: [5, 3], spanGaps: false });
+                    graficaPer = new Chart(this.$refs.per, {
+                        type: 'line', data: { labels: etiquetas, datasets: dsP },
+                        options: { ...comun, scales: { x: ejeX,
+                            y: { min: 0, suggestedMax: 20, ticks: { color: texto, font: { size: 10.5 }, callback: v => v + ' %' }, grid: { color: rejilla } } },
+                            plugins: { ...comun.plugins,
+                                legend: { display: true, position: 'bottom', labels: { color: texto, boxWidth: 14, boxHeight: 2, font: { size: 11 } } },
+                                tooltip: { callbacks: { title: titulo, label: c => {
+                                    if (c.parsed.y === null) return null;
+                                    const x = p[c.dataIndex].perdida[c.dataset.ip];
+                                    return `${c.dataset.label}: ${c.parsed.y} %` + (x && x.max > x.avg ? ` (máx. ${x.max} %)` : '');
+                                } } } } },
+                    });
+                }
             },
+
+            filasPerdida() {
+                const r = this.datos?.resumen.perdida || {}, f = [];
+                if (r.admin) f.push({ nombre: 'IP administrativa', color: AZUL, d: r.admin });
+                if (r.loopback) f.push({ nombre: 'Loopback', color: GRIS, d: r.loopback });
+                return f;
+            },
+            fmtPerdida: (v) => v === null || v === undefined ? '—' : `${v} %`,
 
             filasResumen() {
                 const r = this.datos?.resumen || {}, f = [];

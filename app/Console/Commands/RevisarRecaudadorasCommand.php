@@ -30,6 +30,9 @@ class RevisarRecaudadorasCommand extends Command
 
     public const FALLOS_PARA_CAIDA = 3;
 
+    /** Paquetes ICMP por IP de recaudadora en cada revisión (los equipos de adentro siguen con 2). */
+    private const PINGS = 5;
+
     /** Sin revisión en más de estos minutos (el temporizador corre cada minuto) se considera que el monitoreo se detuvo. */
     private const HUECO_MINUTOS = 5;
     private const PUERTOS_EQUIPO = [443, 80, 22, 3389];
@@ -49,11 +52,12 @@ class RevisarRecaudadorasCommand extends Command
 
         $objetivos = [];
         foreach ($recas as $r) {
+            // 5 paquetes ICMP por IP: con ellos se mide la pérdida de paquetes (en pasos de 20 %)
             if ($r->ip_administrativa) {
-                $objetivos[] = ['id' => "a{$r->id}", 'ip' => $r->ip_administrativa, 'puertos' => []];
+                $objetivos[] = ['id' => "a{$r->id}", 'ip' => $r->ip_administrativa, 'puertos' => [], 'pings' => self::PINGS];
             }
             if ($r->ip_loopback) {
-                $objetivos[] = ['id' => "l{$r->id}", 'ip' => $r->ip_loopback, 'puertos' => []];
+                $objetivos[] = ['id' => "l{$r->id}", 'ip' => $r->ip_loopback, 'puertos' => [], 'pings' => self::PINGS];
             }
         }
         foreach ($equipos as $e) {
@@ -110,9 +114,13 @@ class RevisarRecaudadorasCommand extends Command
         // interfaz) o no la tiene, cuenta la loopback. «lan» solo si la IP administrativa respondía y dejó de hacerlo
         // mientras la loopback sigue respondiendo.
         $ok = $adminOk || (!$adminAlgunaVez && $lbOk);
+        // Pérdida de paquetes de esta revisión (%); sin el dato (revisor anterior) queda en null
+        $perdida = fn (?array $x) => $x && !empty($x['enviados']) && isset($x['recibidos'])
+            ? round(($x['enviados'] - $x['recibidos']) * 100 / $x['enviados'], 1) : null;
         $this->mediciones[] = ['recaudadora_id' => $r->id, 'medido_en' => $ahora, 'ok' => (bool) $ok,
             'admin_ok' => $adminOk, 'loopback_ok' => $lbOk,
-            'admin_ms' => $adminOk ? $admin['ms'] : null, 'loopback_ms' => $lbOk ? $loopback['ms'] : null];
+            'admin_ms' => $adminOk ? $admin['ms'] : null, 'loopback_ms' => $lbOk ? $loopback['ms'] : null,
+            'admin_perdida' => $perdida($admin), 'loopback_perdida' => $perdida($loopback)];
         $corte =$this->cortarHueco($r->ultimo_chequeo, $ahora, $ok,
             RecaudadoraEvento::where('recaudadora_id', $r->id)->whereNull('equipo_id')->whereNull('fin'));
         $fallos = $ok ? 0 : min($r->fallos_seguidos + 1, 1000);
