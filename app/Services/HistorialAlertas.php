@@ -38,6 +38,8 @@ class HistorialAlertas
             'estado' => in_array($request->query('estado'), ['activa', 'resuelta'], true) ? $request->query('estado') : null,
             'q' => trim(mb_substr((string) $request->query('q'), 0, 80)),
             'vista' => $request->query('vista') === 'ocurrencias' ? 'ocurrencias' : 'alarma',
+            // Por omisión solo la red prioritaria (10.4.x.x); «todas» muestra también las demás redes
+            'red' => $request->query('red') === 'todas' ? 'todas' : 'prioritaria',
         ];
     }
 
@@ -63,7 +65,22 @@ class HistorialAlertas
             ->when($f['q'] !== '', function ($q) use ($f) {
                 $like = '%' . str_replace(['%', '_'], ['\%', '\_'], $f['q']) . '%';
                 $q->where(fn ($w) => $w->where('a.titulo', Sql::like(), $like)->orWhere('d.nombre', Sql::like(), $like)->orWhere('d.ip', Sql::like(), $like));
-            });
+            })
+            ->when(($f['red'] ?? 'prioritaria') === 'prioritaria', fn ($q) => self::soloPrioritaria($q));
+    }
+
+    /** IP de la alarma (la guardada o la de su equipo) dentro de la red prioritaria. Sin red definida no filtra. */
+    private static function soloPrioritaria($q)
+    {
+        $patrones = \App\Support\RedesPrioritarias::patronesLike();
+        if (!$patrones) {
+            return $q;
+        }
+        return $q->where(function ($w) use ($patrones) {
+            foreach ($patrones as $p) {
+                $w->orWhere('a.ip', 'like', $p)->orWhere(fn ($x) => $x->whereNull('a.ip')->where('d.ip', 'like', $p));
+            }
+        });
     }
 
     /** Duración en segundos; las abiertas hasta ahora (hora de la aplicación: las fechas se guardan en hora local). */

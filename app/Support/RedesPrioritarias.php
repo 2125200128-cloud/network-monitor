@@ -55,6 +55,30 @@ class RedesPrioritarias
         return [implode(', ', array_unique($ok)), null];
     }
 
+    /**
+     * Patrones LIKE que cubren las redes prioritarias, para filtrar en SQL sin funciones propias de una base:
+     * 10.4.0.0/16 → «10.4.%». Una red que no termina en octeto completo se reparte en las de octeto siguiente
+     * (10.4.16.0/20 → 10.4.16.% … 10.4.31.%). Sin redes definidas devuelve [].
+     * @return list<string>
+     */
+    public static function patronesLike(): array
+    {
+        $patrones = [];
+        foreach (self::redes() as [$red, $mascara]) {
+            $bits = 32 - (int) round(log((~$mascara & 0xFFFFFFFF) + 1, 2));
+            $octetos = (int) ceil($bits / 8);
+            $paso = 1 << (32 - $octetos * 8);
+            for ($n = $red, $fin = $red + ((~$mascara) & 0xFFFFFFFF); $n <= $fin; $n += $paso) {
+                $partes = array_slice(explode('.', long2ip($n)), 0, $octetos);
+                $patrones[] = implode('.', $partes) . ($octetos < 4 ? '.%' : '');
+                if ($octetos === 0) {
+                    break;
+                }
+            }
+        }
+        return array_values(array_unique($patrones));
+    }
+
     public static function olvidar(): void
     {
         Cache::forget('redes_prioritarias_v1');

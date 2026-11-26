@@ -62,22 +62,27 @@
 
     <div x-data="alertasActivas()" class="space-y-4">
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div class="al-kpi"><span>Activas</span><b x-text="alarmas.length"></b></div>
-            <div class="al-kpi"><span>Críticas</span><b style="color:#dc2626" x-text="alarmas.filter(a => a.severidad === 'critica').length"></b></div>
-            <div class="al-kpi"><span>Advertencias</span><b style="color:#d97706" x-text="alarmas.filter(a => a.severidad !== 'critica').length"></b></div>
-            <div class="al-kpi"><span>Equipos afectados</span><b x-text="new Set(alarmas.filter(a => a.equipo).map(a => a.equipo)).size"></b></div>
-            {{-- Red prioritaria (Configuración → Notificaciones): siempre arriba en la tabla; al pulsar, muestra solo esas --}}
-            <button type="button" class="al-kpi text-left" :class="soloPrioritaria && 'al-kpi-sel'" @click="soloPrioritaria = !soloPrioritaria"
-                    title="Fallas de la red prioritaria ({{ \App\Support\RedesPrioritarias::texto() ?: 'sin definir' }}): van primero, en rojo, y son las que se avisan por Telegram y correo. Pulsa para ver solo estas.">
-                <span style="display: flex; align-items: center; gap: 7px"><i class="nm-prioritaria-punto" aria-hidden="true"></i>Red prioritaria</span><b style="color:#dc2626" x-text="alarmas.filter(a => a.prioritaria).length"></b>
+            <div class="al-kpi"><span>Activas</span><b x-text="visibles.length"></b></div>
+            <div class="al-kpi"><span>Críticas</span><b style="color:#dc2626" x-text="visibles.filter(a => a.severidad === 'critica').length"></b></div>
+            <div class="al-kpi"><span>Advertencias</span><b style="color:#d97706" x-text="visibles.filter(a => a.severidad !== 'critica').length"></b></div>
+            <div class="al-kpi"><span>Equipos afectados</span><b x-text="new Set(visibles.filter(a => a.equipo).map(a => a.equipo)).size"></b></div>
+            {{-- Por omisión solo la red prioritaria (Ajustes → Notificaciones); las demás redes se muestran al pulsar aquí --}}
+            <button type="button" class="al-kpi text-left" :class="!soloPrioritaria && 'al-kpi-sel'" @click="alternarRed()"
+                    title="Alertas de redes fuera de la red prioritaria ({{ \App\Support\RedesPrioritarias::texto() ?: 'sin definir' }}): no se avisan por Telegram ni correo. Pulsa para mostrarlas u ocultarlas.">
+                <span>Otras redes</span>
+                <b style="color: var(--nm-text-muted)" x-text="alarmas.filter(a => !a.prioritaria).length"></b>
+                <span style="font-size: 10.5px; font-weight: 600; text-transform: none; letter-spacing: 0; margin-top: 2px; color: var(--nm-primary)" x-text="soloPrioritaria ? 'Ocultas · pulsa para verlas' : 'Visibles · pulsa para ocultarlas'"></span>
             </button>
         </div>
 
         {{-- Caídas en cascada: el diagnóstico detectó que sus vecinos tampoco responden (falla aguas arriba) --}}
-        <template x-if="alarmas.some(a => a.cascada)">
+        <p x-show="soloPrioritaria" class="text-xs -mt-1" style="color: var(--nm-text-muted)">
+            Se muestran solo las alertas de la red prioritaria ({{ \App\Support\RedesPrioritarias::texto() ?: 'sin definir' }}), que son las que se avisan por Telegram y correo.
+        </p>
+        <template x-if="visibles.some(a => a.cascada)">
             <div class="floating-card px-4 py-3 flex flex-wrap items-center justify-between gap-2" style="border-left: 4px solid #dc2626">
                 <p class="text-sm" style="color: var(--nm-text)">
-                    <b x-text="alarmas.filter(a => a.cascada).length"></b> equipos sin respuesta por una <b>falla aguas arriba</b>
+                    <b x-text="visibles.filter(a => a.cascada).length"></b> equipos sin respuesta por una <b>falla aguas arriba</b>
                     (sus vecinos tampoco responden). Atender primero el equipo del que dependen resuelve varias a la vez.
                 </p>
                 <button type="button" @click="soloCascada = !soloCascada" class="al-accion" x-text="soloCascada ? 'Ver todas' : 'Ver solo estas'"></button>
@@ -171,7 +176,14 @@
         function alertasActivas() {
             const leer = () => { try { return JSON.parse(document.getElementById('alertasActivasJson').textContent); } catch (e) { return []; } };
             return {
-                alarmas: leer(), buscar: '', severidad: '', categoria: '', agrupar: '', soloCascada: false, soloPrioritaria: false, abierta: null,
+                alarmas: leer(), buscar: '', severidad: '', categoria: '', agrupar: '', soloCascada: false, abierta: null,
+                // Solo la red prioritaria salvo que este navegador haya pedido ver todas
+                soloPrioritaria: (() => { try { return localStorage.getItem('alertas_todas_redes') !== '1'; } catch (e) { return true; } })(),
+                alternarRed() {
+                    this.soloPrioritaria = !this.soloPrioritaria;
+                    try { localStorage.setItem('alertas_todas_redes', this.soloPrioritaria ? '0' : '1'); } catch (e) {}
+                },
+                get visibles() { return this.soloPrioritaria ? this.alarmas.filter(a => a.prioritaria) : this.alarmas; },
                 orden: 'inicio_ts', desc: true,   // por defecto: la más reciente arriba
                 // Primer clic en una columna: fechas y severidad de mayor a menor, textos de A a Z; otro clic invierte
                 ordenar(col) {
@@ -184,11 +196,10 @@
                 },
                 get filtradas() {
                     const q = this.buscar.toLowerCase().trim();
-                    return this.alarmas
+                    return this.visibles
                         .filter(a => !this.severidad || a.severidad === this.severidad)
                         .filter(a => !this.categoria || a.categoria === this.categoria)
                         .filter(a => !this.soloCascada || a.cascada)
-                        .filter(a => !this.soloPrioritaria || a.prioritaria)
                         .filter(a => !q || [a.titulo, a.equipo, a.ip, a.mensaje].join(' ').toLowerCase().includes(q))
                         .sort((x, y) => {
                             // La red prioritaria siempre arriba; dentro de cada parte, el orden elegido
@@ -252,6 +263,12 @@
         </label>
         <label class="text-xs font-bold flex-1 min-w-[12rem]" style="color: var(--nm-text-muted)">Buscar<br>
             <input type="search" name="q" value="{{ $filtros['q'] }}" placeholder="Equipo, IP o alerta" class="al-campo mt-1 w-full">
+        </label>
+        <label class="text-xs font-bold" style="color: var(--nm-text-muted)">Red<br>
+            <select name="red" class="al-campo mt-1" title="La red prioritaria es la que se avisa por Telegram y correo">
+                <option value="prioritaria" @selected($filtros['red'] === 'prioritaria')>Solo red prioritaria ({{ \App\Support\RedesPrioritarias::texto() ?: 'sin definir' }})</option>
+                <option value="todas" @selected($filtros['red'] === 'todas')>Todas las redes</option>
+            </select>
         </label>
         <label class="text-xs font-bold" style="color: var(--nm-text-muted)">Ver<br>
             <select name="vista" class="al-campo mt-1" title="Agrupada: una fila por alarma con cuántas veces ocurrió">
