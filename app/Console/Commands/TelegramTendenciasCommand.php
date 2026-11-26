@@ -58,7 +58,7 @@ class TelegramTendenciasCommand extends Command
         $errores = 0;
         foreach ($envios as $chat => $grupos) {
             foreach ($grupos as $grupo) {
-                $pie = '📈 <b>' . self::TITULOS[$grupo] . '</b> · última hora (' . $desde->format('H:i') . ' a ' . $hasta->format('H:i') . ')';
+                $pie = '<b>' . self::TITULOS[$grupo] . '</b> · última hora (' . $desde->format('H:i') . ' a ' . $hasta->format('H:i') . ')';
                 try {
                     $bot->enviarFoto((string) $chat, $pngs[$grupo], $pie);
                 } catch (\Throwable $e) {

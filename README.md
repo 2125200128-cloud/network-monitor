@@ -1,132 +1,59 @@
-﻿# Network Monitor NOC — Enterprise Infrastructure Platform
+﻿# Network Monitor NOC
 
-[![PHP Version](https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=flat-square&logo=php&logoColor=white)](https://php.net)
-[![Laravel Version](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
-[![Python Version](https://img.shields.io/badge/Python-3.12%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-v4.0-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![SNMP Protocol](https://img.shields.io/badge/SNMP-v2c%20%2F%20v3-0A66C2?style=flat-square)](https://en.wikipedia.org/wiki/Simple_Network_Management_Protocol)
-[![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
+Sistema web del Centro de Operaciones de Red de la Secretaría de la Hacienda Pública (Jalisco). Vigila en un solo lugar:
 
-**Network Monitor NOC** es una plataforma integral de monitoreo de infraestructura de red y servicios web diseñada para centros de operaciones de red (NOC) empresariales y gubernamentales. Ofrece supervisión en tiempo real de conmutadores (Switches L2/L3, Nexus, Core), routers WAN, gateways de voz, teléfonos IP, controladores inalámbricos (WLC) y servicios web críticos.
+- **Equipos de red**: switches, routers, access points y teléfonos, por ping y SNMP; puertos, hardware y diagnóstico.
+- **Firewalls FortiGate**: alta disponibilidad, sesiones, CPU, memoria y tráfico (SNMPv3).
+- **Virtualización VMware**: hosts ESXi, máquinas virtuales y datastores.
+- **Servicios web**: disponibilidad y tiempo de respuesta de los sitios institucionales.
+- **Recaudadoras**: comunicación de cada oficina cada minuto, sus enlaces, sus equipos (kioscos, terminales) e historial de ping.
+- **Cámaras**: inventario a partir de las tablas ARP y video en vivo.
 
----
+Las fallas se registran como alertas y se avisan por Telegram y por correo (solo las de la red prioritaria, 10.4.0.0/16 por omisión).
 
-## Modulos y Capacidades Principales
+## Tecnología
 
-### 1. Mapa de Topologia Dinamica e Interactiva (L2 / L3)
-* **Visualizacion de Grafos en Tiempo Real:** Motor de fisica interactivo con **Vis.js** que renderiza enlaces troncales, interfaces origen/destino, VLANs permitidas y porcentaje de saturacion de ancho de banda (1G, 10G, 40G).
-* **Mapeo de Hardware:** Identificacion automatica y renderizado de hardware especifico:
-  * **Cisco Nexus / Modular:** Nexus 7000, 9000, 3000, ACI Leaf/Spine.
-  * **Switches Core / Distribucion:** Catalyst 9300, 9600, 6500.
-  * **Switches de Acceso:** Catalyst 2960, 3750, 3560, 9200, SG200.
-  * **Routers de Borde WAN & Gateways:** Cisco ISR 4400, 4300, 1841, CUBE Voice Gateways.
-  * **Telefonia VoIP:** Telefonos IP Cisco Serie 7900, 7800, 8800 con vinculacion automatica a estaciones de trabajo PC adjuntas.
-* **Persistencia de Coordenadas:** Guardado y restauracion de posiciones personalizadas por operador.
+| Parte | Qué se usa |
+|---|---|
+| Web | PHP 8.3, Laravel 12, Blade, Alpine.js, Tailwind CSS |
+| Base de datos | PostgreSQL |
+| Recolectores | Python 3.12 (`worker/`) y comandos de Laravel (`app/Console/Commands/`) |
+| Servidor | Ubuntu 24.04, Nginx, PHP-FPM y servicios systemd (`deploy/systemd/`) |
 
-### 2. Telemetria y Monitoreo SNMP en Vivo
-* **Motor Asincrono de Sondeo (Python AsyncIO):** `worker/snmp_poller.py` realiza barridos continuos de baja latencia con sondeo de CPU, memoria RAM, ping ICMP, estado operacional de puertos y trafico In/Out.
-* **Colector de Chasis y Sensores:** Deteccion de numero de serie, version de firmware (IOS/NX-OS), uptime, sensores de temperatura y estado de fuentes de alimentacion.
-* **Gestion de Alarmas y Notificaciones:** Deteccion instantanea de enlaces caidos, saturacion excesiva de ancho de banda y degradacion de latencia.
-
-### 3. Monitoreo de Servicios & Paginas Web
-* **Vigilancia HTTP/HTTPS:** Verificacion de portales web, aplicaciones de recaudacion y endpoints bancarios (`Multipagos`, `Bancos Reimprime`, `Tramites`).
-* **Metricas de Rendimiento:** Latencia en milisegundos, codigos de respuesta HTTP (200 OK, 4xx, 5xx) y deteccion de caidas/timeouts.
-* **Dashboard:** Interfaz compacta con filtros por categoria y verificacion masiva concurrente.
-
-### 4. Auto-Descubrimiento de Red (Network Discovery Crawler)
-* **Descubrimiento por Vecindad CDP / LLDP:** Mapeo automatico de topologia saltando de equipo semilla a dispositivos vecinos.
-* **Barrido por Rango CIDR:** Escaneo de subredes completas con resolucion de MAC Vendor y deteccion de servicios SNMP.
-
-### 5. Aprovisionamiento de VLANs y Switchports
-* **Gestion de VLANs:** Creacion, edicion y asignacion de VLANs e interfaces SVI.
-* **Asignacion de Puertos:** Configuracion de puertos en modo *Access* o *Trunk*.
-
----
-
-## Stack Tecnologico
-
-| Capa | Tecnologias |
-| :--- | :--- |
-| **Backend** | PHP 8.3+, Laravel 12, Eloquent ORM, Fortify |
-| **Workers de Red** | Python 3.12+, AsyncIO, PySNMP, Requests |
-| **Frontend** | Blade Templates, Tailwind CSS, Alpine.js, Vis.js Network |
-| **Base de Datos** | PostgreSQL 18 |
-| **Protocolos de Red** | SNMP v2c/v3, ICMP Ping, CDP, LLDP, HTTP/HTTPS, ARP |
-
----
-
-## Arquitectura del Proyecto
+## Estructura
 
 ```
-network-monitor/
-|-- app/
-|   |-- Console/Commands/        # Comandos Artisan (Polling, Web Checks)
-|   |-- Http/Controllers/       # Controladores (Topologia, Dispositivos, ServiciosWeb, Discovery)
-|   |-- Models/                 # Modelos Eloquent (Dispositivo, EnlaceRed, MetricaRed, ServicioWeb)
-|   `-- Services/               # Servicios (WebServicePoller, PhonePcLinkResolver, MacVendorResolver)
-|-- resources/
-|   |-- views/                  # Vistas Blade (Topologia, Dashboard, Servicios Web, VLANs)
-|   |-- css/                    # Estilos Tailwind CSS
-|   `-- js/                     # Scripts y componentes frontend
-|-- worker/
-|   |-- snmp_poller.py          # Worker asincrono de sondeo continuo
-|   |-- snmp_detail_collector.py# Colector detallado de hardware y tablas MAC/ARP
-|   `-- network_discovery.py    # Crawler de auto-descubrimiento CDP/LLDP y CIDR
-|-- public/
-|   `-- images/topology/        # Iconos de hardware (Nexus, Core, Access, Routers, VoIP, Servers)
-`-- iniciar_monitor.bat         # Lanzador de todos los servicios del NOC
+app/                 Controladores, modelos, servicios y comandos de Laravel
+resources/views/     Vistas Blade de cada sección
+worker/              Recolectores en Python (sondeo SNMP/ICMP, detalle, ESXi, cámaras, recaudadoras)
+deploy/              Instalación y actualización del servidor (ver deploy/LEEME.md)
+database/migrations/ Estructura de la base de datos
 ```
 
----
+## Desarrollo (Windows)
 
-## Instalacion y Puesta en Marcha
-
-### Prerrequisitos
-* PHP >= 8.3 con extensiones `pdo`, `mbstring`, `openssl`, `curl`, `snmp`
-* Composer
-* Node.js & NPM
-* Python >= 3.10 con dependencias de red (`pysnmp`, `requests`)
-
-### Pasos de Instalacion
-
-1. **Clonar el repositorio:**
-   ```bash
-   git clone https://github.com/2125200128-cloud/network-monitor.git
-   cd network-monitor
+1. Clonar el repositorio en `C:\MAMP\htdocs\network-monitor` y copiar `.env.example` a `.env` con los datos de la base local.
+2. Instalar dependencias:
    ```
-
-2. **Instalar dependencias de PHP y Node:**
-   ```bash
    composer install
-   npm install && npm run build
+   npm install
+   npm run build
    ```
+3. Ejecutar `iniciar_desarrollo.bat` y abrir http://localhost:8000.
 
-3. **Configurar el entorno:**
-   ```bash
-   cp .env.example .env
-   php artisan key:generate
-   ```
+En desarrollo solo corre la web, con la copia local de la base: no sondea la red ni manda avisos. No uses `iniciar_monitor.bat` mientras el servidor de producción esté funcionando, porque la red se sondearía dos veces y los avisos llegarían duplicados.
 
-4. **Ejecutar migraciones y seeds:**
-   ```bash
-   php artisan migrate --seed
-   ```
+## Producción
 
-5. **Iniciar la plataforma (Servidor Web + Workers de Red):**
-   ```bash
-   # En Windows:
-   iniciar_monitor.bat
+El servidor de producción recibe las versiones ya probadas: en Windows se hace `git push` y en el servidor se ejecuta
 
-   # O manualmente:
-   php artisan serve --host=0.0.0.0 --port=8000
-   python worker/snmp_poller.py
-   ```
+```
+cd /var/www/network-monitor
+sudo bash deploy/actualizar.sh
+```
 
-6. **Abrir en el navegador:**
-   Accede a `http://localhost:8000` o `http://<IP-DEL-SERVIDOR>:8000`.
+La instalación desde cero, la restauración de respaldos, HTTPS y la operación diaria están en [deploy/LEEME.md](deploy/LEEME.md). Qué hacer si se detiene un recolector o se cae el servidor está en el manual de uso (sección 15).
 
----
+## Autor
 
-## Licencia
-
-Este proyecto esta bajo la Licencia MIT.
+Desarrollado por Ing. adahir mendez para la Dirección de Tecnología de la Información Financiera.

@@ -342,27 +342,27 @@ class RevisarRecaudadorasCommand extends Command
             return implode("\n", $lineas);
         };
 
-        $partes = ['🏛 <b>Recaudadoras</b>'];
+        $partes = ['<b>RECAUDADORAS</b>'];
         if (count($this->avisos['caidas']) >= self::CAIDA_MASIVA) {
-            $partes[] = '⚠️ <b>' . count($this->avisos['caidas']) . ' recaudadoras perdieron comunicación a la vez.</b> '
+            $partes[] = '<b>Atención: ' . count($this->avisos['caidas']) . ' recaudadoras perdieron comunicación a la vez.</b> '
                 . 'Probable falla general del enlace del proveedor (MPLS) o del core, no de cada oficina.';
         }
         if ($this->avisos['caidas']) {
-            $partes[] = "🔴 <b>Sin comunicación</b> (no responden ni su IP administrativa ni su loopback)\n" . $lista($this->avisos['caidas'], $linea);
+            $partes[] = "<b>[CRÍTICA] Sin comunicación</b> (no responden ni su IP administrativa ni su loopback)\n" . $lista($this->avisos['caidas'], $linea);
         }
         if ($this->avisos['lan']) {
-            $partes[] = "🟠 <b>Falla de red interna</b> (el equipo responde por su loopback, su red no)\n" . $lista($this->avisos['lan'], $linea);
+            $partes[] = "<b>[ADVERTENCIA] Falla de red interna</b> (el equipo responde por su loopback, su red no)\n" . $lista($this->avisos['lan'], $linea);
         }
         if ($this->avisos['recuperadas']) {
-            $partes[] = "🟢 <b>Recuperadas</b>\n" . $lista($this->avisos['recuperadas'],
+            $partes[] = "<b>[RESUELTA] Recuperadas</b>\n" . $lista($this->avisos['recuperadas'],
                 fn ($x) => '• ' . $e($x[0]->titulo()) . ($x[1] ? ' · estuvo caída ' . self::duracion($x[1]) : ''));
         }
         if ($this->avisos['equipos_caidos']) {
-            $partes[] = "🔴 <b>Equipos sin respuesta</b>\n" . $lista($this->avisos['equipos_caidos'],
+            $partes[] = "<b>[ADVERTENCIA] Equipos sin respuesta</b>\n" . $lista($this->avisos['equipos_caidos'],
                 fn ($q) => '• ' . $e($q->nombre) . ' <code>' . $e($q->ip) . '</code> en ' . $e($q->recaudadora->titulo()));
         }
         if ($this->avisos['equipos_recuperados']) {
-            $partes[] = "🟢 <b>Equipos recuperados</b>\n" . $lista($this->avisos['equipos_recuperados'],
+            $partes[] = "<b>[RESUELTA] Equipos recuperados</b>\n" . $lista($this->avisos['equipos_recuperados'],
                 fn ($x) => '• ' . $e($x[0]->nombre) . ' en ' . $e($x[0]->recaudadora->titulo()) . ($x[1] ? ' · ' . self::duracion($x[1]) : ''));
         }
         return implode("\n\n", $partes);

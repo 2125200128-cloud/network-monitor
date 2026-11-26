@@ -119,7 +119,7 @@ class AlertasTelegram
     {
         $e = fn ($t) => htmlspecialchars((string) $t, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $n = $alarmas->count();
-        $lineas = ['🔁 <b>RECORDATORIO · RED PRIORITARIA</b> (' . $e(\App\Support\RedesPrioritarias::texto()) . ')',
+        $lineas = ['<b>RECORDATORIO · RED PRIORITARIA</b> (' . $e(\App\Support\RedesPrioritarias::texto()) . ')',
             ($n === 1 ? 'Sigue sin resolverse <b>1 falla</b>:' : "Siguen sin resolverse <b>{$n} fallas</b>:")];
         foreach ($alarmas->take(self::MAX_LINEAS_RESUMEN) as $a) {
             $lleva = $a->fecha_inicio ? $this->duracion($a->fecha_inicio->diffInSeconds(now())) : null;
@@ -131,7 +131,7 @@ class AlertasTelegram
         if ($n > self::MAX_LINEAS_RESUMEN) {
             $lineas[] = '… y ' . ($n - self::MAX_LINEAS_RESUMEN) . ' más (ver Alertas).';
         }
-        $lineas[] = '🕒 ' . now()->format('d/m/Y H:i');
+        $lineas[] = '<b>Hora:</b> ' . now()->format('d/m/Y H:i');
         return implode("\n", $lineas);
     }
 
@@ -225,7 +225,7 @@ class AlertasTelegram
                 $sectores[0] === 'redes' => 'las alarmas de redes (switches, firewalls, routers, APs, teléfonos)',
                 default => 'las alarmas de servidores, virtualización (ESXi) y sitios web',
             };
-            $bot->enviarMensaje((string) $chat, "✅ <b>NOC Network Monitor</b>\nLas alertas de Telegram están configuradas correctamente.\n"
+            $bot->enviarMensaje((string) $chat, "<b>NOC Network Monitor</b>\nLas alertas de Telegram están configuradas correctamente.\n"
                 . "Este chat recibe {$recibe}.\n"
                 . 'Se enviarán: ' . ($cfg->telegram_severidad_min === 'advertencia' ? 'críticas y advertencias' : 'solo críticas')
                 . ($cfg->telegram_resueltas ? ', y avisos de resolución.' : '.')
@@ -273,7 +273,7 @@ class AlertasTelegram
         $disp = $a->dispositivo;
         // El equipo va en la primera línea (la que se ve en la notificación del celular) si el título no lo nombra
         $lineas = [
-            $this->icono($a->severidad) . ' <b>' . ($a->severidad === 'critica' ? 'CRÍTICA' : 'ADVERTENCIA') . '</b>'
+            '<b>' . ($a->severidad === 'critica' ? 'CRÍTICA' : 'ADVERTENCIA') . '</b>'
                 . ($a->esPrioritaria() ? ' · <b>[RED PRIORITARIA]</b>' : '') . ' · ' . $e($a->titulo) . $this->deQueEquipo($a),
         ];
         if ($disp) {
@@ -294,7 +294,7 @@ class AlertasTelegram
         if ($a->accion_sugerida) {
             $lineas[] = '<b>Acción sugerida:</b> ' . $e($a->accion_sugerida);
         }
-        $lineas[] = '🕒 ' . $a->fecha_inicio?->format('d/m/Y H:i:s');
+        $lineas[] = '<b>Desde:</b> ' . $a->fecha_inicio?->format('d/m/Y H:i:s');
         if ($enlace = $this->enlace($a->dispositivo_id)) {
             $lineas[] = '<a href="' . $e($enlace) . '">Ver equipo en el NOC</a>';
         }
@@ -305,7 +305,7 @@ class AlertasTelegram
     {
         $e = fn ($t) => htmlspecialchars((string) $t, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $criticas = $alarmas->where('severidad', 'critica')->count();
-        $lineas = ['🚨 <b>' . $alarmas->count() . ' alarmas nuevas</b>' . ($criticas ? " ({$criticas} críticas)" : '')];
+        $lineas = ['<b>' . $alarmas->count() . ' alarmas nuevas</b>' . ($criticas ? " ({$criticas} críticas)" : '')];
         // Las de la red prioritaria primero y marcadas
         foreach ($alarmas->sortBy(fn (AlarmaRed $a) => $a->esPrioritaria() ? 0 : 1)->take(self::MAX_LINEAS_RESUMEN) as $a) {
             $lineas[] = $this->icono($a->severidad) . ' ' . ($a->esPrioritaria() ? '<b>[PRIORITARIA]</b> ' : '') . $e($a->titulo) . $this->deQueEquipo($a);
@@ -313,14 +313,14 @@ class AlertasTelegram
         if ($alarmas->count() > self::MAX_LINEAS_RESUMEN) {
             $lineas[] = '… y ' . ($alarmas->count() - self::MAX_LINEAS_RESUMEN) . ' más.';
         }
-        $lineas[] = '🕒 ' . now()->format('d/m/Y H:i:s');
+        $lineas[] = '<b>Hora:</b> ' . now()->format('d/m/Y H:i:s');
         return implode("\n", $lineas);
     }
 
     private function mensajeResueltas(Collection $alarmas): string
     {
         $e = fn ($t) => htmlspecialchars((string) $t, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $lineas = ['✅ <b>' . ($alarmas->count() === 1 ? 'Alarma resuelta' : $alarmas->count() . ' alarmas resueltas') . '</b>'];
+        $lineas = ['<b>' . ($alarmas->count() === 1 ? 'Alarma resuelta' : $alarmas->count() . ' alarmas resueltas') . '</b>'];
         foreach ($alarmas->take(self::MAX_LINEAS_RESUMEN) as $a) {
             $duracion = $a->fecha_inicio && $a->fecha_resolucion ? $this->duracion($a->fecha_inicio->diffInSeconds($a->fecha_resolucion)) : null;
             $lineas[] = '• ' . $e($a->titulo) . $this->deQueEquipo($a) . ($duracion ? " — duró {$duracion}" : '');
@@ -347,9 +347,10 @@ class AlertasTelegram
         return ' · <b>' . $e($d->nombre) . '</b>' . ($conIp ? ' (<code>' . $e($d->ip) . '</code>)' : '');
     }
 
+    /** Severidad al inicio de cada renglón de los resúmenes, en texto. */
     private function icono(?string $severidad): string
     {
-        return $severidad === 'critica' ? '🔴' : '🟠';
+        return $severidad === 'critica' ? '<b>[CRÍTICA]</b>' : '[ADVERTENCIA]';
     }
 
     private function duracion(float $s): string

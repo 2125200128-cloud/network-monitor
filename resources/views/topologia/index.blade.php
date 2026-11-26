@@ -377,7 +377,7 @@
                 <span class="font-bold text-blue-300 mr-1">Modo zonas</span>
                 <button type="button" onclick="acomodarPorIps()" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 font-bold" title="Coloca dentro de cada zona, en cuadrícula, los equipos cuya IP coincide con sus rangos" aria-label="Coloca dentro de cada zona, en cuadrícula, los equipos cuya IP coincide con sus rangos">Acomodar por IPs</button>
                 <button type="button" onclick="crearZonasPorSubred()" class="px-3 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 font-bold" title="Crea una zona por cada subred /24 con equipos y los acomoda" aria-label="Crea una zona por cada subred /24 con equipos y los acomoda">Zonas por subred /24</button>
-                <span class="text-slate-400 hidden lg:inline ml-2">Arrastra en vacío para dibujar · arrastra el título para mover · esquina para redimensionar · ✎ editar · 🗑 borrar</span>
+                <span class="text-slate-400 hidden lg:inline ml-2">Arrastra en vacío para dibujar · arrastra el título para mover · esquina para redimensionar · ✎ editar · ✕ borrar</span>
                 <button type="button" onclick="toggleZonaEdicion(false)" class="ml-auto px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 font-bold">Listo</button>
             </div>
             <div id="zonaLista" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto"></div>
@@ -2651,7 +2651,7 @@
             if (hijos.length) {
                 let caidos = 0;
                 hijos.forEach(id => { if (estadoNodo[id] === 'offline') caidos++; });
-                const texto = `☎ ${hijos.length}` + (caidos ? `  ▼${caidos}` : '');
+                const texto = `Tel. ${hijos.length}` + (caidos ? `  ▼${caidos}` : '');
                 ctx.save();
                 ctx.font = 'bold 22px Inter, system-ui, sans-serif';
                 const w = ctx.measureText(texto).width + 20;
@@ -3233,10 +3233,10 @@
                     ctx.fillStyle = z.color;
                     ctx.fillRect(z.x + z.ancho - h, z.y + z.alto - h, h, h);
 
-                    // Botones ✎ y 🗑 en el extremo derecho del título (solo si caben y la zona ya existe)
+                    // Botones ✎ (editar) y ✕ (borrar) en el extremo derecho del título (solo si caben y la zona ya existe)
                     if (z.id && z.ancho > px(110)) {
                         const b = botonesZona(z);
-                        [[b.editar, '✎', '#667d93'], [b.borrar, '🗑', '#dc2626']].forEach(([r, txt, col]) => {
+                        [[b.editar, '✎', '#667d93'], [b.borrar, '✕', '#dc2626']].forEach(([r, txt, col]) => {
                             ctx.fillStyle = '#ffffff';
                             ctx.strokeStyle = col;
                             ctx.lineWidth = px(1.5);
@@ -3457,7 +3457,7 @@
             }
         }
 
-        // Lista de zonas en la barra del modo edición: clic = encuadrar, ✎ = editar, 🗑 = borrar
+        // Lista de zonas en la barra del modo edición: clic = encuadrar, ✎ = editar, ✕ = borrar
         function renderZonaLista() {
             const cont = document.getElementById('zonaLista');
             if (!cont) return;

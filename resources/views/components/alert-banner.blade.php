@@ -50,11 +50,11 @@
                         @if(!$n['leida'])
                             <div class="inline-flex items-center gap-2 cursor-pointer hover:text-amber-300 transition" onclick="toggleGlobalNotifModal(event)">
                                 @if($n['tipo'] === 'critica')
-                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-red-500/30 text-red-300 border border-red-500/40">🔴 CRÍTICA</span>
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-red-500/30 text-red-300 border border-red-500/40">CRÍTICA</span>
                                 @elseif($n['tipo'] === 'advertencia')
-                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/40">🟡 ADVERTENCIA</span>
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/40">ADVERTENCIA</span>
                                 @else
-                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/40">⚡ SISTEMA</span>
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/40">SISTEMA</span>
                                 @endif
                                 <span class="font-extrabold text-white">{{ $n['titulo'] }}</span>
                                 <span class="text-slate-300 font-mono text-[11px]">({{ $n['dispositivo'] }} · {{ $n['hora_falla'] ?? $n['tiempo'] }})</span>
@@ -69,11 +69,11 @@
                         @if(!$n['leida'])
                             <div class="inline-flex items-center gap-2 cursor-pointer hover:text-amber-300 transition" onclick="toggleGlobalNotifModal(event)">
                                 @if($n['tipo'] === 'critica')
-                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-red-500/30 text-red-300 border border-red-500/40">🔴 CRÍTICA</span>
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-red-500/30 text-red-300 border border-red-500/40">CRÍTICA</span>
                                 @elseif($n['tipo'] === 'advertencia')
-                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/40">🟡 ADVERTENCIA</span>
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-amber-500/30 text-amber-300 border border-amber-500/40">ADVERTENCIA</span>
                                 @else
-                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/40">⚡ SISTEMA</span>
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-black bg-blue-500/30 text-blue-300 border border-blue-500/40">SISTEMA</span>
                                 @endif
                                 <span class="font-extrabold text-white">{{ $n['titulo'] }}</span>
                                 <span class="text-slate-300 font-mono text-[11px]">({{ $n['dispositivo'] }} · {{ $n['hora_falla'] ?? $n['tiempo'] }})</span>
@@ -126,11 +126,11 @@
             @forelse($notificaciones as $n)
                 <div class="global-notif-item p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 flex gap-3 items-start" data-tipo="{{ $n['tipo'] }}">
                     @if($n['tipo'] === 'critica')
-                        <div class="w-8 h-8 rounded-xl bg-red-100 dark:bg-red-950/60 text-red-600 flex items-center justify-center shrink-0">🔴</div>
+                        <div class="w-8 h-8 rounded-xl bg-red-100 dark:bg-red-950/60 text-red-600 flex items-center justify-center shrink-0"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span></div>
                     @elseif($n['tipo'] === 'advertencia')
-                        <div class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center shrink-0">🟡</div>
+                        <div class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center shrink-0"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span></div>
                     @else
-                        <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-blue-600 flex items-center justify-center shrink-0">⚡</div>
+                        <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-blue-600 flex items-center justify-center shrink-0"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span></div>
                     @endif
                     <div class="flex-1 min-w-0">
                         <h4 class="text-xs font-extrabold text-gray-900 dark:text-slate-100">{{ $n['titulo'] }}</h4>

@@ -4,8 +4,10 @@ cd /d "%~dp0"
 rem Entorno de desarrollo: solo la web en esta PC, con la copia local de la base.
 rem Sin workers ni noc:sync: no sondea la red ni manda Telegram (eso lo hace el servidor).
 
-set PHP=C:\MAMP\bin\php\php8.3.36\php.exe
-if not exist "%PHP%" set PHP=php
+rem PHP 8.3 de MAMP (la carpeta cambia con cada version: php8.3.1, php8.3.36...); si no hay, el del PATH
+set PHP=
+for /d %%D in (C:\MAMP\bin\php\php8.3*) do if exist "%%D\php.exe" set PHP=%%D\php.exe
+if not defined PHP set PHP=php
 
 rem Sin caches: los cambios en vistas, rutas y configuracion se ven al recargar
 "%PHP%" artisan optimize:clear >nul 2>&1
