@@ -78,6 +78,13 @@ class RecaudadorasController extends Controller
         ]);
     }
 
+    /** Historial de ping para las gráficas de la ficha (?rango=6h|24h|7d|30d|90d). */
+    public function historial(Request $request, Recaudadora $recaudadora)
+    {
+        $rango = $request->validate(['rango' => 'nullable|in:' . implode(',', array_keys(\App\Services\Recaudadoras\HistorialPing::RANGOS))])['rango'] ?? '24h';
+        return response()->json(\App\Services\Recaudadoras\HistorialPing::serie($recaudadora, $rango));
+    }
+
     /** Reporte PDF de disponibilidad de un mes (?mes=2026-11; el mes en curso se cuenta hasta ahora). */
     public function reporte(Request $request, PdfReportService $pdf)
     {

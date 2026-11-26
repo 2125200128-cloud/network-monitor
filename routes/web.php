@@ -39,6 +39,7 @@ Route::get('/firewalls', [\App\Http\Controllers\FirewallsController::class, 'ind
     Route::get('/api/recaudadoras/estados', [\App\Http\Controllers\RecaudadorasController::class, 'estados'])->name('recaudadoras.estados');
     Route::get('/recaudadoras/reporte', [\App\Http\Controllers\RecaudadorasController::class, 'reporte'])->middleware('throttle:20,1,recas-reporte')->name('recaudadoras.reporte');
     Route::get('/recaudadoras/{recaudadora}', [\App\Http\Controllers\RecaudadorasController::class, 'show'])->whereNumber('recaudadora')->name('recaudadoras.show');
+    Route::get('/recaudadoras/{recaudadora}/historial', [\App\Http\Controllers\RecaudadorasController::class, 'historial'])->whereNumber('recaudadora')->middleware('throttle:60,1')->name('recaudadoras.historial');
     Route::middleware(['check.role:Admin,Operador'])->group(function () {
         Route::post('/recaudadoras/kioscos', [\App\Http\Controllers\RecaudadorasController::class, 'loteKioscos'])->middleware('throttle:10,1,recas-kioscos')->name('recaudadoras.kioscos');
         Route::post('/recaudadoras/{recaudadora}/equipos', [\App\Http\Controllers\RecaudadorasController::class, 'guardarEquipo'])->whereNumber('recaudadora')->name('recaudadoras.equipos.guardar');

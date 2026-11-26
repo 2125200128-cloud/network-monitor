@@ -39,6 +39,9 @@ class RevisarRecaudadorasCommand extends Command
 
     private array $avisos = ['caidas' => [], 'lan' => [], 'recuperadas' => [], 'equipos_caidos' => [], 'equipos_recuperados' => []];
 
+    /** Esta revisión de cada recaudadora, para el historial de ping de su ficha. */
+    private array $mediciones = [];
+
     public function handle(): int
     {
         $recas = Recaudadora::where('activo', true)->get()->keyBy('id');
@@ -78,6 +81,12 @@ class RevisarRecaudadorasCommand extends Command
         foreach ($equipos as $e) {
             $this->evaluarEquipo($e, $recas[$e->recaudadora_id], $res->get("e{$e->id}"), $ahora);
         }
+        // Historial de las gráficas: si falla, la revisión y los avisos siguen
+        try {
+            \App\Services\Recaudadoras\HistorialPing::registrar($this->mediciones);
+        } catch (\Throwable $e) {
+            $this->warn('No se pudo guardar el historial de ping: ' . $e->getMessage());
+        }
 
         if (!$this->option('sin-avisos')) {
             $this->avisar();
@@ -101,7 +110,10 @@ class RevisarRecaudadorasCommand extends Command
         // interfaz) o no la tiene, cuenta la loopback. «lan» solo si la IP administrativa respondía y dejó de hacerlo
         // mientras la loopback sigue respondiendo.
         $ok = $adminOk || (!$adminAlgunaVez && $lbOk);
-        $corte = $this->cortarHueco($r->ultimo_chequeo, $ahora, $ok,
+        $this->mediciones[] = ['recaudadora_id' => $r->id, 'medido_en' => $ahora, 'ok' => (bool) $ok,
+            'admin_ok' => $adminOk, 'loopback_ok' => $lbOk,
+            'admin_ms' => $adminOk ? $admin['ms'] : null, 'loopback_ms' => $lbOk ? $loopback['ms'] : null];
+        $corte =$this->cortarHueco($r->ultimo_chequeo, $ahora, $ok,
             RecaudadoraEvento::where('recaudadora_id', $r->id)->whereNull('equipo_id')->whereNull('fin'));
         $fallos = $ok ? 0 : min($r->fallos_seguidos + 1, 1000);
         $anterior = $r->estado;

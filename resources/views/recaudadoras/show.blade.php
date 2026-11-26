@@ -136,6 +136,56 @@
         </div>
     </div>
 
+    {{-- Historial de ping: disponibilidad y tiempo de respuesta (como las gráficas de Zabbix) --}}
+    <div class="floating-card p-4" x-data="historialPing()" x-init="cargar()">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div>
+                <h2 class="rc-titulo">Historial de ping</h2>
+                <p class="text-[11px]" style="color: var(--nm-text-muted)">Una revisión por minuto a la IP administrativa y a la loopback.</p>
+            </div>
+            <div class="flex gap-1" role="group" aria-label="Periodo de las gráficas">
+                @foreach(['6h' => '6 h', '24h' => '24 h', '7d' => '7 días', '30d' => '30 días', '90d' => '90 días'] as $clave => $texto)
+                    <button type="button" class="rc-btn" :class="rango === '{{ $clave }}' && 'rc-btn-p'" :aria-pressed="(rango === '{{ $clave }}').toString()"
+                            @click="rango = '{{ $clave }}'; cargar()">{{ $texto }}</button>
+                @endforeach
+            </div>
+        </div>
+
+        <p x-show="error" x-cloak class="text-xs py-6 text-center" style="color: #dc2626" x-text="error"></p>
+        <p x-show="!error && datos && !datos.resumen.muestras" x-cloak class="text-xs py-6 text-center" style="color: var(--nm-text-muted)">
+            Todavía no hay mediciones en este periodo. El historial se guarda desde que se actualizó el sistema: las gráficas se llenan con cada revisión (una por minuto).
+        </p>
+
+        <div x-show="datos && datos.resumen.muestras" x-cloak>
+            <div class="flex items-baseline justify-between gap-2">
+                <h3 class="text-[11px] font-bold uppercase tracking-wider" style="color: var(--nm-text-muted)">Responde al ping</h3>
+                <span class="text-xs" style="color: var(--nm-text-muted)">Disponibilidad del periodo:
+                    <b class="font-mono" :style="`color: ${colorDisp(datos?.resumen.disponibilidad)}`" x-text="fmtPct(datos?.resumen.disponibilidad)"></b></span>
+            </div>
+            <div style="height: 110px" class="mt-1"><canvas x-ref="disp" aria-label="Disponibilidad por intervalo" role="img"></canvas></div>
+
+            <h3 class="text-[11px] font-bold uppercase tracking-wider mt-4" style="color: var(--nm-text-muted)">Tiempo de respuesta</h3>
+            <div style="height: 200px" class="mt-1"><canvas x-ref="lat" aria-label="Tiempo de respuesta del ping" role="img"></canvas></div>
+
+            {{-- Resumen como el de Zabbix: último, mínimo, media y máximo --}}
+            <table class="rc-tabla mt-3">
+                <thead><tr><th></th><th style="text-align: right">Último</th><th style="text-align: right">Mínimo</th><th style="text-align: right">Media</th><th style="text-align: right">Máximo</th></tr></thead>
+                <tbody>
+                    <template x-for="fila in filasResumen()" :key="fila.nombre">
+                        <tr>
+                            <td><span class="flex items-center gap-1.5"><span class="rc-punto" :style="`background: ${fila.color}`"></span><span x-text="fila.nombre"></span></span></td>
+                            <td class="text-right font-mono" x-text="fmtMs(fila.d.ultimo)"></td>
+                            <td class="text-right font-mono" x-text="fmtMs(fila.d.min)"></td>
+                            <td class="text-right font-mono" x-text="fmtMs(fila.d.avg)"></td>
+                            <td class="text-right font-mono" x-text="fmtMs(fila.d.max)"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+            <p class="text-[11px] mt-2" style="color: var(--nm-text-muted)" x-text="nota()"></p>
+        </div>
+    </div>
+
     {{-- Equipos --}}
     <div class="floating-card p-4">
         <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
@@ -318,6 +368,104 @@
 @endsection
 
 @section('scripts')
+<script>
+    // Gráficas del historial de ping. Los objetos Chart viven fuera del estado de Alpine (no deben envolverse en Proxy).
+    function historialPing() {
+        const URL = @json(route('recaudadoras.historial', $r->id));
+        const VERDE = '#059669', ROJO = '#dc2626', AMBAR = '#d97706', AZUL = '#2563eb', GRIS = '#64748b';
+        let graficaDisp = null, graficaLat = null, temporizador = null;
+        const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+        const dosDig = (n) => String(n).padStart(2, '0');
+        const fecha = (t) => new Date(t);   // 'YYYY-MM-DDTHH:mm' en hora local
+
+        return {
+            rango: '24h', datos: null, error: '',
+
+            async cargar() {
+                clearTimeout(temporizador);
+                try {
+                    const res = await fetch(`${URL}?rango=${this.rango}`, { headers: { Accept: 'application/json' } });
+                    if (!res.ok) throw new Error(`No se pudo cargar el historial (HTTP ${res.status}).`);
+                    this.datos = await res.json();
+                    this.error = '';
+                    this.$nextTick(() => this.dibujar());
+                } catch (e) {
+                    this.error = e.message;
+                }
+                // Los periodos cortos se actualizan solos cada minuto
+                if (['6h', '24h'].includes(this.rango)) temporizador = setTimeout(() => this.cargar(), 60000);
+            },
+
+            etiqueta(t) {
+                const d = fecha(t), hm = `${dosDig(d.getHours())}:${dosDig(d.getMinutes())}`;
+                return ['6h', '24h'].includes(this.rango) ? hm : `${dosDig(d.getDate())}/${dosDig(d.getMonth() + 1)}` + (this.rango === '90d' ? '' : ` ${hm}`);
+            },
+
+            dibujar() {
+                if (!this.datos || !this.datos.resumen.muestras || typeof Chart === 'undefined') return;
+                const p = this.datos.puntos, etiquetas = p.map(x => this.etiqueta(x.t));
+                const texto = css('--nm-text-muted') || '#64748b', rejilla = css('--nm-border') || '#e2e8f0';
+                const titulo = (items) => { const d = fecha(p[items[0].dataIndex].t);
+                    return `${dosDig(d.getDate())}/${dosDig(d.getMonth() + 1)}/${d.getFullYear()} ${dosDig(d.getHours())}:${dosDig(d.getMinutes())}`; };
+                const ejeX = { ticks: { color: texto, maxTicksLimit: 10, maxRotation: 0, autoSkip: true, font: { size: 10.5 } }, grid: { color: rejilla, drawTicks: false } };
+                const comun = { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { display: false } }, elements: { point: { radius: 0, hitRadius: 6, hoverRadius: 3 } } };
+
+                // Disponibilidad: verde con respuesta completa, ámbar parcial, rojo sin respuesta; hueco = sin revisiones
+                const colorDe = (v) => v === null || v === undefined ? GRIS : v >= 100 ? VERDE : v > 0 ? AMBAR : ROJO;
+                graficaDisp?.destroy();
+                graficaDisp = new Chart(this.$refs.disp, {
+                    type: 'line',
+                    data: { labels: etiquetas, datasets: [{ label: 'Respondió', data: p.map(x => x.disp), stepped: 'middle', borderWidth: 2, fill: 'origin',
+                        segment: { borderColor: c => colorDe(Math.min(c.p0.parsed.y, c.p1.parsed.y)), backgroundColor: c => colorDe(Math.min(c.p0.parsed.y, c.p1.parsed.y)) + '33' },
+                        borderColor: VERDE, backgroundColor: VERDE + '33', spanGaps: false }] },
+                    options: { ...comun, scales: { x: ejeX,
+                        y: { min: 0, max: 100, ticks: { stepSize: 50, color: texto, font: { size: 10.5 }, callback: v => v + ' %' }, grid: { color: rejilla } } },
+                        plugins: { ...comun.plugins, tooltip: { callbacks: { title: titulo,
+                            label: c => c.parsed.y === null ? 'Sin revisiones' : (c.parsed.y >= 100 ? 'Respondió todas las revisiones' : `Respondió ${c.parsed.y} % de las revisiones`) } } } },
+                });
+
+                // Tiempo de respuesta: promedio de cada IP y, de la administrativa, la franja entre el mínimo y el máximo
+                const conLoop = !!this.datos.resumen.loopback, conAdmin = !!this.datos.resumen.admin;
+                const serie = (ip, k) => p.map(x => x[ip] ? x[ip][k] : null);
+                const ds = [];
+                if (conAdmin) {
+                    ds.push({ label: 'máx', data: serie('admin', 'max'), borderWidth: 0, pointRadius: 0, fill: false, spanGaps: false });
+                    ds.push({ label: 'mín', data: serie('admin', 'min'), borderWidth: 0, pointRadius: 0, fill: '-1', backgroundColor: AZUL + '24', spanGaps: false });
+                    ds.push({ label: 'IP administrativa', data: serie('admin', 'avg'), borderColor: AZUL, backgroundColor: AZUL, borderWidth: 2, spanGaps: false });
+                }
+                if (conLoop) ds.push({ label: 'Loopback', data: serie('loopback', 'avg'), borderColor: GRIS, backgroundColor: GRIS, borderWidth: 1.5, borderDash: [5, 3], spanGaps: false });
+                graficaLat?.destroy();
+                graficaLat = new Chart(this.$refs.lat, {
+                    type: 'line', data: { labels: etiquetas, datasets: ds },
+                    options: { ...comun, scales: { x: ejeX, y: { beginAtZero: true, ticks: { color: texto, font: { size: 10.5 }, callback: v => v + ' ms' }, grid: { color: rejilla } } },
+                        plugins: { ...comun.plugins,
+                            legend: { display: true, position: 'bottom', labels: { color: texto, boxWidth: 14, boxHeight: 2, font: { size: 11 }, filter: i => !['máx', 'mín'].includes(i.text) } },
+                            tooltip: { filter: i => i.dataset.label !== 'máx', callbacks: { title: titulo, label: c => {
+                                if (c.parsed.y === null) return null;
+                                if (c.dataset.label === 'mín') { const x = p[c.dataIndex].admin; return x && x.max !== x.min ? `  rango ${x.min} – ${x.max} ms` : null; }
+                                return `${c.dataset.label}: ${c.parsed.y} ms`;
+                            } } } } },
+                });
+            },
+
+            filasResumen() {
+                const r = this.datos?.resumen || {}, f = [];
+                if (r.admin) f.push({ nombre: 'IP administrativa', color: AZUL, d: r.admin });
+                if (r.loopback) f.push({ nombre: 'Loopback', color: GRIS, d: r.loopback });
+                return f;
+            },
+            nota() {
+                const r = this.datos?.resumen; if (!r) return '';
+                const paso = this.datos.intervalo_s >= 3600 ? `${this.datos.intervalo_s / 3600} h` : `${this.datos.intervalo_s / 60} min`;
+                return `Cada punto resume ${paso} · ${r.muestras.toLocaleString('es-MX')} revisiones en el periodo. Un hueco en la gráfica es tiempo sin revisiones (monitoreo detenido).`;
+            },
+            fmtMs: (v) => v === null || v === undefined ? '—' : `${v} ms`,
+            fmtPct: (v) => v === null || v === undefined ? '—' : (v >= 99.995 ? '100' : v.toFixed(2)) + ' %',
+            colorDisp: (v) => v === null || v === undefined ? GRIS : v >= 99.5 ? VERDE : v >= 97 ? AMBAR : ROJO,
+        };
+    }
+</script>
 @if($puedeEditarEquipos)
 <script>
     function escanerRed() {
